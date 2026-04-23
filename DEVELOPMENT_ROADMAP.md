@@ -358,3 +358,72 @@ This is a pragmatic MVP schema. Columns are illustrative, not exhaustive; every 
 - `job_events`, `reports`, `deliveries`, and `workfile_items` are append-only — updates are forbidden; corrections are new rows. Deletes are soft, with a 5-year hold.
 
 ---
+
+## 8. Tech Stack & Tooling
+
+Chosen to optimize for a small team shipping quickly, with no exotic infra, and a clear path to scale.
+
+### 8.1 Languages & frameworks
+- **TypeScript** end-to-end.
+- **Next.js 15 (App Router)** for web + PWA. Server components for the dashboard, client components for the field tool.
+- **tRPC** for type-safe BFF between Next.js and the core API. REST surface exposed for third-party integrations.
+- **React Native (Expo)** for native mobile in v1+.
+- **Node.js 20 LTS** runtime.
+
+### 8.2 Data & storage
+- **PostgreSQL 16** on managed RDS / Neon / Supabase; **PostGIS** extension for spatial comp queries.
+- **Prisma** or **Drizzle** as the ORM (Drizzle preferred — lighter, better TS ergonomics).
+- **Redis** for cache, rate-limit, and the BullMQ queue.
+- **S3** (or Cloudflare R2) for photos, sketches, PDFs. Server-side encryption (SSE-S3 or SSE-KMS).
+- **ClickHouse** for analytics (v1+).
+
+### 8.3 Auth
+- **Clerk** or **Auth0** for MVP to avoid rolling our own. Supports TOTP 2FA, SSO when we need it.
+- Self-hosted alternative: **Lucia Auth** if we want to own identity.
+
+### 8.4 PDF & imaging
+- **`pdf-lib`** for form rendering (fill fields, stamp text on templates, embed signatures).
+- **`sharp`** for image transcoding, EXIF, thumbnails, HEIC → JPEG.
+- **`exifr`** for metadata extraction.
+
+### 8.5 Field / PWA
+- **Service Worker** (Workbox) for offline shell.
+- **IndexedDB** via **Dexie.js** for on-device job + photo store.
+- **MediaRecorder** API for voice notes, **Web Speech API** on-device transcription with server fallback (Whisper or AWS Transcribe).
+
+### 8.6 Maps & geo
+- **Mapbox** or **Google Maps**. Mapbox preferred for styling control and cost.
+- **FEMA NFHL** free API for flood zones.
+- **US Census Geocoder** free API for address normalization + FIPS codes.
+
+### 8.7 Integrations (v1)
+- **RESO Web API** client library for MLS.
+- **Mercury Network XSite** SOAP adapter.
+- **AppraisalPort** XML adapter.
+- **QuickBooks Online** OAuth + REST.
+- **Stripe** for payments.
+- **Postmark** or **Resend** for transactional email.
+- **Twilio** for SMS reminders.
+
+### 8.8 AI (post-v1)
+- **Claude** (Anthropic) for narrative drafting and order-email parsing fallback.
+- **OpenAI Whisper** for voice transcription at scale.
+- **Vector DB** — `pgvector` on the existing Postgres; no new service until it matters.
+
+### 8.9 DevOps & hosting
+- **Vercel** for the Next.js web app (MVP). Move the API to **Fly.io** or **AWS ECS** when the job queue / MLS sync work outgrows serverless.
+- **Managed Postgres** (Neon or RDS).
+- **GitHub Actions** for CI.
+- **Sentry** for error tracking; **PostHog** for product analytics (self-hosted-capable).
+- **Terraform** for infra-as-code from week 1 so environments are reproducible.
+- **Doppler** or **AWS Secrets Manager** for secrets.
+
+### 8.10 Developer experience
+- **pnpm** workspaces, **Turborepo** for monorepo caching.
+- **Biome** (or ESLint + Prettier) for lint/format.
+- **Vitest** for unit tests; **Playwright** for E2E.
+- **Storybook** for UI components — especially the form + comp grid.
+- **Conventional Commits** + **Changesets** for release notes.
+- **Flagsmith** or a home-grown flags table for feature rollouts (especially critical for AMC integrations that vary per customer).
+
+---
