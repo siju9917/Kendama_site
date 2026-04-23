@@ -591,3 +591,146 @@ This plan assumes one full-stack engineer (Claude-assisted, full-time) plus a pa
 | **v1 launch** | **24** | **Commercial launch with integrations.** |
 
 ---
+
+## 11. Team, QA, Metrics, Risks & Launch
+
+### 11.1 Team composition
+
+**Through MVP (weeks 1–15):**
+- 1 full-stack engineer (lead), Claude-assisted.
+- 1 part-time product/design (0.3 FTE) — flows, form fidelity, branding.
+- 1 advisor / design partner appraiser (informal, compensated with pilot credit).
+
+**Through v1 (weeks 16–24), add:**
+- 1 full-stack engineer (integrations-focused — MLS/AMC/QBO).
+- 1 mobile engineer (contractor) for the Expo app.
+- 0.5 FTE customer success, doubling as onboarding + feedback funnel.
+
+**Later (post-v1):**
+- A data / ML engineer once we start shipping comp suggestion and narrative drafts.
+- Security/compliance lead (contractor) for SOC 2 push.
+
+### 11.2 Engineering practices
+- Trunk-based development; short-lived feature branches; PR reviews required even for the solo eng (Claude-assisted review).
+- CI must stay green on `main` — treat red CI as a stop-the-line event.
+- Conventional Commits; automated changelog.
+- One engineer owns each subsystem (forms, field, integrations) at a time to prevent context-thrash.
+- Weekly 30-minute architecture review; decisions recorded in `/docs/adr` using lightweight ADR format.
+
+### 11.3 Testing strategy
+
+| Layer | Tooling | What it protects |
+|---|---|---|
+| Unit | Vitest | Adjustment math, UAD validators, form field resolvers — the places bugs cost money. |
+| Component | Vitest + Testing Library | Form inputs, checklist items, comp grid cells. |
+| Integration | Vitest + Testcontainers (Postgres + Redis + MinIO) | Sync engine, PDF renderer, report pipeline. |
+| E2E | Playwright | Six golden paths: sign up, create job, inspect (offline), enter comps, render + sign PDF, deliver. Run nightly + on PR. |
+| Visual regression | Playwright screenshots | The 1004 PDF must not drift pixel-wise. |
+| Load | k6 or Artillery | PDF render (target p95 < 5s), photo upload burst (200 photos in 60s). |
+| Manual | Pilot appraisers | Anything judgment-based (UAD code correctness, comp defensibility). |
+
+**Non-negotiable invariants covered by tests:**
+- Rendered PDF of a given `{ form, job, revision }` is byte-identical over time (hash asserted).
+- Row-level tenancy: a crafted request with another `org_id` returns 404, always.
+- Offline sync: a 500-command queue replays in order, idempotently.
+
+### 11.4 Success metrics (what tells us it's working)
+
+**Product / usage:**
+- Activation: % of signups who complete their first job within 14 days. Target ≥ 50%.
+- Weekly active appraisers.
+- Jobs completed per user per week.
+- Median per-job time-in-app → target < 90 min for a straightforward 1004.
+- Revision rate on delivered reports → target ≤ 5%.
+
+**Business:**
+- MRR, paid seats, churn.
+- CAC payback < 6 months.
+- NPS ≥ 40 at MVP, ≥ 50 at v1.
+
+**Reliability:**
+- Uptime ≥ 99.5% MVP / 99.9% v1.
+- P95 latencies for dashboard and PDF render within targets.
+- Zero-data-loss incidents.
+
+### 11.5 Risks & mitigations
+
+| Risk | Likelihood | Impact | Mitigation |
+|---|---|---|---|
+| Form PDF fidelity falls short; AMCs reject reports | Med | High | Pixel-diff tests vs. reference PDFs from TOTAL; require a real appraiser to sign off on form fidelity before any pilot delivery. |
+| MLS / AMC integrations take far longer than estimated | High | Med | Ship MVP with manual + CSV only; do not block launch on any integration. Budget 2× estimate for each integration. |
+| Offline sync bugs lose field data | Med | Very High | Client persists raw commands forever until server ACK; never delete pre-ACK. Add a "safe export" button for paranoid users. |
+| Regulatory shift (FHFA UAD 4.0 redesign arriving) | High (known) | High | Model forms as data, not code, so a new UAD spec is a config update. Track FHFA announcements. |
+| Solo founder burnout | High | Very High | Ruthless scope control; weekly rest day; written MVP scope that we defend against scope creep. |
+| Competitor (ACI, TOTAL) ships a modern web product | Low-Med | High | Our edge is mobile + speed, not feature count. Invest in UX and pilot-driven polish. |
+| Fraudulent / malicious PDF injection via order emails | Med | Med | Parse server-side only; never `eval` extracted content; strict schema on parsed output. |
+
+### 11.6 Launch plan
+
+**Pilot (week 15–18):**
+- 5 paid design partners at 50% discount in exchange for weekly feedback calls.
+- Source from: AppraisersForum, local chapter of Appraisal Institute, LinkedIn outreach.
+- Success bar: each completes ≥ 10 real appraisals end-to-end in the product.
+
+**Soft launch (week 19–22):**
+- Open waitlist → invite batch of 50 in order.
+- Usage-based onboarding: every new user gets a 30-min call for the first month.
+
+**Commercial launch (week 24):**
+- Public signups, Stripe billing live.
+- Launch assets: landing page, 2-minute product video, case study from top pilot, comparison page vs. TOTAL.
+- Channel: appraiser podcasts, state-board CE partnerships, paid search on "appraisal software" terms.
+
+### 11.7 Go / no-go gates
+
+Do not proceed to the next phase until all are true:
+
+**MVP → Pilot:**
+- E2E suite passes for the six golden paths.
+- At least one end-to-end real appraisal completed by the team internally (dogfood).
+- Privacy policy + ToS published.
+
+**Pilot → Soft launch:**
+- ≥ 3 of 5 pilots renew or convert.
+- Zero P0 bugs open.
+- Incident response tested (induced DB failover drill).
+
+**Soft launch → Commercial:**
+- SOC 2 Type I in progress with evidence collection active.
+- Support SLA documented and staffed.
+- Churn trend flat or improving over 4 weeks.
+
+---
+
+## Appendix A — Minimal repo layout
+
+```
+/
+├── apps/
+│   ├── web/               # Next.js 15 app (web + PWA)
+│   └── worker/            # BullMQ queue consumer (PDF, email, sync)
+├── packages/
+│   ├── db/                # Drizzle schema + migrations
+│   ├── forms/             # Form schemas + PDF renderer
+│   ├── sync/              # Shared sync engine (client + server halves)
+│   ├── ui/                # Design system (shadcn-based)
+│   └── config/            # Shared eslint / tsconfig / biome
+├── infra/                 # Terraform modules
+├── docs/
+│   ├── adr/               # Architecture decision records
+│   ├── forms/             # UAD field maps, PDF templates
+│   └── runbooks/          # On-call procedures
+└── DEVELOPMENT_ROADMAP.md # This document
+```
+
+## Appendix B — Open questions for the team
+
+1. Target geography for first MLS integration? (Affects which RESO API we harden first.)
+2. Do we start single-user or multi-user from day 1? (This doc assumes single-user MVP.)
+3. AI narrative drafts at launch or post-v1? Compliance posture hinges on this.
+4. Build our own e-sign or outsource (DocuSign click-to-sign)?
+5. Native mobile vs. PWA-only for v1 — how loud is pilot demand?
+
+---
+
+*Last updated: 2026-04-23.*
