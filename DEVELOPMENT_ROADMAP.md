@@ -56,3 +56,80 @@
 When I get a new appraisal order, I want the subject address, borrower, and due date auto-populated into a job so I can skip data entry. When I'm on-site, I want to capture every required UAD field on my phone so I don't drive back for a missed measurement. When I'm writing the report, I want the system to flag missing UAD codes and suggest comps so I can defend my value conclusion. When I'm done, I want to e-deliver to the AMC and invoice in one click so I get paid faster.
 
 ---
+
+## 3. MVP Feature Set (what's required to be useful enough to deploy)
+
+The MVP is the smallest surface that an independent appraiser can adopt for a real job end-to-end. Anything below the line is deferred.
+
+### 3.1 Authentication & tenancy
+- Email + password auth; 2FA via TOTP.
+- Single-tenant-per-account model on day 1 (Dana persona). Multi-user orgs added in v1.
+- Password reset, session management, audit log of logins.
+
+### 3.2 Job / order management ("Jobs" is the core entity)
+- Create a job manually (subject address, client, fee, due date, form type).
+- Import a job from a pasted AMC email or uploaded AMC PDF order (server-side parse — regex + templated extractors for Mercury, AppraisalPort, Valuepad; LLM fallback for anything else).
+- Job states: `NEW` → `SCHEDULED` → `INSPECTED` → `DRAFTING` → `IN_REVIEW` → `DELIVERED` → `PAID` → `ARCHIVED`.
+- Dashboard with "what's due this week" and "what's past due."
+- Per-job SLA timer visible at all times.
+
+### 3.3 Scheduling & calendar
+- Built-in calendar view (week/month).
+- Book an inspection slot on a job; auto-compute drive time from previous appointment using the maps provider.
+- Public booking link the homeowner can use to pick a window (like a Calendly, but scoped to the job).
+- ICS export + two-way sync with Google Calendar.
+- SMS + email reminders to the homeowner 24 h and 1 h before.
+
+### 3.4 Field inspection — mobile (PWA on day 1, native later)
+- Offline-first: everything works with no signal, syncs when back online.
+- Guided checklist per form type (UAD-aware): exterior walkaround, each room, baths, kitchens, basement, mechanicals, site, view, condition (C1–C6), quality (Q1–Q6).
+- Photo capture tagged to the checklist item (e.g., "front elevation," "kitchen," "water heater"). EXIF geotag preserved.
+- Voice notes per item, auto-transcribed.
+- Measurement entry: room dimensions + GLA rollup; sanity warning if GLA differs from public-record by >10%.
+- Sketch tool: drag-to-draw rectangles on a grid, auto-calculate area, label rooms. No ANSI Z765.0 certification on MVP — a simple, defensible sketch.
+
+### 3.5 Comparables
+- Manual comp entry (address, GLA, bed/bath, sale date/price, adjustments).
+- CSV/Excel import of comps (from MLS export).
+- Side-by-side grid (subject + up to 6 comps) with a live adjusted-value calculation.
+- Map view with subject + comps pinned + distance display.
+- **MLS live integration is v1, not MVP.** MVP ships with manual / CSV only.
+
+### 3.6 Report generation
+- URAR 1004 only on MVP. (1073, 2055, 1025 added in v1.)
+- Pull every known field from the job + inspection + comps into the form draft.
+- Render to a pixel-accurate PDF matching the Fannie Mae 1004 form.
+- "Missing fields" panel listing every required UAD field still blank.
+- Review-before-sign step: appraiser types value conclusion, signs via stored signature image, PDF is sealed (hash stored for workfile integrity).
+
+### 3.7 Delivery
+- Download signed PDF.
+- Email the PDF to the client with a tracked link.
+- AMC-portal delivery (Mercury, AppraisalPort) is v1 — MVP is email-only.
+
+### 3.8 Workfile
+- Every photo, note, voice recording, comp source document, and form revision is retained per job.
+- 5-year retention default, USPAP-compliant audit trail (who did what, when).
+- Zip-export of the full workfile per job.
+
+### 3.9 Invoicing (lightweight)
+- Generate a PDF invoice from the job fee field.
+- Mark paid / unpaid; A/R dashboard showing total outstanding and aging buckets (0–30, 31–60, 60+).
+- Stripe payment link on the invoice (optional).
+- **Full accounting / QuickBooks sync is v1.**
+
+### 3.10 Settings
+- Profile (license number, state, expiration; warn 60/30/7 days before expiration).
+- Company info, logo, signature image.
+- Fee schedule defaults by form type + distance.
+
+### 3.11 MVP out-of-scope (explicitly deferred)
+- Multi-user orgs / trainee workflows.
+- MLS live integration.
+- AMC portal delivery.
+- ANSI-compliant sketching.
+- Mobile native apps (PWA only for MVP).
+- AI comp suggestion.
+- Commercial forms.
+
+---
