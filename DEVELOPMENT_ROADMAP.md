@@ -133,3 +133,77 @@ The MVP is the smallest surface that an independent appraiser can adopt for a re
 - Commercial forms.
 
 ---
+
+## 4. v1 Feature Set (what's required to be commercially competitive)
+
+v1 is the release we market, price, and onboard paying customers onto. It adds the integrations and workflows that stop being "nice to have" once an appraiser tries to run their whole business on the tool.
+
+### 4.1 Multi-user organizations
+- Orgs, roles (`owner`, `admin`, `appraiser`, `trainee`, `office_staff`).
+- Row-level permissions on jobs; a trainee can only see jobs they're assigned to; an office_staff can schedule but not draft.
+- Review workflow: trainee submits draft → supervisor reviews inline → supervisor signs → delivered.
+- Trainee experience log auto-generated from job involvement (address, hours on-site, role), exportable as a PDF for the state board.
+
+### 4.2 Additional form types
+- URAR 1073 (condo).
+- URAR 2055 (exterior-only / drive-by).
+- URAR 1025 (small residential income 2–4 unit).
+- URAR 1004D / 442 (appraisal update & completion report).
+- Fannie Mae 1004MC (market conditions addendum).
+
+### 4.3 MLS integration
+- RETS / RESO Web API connector, per-MLS.
+- Search comps by radius, sale date window, GLA range, style; pull full listing detail and photos.
+- "Suggest comps" feature — ranks listings by similarity to the subject (bed/bath/GLA/distance/recency), no ML yet, deterministic scoring.
+- Auto-populate comp grid fields from MLS.
+
+### 4.4 AMC / client delivery integrations
+- Mercury Network XSite direct submit.
+- AppraisalPort direct submit.
+- ValuPad / other mid-tier AMCs via their webhook/API.
+- Delivery status tracked back into the job (received, under review, revision requested, accepted, paid).
+- **Stretch:** ingest revision requests as actionable line items in the job.
+
+### 4.5 Public records / AVM data
+- Partnership or paid API (CoreLogic, ATTOM, DataTree, or a reseller like Estated) to auto-fill:
+  - Subject legal description, APN, lot size, year built, assessor GLA.
+  - Prior sales history (3-year).
+  - Zoning and flood zone (FEMA API is free).
+
+### 4.6 ANSI-compliant sketching
+- Upgrade sketch tool to measure per ANSI Z765.0 (ceiling height rules, below-grade exclusion, GLA vs. GBA).
+- Floor-by-floor layer support.
+- Import from laser distance meter (Bluetooth Leica Disto, Bosch GLM).
+- Export to Apex / iGuide format for back-compat.
+
+### 4.7 QuickBooks / accounting sync
+- Two-way sync of invoices and payments with QuickBooks Online and Xero.
+- 1099 summary export.
+- Mileage tracking per inspection (auto from calendar + maps).
+
+### 4.8 Client CRM
+- Client records (AMC or direct lender) with contact, fee schedule, billing terms, average turn time.
+- Per-client history: volume, revenue, revision rate, avg days-to-pay.
+- Client-specific delivery preferences (portal vs. email, extra appendices).
+
+### 4.9 E-signature & supervisor sign
+- Signature pad (drawn) + stored signature image, hashed with report PDF for tamper evidence.
+- Two-appraiser co-sign flow for trainees.
+
+### 4.10 Native mobile apps
+- iOS + Android via React Native.
+- Background photo upload, offline sketch, bluetooth laser pairing, better camera control (burst, HDR for exterior).
+- Push notifications for new orders and homeowner replies.
+
+### 4.11 Reporting & analytics (appraiser-facing)
+- Per-form turnaround time, per-client turnaround.
+- Revenue by client, by form type, by month.
+- Revision rate and most common revision reasons.
+- Expiring license / E&O insurance / state CE reminders.
+
+### 4.12 Compliance layer
+- UAD validator: every field checked against Fannie Mae UAD 3.6 spec before allowing sign.
+- USPAP workfile check: ensures every required workfile element is present (comp source documents, inspection photos, contract if purchase, prior sale explanation).
+- Record-of-assignment log immutable & exportable.
+
+---
