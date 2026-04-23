@@ -427,3 +427,46 @@ Chosen to optimize for a small team shipping quickly, with no exotic infra, and 
 - **Flagsmith** or a home-grown flags table for feature rollouts (especially critical for AMC integrations that vary per customer).
 
 ---
+
+## 9. Security, Compliance, and Legal
+
+Appraisal workflows handle borrower PII (SSN-adjacent data, sometimes full SSN on older forms), property addresses, and financial data. This is sensitive-but-not-medical data, so the bar is "SOC 2 trajectory" rather than "HIPAA."
+
+### 9.1 Security baseline (MVP)
+- HTTPS/TLS 1.2+ only; HSTS; no mixed content.
+- JWT short-lived access tokens (15 min) + refresh tokens; rotate on use.
+- Server-side input validation with `zod` on every request.
+- Row-level tenancy: `org_id` filter on every query, enforced via a Drizzle middleware + Postgres RLS as a belt-and-suspenders.
+- Rate limiting (per IP + per user) on auth endpoints.
+- Secrets never in code; Doppler / AWS Secrets Manager.
+- S3 buckets private by default; no public ACLs; signed URLs with short TTL for downloads.
+- At-rest encryption: Postgres (AWS KMS), S3 (SSE-S3 minimum).
+- Automated dependency scanning (Dependabot, `pnpm audit` in CI).
+
+### 9.2 Compliance roadmap
+- **USPAP.** The product must preserve a complete, defensible workfile for 5 years per Record Keeping Rule. Solved via append-only events + workfile zip export.
+- **UAD (Uniform Appraisal Dataset) 3.6.** Form rendering must match Fannie Mae's UAD codes and formats; validator runs before sign.
+- **GLBA (Gramm-Leach-Bliley).** Because appraisals are ordered by lenders, we're likely a "service provider" under GLBA's Safeguards Rule. Need an information security program document, risk assessment, and an incident response plan before onboarding lender customers.
+- **State appraisal board regulations.** Vary by state; mostly about workfile retention and supervisor oversight. Handled by the workfile + trainee-log features.
+- **SOC 2 Type II.** Target for v1 so we can sell to AMCs and regional lenders. Engage an auditor 6 months before launch; use Vanta / Drata to collect evidence automatically.
+- **CCPA / state privacy laws.** Publish a privacy notice; implement DSAR (data subject access request) flow for the homeowner data we touch.
+- **E&O insurance.** Not a product feature, but the company needs $1–2M E&O plus cyber. Appraisers already carry their own.
+
+### 9.3 PII handling rules (engineering)
+- Borrower SSN: never store unless the user explicitly opts in. If stored, encrypted at the column level with a per-tenant key (AWS KMS).
+- Photos containing faces or license plates: allow in-app blur. No automated CV redaction at MVP, but keep the hook for later.
+- Audit log of every read of PII fields (who saw what borrower data, when).
+
+### 9.4 Data retention & deletion
+- Workfile: 5 years minimum; configurable longer per state.
+- After retention, user can purge a job — triggers a soft-delete hold of 90 days, then hard-delete across Postgres + S3 + backups-next-rotation.
+- On org termination, 60-day export window then full deletion except records required by law.
+
+### 9.5 Legal artifacts needed before launch
+- Terms of Service (emphasize: we are a tool, not the appraiser of record).
+- Privacy Policy.
+- Data Processing Addendum template for lender customers.
+- DMCA + acceptable-use policies.
+- Disclaimers around AI narrative drafts when that feature ships.
+
+---
