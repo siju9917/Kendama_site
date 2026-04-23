@@ -207,3 +207,33 @@ v1 is the release we market, price, and onboard paying customers onto. It adds t
 - Record-of-assignment log immutable & exportable.
 
 ---
+
+## 5. Post-v1 / Differentiators (the reasons an appraiser switches from TOTAL)
+
+These are the features we keep in the backlog and ship once v1 has paying customers.
+
+### 5.1 AI assist
+- **Comp recommendation model.** Given a subject, rank MLS listings by appraiser-defensible similarity, not just distance. Training signal: comps that past appraisers actually used in similar subjects.
+- **UAD auto-code.** Given a room's photos + notes, suggest the correct Q-rating / C-rating with a rationale string the appraiser can edit. Never auto-submit.
+- **Narrative drafter.** Pre-writes the "neighborhood," "site," "improvements," and "reconciliation" narratives based on the structured data. Appraiser reviews and edits. Must be clearly labeled as draft text.
+- **Photo auto-tagging.** Classify each field photo (front elevation, kitchen, bath, mechanical) so the appraiser doesn't tag them by hand.
+
+### 5.2 LiDAR / iPhone Pro scanning for sketches
+- One-walk scan produces a measured floor plan with ANSI-compliant GLA. Major adoption driver for iPhone-Pro-equipped appraisers.
+
+### 5.3 Homeowner-facing portal
+- Homeowner gets a link, confirms appointment, uploads a list of recent improvements with receipts/photos pre-inspection, selects alarm codes / dog warnings.
+
+### 5.4 Team marketplace / overflow network
+- Opt-in marketplace where appraisers can post overflow orders to other certified users in their coverage area with a revenue split.
+
+### 5.5 Commercial appraisal module
+- Form 71A/71B, capitalization-rate workflow, income approach calculator, rent comparable grid. Separate SKU.
+
+### 5.6 API & Zapier/Make integrations
+- Public REST API for orders, jobs, and deliveries so large clients can integrate directly.
+
+### 5.7 White-label for national AMCs
+- Multi-tenant white-label deployment for AMCs that want to offer our tool to their panel appraisers as a competitive advantage.
+
+---
