@@ -323,3 +323,38 @@ These are the features we keep in the backlog and ship once v1 has paying custom
 - **Scale target (year 1):** 1,000 appraisers × 40 jobs/mo = 40k jobs/mo; ~1 M photos/mo; ~50 GB/mo image storage. Comfortably single-region single-db.
 
 ---
+
+## 7. Data Model (core entities)
+
+This is a pragmatic MVP schema. Columns are illustrative, not exhaustive; every table has `id (uuid pk)`, `org_id`, `created_at`, `updated_at`, `deleted_at (soft-delete)`.
+
+| Entity | Key fields | Notes |
+|---|---|---|
+| `orgs` | name, plan, billing_customer_id | Tenant root. |
+| `users` | email, hashed_password, role, license_number, license_state, license_expires_at | `role` ∈ owner/admin/appraiser/trainee/office_staff. |
+| `clients` | name, type (amc/lender/private), contact, fee_terms, delivery_pref | Billing counterparty. |
+| `subjects` | address, city, state, zip, apn, lat/lng (PostGIS point), property_type | Deduped by normalized address across jobs. |
+| `jobs` | subject_id, client_id, form_type, fee_cents, due_at, status, assigned_user_id | Central entity. |
+| `job_events` | job_id, type, actor_id, payload (jsonb), at | Immutable audit log. |
+| `inspections` | job_id, scheduled_at, actual_at, device_id | Tied to a job, one-to-one on MVP. |
+| `inspection_items` | inspection_id, key (e.g. `kitchen.condition`), value (jsonb), source | From the guided checklist. |
+| `photos` | inspection_id, s3_key, taken_at, geo_point, tag, width, height, sha256 | SHA lets us dedupe bursts. |
+| `sketches` | job_id, version, geometry (jsonb), gla, gba, rendered_png_s3_key | JSON is source of truth. |
+| `comparables` | job_id, address, lat/lng, sale_date, sale_price_cents, gla, beds, baths, source (`manual`/`csv`/`mls`), adjustments (jsonb) | Ordered by grid position. |
+| `reports` | job_id, form_type, revision, status (draft/signed/delivered), pdf_s3_key, pdf_sha256, signed_at, signed_by | Every signed revision is retained. |
+| `deliveries` | report_id, channel (email/mercury/appraisalport), target, sent_at, status, external_ref | One row per send attempt. |
+| `invoices` | job_id, client_id, amount_cents, status (draft/sent/paid/overdue), stripe_payment_intent, due_at, paid_at | Paid triggers GL export in v1. |
+| `workfile_items` | job_id, kind (photo/comp_source/contract/email/other), s3_key, description | Anything the USPAP workfile needs. |
+| `calendar_events` | user_id, job_id, type, starts_at, ends_at, location | Inspections, meetings, office time. |
+| `integrations` | org_id, kind (qbo/google/mercury/mls_xxx), config (jsonb, encrypted), status | OAuth tokens live here. |
+
+**Indexing highlights.**
+- `jobs(org_id, status, due_at)` for the dashboard.
+- `subjects` spatial index on the lat/lng for radius comp search.
+- `job_events(job_id, at)` for the timeline view.
+- `photos(inspection_id, tag)` for the field checklist UI.
+
+**Immutability / retention.**
+- `job_events`, `reports`, `deliveries`, and `workfile_items` are append-only — updates are forbidden; corrections are new rows. Deletes are soft, with a 5-year hold.
+
+---
