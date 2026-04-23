@@ -237,3 +237,89 @@ These are the features we keep in the backlog and ship once v1 has paying custom
 - Multi-tenant white-label deployment for AMCs that want to offer our tool to their panel appraisers as a competitive advantage.
 
 ---
+
+## 6. Technical Architecture
+
+### 6.1 High-level topology
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                         CLIENTS                                │
+│  ┌────────────┐   ┌────────────┐   ┌────────────────────────┐  │
+│  │ Web (SPA)  │   │ PWA (field)│   │ Native mobile (v1+)    │  │
+│  │ Next.js    │   │ Next.js +  │   │ React Native           │  │
+│  │            │   │ Service Wk │   │                        │  │
+│  └─────┬──────┘   └─────┬──────┘   └──────────┬─────────────┘  │
+└────────┼────────────────┼─────────────────────┼────────────────┘
+         │                │                     │
+         └────────────┬───┴─────────────────────┘
+                     │  HTTPS / tRPC or REST + JWT
+                     ▼
+┌────────────────────────────────────────────────────────────────┐
+│                       API GATEWAY / BFF                        │
+│             Next.js route handlers  +  tRPC server             │
+└────────┬───────────────────────────────────────────────────────┘
+         │
+   ┌─────┼───────────────────────────────────────────────────────┐
+   │     │                                                       │
+   ▼     ▼                                                       ▼
+┌──────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌────────────┐
+│ Auth │ │  Core API    │ │  Background  │ │   File /     │ │  External  │
+│      │ │  (domain     │ │   workers    │ │   Image svc  │ │  adapters  │
+│Clerk │ │   services)  │ │  (queues)    │ │              │ │  (MLS,AMC, │
+│ /    │ │              │ │              │ │  S3 + image  │ │  maps,     │
+│Auth0 │ │  TypeScript  │ │  BullMQ /    │ │  pipeline    │ │  FEMA,     │
+│      │ │  Nest or     │ │  SQS         │ │              │ │  QBO,      │
+│      │ │  Hono        │ │              │ │              │ │  Stripe)   │
+└──────┘ └──────┬───────┘ └──────┬───────┘ └──────┬───────┘ └─────┬──────┘
+                │                │                │               │
+                ▼                ▼                ▼               ▼
+         ┌──────────────────────────────────────────────────────────┐
+         │                     DATA LAYER                           │
+         │  PostgreSQL (primary) + PostGIS  |  Redis  |  S3         │
+         │  ClickHouse (analytics, v1+)                             │
+         └──────────────────────────────────────────────────────────┘
+```
+
+### 6.2 Key architectural decisions
+
+- **Monolith-first, modular.** One deployable Next.js + API app at MVP. Split out the form-renderer and the MLS ingester into services only when load or deploy cadence justifies it.
+- **Offline-first field client.** The inspection UI is a PWA with IndexedDB as the source of truth on-device, syncing via a command log to the server. Every field write is an idempotent event.
+- **Event log per job.** Every mutation to a job emits an immutable event (create, assign, reschedule, photo_added, field_updated, signed). Events build the UI state; they also become the USPAP workfile audit trail for free.
+- **File pipeline.** Images go to S3 via a signed-upload URL; a worker runs EXIF extraction, HEIC→JPEG, perceptual-hash dedup, and thumbnail generation.
+- **Form rendering is declarative.** Each form (1004, 1073, etc.) is a JSON schema mapping UAD field IDs to coordinates on a template PDF. Rendering is a pure function (form + job data → PDF). Makes adding new forms a data task, not a code task.
+- **Background jobs via Redis + BullMQ on MVP; migrate to SQS + Lambda workers if we outgrow a single Redis.**
+- **Multi-tenant from day 1.** Every table has `org_id`; Postgres row-level security enforces tenancy; application code never trusts the client for tenant scope.
+
+### 6.3 Critical subsystems
+
+#### 6.3.1 Inspection sync engine
+- Client writes commands to a local queue (IndexedDB).
+- Background syncer POSTs batches of commands with a per-device sequence number.
+- Server validates, persists, replies with server sequence IDs.
+- Conflict resolution: last-writer-wins per field, but photos/files are additive (never conflict).
+- Works on flaky LTE, in basements, at rural properties with no signal.
+
+#### 6.3.2 Form rendering engine
+- Input: `{ formType, jobId, revision }`
+- Steps: (1) load form schema, (2) resolve every field binding against the job's structured data, (3) run UAD validators, (4) render each page by overlaying text on a pre-embedded PDF template using `pdf-lib`, (5) embed signature + hash, (6) return PDF stream.
+- Fully deterministic: same inputs produce byte-identical output. This matters for workfile integrity.
+
+#### 6.3.3 Comp grid engine
+- Calculates adjustments using a configurable adjustment rule set (e.g., $50/sqft GLA, $5k/bed, $10k/full bath — configurable per user and per market).
+- Displays gross and net adjustment %, flags Fannie's 15%/25% guideline breaches.
+- Stores a snapshot of each adjustment at sign time for defensibility.
+
+#### 6.3.4 Photo / sketch storage
+- S3 bucket per environment; objects keyed by `org/{org_id}/job/{job_id}/...`.
+- Server returns short-lived signed URLs; clients never see bucket credentials.
+- Sketches stored as JSON geometry + a PNG render; the JSON is the source of truth.
+
+### 6.4 Non-functional requirements
+
+- **Availability target:** 99.5% MVP, 99.9% v1. Appraisers work weekends and evenings.
+- **RPO / RTO:** RPO ≤ 5 min (Postgres WAL shipping to S3), RTO ≤ 1 hour.
+- **Performance:** P95 job-dashboard load < 500 ms; PDF render of a typical 1004 < 5 s.
+- **Scale target (year 1):** 1,000 appraisers × 40 jobs/mo = 40k jobs/mo; ~1 M photos/mo; ~50 GB/mo image storage. Comfortably single-region single-db.
+
+---
