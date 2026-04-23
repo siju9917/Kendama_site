@@ -131,6 +131,7 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
           <Link href={`/jobs/${id}/inspection`} className="btn-secondary">Inspection</Link>
           <Link href={`/jobs/${id}/comps`} className="btn-secondary">Comparables</Link>
           <Link href={`/jobs/${id}/report`} className="btn-primary" target="_blank">Open report PDF</Link>
+          <Link href={`/jobs/${id}/workfile`} className="btn-ghost">Export workfile</Link>
         </div>
       </div>
 
