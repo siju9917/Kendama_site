@@ -470,3 +470,124 @@ Appraisal workflows handle borrower PII (SSN-adjacent data, sometimes full SSN o
 - Disclaimers around AI narrative drafts when that feature ships.
 
 ---
+
+## 10. Development Phases & 6-Month Engineering Plan
+
+This plan assumes one full-stack engineer (Claude-assisted, full-time) plus a part-time product/design collaborator. Each "week" is a working week; padding for holidays and discovery is baked in.
+
+### Phase 0 — Foundation (Weeks 1–2)
+
+**Goal:** Get a deployable shell that authenticated users can log into.
+
+- [ ] Monorepo scaffold (pnpm + Turborepo): `apps/web`, `apps/worker`, `packages/db`, `packages/ui`, `packages/forms`.
+- [ ] Next.js 15 app with Tailwind + shadcn/ui baseline.
+- [ ] Postgres + Drizzle schema for `orgs`, `users`, sessions.
+- [ ] Clerk (or Auth0) integration; 2FA enabled.
+- [ ] CI pipeline (lint, typecheck, unit tests, Playwright smoke).
+- [ ] Staging + production environments on Vercel + Neon.
+- [ ] Sentry + PostHog wired up.
+- [ ] Basic dashboard shell (nav, empty state).
+
+**Exit criteria:** Can sign up, 2FA, log in, see an empty dashboard in prod. Pipeline green.
+
+### Phase 1 — Jobs core (Weeks 3–5)
+
+**Goal:** Appraisers can manually create and track jobs end-to-end except for report generation.
+
+- [ ] `jobs`, `subjects`, `clients`, `job_events` tables + RLS.
+- [ ] Job list, create/edit, status board (kanban).
+- [ ] Clients CRUD + fee schedule defaults.
+- [ ] Job timeline (renders from `job_events`).
+- [ ] Dashboard "due this week" + "past due" panels.
+- [ ] Calendar view (FullCalendar or similar) wired to inspections.
+- [ ] Google Calendar two-way sync.
+
+**Exit criteria:** Dana can log a week of real jobs, see due dates, schedule inspections, and trust the state.
+
+### Phase 2 — Field inspection PWA (Weeks 6–9)
+
+**Goal:** The phone experience that replaces a clipboard + camera.
+
+- [ ] Guided UAD-aware checklist schema (static JSON for 1004 first).
+- [ ] Checklist UI with per-item notes + photo capture.
+- [ ] IndexedDB store (Dexie) + command queue for offline.
+- [ ] Sync engine with conflict resolution rules.
+- [ ] Photo pipeline: signed-URL upload, EXIF, thumbnail, dedupe.
+- [ ] Voice notes with on-device transcription + server fallback.
+- [ ] Simple rectangle-grid sketch tool with GLA rollup.
+
+**Exit criteria:** An appraiser can spend 45 minutes in a basement (no signal), come back to the car, and have every photo/note/room sync cleanly.
+
+### Phase 3 — Comparables + form rendering (Weeks 10–13)
+
+**Goal:** Produce a signed, deliverable URAR 1004 PDF.
+
+- [ ] Manual comp entry + CSV import.
+- [ ] Adjustment rules engine + comp grid UI.
+- [ ] Map view (Mapbox) with subject + comps.
+- [ ] 1004 form schema (field IDs, PDF template, coordinate map).
+- [ ] Rendering engine: JSON → pixel-accurate PDF via `pdf-lib`.
+- [ ] Missing-field panel + UAD validator (subset for MVP).
+- [ ] Signature capture + PDF sealing (hash stored).
+- [ ] Email delivery via Postmark with tracked link.
+- [ ] Workfile zip export.
+
+**Exit criteria:** Full round-trip: order → inspection → comps → draft → sign → email deliver → archived workfile. Real appraiser signs off on the PDF quality.
+
+### Phase 4 — Invoicing + polish (Weeks 14–15)
+
+**Goal:** Ready for first 5 paying pilot users.
+
+- [ ] Invoices CRUD + PDF.
+- [ ] Stripe payment links.
+- [ ] A/R dashboard (aging buckets).
+- [ ] License expiration reminder emails.
+- [ ] Settings (profile, signature, logo, default fees).
+- [ ] Import-order-from-email: regex templates for top 3 AMC formats + LLM fallback.
+- [ ] End-to-end Playwright suite covering the primary job journey.
+- [ ] Load test the PDF render + photo upload.
+- [ ] Onboarding checklist in-app.
+
+**Exit criteria:** MVP shipped. 5 pilot appraisers actively using for real jobs. Weekly feedback loop open.
+
+### Phase 5 — Pilot hardening (Weeks 16–18)
+
+**Goal:** Turn pilot feedback into a product that's paid-ready.
+
+- [ ] Fix the top 20 issues surfaced by pilots (prioritized list, no new features).
+- [ ] Add form types 1073, 2055 (+ tests against real sample reports).
+- [ ] UAD validator upgraded to full 3.6 coverage.
+- [ ] Homeowner public booking link + SMS reminders (Twilio).
+- [ ] Performance pass: sub-500 ms dashboard, sub-5 s PDF render.
+- [ ] Incident runbook + on-call rotation (even if team = 1).
+
+**Exit criteria:** Pilots convert to paying customers. NPS ≥ 40 among pilots.
+
+### Phase 6 — v1 integrations (Weeks 19–24)
+
+**Goal:** The features that unlock the next tier of customers (shops, trainees, AMC-heavy users).
+
+- [ ] Multi-user orgs + roles + trainee/supervisor workflow.
+- [ ] MLS integration (1 RESO Web API MLS first — largest in target geography).
+- [ ] Mercury Network + AppraisalPort delivery adapters.
+- [ ] QuickBooks Online sync.
+- [ ] Public records auto-fill (CoreLogic or Estated).
+- [ ] ANSI-compliant sketch upgrade.
+- [ ] Analytics (turnaround, revision rate, revenue).
+- [ ] Native iOS app (Expo) with background upload + bluetooth Disto.
+
+**Exit criteria:** v1 launched. Billing live. 50+ paying accounts. SOC 2 Type I audit started.
+
+### Milestone summary
+
+| Milestone | Week | What's true when this is done |
+|---|---|---|
+| Foundation | 2 | Auth works in prod. |
+| Jobs core | 5 | Dana runs her week on the tool. |
+| Field PWA | 9 | Basement-resilient offline inspection. |
+| Signed PDF | 13 | A legally-deliverable URAR comes out. |
+| **MVP ship** | **15** | **First paying pilots.** |
+| Pilot-hardened | 18 | Pilots renew / convert. |
+| **v1 launch** | **24** | **Commercial launch with integrations.** |
+
+---
