@@ -268,5 +268,77 @@ Report has a room *schedule* but no visual. That's a red flag to most AMCs.
 
 ---
 
+## 5. Professional SaaS Expectations That Are Missing
+
+The "feels like a finished product" bar. Individually small; collectively the difference between a hobby project and a credible SaaS.
+
+### 5.1 Zero loading states — HIGH — S
+Every form submission is a round-trip server action + full navigation. No spinner, no disabled button, no "Saving…". The user clicks, the page visibly hangs, they wonder if it worked.
+
+**Fix**: every submit button becomes a `<SubmitButton/>` that uses `useFormStatus()` to show "Saving…" while pending.
+
+### 5.2 No form validation feedback — HIGH — S
+A failed submit re-renders the page with a query param (`?e=missing`), losing all form state. And the only message is "required fields missing" for 10 fields at once.
+
+**Fix**: per-field errors. A tiny schema-derived error display under each input. `zod` + `useActionState` is the smallest path.
+
+### 5.3 No empty states — MED — S
+The Jobs page shows "Create your first job" — good. But the comps grid with 0 comps just shows the add form (fine), the photos section shows "No photos uploaded yet" (good), the events list shows "No activity yet." (good). The calendar with no jobs shows an empty grid (needs an empty state). The dashboard with no delivered jobs says "No delivered reports yet." (good). Mostly there, a few gaps.
+
+### 5.4 No error pages — HIGH — S
+No `app/error.tsx`, no `app/(app)/error.tsx`, no `app/not-found.tsx`. A thrown `Response("Not found", 404)` from a server action renders as a raw Next.js error in dev and a blank screen in prod.
+
+**Fix**: wire up `error.tsx` and `not-found.tsx` at the root + in the `(app)` segment.
+
+### 5.5 No global toast/notification system — MED — S
+State changes happen silently. Sign report → full reload with no feedback except the status badge changed. "Report signed. Value $605,000." as a toast is the expected feedback.
+
+**Fix**: `sonner` or a 60-line context-based toast + redirect pattern that passes a flash cookie.
+
+### 5.6 No keyboard shortcuts — MED — M
+Pro tools ship with `?` for help, `/` for search, `gj` for jump-to-jobs. Heavy users notice fast.
+
+### 5.7 No undo for destructive actions — HIGH — S
+Pair with 4.5. Pattern: soft-delete + "Deleted · Undo" toast for 10 seconds. Cheap; hugely professional.
+
+### 5.8 Print / email / share the report — MED — S
+PDF opens in a new tab. No "Email to client" button, no "Copy shareable link," no "Download" vs "Open." Roadmap says MVP is "email-only delivery" — today it's not even that.
+
+**Fix**: at minimum, a mailto: link prefilled with the client's email + a download button. Server-side email send (Postmark/Resend) is a 20-minute add.
+
+### 5.9 No help text, tooltips, or inline docs — MED — S
+`C1`, `C2`, `Q1` etc. codes are UAD jargon. A new appraiser might know them; a trainee won't. One-line definitions on hover are expected.
+
+### 5.10 No onboarding / product tour — LOW — M
+Brand-new user lands on dashboard with a seeded job and has to guess what to do. A 3-step intro overlay would help enormously.
+
+### 5.11 Favicon + app icons missing — LOW — S
+No `favicon.ico`, no apple-touch-icon. Shows up as the default Next.js dot in every tab.
+
+### 5.12 Page titles all say "AppraiseOS — Appraisal Workbench" — LOW — S
+Browser tab doesn't change between `/dashboard` and `/jobs/abc123`. Makes multi-tab workflows (which appraisers absolutely do) confusing.
+
+**Fix**: per-page `generateMetadata` returning the subject address for job pages, etc.
+
+### 5.13 No breadcrumbs — LOW — S
+Deep pages (inspection, comps) have a "← Subject Address" link but nothing showing the hierarchy.
+
+### 5.14 No activity notifications — MED — M
+"Your inspection is in 1 hour," "Invoice 30 days overdue," "License expires in 14 days." Roadmap mentions license-expiration emails. None implemented.
+
+### 5.15 No CSV export of jobs — LOW — S
+For tax time, expense tracking, etc. Appraisers love spreadsheets.
+
+### 5.16 No API keys / personal access tokens — LOW — L
+Roadmap lists a public REST API as post-v1. Not needed yet. Call it out.
+
+### 5.17 No mobile-friendly inspection — HIGH — M
+The inspection page is a big form with a 2-column grid. On an iPhone it works but it's cramped and requires horizontal scroll in places. Roadmap's whole **pitch** is mobile-first field use. This is the single biggest gap between vision and execution.
+
+**Fix**: full-screen mobile layout with larger tap targets, sticky "Save" button, room cards that stack vertically, camera-capture button tied to each checklist item.
+
+---
+
+
 
 
