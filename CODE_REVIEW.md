@@ -419,6 +419,79 @@ Schema has the field; no alert. Real compliance risk — signing with an expired
 
 ---
 
+## 7. UX & Accessibility
+
+### 7.1 Status flags are color-only — MED — S
+`app/(app)/jobs/[id]/comps/page.tsx` flags gross adjustments > 15% / 25% with amber/red text only. Color-blind users see nothing. Same for the status badges on the dashboard.
+
+**Fix**: icon + color + text ("⚠ over 25%") consistently.
+
+### 7.2 Delete buttons use X character — LOW — S
+`inspection/page.tsx:214` — `<button>✕</button>`. No `aria-label`. Screen readers announce it as "X." Should say "Delete photo."
+
+### 7.3 No focus-visible styles — MED — S
+Default browser blue outline only. Tailwind makes it trivial to add `focus-visible:ring-2 ring-brand-500`.
+
+### 7.4 Form labels aren't associated with inputs — MED — S
+`<label class="label">Name</label><input ...>` — not wrapped, no `htmlFor`. Click-label-to-focus-input doesn't work, and screen readers get no label context.
+
+**Fix**: wrap every label-input pair OR add matching `id` and `htmlFor`.
+
+### 7.5 No skip-to-content link — LOW — S
+Standard a11y pattern.
+
+### 7.6 Tab order is fine by default but not tested — LOW — S
+Some forms have the submit button floating; some have grid layouts that re-order logical vs visual. Worth a manual pass.
+
+### 7.7 No dark mode — LOW — M
+Some users will want it, especially appraisers working evenings/nights. Add if trivial with Tailwind + CSS vars.
+
+### 7.8 Date inputs: `<input type="date">` picker varies wildly by browser — LOW — S
+Safari's iOS looks different from desktop Chrome, and neither matches the design language. Either style it heavily or accept the inconsistency.
+
+### 7.9 Mobile nav is missing — MED — S
+`components/nav.tsx` renders horizontally with fixed-width links. Narrow phones overflow.
+
+**Fix**: hamburger menu below `md:` breakpoint.
+
+### 7.10 Job-detail header buttons wrap poorly on mobile — MED — S
+Four pill buttons in a row (`Inspection | Comparables | Open report PDF | Export workfile`) don't fit on small screens. No wrap protection.
+
+### 7.11 The URAR checklist is a wall of inputs — MED — M
+~40 fields on one screen. Not progressively disclosed. Break into tabs or an accordion.
+
+### 7.12 Tooltips / hints not present — MED — S
+"Condition C3" or "View N;Res" are meaningless without context. A `<Tooltip>` primitive is expected.
+
+### 7.13 Inconsistent button hierarchy — LOW — S
+Some pages have three `btn-secondary`s in a row; visual primary action is lost. Pick one primary per page.
+
+### 7.14 Long activity logs overflow silently — LOW — S
+`jobs/[id]/page.tsx:215` uses `max-h-96 overflow-auto`. No scroll hint, no pagination. Big jobs with 50+ events will scroll forever.
+
+### 7.15 No "copy to clipboard" on addresses / IDs / invoice numbers — LOW — S
+Pro tools have copy icons everywhere.
+
+### 7.16 Currency input UX is weak — MED — S
+`<input type="number">` lets you paste `$605,000` and get `NaN`. And input-mode isn't set, so phone keyboards show the text keyboard.
+
+**Fix**: a `<CurrencyInput>` component with formatter + `inputMode="decimal"`.
+
+### 7.17 Calendar clicks do nothing beyond job links — LOW — S
+Clicking an empty day should offer "Schedule an inspection here." Clicking past dates should be visually dimmed.
+
+### 7.18 No print stylesheet — LOW — S
+The PDF route handles the "for real" print case, but a user clicking Cmd-P on the report page gets the UI with nav + chrome. Easy CSS fix.
+
+### 7.19 Photo upload doesn't preview before submit — MED — S
+User selects files → page waits while they upload. A preview with "Remove" options per file before sending would help with wrong-file mistakes.
+
+### 7.20 PDF opens `target="_blank"` but with no `rel="noopener"` — LOW — S
+Security nit; and causes a tiny memory leak. Add `rel="noopener noreferrer"`.
+
+---
+
+
 
 
 
