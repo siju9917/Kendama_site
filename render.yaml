@@ -13,7 +13,10 @@ services:
     name: appraise-os
     runtime: node
     plan: free
-    buildCommand: npm install --legacy-peer-deps && npm run build
+    # --include=dev forces npm to install devDependencies even when
+    # NODE_ENV=production is set below (tailwindcss, postcss, autoprefixer,
+    # and typescript all live in devDependencies but are needed for the build).
+    buildCommand: npm install --legacy-peer-deps --include=dev && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
