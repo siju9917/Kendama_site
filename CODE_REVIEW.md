@@ -491,6 +491,87 @@ Security nit; and causes a tiny memory leak. Add `rel="noopener noreferrer"`.
 
 ---
 
+## 8. Code Quality & Architecture
+
+### 8.1 Schema bootstrapped on every import — MED — S
+`lib/db.ts` runs `CREATE TABLE IF NOT EXISTS …` at module load. Works for demo, terrible for production — every dev server hot-reload re-runs DDL; schema changes require editing both `schema.ts` and the raw SQL in `db.ts` (already drift-prone).
+
+**Fix**: delete the raw SQL in `db.ts`; run `drizzle-kit push` (or a real migration) on startup in dev, and a proper migration step in prod.
+
+### 8.2 Drizzle schema and raw SQL have drifted — MED — S
+`schema.ts` uses `integer("_ts", { mode: "timestamp_ms" }).notNull().default(sql`(unixepoch() * 1000)`)` — a helper that's never exported or used, it's a dangling const. Unused code.
+
+Related: the `isBelowGrade` column is `{ mode: "boolean" }` in Drizzle but an integer in the raw SQL. SQLite doesn't care, but the type-level contract between the two sources of truth is inconsistent.
+
+### 8.3 Server actions inlined in every page — MED — M
+Each page has 30–100 lines of "use server" functions at the top. `jobs/[id]/page.tsx` has one big `updateJob` switch with 8 branches. Hard to test, harder to reuse, impossible to see business logic apart from render code.
+
+**Fix**: move actions into `lib/actions/jobs.ts` (or per-concern files). Each action is a pure function taking a typed input; page just imports and passes.
+
+### 8.4 No input validation with a schema library — HIGH — S
+Everything is `Number(formData.get(...) || 0)`. Will happily accept garbage. No typed errors. No single source of truth for what fields an action expects.
+
+**Fix**: adopt `zod` (already ubiquitous in Next.js apps) + `useActionState`. Small templatized wrapper in `lib/actions/helpers.ts`.
+
+### 8.5 Magic strings for status — MED — S
+`"NEW"`, `"SCHEDULED"`, etc. appear in 8+ files. Typo = silent bug.
+
+**Fix**: import `JobStatus` from `lib/format.ts` everywhere and use const values, not strings.
+
+### 8.6 `requireUser()` throws a `Response` — LOW — S
+`lib/auth.ts:61`: `throw new Response("Unauthorized", { status: 401 })` inside a React Server Component causes a generic Next error page, not a redirect. Should `redirect("/login")`.
+
+**Fix**: `async function requireUser() { const u = await getCurrentUser(); if (!u) redirect("/login"); return u; }`.
+
+### 8.7 Duplicate imports — LOW — S
+`jobs/[id]/page.tsx:3` imports `requireUser` from `@/lib/auth` and `:18` imports `randomId` from `@/lib/auth` again. Should be one import.
+
+### 8.8 Mixed data access patterns — LOW — S
+Some pages use `db.select().from(...)` directly; others go through helpers in `lib/jobs.ts`. Pick one.
+
+### 8.9 No zod-derived TypeScript types for action inputs — MED — S
+We have Drizzle `type User = $inferSelect`, but no `type NewJobInput = z.infer<typeof newJobSchema>`. Action bodies manually stringify/number-coerce.
+
+### 8.10 `lib/adjustments.ts` coupled to the `Comparable` drizzle type — LOW — S
+Makes pure testing awkward. Extract a pure `CompMetrics` type.
+
+### 8.11 Constants live in many places — LOW — S
+`UPLOAD_DIR`, `SESSION_COOKIE`, `SESSION_TTL_MS`, `DEFAULT_ADJUSTMENTS`, `PAGE_W` — all scattered. Move to `lib/config.ts` (or keep, but namespace).
+
+### 8.12 No barrel file for `lib/` — LOW — S
+Each page has 5–10 deep imports. Optional cleanup.
+
+### 8.13 Client component is only the nav — LOW — S
+Everything else is a server component. Good — but signals we're one step away from needing a useful client-side store (e.g. for an upload queue, a toast system). Plan for it.
+
+### 8.14 No env var config — MED — S
+No `.env.example`. `NODE_ENV` is the only runtime variable referenced. Production will need `DATABASE_URL`, `SESSION_SECRET`, `POSTMARK_API_KEY`, etc.
+
+**Fix**: `lib/env.ts` using `zod` to parse `process.env` and crash at boot on missing required vars.
+
+### 8.15 No separation of dev vs. prod cookie settings — LOW — S
+See 2.4. Same root fix.
+
+### 8.16 `package.json` lists Drizzle + drizzle-kit but no migrations are committed — MED — S
+Because of 8.1, there are no `.sql` migrations tracked, so schema history is lost. Any schema change breaks existing deployments.
+
+**Fix**: real migrations via `drizzle-kit generate` + commit them.
+
+### 8.17 `better-sqlite3` has no graceful shutdown — LOW — S
+On SIGTERM the WAL can be left un-checkpointed. Ship a `process.on("SIGTERM", () => sqlite.close())`.
+
+### 8.18 `scrypt` params are Node defaults — LOW — S
+Node's default scrypt is `N=16384, r=8, p=1`. Fine for 2018. Modern recommendation is Argon2id via `@node-rs/argon2`.
+
+### 8.19 PDF rendering has no retry / error page — LOW — S
+If `/jobs/[id]/report` throws mid-render, browsers show a generic PDF-parse error. Wrap in a try/catch that writes a minimal "error" PDF with the job ID and a request to retry.
+
+### 8.20 Uploads directory is writable at runtime — MED — S
+Fine for a single-server setup; terrible for serverless/Vercel (read-only FS). Swap for S3 / R2 well before hosting. At minimum, make `UPLOAD_DIR` env-configurable.
+
+---
+
+
 
 
 
