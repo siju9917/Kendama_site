@@ -187,4 +187,86 @@ All primary keys are 32-char hex. Fine for security; ugly in URLs; 2× the index
 
 ---
 
+## 4. Missing Core Features (user-blocking)
+
+These are things a user will hit in the first 10 minutes and say *"wait, I can't edit this?"*
+
+### 4.1 Cannot edit a job after creation — HIGH — S
+You can only create or delete. If you typo the subject address, your only recourse is delete-and-recreate, which wipes the activity log. No pro tool behaves this way.
+
+**Fix**: an edit form (same shape as `new/page.tsx`) reachable from the job detail.
+
+### 4.2 Cannot edit a room — HIGH — S
+Typo "Bed 1" as 14×4 instead of 14×14? Delete + re-add. Lost.
+
+**Fix**: inline editing (cells become inputs on click) or an edit modal per row.
+
+### 4.3 Cannot edit a comparable — HIGH — S
+Same problem, worse — the adjustment grid is literally the appraiser's work product. One fat-finger on sale price and the whole grid is wrong until deleted + re-entered.
+
+**Fix**: inline-editable grid. This is the feature that an appraiser will ask for in the first 3 minutes.
+
+### 4.4 Cannot edit a client — MED — S
+Only Add + Delete. Typo the AMC name? Recreate.
+
+**Fix**: standard edit form.
+
+### 4.5 No delete confirmation anywhere — HIGH — S
+`jobs/[id]/page.tsx:275` (Delete job), `clients/page.tsx:55` (Delete client), comp remove, photo remove, room remove — all one-click, no confirm.
+
+**Fix**: either a `confirm()` dialog (cheap), or a proper modal with "type DELETE to confirm." Or a soft-delete + undo toast pattern.
+
+### 4.6 No photo lightbox — MED — S
+Thumbnails are clickable X for delete but not clickable to view full-size. Viewing a photo means right-click → view image. Unprofessional.
+
+**Fix**: click-to-expand lightbox (a single 80-line client component with keyboard navigation).
+
+### 4.7 No photo reorder, caption edit, or rotate — MED — M
+Reorder matters because the PDF addendum embeds the first N photos per tag. Caption edit matters because typos happen. Rotate matters because phones take portraits.
+
+### 4.8 No CSV comp import — HIGH — S
+Roadmap promises it for MVP. Bulk-entry of 6 comps is currently 6 × 15-field forms. 5 minutes of pure typing.
+
+**Fix**: a drag-drop CSV area that parses with a field mapper.
+
+### 4.9 No free-form notes on a job — MED — S
+Appraisers write narrative ("subject is on a corner lot fronting a busy street; view is typical residential"). No field for it.
+
+**Fix**: a `job_notes` table keyed to (jobId, section) where section ∈ "neighborhood", "site", "improvements", "reconciliation".
+
+### 4.10 No sketch tool — HIGH — L
+Roadmap lists a "simple rectangle-grid sketch." Today rooms are a table of L × W numbers with no visual. Real appraisers draw a footprint; we need at least a minimal canvas.
+
+**Fix**: deferred for now (proper ANSI support is v1). Stub out a "coming soon" link so it's on the roadmap visibly.
+
+### 4.11 No profile / settings page — HIGH — S
+The `users` table has `licenseNumber`, `licenseState`, `licenseExpiresAt`, `signatureDataUrl` — none are editable in the UI. The signup flow skips them. The PDF falls back to "—".
+
+**Fix**: a `/settings` page with profile, license, signature pad (react-signature-canvas), default fee schedule, logo upload.
+
+### 4.12 No job search or filter — HIGH — S
+Jobs list has no search box, no client filter, no date range. Fine at 5 jobs. Useless at 50.
+
+**Fix**: top-of-page input bound to a simple `LIKE %q%` search across subject address + borrower + loan.
+
+### 4.13 No bulk actions — LOW — M
+Can't select 5 archived jobs and move them together.
+
+### 4.14 No copy-from-previous-job — MED — S
+Appraisers do a lot of repeat work in the same neighborhood. "Clone job" (copy subject + reset everything else) would save minutes per job.
+
+### 4.15 No invoice edit — MED — S
+Invoice auto-generates from `job.feeCents` on delivery. If the appraiser needs to bill $50 extra for a complex assignment, there's no way to edit the invoice.
+
+### 4.16 No sketch / floor plan in PDF — MED — M
+Report has a room *schedule* but no visual. That's a red flag to most AMCs.
+
+### 4.17 Signature image never captured — HIGH — S
+`users.signatureDataUrl` exists in schema, nothing writes to it, PDF just shows "Signed: 2026-04-23" as text. Real URARs show a signature image.
+
+**Fix**: signature pad in `/settings`, stored as base64 PNG, embedded in the PDF sign step.
+
+---
+
+
 
