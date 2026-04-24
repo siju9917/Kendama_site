@@ -6,15 +6,23 @@ function readOrCreateSessionSecret(): string {
   const envVal = process.env.APPRAISE_SESSION_SECRET;
   if (envVal && envVal.length >= 32) return envVal;
 
+  // During `next build` Next.js imports modules to collect types. Skip the
+  // filesystem write (not always permitted in CI) and return a throwaway.
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return randomBytes(32).toString("hex");
+  }
+
   // Persist a locally-generated secret so sessions survive restarts without
   // requiring the user to manage environment variables on first run.
   const dataDir = path.join(process.cwd(), "data");
   try { fs.mkdirSync(dataDir, { recursive: true }); } catch {}
   const secretFile = path.join(dataDir, ".session-secret");
-  if (fs.existsSync(secretFile)) {
-    const v = fs.readFileSync(secretFile, "utf8").trim();
-    if (v.length >= 32) return v;
-  }
+  try {
+    if (fs.existsSync(secretFile)) {
+      const v = fs.readFileSync(secretFile, "utf8").trim();
+      if (v.length >= 32) return v;
+    }
+  } catch {}
   const fresh = randomBytes(32).toString("hex");
   try {
     fs.writeFileSync(secretFile, fresh, { mode: 0o600 });

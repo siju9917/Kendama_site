@@ -5,17 +5,32 @@ import fs from "node:fs";
 import path from "node:path";
 import { env } from "./env";
 
-const dataDir = path.dirname(env.dbPath);
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+// During `next build`, Next imports every route module to collect page
+// data + types. If our module opens a real SQLite file at import time,
+// any writable-path problem in the build environment crashes the build.
+// During build we use an in-memory DB; runtime uses the configured path.
+const IS_BUILD_PHASE = process.env.NEXT_PHASE === "phase-production-build";
 
-const sqlite = new Database(env.dbPath);
+function openDb(): Database.Database {
+  if (IS_BUILD_PHASE) return new Database(":memory:");
+  const dataDir = path.dirname(env.dbPath);
+  try {
+    fs.mkdirSync(dataDir, { recursive: true });
+  } catch (err) {
+    console.warn("could not create data dir", dataDir, err);
+  }
+  return new Database(env.dbPath);
+}
+
+const sqlite = openDb();
 sqlite.pragma("journal_mode = WAL");
 sqlite.pragma("foreign_keys = ON");
 
 export const db = drizzle(sqlite, { schema });
 export { schema };
 
-// Bootstrap tables on first use. Avoids needing a separate migration step for the demo.
+// Bootstrap tables on first use. Safe on in-memory too; tables just
+// materialize in the build-time dummy DB and get discarded.
 sqlite.exec(`
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
