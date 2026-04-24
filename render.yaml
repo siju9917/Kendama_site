@@ -25,7 +25,7 @@ services:
     # comment out the `disk` block below. Data (db + photos) will then
     # reset on every deploy and possibly on restarts — fine for a demo, not
     # fine for a real appraiser's workflow.
-    disk:
-      name: appraise-data
-      mountPath: /var/data
-      sizeGB: 1
+    #disk:
+      #name: appraise-data
+      #mountPath: /var/data
+      #sizeGB: 1
