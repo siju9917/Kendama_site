@@ -131,6 +131,16 @@ async function updateJob(formData: FormData) {
   redirect(`/jobs/${jobId}`);
 }
 
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const { getCurrentUser } = await import("@/lib/auth");
+  const user = await getCurrentUser();
+  if (!user) return { title: "AppraiseOS" };
+  const { getJobForUser } = await import("@/lib/jobs");
+  const job = await getJobForUser(user.id, id);
+  return { title: job ? `${job.subjectAddress} · AppraiseOS` : "Job · AppraiseOS" };
+}
+
 export default async function JobDetail({
   params,
   searchParams,

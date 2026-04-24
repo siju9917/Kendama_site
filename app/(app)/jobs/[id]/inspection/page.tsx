@@ -14,6 +14,7 @@ import {
 import { eq, and } from "drizzle-orm";
 import { URAR_1004_CHECKLIST } from "@/lib/checklist";
 import { validatePhoto, MAX_PHOTOS_PER_REQUEST } from "@/lib/images";
+import { PhotoGrid } from "@/components/photo-grid";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -159,9 +160,16 @@ async function deletePhoto(formData: FormData) {
   redirect(`/jobs/${jobId}/inspection`);
 }
 
-export default async function InspectionPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function InspectionPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ rejected?: string }>;
+}) {
   const user = await requireUser();
   const { id } = await params;
+  const { rejected } = await searchParams;
   const job = await requireJobForUser(user.id, id);
   const [items, rooms, photos] = await Promise.all([
     listItemsForJob(id),
@@ -169,6 +177,7 @@ export default async function InspectionPage({ params }: { params: Promise<{ id:
     listPhotosForJob(id),
   ]);
   const gla = computeGLA(rooms);
+  const rejectedCount = Number(rejected) || 0;
 
   const itemValue = (section: string, key: string) =>
     items.find((i) => i.section === section && i.key === key)?.valueText ?? "";
@@ -185,6 +194,12 @@ export default async function InspectionPage({ params }: { params: Promise<{ id:
         <Link href={`/jobs/${id}`} className="text-sm text-gray-600 hover:underline">← {job.subjectAddress}</Link>
         <h1 className="text-2xl font-semibold mt-2">Inspection</h1>
       </div>
+      {rejectedCount > 0 && (
+        <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900">
+          {rejectedCount} file{rejectedCount > 1 ? "s were" : " was"} rejected — only JPEG, PNG,
+          and WebP images up to 12 MB are accepted. HEIC from iPhone isn't supported yet.
+        </div>
+      )}
 
       <div className="card card-body">
         <h2 className="font-semibold mb-3">Rooms &amp; GLA</h2>
@@ -298,30 +313,27 @@ export default async function InspectionPage({ params }: { params: Promise<{ id:
           {Object.keys(photosByTag).length === 0 && <p className="text-sm text-gray-500">No photos uploaded yet.</p>}
           {Object.entries(photosByTag).map(([tag, tagPhotos]) => (
             <div key={tag}>
-              <h3 className="font-medium capitalize mb-2">{tag.replace("_", " ")} <span className="text-xs text-gray-500">({tagPhotos.length})</span></h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                {tagPhotos.map((p) => (
-                  <div key={p.id} className="relative group aspect-square overflow-hidden rounded bg-gray-100">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`/api/photos/${p.id}`}
-                      alt={p.caption || p.tag || ""}
-                      className="h-full w-full object-cover"
-                    />
-                    <form
-                      action={deletePhoto}
-                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition"
+              <h3 className="font-medium capitalize mb-2">
+                {tag.replace("_", " ")}{" "}
+                <span className="text-xs text-gray-500">({tagPhotos.length})</span>
+              </h3>
+              <PhotoGrid
+                jobId={id}
+                photos={tagPhotos.map((p) => ({ id: p.id, caption: p.caption, tag: p.tag }))}
+                renderDeleteForm={(photoId) => (
+                  <form action={deletePhoto}>
+                    <input type="hidden" name="jobId" value={id} />
+                    <input type="hidden" name="photoId" value={photoId} />
+                    <button
+                      type="submit"
+                      className="bg-red-600 text-white text-xs rounded px-2 py-0.5"
+                      aria-label="Delete photo"
                     >
-                      <input type="hidden" name="jobId" value={id} />
-                      <input type="hidden" name="photoId" value={p.id} />
-                      <button className="bg-red-600 text-white text-xs rounded px-2 py-0.5" type="submit">✕</button>
-                    </form>
-                    {p.caption && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs px-1 py-0.5 truncate">{p.caption}</div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                      ✕
+                    </button>
+                  </form>
+                )}
+              />
             </div>
           ))}
         </div>

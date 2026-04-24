@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
+
+export const metadata = { title: "Dashboard · AppraiseOS" };
+
 import { listJobsForUser } from "@/lib/jobs";
 import { usd, fmtDate, daysUntil, STATUS_LABEL, type JobStatus } from "@/lib/format";
 

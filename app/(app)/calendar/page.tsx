@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
+
+export const metadata = { title: "Calendar · AppraiseOS" };
+
 import { listJobsForUser } from "@/lib/jobs";
 import { fmtDate } from "@/lib/format";
 

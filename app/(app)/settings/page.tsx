@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
+
+export const metadata = { title: "Settings · AppraiseOS" };
+
 import { db, schema } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { SignaturePad } from "@/components/signature-pad";

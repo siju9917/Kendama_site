@@ -1,4 +1,7 @@
 import { requireUser, randomId } from "@/lib/auth";
+
+export const metadata = { title: "Clients · AppraiseOS" };
+
 import { db, schema } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { listClientsForUser } from "@/lib/jobs";
