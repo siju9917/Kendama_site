@@ -113,3 +113,78 @@ Anyone can register with anyone's email. No verification link. For a professiona
 
 ---
 
+## 3. Data Integrity & Bug Hunt
+
+### 3.1 Delete job isn't transactional — HIGH — S
+`app/(app)/jobs/[id]/page.tsx:88-96` runs 7 deletes sequentially. If any fail (disk full, constraint, crash mid-delete) the job is left half-gone. Photos on disk aren't deleted at all.
+
+**Fix**: wrap in `db.transaction(...)` and delete `uploads/<jobId>/*` + the directory after DB commit succeeds. Also: prefer a soft-delete with a 30-day hold — users *will* misclick.
+
+### 3.2 Photo files leak on delete — MED — S
+`app/(app)/jobs/[id]/inspection/page.tsx:131-141` has `try { await fs.unlink ... } catch {}` but doesn't batch-clean the directory. When a whole job is deleted, every photo file stays on disk forever (see 3.1). Cron-only cleanup by uuid is painful later.
+
+**Fix**: add `await fs.rm(path.join(UPLOAD_DIR, jobId), { recursive: true, force: true })` in the delete-job path, and ensure individual-photo deletes actually succeed.
+
+### 3.3 Server actions silently swallow missing input — MED — S
+Many handlers do `String(formData.get("x") || "").trim()` and then proceed with empty string if it wasn't sent. Example: `inspection/page.tsx:68-80`'s `addRoom` redirects on empty name but silently writes `lengthFt: Number("")` → `0`. So a user hitting Add with only a name gets a 0×0 room.
+
+**Fix**: define `zod` schemas for every action input and fail loudly with an error flash (see 5.2).
+
+### 3.4 `String(...)` trick bypasses FormData typing — LOW — S
+`jobs/[id]/page.tsx:23`: `String(formData.get("jobId"))` stringifies `null` as `"null"`. The subsequent `getJobForUser` will return `null` and throw a 404 — correct by accident, but ugly. A missing required field should error cleanly.
+
+**Fix**: helper `requireField(formData, "jobId")` that throws `400` with a message.
+
+### 3.5 No concurrent-write protection on status transitions — MED — M
+Two browser tabs can each click "Deliver + invoice." Both server actions will read `status = IN_REVIEW`, both will insert an invoice row. Result: two `INV-…` rows for the same job.
+
+**Fix**: a CAS-style update — `UPDATE jobs SET status='DELIVERED', delivered_at=? WHERE id=? AND status='IN_REVIEW'` and inspect rowcount. Same pattern for `sign`, `markPaid`.
+
+### 3.6 `sessions` rows never cleaned — LOW — S
+Expired sessions stay in the table forever. Grows unbounded. Auth check skips them correctly but the table rots.
+
+**Fix**: on login, `DELETE FROM sessions WHERE expires_at < now()`. Or a cron job. Four lines either way.
+
+### 3.7 `dueAt` parsed as local time — MED — S
+`jobs/new/page.tsx:26`: `new Date(dueStr)` on an `<input type="date">` value (`"2026-04-30"`) is parsed as UTC midnight. In any US timezone the date shows as "Apr 29" on the dashboard. Known gotcha.
+
+**Fix**: normalize by appending `T23:59:59` or by storing dates as strings and never round-tripping through `Date`.
+
+### 3.8 `inputDateTime` formats in local time, `new Date()` parses as UTC-ish — MED — S
+`lib/format.ts:41-46` formats for `<input type="datetime-local">` in the server's local time. The server's local time is *whatever the runtime env is*, not the user's. Inspection at "3pm" saved on a server in UTC will display as 3pm → stored as 15:00 UTC → shown to a PT user as 8am.
+
+**Fix**: store everything UTC in the DB (already true), but convert to/from the user's TZ on display. Add `users.timezone` with a default from browser `Intl.DateTimeFormat().resolvedOptions().timeZone` captured at signup.
+
+### 3.9 `recordEvent` writes after the primary action — LOW — S
+Most handlers do `update(...); await recordEvent(...)`. If the event insert fails, the state change persists but the audit log is missing. USPAP compliance depends on the audit log being complete.
+
+**Fix**: wrap in transactions; or move the event insert *before* the state change (so a missing event blocks the state change, not the other way around).
+
+### 3.10 `valueConclusionCents` is unvalidated — MED — S
+`jobs/[id]/page.tsx:44`: `Number(formData.get("valueConclusion") || 0)` — no lower/upper bound. An appraiser can sign a report with a value of `$0` or `$10^12`. Sanity check + warn if outside `indicatedValue ± 15%`.
+
+**Fix**: server-side validation + UI warning banner.
+
+### 3.11 `recordEvent` payload is stringified twice on rendering — LOW — S
+`jobs/[id]/page.tsx:221`: `<pre>{ev.payload}</pre>` prints the raw JSON string including quotes and `\n` escapes. Users see `{"at":"2026-..."}` as text.
+
+**Fix**: `JSON.parse(ev.payload ?? "null")` then render a humanized line per event type.
+
+### 3.12 Clients delete cascade missing — MED — S
+`clients/page.tsx:27` deletes a client. Any `jobs.client_id` pointing at it becomes a dangling FK (SQLite's FK check is on, but the delete succeeds because nothing references it as `ON DELETE CASCADE`). On re-render, `clientName` lookup returns `undefined` → UI says "Client: —" without explanation.
+
+**Fix**: block client delete when jobs reference it, OR `ON DELETE SET NULL` with a user warning + job reassignment flow.
+
+### 3.13 Signup race: duplicate email — LOW — S
+`app/signup/page.tsx:17-20` checks `existing` then inserts. Two concurrent signups with same email race past the check. The `UNIQUE` constraint saves us, but the second user gets a server 500 instead of the friendly "exists" redirect.
+
+**Fix**: catch the `UNIQUE` violation; redirect with `?e=exists`.
+
+### 3.14 `randomId(16)` = 128-bit hex is fine for IDs but 2x the storage — LOW — S
+All primary keys are 32-char hex. Fine for security; ugly in URLs; 2× the index size vs. a UUID-v7 binary.
+
+**Fix**: optional cleanup — switch to UUID v7 (time-ordered, Postgres-friendly, can keep hex encoding for URLs).
+
+---
+
+
