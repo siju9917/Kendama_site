@@ -615,6 +615,72 @@ SQLite serializes all writes. At our scale (1 appraiser = few writes/sec) fine. 
 
 ---
 
+## 10. Testing
+
+### 10.1 Zero tests of any kind — HIGH — M
+No unit, no integration, no E2E. The roadmap calls for Vitest, Testcontainers, Playwright, visual regression for PDFs. None exist.
+
+**Start with these 6 tests (biggest ROI):**
+
+| Test | What it protects |
+|------|-------------------|
+| `lib/adjustments.test.ts` | Pure-function: compute comp adjustments for a known subject + comp set, assert expected gross/net/adjusted price. |
+| `lib/jobs.test.ts` | `computeGLA` with and without below-grade rooms. |
+| `lib/auth.test.ts` | `hashPassword` + `verifyPassword` round-trip; rejects wrong password. |
+| `lib/pdf/report.test.ts` | Render a fixed job; assert PDF is valid, >1 KB, and contains the expected section headers (via `pdf-parse`). |
+| Playwright `happy-path.spec.ts` | Sign up → new job → add rooms + comps → sign → deliver → mark paid. |
+| Playwright `tenancy.spec.ts` | User A creates a job; user B cannot access `/jobs/<A's id>` (expect 404). Regression lock for §2.1 once fixed. |
+
+### 10.2 No CI — HIGH — S
+No `.github/workflows/`. Nothing runs on PRs. Easiest possible win — one action file running `pnpm typecheck && pnpm test && pnpm playwright test`.
+
+### 10.3 No type-check script — LOW — S
+`package.json:scripts` has no `typecheck`. `tsc --noEmit` is free.
+
+### 10.4 No lint config — LOW — S
+No `.eslintrc`, no `biome.json`.
+
+### 10.5 No pre-commit hooks — LOW — S
+Husky + lint-staged is a 5-minute setup.
+
+---
+
+## 11. Operations / Deployment Readiness
+
+### 11.1 No logging — HIGH — S
+`console.log` / `console.error` used nowhere. When something fails in prod, we have no breadcrumbs.
+
+**Fix**: `pino` + Sentry integration for errors.
+
+### 11.2 No health check endpoint — MED — S
+`/api/health` returning DB ping + version. Needed for load-balancer checks.
+
+### 11.3 No security headers — MED — S
+No CSP, no Referrer-Policy, no X-Frame-Options. Easy to add via `next.config.ts` `headers()`.
+
+### 11.4 No DB backup strategy — HIGH — S
+Single SQLite file. Losing `data/app.db` = losing all customer data. Needs scheduled `.backup` (sqlite3 cli) or Litestream replication.
+
+### 11.5 No environment separation — MED — S
+No staging. No way to test migrations without touching prod.
+
+### 11.6 No feature flags — LOW — M
+Roadmap calls for Flagsmith or similar. Not needed for v0 but expected at v1 for AMC integrations that vary per customer.
+
+### 11.7 No Dockerfile or deploy docs — MED — S
+Today the deploy story is implicit. Needs a Dockerfile + a "works on Fly / a VPS / etc." explanation. Note: Vercel is a no-go because of the writable uploads dir and SQLite file.
+
+### 11.8 Graceful shutdown — LOW — S
+See §8.17.
+
+### 11.9 No metrics / tracing — LOW — M
+No request-count / latency / error-rate visibility.
+
+### 11.10 No email sending plumbed — MED — S
+Roadmap lists Postmark/Resend. Nothing is wired yet. "Deliver" action doesn't actually email anything.
+
+---
+
 
 
 
