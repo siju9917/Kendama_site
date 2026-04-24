@@ -204,13 +204,18 @@ export default async function CompsPage({ params }: { params: Promise<{ id: stri
             </div>
           </div>
 
-          <div className="mt-4 flex gap-2 flex-wrap">
+          <div className="mt-4 flex gap-3 flex-wrap text-xs">
             {comps.map((c) => (
-              <form key={c.id} action={deleteComp} className="inline-block">
-                <input type="hidden" name="jobId" value={id} />
-                <input type="hidden" name="compId" value={c.id} />
-                <button type="submit" className="btn-ghost text-xs text-red-600">Remove Comp {c.position}</button>
-              </form>
+              <div key={c.id} className="inline-flex items-center gap-1 border border-gray-200 rounded px-2 py-1">
+                <span className="font-medium">Comp {c.position}</span>
+                <Link href={`/jobs/${id}/comps/${c.id}/edit`} className="text-brand-600 hover:underline">Edit</Link>
+                <span className="text-gray-300">·</span>
+                <form action={deleteComp} className="inline-block">
+                  <input type="hidden" name="jobId" value={id} />
+                  <input type="hidden" name="compId" value={c.id} />
+                  <button type="submit" className="text-red-600 hover:underline">Remove</button>
+                </form>
+              </div>
             ))}
           </div>
         </div>

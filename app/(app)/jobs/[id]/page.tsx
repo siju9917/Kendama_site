@@ -60,6 +60,10 @@ async function updateJob(formData: FormData) {
     }
     await recordEvent(jobId, user.id, "status.changed", { to: "DRAFTING" });
   } else if (action === "sign") {
+    // 6.18: block signing with an expired license.
+    if (user.licenseExpiresAt && user.licenseExpiresAt.getTime() < Date.now()) {
+      redirect(`/jobs/${jobId}?e=expired`);
+    }
     const valueDollars = Number(formData.get("valueConclusion") || 0);
     if (!Number.isFinite(valueDollars) || valueDollars <= 0 || valueDollars > 1e9) {
       redirect(`/jobs/${jobId}?e=badvalue`);
@@ -153,6 +157,7 @@ export default async function JobDetail({
   const flash =
     e === "stale" ? "Another tab changed this job. Reloaded with latest state." :
     e === "badvalue" ? "Value conclusion must be a positive number." :
+    e === "expired" ? "Your appraiser license is expired. Update it in Settings before signing." :
     null;
 
   return (
@@ -172,10 +177,18 @@ export default async function JobDetail({
             <span className="text-sm text-gray-500">Form {job.formType} · {usd(job.feeCents)} · Due {fmtDate(job.dueAt)}</span>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 justify-end max-w-md">
+          <Link href={`/jobs/${id}/edit`} className="btn-ghost">Edit</Link>
           <Link href={`/jobs/${id}/inspection`} className="btn-secondary">Inspection</Link>
           <Link href={`/jobs/${id}/comps`} className="btn-secondary">Comparables</Link>
-          <Link href={`/jobs/${id}/report`} className="btn-primary" target="_blank">Open report PDF</Link>
+          <Link
+            href={`/jobs/${id}/report`}
+            className="btn-primary"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open report PDF
+          </Link>
           <Link href={`/jobs/${id}/workfile`} className="btn-ghost">Export workfile</Link>
         </div>
       </div>

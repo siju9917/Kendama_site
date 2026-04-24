@@ -205,6 +205,21 @@ export async function generateReportPDF(jobId: string): Promise<Uint8Array> {
   drawText(ctx, `Appraiser: ${user?.name ?? "—"}`);
   drawText(ctx, `License: ${user?.licenseNumber ?? "—"} (${user?.licenseState ?? "—"})`);
   drawText(ctx, `Signed: ${fmtDate(job.signedAt)}`);
+  // Embed the appraiser's captured signature image if present and the job is signed.
+  if (job.signedAt && user?.signatureDataUrl && user.signatureDataUrl.startsWith("data:image/")) {
+    try {
+      const [meta, b64] = user.signatureDataUrl.split(",");
+      const bytes = Buffer.from(b64 ?? "", "base64");
+      const img = meta.includes("png") ? await doc.embedPng(bytes) : await doc.embedJpg(bytes);
+      ensureSpace(ctx, 60);
+      const w = 160;
+      const h = 40;
+      ctx.page.drawImage(img, { x: MARGIN, y: ctx.y - h, width: w, height: h });
+      ctx.y -= h + 4;
+    } catch {
+      // Corrupt signature, skip silently.
+    }
+  }
   drawText(ctx, "I certify that, to the best of my knowledge, the statements of fact contained in this report are true and", { size: 8, color: [0.4, 0.4, 0.5] });
   drawText(ctx, "correct, and that this report has been prepared in conformity with USPAP.", { size: 8, color: [0.4, 0.4, 0.5] });
 
