@@ -19,9 +19,10 @@ import { usd, fmtDate, fmtDateTime, inputDateTime, STATUS_LABEL, type JobStatus 
 import { ConfirmSubmit } from "@/components/confirm-button";
 import { SubmitButton } from "@/components/submit-button";
 import fs from "node:fs/promises";
-import path from "node:path";
+import { env } from "@/lib/env";
 
-const UPLOAD_DIR = path.join(process.cwd(), "uploads");
+import path from "node:path";
+const UPLOAD_DIR = env.uploadDir;
 
 /**
  * CAS helper: perform an UPDATE scoped to (id, expected status); if the

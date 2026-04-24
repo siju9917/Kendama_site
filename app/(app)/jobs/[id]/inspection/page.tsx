@@ -17,15 +17,15 @@ import { validatePhoto, MAX_PHOTOS_PER_REQUEST } from "@/lib/images";
 import { PhotoGrid } from "@/components/photo-grid";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { env } from "@/lib/env";
 
-const UPLOAD_DIR = path.join(process.cwd(), "uploads");
+const UPLOAD_DIR = env.uploadDir;
 
 async function saveChecklist(formData: FormData) {
   "use server";
   const user = await requireUser();
   const jobId = String(formData.get("jobId"));
-  const job = await getJobForUser(user.id, jobId);
-  if (!job) throw new Response("Not found", { status: 404 });
+  await requireJobForUser(user.id, jobId);
 
   for (const [k, v] of formData.entries()) {
     if (!k.startsWith("ci_")) continue;
@@ -66,8 +66,7 @@ async function addRoom(formData: FormData) {
   "use server";
   const user = await requireUser();
   const jobId = String(formData.get("jobId"));
-  const job = await getJobForUser(user.id, jobId);
-  if (!job) throw new Response("Not found", { status: 404 });
+  await requireJobForUser(user.id, jobId);
   const name = String(formData.get("name") || "").trim();
   if (!name) redirect(`/jobs/${jobId}/inspection`);
   await db.insert(schema.rooms).values({

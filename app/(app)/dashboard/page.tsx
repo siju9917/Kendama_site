@@ -10,6 +10,27 @@ export default async function Dashboard() {
   const user = await requireUser();
   const jobs = await listJobsForUser(user.id);
 
+  if (jobs.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto py-12 text-center space-y-6">
+        <h1 className="text-3xl font-semibold">Welcome to AppraiseOS, {user.name.split(" ")[0]}.</h1>
+        <p className="text-gray-600">
+          Let's set up your workspace. You'll want to do these in order — each one takes a minute.
+        </p>
+        <ol className="text-left card card-body space-y-3 text-sm">
+          <li><strong>1. Profile &amp; signature.</strong> Go to <Link href="/settings" className="text-brand-600 hover:underline">Settings</Link> and enter your license number, state, expiration date, and draw your signature. This is embedded on every signed report.</li>
+          <li><strong>2. Adjustment rules.</strong> Open <Link href="/settings/adjustments" className="text-brand-600 hover:underline">Adjustment settings</Link> and set your market's $/sqft GLA, $/bed, condition step, etc. These apply to every comp grid.</li>
+          <li><strong>3. Clients.</strong> Add the AMCs and lenders you work with on the <Link href="/clients" className="text-brand-600 hover:underline">Clients</Link> page.</li>
+          <li><strong>4. Your first job.</strong> Click <Link href="/jobs/new" className="text-brand-600 hover:underline">New job</Link> to create an assignment and walk it through inspection → comps → signed PDF.</li>
+        </ol>
+        <div className="flex justify-center gap-2">
+          <Link href="/settings" className="btn-primary">Start with Settings</Link>
+          <Link href="/jobs/new" className="btn-secondary">Skip, create a job</Link>
+        </div>
+      </div>
+    );
+  }
+
   const now = Date.now();
   const openJobs = jobs.filter((j) => j.status !== "PAID" && j.status !== "ARCHIVED");
   const dueSoon = openJobs.filter((j) => j.dueAt && j.dueAt.getTime() - now < 1000 * 60 * 60 * 24 * 7);

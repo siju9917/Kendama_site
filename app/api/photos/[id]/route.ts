@@ -4,8 +4,9 @@ import { db, schema } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { env } from "@/lib/env";
 
-const UPLOAD_DIR = path.join(process.cwd(), "uploads");
+const UPLOAD_DIR = env.uploadDir;
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();

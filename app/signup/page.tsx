@@ -16,49 +16,23 @@ async function signup(formData: FormData) {
     redirect("/signup?e=exists");
   }
 
-  const userId = randomId();
-  await db.insert(schema.users).values({
-    id: userId,
-    email,
-    name,
-    passwordHash: hashPassword(password),
-  });
-
-  // Seed a default client + demo job so the user has something to click on immediately.
-  const clientId = randomId();
-  await db.insert(schema.clients).values({
-    id: clientId,
-    userId,
-    name: "Pacific Northwest AMC",
-    type: "amc",
-    email: "orders@pnwamc.example",
-    feeStandard: 550,
-  });
-  const jobId = randomId();
-  await db.insert(schema.jobs).values({
-    id: jobId,
-    userId,
-    clientId,
-    subjectAddress: "1428 Maple Street",
-    subjectCity: "Portland",
-    subjectState: "OR",
-    subjectZip: "97205",
-    borrowerName: "J. Thompson",
-    loanNumber: "LN-2026-" + Math.floor(Math.random() * 90000 + 10000),
-    formType: "1004",
-    feeCents: 55000,
-    status: "NEW",
-    dueAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
-  });
-  await db.insert(schema.jobEvents).values({
-    id: randomId(),
-    jobId,
-    actorId: userId,
-    type: "job.created",
-    payload: JSON.stringify({ source: "signup-seed" }),
-  });
-
-  await createSession(userId);
+  try {
+    const userId = randomId();
+    await db.insert(schema.users).values({
+      id: userId,
+      email,
+      name,
+      passwordHash: hashPassword(password),
+    });
+    await createSession(userId);
+  } catch (err: unknown) {
+    // Handle the race where two concurrent signups hit the email UNIQUE constraint
+    // after the first check passed (§3.13).
+    if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "SQLITE_CONSTRAINT_UNIQUE") {
+      redirect("/signup?e=exists");
+    }
+    throw err;
+  }
   redirect("/dashboard");
 }
 
@@ -76,7 +50,7 @@ export default async function SignupPage({
         <form action={signup} className="card-body space-y-4">
           <div>
             <h1 className="text-2xl font-semibold">Create your account</h1>
-            <p className="text-sm text-gray-600 mt-1">Get started in seconds. We'll seed a demo job.</p>
+            <p className="text-sm text-gray-600 mt-1">Takes a few seconds. You'll set up your license and adjustment rules next.</p>
           </div>
           {e === "exists" && (
             <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-2">
