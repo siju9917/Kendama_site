@@ -1,5 +1,13 @@
 # Render Blueprint — one-click deploy of AppraiseOS.
 # Docs: https://render.com/docs/blueprint-spec
+#
+# This version is tuned for Render's FREE plan — no persistent disk, no
+# custom mount paths. Data (SQLite DB + photos) lives inside the deploy's
+# ephemeral filesystem and is wiped on every redeploy or restart.
+#
+# To make data persistent, upgrade to a paid plan and uncomment the `disk:`
+# block at the bottom, then redeploy.
+
 services:
   - type: web
     name: appraise-os
@@ -10,22 +18,18 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # Render auto-generates a stable secret on first deploy and keeps it
+      # across redeploys so user sessions survive.
       - key: APPRAISE_SESSION_SECRET
-        generateValue: true    # Render auto-generates a stable secret
-      - key: APPRAISE_DB_PATH
-        value: /var/data/app.db
-      - key: APPRAISE_UPLOAD_DIR
-        value: /var/data/uploads
-    # The `disk` block is *required* for real appraisal data to persist
-    # across deploys and restarts. Render's free tier does NOT include a
-    # persistent disk — attaching one is $1/month for 1 GB, which is the
-    # cheapest credible option for a live user.
+        generateValue: true
+
+    # Persistent disk — FREE PLAN DOES NOT SUPPORT THIS.
+    # Uncomment the block below AFTER upgrading the service to Starter
+    # ($7/month) or higher, and add these env vars:
+    #   APPRAISE_DB_PATH=/var/data/app.db
+    #   APPRAISE_UPLOAD_DIR=/var/data/uploads
     #
-    # If you want to try the app for free on Render's ephemeral filesystem,
-    # comment out the `disk` block below. Data (db + photos) will then
-    # reset on every deploy and possibly on restarts — fine for a demo, not
-    # fine for a real appraiser's workflow.
-    #disk:
-      #name: appraise-data
-      #mountPath: /var/data
-      #sizeGB: 1
+    # disk:
+    #   name: appraise-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
