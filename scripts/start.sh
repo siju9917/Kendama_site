@@ -10,9 +10,9 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-if [ ! -d ".next" ]; then
+if [ ! -f ".next/BUILD_ID" ]; then
   echo "❌ No production build found."
-  echo "   Run ./scripts/install.sh first."
+  echo "   Run ./scripts/install.sh first (it installs deps and builds the app)."
   exit 1
 fi
 
