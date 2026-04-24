@@ -106,6 +106,14 @@ export default async function SettingsPage({
           <button className="btn-primary" type="submit">Save settings</button>
         </div>
       </form>
+
+      <section className="card card-body">
+        <h2 className="font-semibold">Adjustment rules</h2>
+        <p className="text-sm text-gray-600 mt-1 mb-3">
+          Configure the $-per-unit adjustments used in every comparable grid.
+        </p>
+        <a href="/settings/adjustments" className="btn-secondary">Open adjustment settings →</a>
+      </section>
     </div>
   );
 }

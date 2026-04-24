@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { db, schema } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import { computeGLA } from "@/lib/jobs";
+import { computeGLA, getAdjustmentProfile } from "@/lib/jobs";
 import { computeCompAdjustments, reconcileValue, type Subject } from "@/lib/adjustments";
 
 type Ctx = {
@@ -98,8 +98,11 @@ export async function generateReportPDF(jobId: string): Promise<Uint8Array> {
     bathsHalf: Number(itemVal("bath", "half_baths")) || 0,
     garageStalls: Number(itemVal("garage", "garage_stalls")) || 0,
     lotSqft: Number(itemVal("site", "lot_size")) || null,
+    condition: itemVal("interior", "condition_interior") || itemVal("exterior", "condition_exterior") || null,
+    quality: itemVal("interior", "quality") || null,
   };
-  const computed = comps.map((c) => ({ comp: c, ...computeCompAdjustments(subject, c) }));
+  const profile = await getAdjustmentProfile(job.userId);
+  const computed = comps.map((c) => ({ comp: c, ...computeCompAdjustments(subject, c, profile) }));
   const indicated = reconcileValue(computed.map((c) => c.adjustedPriceCents));
 
   const doc = await PDFDocument.create();

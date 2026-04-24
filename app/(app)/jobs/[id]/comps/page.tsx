@@ -1,14 +1,15 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { requireUser, randomId } from "@/lib/auth";
 import { db, schema } from "@/lib/db";
 import {
-  getJobForUser,
+  requireJobForUser,
   listCompsForJob,
   listRoomsForJob,
   listItemsForJob,
   computeGLA,
   recordEvent,
+  getAdjustmentProfile,
 } from "@/lib/jobs";
 import { eq, and } from "drizzle-orm";
 import { computeCompAdjustments, reconcileValue, type Subject } from "@/lib/adjustments";
@@ -18,8 +19,7 @@ async function addComp(formData: FormData) {
   "use server";
   const user = await requireUser();
   const jobId = String(formData.get("jobId"));
-  const job = await getJobForUser(user.id, jobId);
-  if (!job) throw new Response("Not found", { status: 404 });
+  await requireJobForUser(user.id, jobId);
 
   const existing = await listCompsForJob(jobId);
   const position = (existing[existing.length - 1]?.position ?? 0) + 1;
@@ -55,8 +55,7 @@ async function deleteComp(formData: FormData) {
   const user = await requireUser();
   const jobId = String(formData.get("jobId"));
   const compId = String(formData.get("compId"));
-  const job = await getJobForUser(user.id, jobId);
-  if (!job) throw new Response("Not found", { status: 404 });
+  await requireJobForUser(user.id, jobId);
   await db.delete(schema.comparables).where(and(eq(schema.comparables.id, compId), eq(schema.comparables.jobId, jobId)));
   redirect(`/jobs/${jobId}/comps`);
 }
@@ -72,21 +71,25 @@ function subjectFromChecklist(rooms: { lengthFt: number; widthFt: number; isBelo
     bathsHalf: num(find("bath", "half_baths")),
     garageStalls: num(find("garage", "garage_stalls")),
     lotSqft: num(find("site", "lot_size")) || null,
+    condition: find("interior", "condition_interior") || find("exterior", "condition_exterior") || null,
+    quality: find("interior", "quality") || null,
   };
 }
+
+export const metadata = { title: "Comparables · AppraiseOS" };
 
 export default async function CompsPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const { id } = await params;
-  const job = await getJobForUser(user.id, id);
-  if (!job) notFound();
-  const [comps, rooms, items] = await Promise.all([
+  const job = await requireJobForUser(user.id, id);
+  const [comps, rooms, items, profile] = await Promise.all([
     listCompsForJob(id),
     listRoomsForJob(id),
     listItemsForJob(id),
+    getAdjustmentProfile(user.id),
   ]);
   const subject = subjectFromChecklist(rooms, items);
-  const computed = comps.map((c) => ({ comp: c, ...computeCompAdjustments(subject, c) }));
+  const computed = comps.map((c) => ({ comp: c, ...computeCompAdjustments(subject, c, profile) }));
   const indicated = reconcileValue(computed.map((c) => c.adjustedPriceCents));
 
   return (

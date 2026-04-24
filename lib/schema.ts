@@ -133,6 +133,22 @@ export const invoices = sqliteTable("invoices", {
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(sql`(unixepoch() * 1000)`),
 });
 
+export const adjustmentProfiles = sqliteTable("adjustment_profiles", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id),
+  // One row per user for v0; a per-market table is v1.
+  perGlaSqftCents: integer("per_gla_sqft_cents").notNull().default(5000),
+  perBedCents: integer("per_bed_cents").notNull().default(500000),
+  perFullBathCents: integer("per_full_bath_cents").notNull().default(750000),
+  perHalfBathCents: integer("per_half_bath_cents").notNull().default(300000),
+  perGarageStallCents: integer("per_garage_stall_cents").notNull().default(400000),
+  perLotSqftCents: integer("per_lot_sqft_cents").notNull().default(100),
+  perConditionStepCents: integer("per_condition_step_cents").notNull().default(1500000),
+  perQualityStepCents: integer("per_quality_step_cents").notNull().default(2000000),
+  annualAppreciationBps: integer("annual_appreciation_bps").notNull().default(300), // 3% yoy
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(sql`(unixepoch() * 1000)`),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Job = typeof jobs.$inferSelect;

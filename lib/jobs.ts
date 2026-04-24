@@ -83,3 +83,23 @@ export function computeGLA(rooms: { lengthFt: number; widthFt: number; isBelowGr
 export function computeGBA(rooms: { lengthFt: number; widthFt: number }[]) {
   return rooms.reduce((sum, r) => sum + r.lengthFt * r.widthFt, 0);
 }
+
+/**
+ * Load the user's adjustment profile, creating a default row if absent.
+ * Called from the comps grid and PDF renderer so rules stay in sync.
+ */
+export async function getAdjustmentProfile(userId: string) {
+  const rows = await db
+    .select()
+    .from(schema.adjustmentProfiles)
+    .where(eq(schema.adjustmentProfiles.userId, userId));
+  if (rows[0]) return rows[0];
+  // Insert defaults.
+  const id = randomId();
+  await db.insert(schema.adjustmentProfiles).values({ id, userId });
+  const fresh = await db
+    .select()
+    .from(schema.adjustmentProfiles)
+    .where(eq(schema.adjustmentProfiles.id, id));
+  return fresh[0]!;
+}

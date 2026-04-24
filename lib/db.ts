@@ -136,6 +136,21 @@ CREATE TABLE IF NOT EXISTS invoices (
   paid_at INTEGER,
   created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
 );
+CREATE TABLE IF NOT EXISTS adjustment_profiles (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  per_gla_sqft_cents INTEGER NOT NULL DEFAULT 5000,
+  per_bed_cents INTEGER NOT NULL DEFAULT 500000,
+  per_full_bath_cents INTEGER NOT NULL DEFAULT 750000,
+  per_half_bath_cents INTEGER NOT NULL DEFAULT 300000,
+  per_garage_stall_cents INTEGER NOT NULL DEFAULT 400000,
+  per_lot_sqft_cents INTEGER NOT NULL DEFAULT 100,
+  per_condition_step_cents INTEGER NOT NULL DEFAULT 1500000,
+  per_quality_step_cents INTEGER NOT NULL DEFAULT 2000000,
+  annual_appreciation_bps INTEGER NOT NULL DEFAULT 300,
+  updated_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
+);
+CREATE INDEX IF NOT EXISTS idx_adj_user ON adjustment_profiles(user_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_user_status ON jobs(user_id, status);
 CREATE INDEX IF NOT EXISTS idx_photos_job ON photos(job_id);
 CREATE INDEX IF NOT EXISTS idx_comps_job_pos ON comparables(job_id, position);
