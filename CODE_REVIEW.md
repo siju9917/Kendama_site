@@ -681,6 +681,95 @@ Roadmap lists Postmark/Resend. Nothing is wired yet. "Deliver" action doesn't ac
 
 ---
 
+## 12. Prioritized Improvement Plan
+
+A sequence that minimizes risk and maximizes user-facing polish. Time estimates assume one engineer, Claude-assisted.
+
+### Wave 1 — Stop-the-bleeding security & data integrity (0.5–1 day)
+| # | Item |
+|---|------|
+| 2.1 | Tenant isolation on every destructive action. |
+| 2.2 | Remove GET from logout. |
+| 2.3 | MIME sniff + size cap + `sharp` re-encode on photo upload. |
+| 2.4 | `secure` cookie flag in prod. |
+| 3.1 | Transactional delete-job + photo directory cleanup. |
+| 3.5 | CAS status transitions. |
+| 8.6 | `requireUser` redirects instead of throwing. |
+| 11.3 | Security headers. |
+
+### Wave 2 — Professional functionality (1–2 days)
+| # | Item |
+|---|------|
+| 4.1 / 4.2 / 4.3 / 4.4 | Edit forms for job, room, comp, client. |
+| 4.5 | Delete-confirm modals. |
+| 4.6 | Photo lightbox. |
+| 4.11 | /settings page: profile + signature pad + default fee. |
+| 4.12 | Search/filter on jobs. |
+| 4.17 | Embed signature image in signed PDFs. |
+| 5.1 | Submit-button loading state. |
+| 5.4 | `app/error.tsx` + `app/not-found.tsx`. |
+| 5.5 | Toast system on state changes. |
+| 5.11 | Favicon + per-page titles (5.12). |
+
+### Wave 3 — Domain credibility (1–2 days)
+| # | Item |
+|---|------|
+| 6.1 | Configurable adjustment rules + `/settings/adjustments`. |
+| 6.2 | Time adjustment for stale comps. |
+| 6.3 | Condition/quality adjustment rows. |
+| 6.6 | Subject prior-sales section. |
+| 6.7 | Neighborhood section. |
+| 6.18 | License-expiration guard on sign. |
+
+### Wave 4 — UX polish (0.5–1 day)
+| # | Item |
+|---|------|
+| 5.17 | Mobile-first inspection layout. |
+| 7.1 / 7.2 / 7.4 | Color-blind flags, aria-labels, label-input pairing. |
+| 7.9 / 7.10 | Mobile nav + responsive job-detail header. |
+| 7.11 | Tabbed or accordion'd checklist. |
+| 7.16 | CurrencyInput component. |
+| 5.7 | Undo toast on destructive actions. |
+
+### Wave 5 — Code quality / reliability (1 day)
+| # | Item |
+|---|------|
+| 8.1 / 8.16 | Real migrations via drizzle-kit; remove raw DDL in `db.ts`. |
+| 8.3 / 8.4 / 8.9 | Move actions to `lib/actions/*.ts`; `zod` schemas; typed inputs. |
+| 8.14 | `lib/env.ts` with zod-parsed env vars. |
+| 10.1 / 10.2 | The 6 tests above + a GitHub Actions CI file. |
+| 11.1 | Pino + Sentry. |
+
+### Wave 6 — Operations (0.5 day)
+| # | Item |
+|---|------|
+| 11.2 | `/api/health`. |
+| 11.4 | Automated DB backups. |
+| 11.7 | Dockerfile + production deploy docs. |
+| 9.1 / 9.3 | Pagination + photo thumbnails. |
+
+### Total effort
+~5–7 focused engineering days to close the MVP gap to **pilot-ready**. Not including the deferred roadmap items (offline PWA sync, MLS integration, AMC delivery, multi-user orgs, native mobile) which remain v1 scope.
+
+### Guiding principle
+Every wave ends with a shippable state. Nothing here requires a big-bang rewrite; the architecture choices in the MVP (Next.js monolith, Drizzle+SQLite, server actions, event log) all scale into the v1 version described in `DEVELOPMENT_ROADMAP.md`.
+
+---
+
+## Appendix — Findings By Severity
+
+| Severity | Count |
+|----------|------:|
+| HIGH     |   23  |
+| MED      |   48  |
+| LOW      |   30  |
+| **Total**| **101** |
+
+(Findings count reflects this review; the spreadsheet-ready source lives above with IDs like `2.1`, `3.7`, etc.)
+
+*Review performed against commit 1767087 of the `main` branch.*
+
+
 
 
 
