@@ -1,10 +1,25 @@
-# AppraiseOS — MVP
+# AppraiseOS
 
-A working MVP slice of the AppraiseOS product described in `DEVELOPMENT_ROADMAP.md`.
+A working MVP of the AppraiseOS product described in `DEVELOPMENT_ROADMAP.md`.
 It covers the end-to-end workflow an independent residential appraiser runs for a single job:
 order-style job intake → schedule inspection → URAR checklist + rooms/GLA + photos →
 comparables with live adjustment math → signed URAR-style PDF → invoice → mark paid →
 USPAP workfile zip export.
+
+**See `CODE_REVIEW.md`** for the full professional evaluation of the codebase (~100 findings
+across security, data integrity, UX, code quality, domain correctness, testing, and ops) and
+the prioritized improvement plan that drove the recent wave of fixes.
+
+## What improved since the initial MVP
+
+| Wave | Theme | Highlights |
+|------|-------|------------|
+| 1 | Critical security | Tenant isolation on child-record deletes, POST-only logout, magic-byte image sniffing (12 MB cap), secure cookies, security headers, expired-session cleanup |
+| 2 | Data integrity | Transactional delete-job with photo-directory cleanup, CAS status transitions (no duplicate invoices on concurrent deliver), value-conclusion validation, delete-confirm component |
+| 3 | Edit flows | Edit forms for job, comparable, client; `/settings` with profile, license tracking, signature pad; signature image embedded in signed PDFs; license-expiration guard blocks Sign |
+| 4 | UX polish | Job search + status/client filters; keyboard-navigable photo lightbox; `app/error.tsx` + `app/not-found.tsx`; SVG favicon; per-page titles; focus-visible rings |
+| 5 | Domain credibility | Per-user configurable adjustment rules (`/settings/adjustments`); condition and quality adjustment rows; time adjustment from sale date with compounded monthly appreciation |
+| 6 | Polish | `SubmitButton` with `useFormStatus` pending states; responsive mobile nav with hamburger; persistent license-expiring banner in the app shell; accessible focus styles throughout |
 
 ---
 
