@@ -339,6 +339,87 @@ The inspection page is a big form with a 2-column grid. On an iPhone it works bu
 
 ---
 
+## 6. Domain / Appraiser-Workflow Gaps
+
+This is what a real appraiser would notice in the first 30 seconds.
+
+### 6.1 Adjustment rules are hardcoded — HIGH — M
+`lib/adjustments.ts:3-10` has `$50/sqft`, `$5k/bed`, etc. baked in. Appraisers set these per market — $50/sqft in Boise is absurd in Manhattan. This is the **single biggest credibility blocker** for a real appraiser.
+
+**Fix**: a `market_adjustment_sets` table (per-user, optionally per-market). Default one is seeded from current values. A `/settings/adjustments` page to edit. Per-job override option.
+
+### 6.2 No time adjustment for stale comps — HIGH — M
+A comp that sold 9 months ago at $600k in a market up 6% YoY should be adjusted +$27k before use. The grid doesn't do this at all.
+
+**Fix**: `sale_date → days_old` column in the grid with a per-market % appreciation entry field. Standard in all competitor software.
+
+### 6.3 Condition / quality adjustments missing from grid — HIGH — M
+`comparables.condition` and `quality` are collected but never adjusted. Subject C3 vs. comp C4 should drive a $/sqft adjustment.
+
+**Fix**: add condition/quality rows to the adjustment grid with a per-step $ amount.
+
+### 6.4 Location, view, and site-value adjustments missing — MED — M
+Appraisers write these in manually in competitor tools. We have no place for them.
+
+**Fix**: a configurable row set. Each row: label, subject value, comp values, $ adjustment. Extensible.
+
+### 6.5 Sale type / financing concessions — MED — S
+Seller-paid closing costs = adjustment. Today: no field.
+
+**Fix**: `saleConcessionsCents` column on `comparables`; auto-adjusted off.
+
+### 6.6 No prior-sales history for the subject — HIGH — S
+URAR requires listing the subject's prior transfers in the last 3 years. We don't have a place for it.
+
+**Fix**: a `prior_sales` table keyed to subjects or jobs.
+
+### 6.7 Neighborhood section missing — MED — S
+URAR has a whole section: 1-unit housing price range, days-on-market, supply/demand trend. Today: absent.
+
+**Fix**: dedicated section on the inspection page + serialized into the PDF.
+
+### 6.8 No contract section for purchase appraisals — MED — S
+On a purchase, the URAR wants contract price, date, whether there are seller concessions, etc. Not there.
+
+### 6.9 Mileage tracking — MED — S
+Roadmap mentions it for QuickBooks sync. Not in MVP. Pro tools auto-log mileage between inspections using the calendar + maps.
+
+### 6.10 GLA source disagreement alarm — MED — S
+Roadmap calls for: "sanity warning if GLA differs from public-record by >10%." Not built (no public-records integration either).
+
+**Fix**: at minimum, a manual "Public-record GLA" field on the inspection so the warning can compute locally.
+
+### 6.11 Garage type labels don't match UAD — LOW — S
+`inspection/checklist.ts` says `"Attached" | "Detached" | "Carport" | "None"`. UAD wants `1ga1` style codes. We're hiding the code from the user, but when exporting/integrating with AMCs the mapping needs to be explicit.
+
+### 6.12 URAR 3.6 UAD validator absent — HIGH — L
+Roadmap calls for a full UAD 3.6 validation pass. MVP has none. This is what *actually* prevents AMC revision requests in real life.
+
+### 6.13 Form types 1073, 2055, 1025 not rendered — MED — L
+Job form has dropdown for all 4, but the PDF renderer only handles 1004. Any other form_type gets a wrong-format PDF. Minor: not user-breaking yet, but will surprise.
+
+**Fix**: either hide the dropdown options, or at minimum pop a "1004 layout only for MVP" warning.
+
+### 6.14 Effective date vs. inspection date — MED — S
+URAR distinguishes "effective date" (what the value represents) from "inspection date." We conflate them. Usually same day but not always.
+
+### 6.15 Highest-and-best-use statement missing — LOW — S
+URAR requires a HBU box. Not in our UI or PDF.
+
+### 6.16 Exposure and marketing time fields — LOW — S
+URAR asks. Not collected.
+
+### 6.17 Cost approach and income approach not supported — LOW — L
+1004 strictly requires the sales comparison but also lets the appraiser complete cost + income where relevant. We only do sales. Fine for most SFR; limiting for high-end and 2-4 unit.
+
+### 6.18 Appraiser license-number expiration tracking — MED — S
+Schema has the field; no alert. Real compliance risk — signing with an expired license invalidates the report.
+
+**Fix**: a red banner when expiration is within 30 days; block "Sign report" if expired.
+
+---
+
+
 
 
 
