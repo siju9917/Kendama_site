@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { requireUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { requireUser, randomId } from "@/lib/auth";
 import { db, schema } from "@/lib/db";
 import {
-  getJobForUser,
+  requireJobForUser,
   listClientsForUser,
   listEventsForJob,
   listPhotosForJob,
@@ -13,17 +13,32 @@ import {
   recordEvent,
   computeGLA,
 } from "@/lib/jobs";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { usd, fmtDate, fmtDateTime, inputDateTime, STATUS_LABEL, type JobStatus } from "@/lib/format";
-import { randomId } from "@/lib/auth";
+import { ConfirmSubmit } from "@/components/confirm-button";
+import fs from "node:fs/promises";
+import path from "node:path";
+
+const UPLOAD_DIR = path.join(process.cwd(), "uploads");
+
+/**
+ * CAS helper: perform an UPDATE scoped to (id, expected status); if the
+ * rowcount is 0 the user raced another tab. Drizzle returns `changes` on SQLite.
+ */
+async function casStatus(jobId: string, from: JobStatus, patch: Partial<typeof schema.jobs.$inferInsert>) {
+  const result = await db
+    .update(schema.jobs)
+    .set(patch)
+    .where(and(eq(schema.jobs.id, jobId), eq(schema.jobs.status, from)))
+    .run();
+  return result.changes > 0;
+}
 
 async function updateJob(formData: FormData) {
   "use server";
   const user = await requireUser();
   const jobId = String(formData.get("jobId"));
-  const job = await getJobForUser(user.id, jobId);
-  if (!job) throw new Response("Not found", { status: 404 });
-
+  const job = await requireJobForUser(user.id, jobId);
   const action = String(formData.get("_action"));
 
   if (action === "schedule") {
@@ -35,23 +50,33 @@ async function updateJob(formData: FormData) {
       .where(eq(schema.jobs.id, jobId));
     await recordEvent(jobId, user.id, "inspection.scheduled", { at: when });
   } else if (action === "markInspected") {
-    await db.update(schema.jobs).set({ status: "INSPECTED" }).where(eq(schema.jobs.id, jobId));
+    if (!(await casStatus(jobId, "SCHEDULED", { status: "INSPECTED" }))) {
+      redirect(`/jobs/${jobId}?e=stale`);
+    }
     await recordEvent(jobId, user.id, "status.changed", { to: "INSPECTED" });
   } else if (action === "markDrafting") {
-    await db.update(schema.jobs).set({ status: "DRAFTING" }).where(eq(schema.jobs.id, jobId));
+    if (!(await casStatus(jobId, "INSPECTED", { status: "DRAFTING" }))) {
+      redirect(`/jobs/${jobId}?e=stale`);
+    }
     await recordEvent(jobId, user.id, "status.changed", { to: "DRAFTING" });
   } else if (action === "sign") {
     const valueDollars = Number(formData.get("valueConclusion") || 0);
-    await db
-      .update(schema.jobs)
-      .set({
-        status: "IN_REVIEW",
-        signedAt: new Date(),
-        valueConclusionCents: Math.round(valueDollars * 100),
-      })
-      .where(eq(schema.jobs.id, jobId));
+    if (!Number.isFinite(valueDollars) || valueDollars <= 0 || valueDollars > 1e9) {
+      redirect(`/jobs/${jobId}?e=badvalue`);
+    }
+    if (!(await casStatus(jobId, "DRAFTING", {
+      status: "IN_REVIEW",
+      signedAt: new Date(),
+      valueConclusionCents: Math.round(valueDollars * 100),
+    }))) {
+      redirect(`/jobs/${jobId}?e=stale`);
+    }
     await recordEvent(jobId, user.id, "report.signed", { value: valueDollars });
   } else if (action === "deliver") {
+    if (!(await casStatus(jobId, "IN_REVIEW", { status: "DELIVERED", deliveredAt: new Date() }))) {
+      redirect(`/jobs/${jobId}?e=stale`);
+    }
+    // After the CAS wins, create the invoice (at most one — we hold the transition).
     const invoice = await getInvoiceForJob(jobId);
     if (!invoice) {
       await db.insert(schema.invoices).values({
@@ -64,12 +89,11 @@ async function updateJob(formData: FormData) {
         dueAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
       });
     }
-    await db
-      .update(schema.jobs)
-      .set({ status: "DELIVERED", deliveredAt: new Date() })
-      .where(eq(schema.jobs.id, jobId));
     await recordEvent(jobId, user.id, "report.delivered");
   } else if (action === "markPaid") {
+    if (!(await casStatus(jobId, "DELIVERED", { status: "PAID", paidAt: new Date() }))) {
+      redirect(`/jobs/${jobId}?e=stale`);
+    }
     const invoice = await getInvoiceForJob(jobId);
     if (invoice) {
       await db
@@ -77,32 +101,43 @@ async function updateJob(formData: FormData) {
         .set({ status: "paid", paidAt: new Date() })
         .where(eq(schema.invoices.id, invoice.id));
     }
-    await db
-      .update(schema.jobs)
-      .set({ status: "PAID", paidAt: new Date() })
-      .where(eq(schema.jobs.id, jobId));
     await recordEvent(jobId, user.id, "invoice.paid");
   } else if (action === "updateClient") {
     const clientId = String(formData.get("clientId") || "") || null;
     await db.update(schema.jobs).set({ clientId }).where(eq(schema.jobs.id, jobId));
   } else if (action === "delete") {
-    await db.delete(schema.invoices).where(eq(schema.invoices.jobId, jobId));
-    await db.delete(schema.comparables).where(eq(schema.comparables.jobId, jobId));
-    await db.delete(schema.photos).where(eq(schema.photos.jobId, jobId));
-    await db.delete(schema.rooms).where(eq(schema.rooms.jobId, jobId));
-    await db.delete(schema.inspectionItems).where(eq(schema.inspectionItems.jobId, jobId));
-    await db.delete(schema.jobEvents).where(eq(schema.jobEvents.jobId, jobId));
-    await db.delete(schema.jobs).where(eq(schema.jobs.id, jobId));
+    // Best-effort FS cleanup AFTER the DB is gone. Wrapped in a transaction so
+    // the DB state is all-or-nothing.
+    db.transaction((tx) => {
+      tx.delete(schema.invoices).where(eq(schema.invoices.jobId, jobId)).run();
+      tx.delete(schema.comparables).where(eq(schema.comparables.jobId, jobId)).run();
+      tx.delete(schema.photos).where(eq(schema.photos.jobId, jobId)).run();
+      tx.delete(schema.rooms).where(eq(schema.rooms.jobId, jobId)).run();
+      tx.delete(schema.inspectionItems).where(eq(schema.inspectionItems.jobId, jobId)).run();
+      tx.delete(schema.jobEvents).where(eq(schema.jobEvents.jobId, jobId)).run();
+      tx.delete(schema.jobs)
+        .where(and(eq(schema.jobs.id, jobId), eq(schema.jobs.userId, user.id)))
+        .run();
+    });
+    try {
+      await fs.rm(path.join(UPLOAD_DIR, jobId), { recursive: true, force: true });
+    } catch {}
     redirect("/jobs");
   }
   redirect(`/jobs/${jobId}`);
 }
 
-export default async function JobDetail({ params }: { params: Promise<{ id: string }> }) {
+export default async function JobDetail({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ e?: string }>;
+}) {
   const user = await requireUser();
   const { id } = await params;
-  const job = await getJobForUser(user.id, id);
-  if (!job) notFound();
+  const { e } = await searchParams;
+  const job = await requireJobForUser(user.id, id);
   const [clients, events, photos, rooms, comps, invoice] = await Promise.all([
     listClientsForUser(user.id),
     listEventsForJob(id),
@@ -115,8 +150,18 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
   const clientName = clients.find((c) => c.id === job.clientId)?.name;
   const invoiceUnpaid = invoice && invoice.status !== "paid";
 
+  const flash =
+    e === "stale" ? "Another tab changed this job. Reloaded with latest state." :
+    e === "badvalue" ? "Value conclusion must be a positive number." :
+    null;
+
   return (
     <div className="space-y-6">
+      {flash && (
+        <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900">
+          {flash}
+        </div>
+      )}
       <div className="flex items-start justify-between">
         <div>
           <Link href="/jobs" className="text-sm text-gray-600 hover:underline">← All jobs</Link>
@@ -269,10 +314,18 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
 
           <div className="card card-body">
             <h3 className="font-semibold mb-3 text-red-700">Danger zone</h3>
+            <p className="text-xs text-gray-600 mb-3">
+              Permanently removes the job, all inspection data, photos, comps, invoice, and activity log.
+              Can't be undone.
+            </p>
             <form action={updateJob}>
               <input type="hidden" name="jobId" value={id} />
               <input type="hidden" name="_action" value="delete" />
-              <button className="btn-danger w-full" type="submit">Delete job</button>
+              <ConfirmSubmit
+                label="Delete job"
+                message="Permanently delete this job and all its data"
+                confirmLabel="Yes, delete permanently"
+              />
             </form>
           </div>
         </aside>
