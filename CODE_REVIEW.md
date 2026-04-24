@@ -571,6 +571,50 @@ Fine for a single-server setup; terrible for serverless/Vercel (read-only FS). S
 
 ---
 
+## 9. Performance
+
+Currently invisible because demo data is tiny. Will bite at 50+ jobs.
+
+### 9.1 No pagination — HIGH — S
+`listJobsForUser` fetches every row. At 500 jobs/year × 2 years = 1,000 rows per appraiser. Works but dashboard grows linearly.
+
+**Fix**: paginate the jobs list (offset + limit, or keyset pagination). Dashboard shouldn't load closed jobs at all.
+
+### 9.2 N+1 on dashboard — MED — S
+`dashboard/page.tsx:9` fetches all jobs and then filters in JS. For an org with 1k jobs the server renders 1k rows just to show 3 summary sections.
+
+**Fix**: separate queries per section (`due this week`, `overdue`, `recently delivered`) with `LIMIT` and index usage.
+
+### 9.3 Photos served full-size as thumbnails — HIGH — S
+`/api/photos/[id]` always serves the original. A phone photo is 3–8 MB. With 30 photos on a job that's 100+ MB to render the inspection page.
+
+**Fix**: on upload, generate 256×256 JPEG thumbnails with `sharp`. Serve `/api/photos/[id]?t=thumb` for thumbnails, `?t=full` for lightbox.
+
+### 9.4 PDF generation embeds originals — MED — S
+`pdf/report.ts:175-195` reads the full source image for each photo. Should embed a 1024-wide thumbnail — the URAR addendum is 2-up on letter size, originals waste space.
+
+### 9.5 No HTTP caching headers on most routes — LOW — S
+`/api/photos/[id]` sets `Cache-Control: private, max-age=31536000, immutable` (good) but nothing else does. Static assets like the favicon/logo will need them when present.
+
+### 9.6 No full-text search index — LOW — S
+Current indexes cover the status board. Once search is added (4.12) we'll want FTS5 on `jobs.subject_address || borrower_name || loan_number`.
+
+### 9.7 `drawText` in PDF is called 200+ times per job — LOW — S
+Minor, but pdf-lib is slow. For 50+ comps or photo-heavy reports, render time balloons. Worth profiling if we see >3s renders.
+
+### 9.8 No streaming response for large downloads — LOW — S
+Workfile zip is built fully into memory then sent. For a 200-photo job that's 1-2 GB. OOM on a small host.
+
+**Fix**: stream the archive directly to the response (archiver supports pipe).
+
+### 9.9 Server components re-render on every action — MED — S
+Because mutations use `redirect(...)`, the entire page re-fetches. OK for correctness; wasteful for server CPU. Can be improved with optimistic updates + `revalidatePath`.
+
+### 9.10 `better-sqlite3` is single-writer — MED — M
+SQLite serializes all writes. At our scale (1 appraiser = few writes/sec) fine. At 50 concurrent users on the same DB, contention starts. Plan Postgres migration as user count grows (roadmap already calls for this).
+
+---
+
 
 
 
