@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { requireUser, randomId } from "@/lib/auth";
+import { requireUser, randomId, getCurrentUser } from "@/lib/auth";
 import { db, schema } from "@/lib/db";
 import {
   requireJobForUser,
+  getJobForUser,
   listClientsForUser,
   listEventsForJob,
   listPhotosForJob,
@@ -16,6 +17,7 @@ import {
 import { and, eq } from "drizzle-orm";
 import { usd, fmtDate, fmtDateTime, inputDateTime, STATUS_LABEL, type JobStatus } from "@/lib/format";
 import { ConfirmSubmit } from "@/components/confirm-button";
+import { SubmitButton } from "@/components/submit-button";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -133,10 +135,8 @@ async function updateJob(formData: FormData) {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { getCurrentUser } = await import("@/lib/auth");
   const user = await getCurrentUser();
   if (!user) return { title: "AppraiseOS" };
-  const { getJobForUser } = await import("@/lib/jobs");
   const job = await getJobForUser(user.id, id);
   return { title: job ? `${job.subjectAddress} · AppraiseOS` : "Job · AppraiseOS" };
 }
@@ -245,23 +245,25 @@ export default async function JobDetail({
                     step="1000"
                     name="valueConclusion"
                     placeholder="Value $"
+                    inputMode="decimal"
                     required
+                    aria-label="Value conclusion in dollars"
                   />
-                  <button className="btn-primary" type="submit">Sign report</button>
+                  <SubmitButton pendingLabel="Signing…">Sign report</SubmitButton>
                 </form>
               )}
               {job.status === "IN_REVIEW" && (
                 <form action={updateJob}>
                   <input type="hidden" name="jobId" value={id} />
                   <input type="hidden" name="_action" value="deliver" />
-                  <button className="btn-primary" type="submit">Deliver + invoice</button>
+                  <SubmitButton pendingLabel="Delivering…">Deliver + invoice</SubmitButton>
                 </form>
               )}
               {job.status === "DELIVERED" && invoiceUnpaid && (
                 <form action={updateJob}>
                   <input type="hidden" name="jobId" value={id} />
                   <input type="hidden" name="_action" value="markPaid" />
-                  <button className="btn-primary" type="submit">Mark paid</button>
+                  <SubmitButton pendingLabel="Saving…">Mark paid</SubmitButton>
                 </form>
               )}
             </div>
