@@ -41,7 +41,9 @@ export function Nav({ userName }: { userName: string }) {
         </div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-600">{userName}</span>
-          <a href="/logout" className="btn-ghost text-sm">Log out</a>
+          <form action="/logout" method="post">
+            <button type="submit" className="btn-ghost text-sm">Log out</button>
+          </form>
         </div>
       </div>
     </header>

@@ -1,10 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { requireUser, randomId } from "@/lib/auth";
 import { db, schema } from "@/lib/db";
 import {
-  getJobForUser,
+  requireJobForUser,
   listItemsForJob,
   listRoomsForJob,
   listPhotosForJob,
@@ -13,6 +13,7 @@ import {
 } from "@/lib/jobs";
 import { eq, and } from "drizzle-orm";
 import { URAR_1004_CHECKLIST } from "@/lib/checklist";
+import { validatePhoto, MAX_PHOTOS_PER_REQUEST } from "@/lib/images";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -86,9 +87,12 @@ async function deleteRoom(formData: FormData) {
   const user = await requireUser();
   const jobId = String(formData.get("jobId"));
   const roomId = String(formData.get("roomId"));
-  const job = await getJobForUser(user.id, jobId);
-  if (!job) throw new Response("Not found", { status: 404 });
-  await db.delete(schema.rooms).where(eq(schema.rooms.id, roomId));
+  await requireJobForUser(user.id, jobId);
+  // Scope by BOTH id and jobId: prevents a crafted request from deleting a
+  // row belonging to a different job.
+  await db.delete(schema.rooms).where(
+    and(eq(schema.rooms.id, roomId), eq(schema.rooms.jobId, jobId)),
+  );
   redirect(`/jobs/${jobId}/inspection`);
 }
 
@@ -96,33 +100,43 @@ async function uploadPhoto(formData: FormData) {
   "use server";
   const user = await requireUser();
   const jobId = String(formData.get("jobId"));
-  const job = await getJobForUser(user.id, jobId);
-  if (!job) throw new Response("Not found", { status: 404 });
+  await requireJobForUser(user.id, jobId);
 
-  const files = formData.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0);
+  const files = formData
+    .getAll("photos")
+    .filter((f): f is File => f instanceof File && f.size > 0)
+    .slice(0, MAX_PHOTOS_PER_REQUEST);
   const tag = String(formData.get("tag") || "misc");
   const caption = String(formData.get("caption") || "") || null;
 
   await fs.mkdir(path.join(UPLOAD_DIR, jobId), { recursive: true });
 
+  let accepted = 0;
+  let rejected = 0;
   for (const file of files) {
+    const raw = Buffer.from(await file.arrayBuffer());
+    // Server-side magic-byte sniff — client-supplied MIME and filename are untrusted.
+    const validated = validatePhoto(raw);
+    if (!validated) {
+      rejected++;
+      continue;
+    }
     const id = randomId();
-    const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
-    const filename = `${id}.${ext}`;
-    const buf = Buffer.from(await file.arrayBuffer());
-    await fs.writeFile(path.join(UPLOAD_DIR, jobId, filename), buf);
+    const filename = `${id}.${validated.ext}`;
+    await fs.writeFile(path.join(UPLOAD_DIR, jobId, filename), validated.buf);
     await db.insert(schema.photos).values({
       id,
       jobId,
       filename,
-      mimeType: file.type || "image/jpeg",
+      mimeType: validated.mime,
       tag,
       caption,
-      sizeBytes: buf.length,
+      sizeBytes: validated.buf.length,
     });
+    accepted++;
   }
-  if (files.length) await recordEvent(jobId, user.id, "photos.uploaded", { count: files.length, tag });
-  redirect(`/jobs/${jobId}/inspection`);
+  if (accepted) await recordEvent(jobId, user.id, "photos.uploaded", { count: accepted, tag });
+  redirect(`/jobs/${jobId}/inspection${rejected ? `?rejected=${rejected}` : ""}`);
 }
 
 async function deletePhoto(formData: FormData) {
@@ -130,13 +144,17 @@ async function deletePhoto(formData: FormData) {
   const user = await requireUser();
   const jobId = String(formData.get("jobId"));
   const photoId = String(formData.get("photoId"));
-  const job = await getJobForUser(user.id, jobId);
-  if (!job) throw new Response("Not found", { status: 404 });
-  const photos = await db.select().from(schema.photos).where(eq(schema.photos.id, photoId));
+  await requireJobForUser(user.id, jobId);
+  const photos = await db
+    .select()
+    .from(schema.photos)
+    .where(and(eq(schema.photos.id, photoId), eq(schema.photos.jobId, jobId)));
   const photo = photos[0];
-  if (photo && photo.jobId === jobId) {
+  if (photo) {
     try { await fs.unlink(path.join(UPLOAD_DIR, jobId, photo.filename)); } catch {}
-    await db.delete(schema.photos).where(eq(schema.photos.id, photoId));
+    await db.delete(schema.photos).where(
+      and(eq(schema.photos.id, photoId), eq(schema.photos.jobId, jobId)),
+    );
   }
   redirect(`/jobs/${jobId}/inspection`);
 }
@@ -144,8 +162,7 @@ async function deletePhoto(formData: FormData) {
 export default async function InspectionPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const { id } = await params;
-  const job = await getJobForUser(user.id, id);
-  if (!job) notFound();
+  const job = await requireJobForUser(user.id, id);
   const [items, rooms, photos] = await Promise.all([
     listItemsForJob(id),
     listRoomsForJob(id),

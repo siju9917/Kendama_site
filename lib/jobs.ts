@@ -1,6 +1,7 @@
 import { db, schema } from "./db";
 import { eq, and, desc } from "drizzle-orm";
 import { randomId } from "./auth";
+import { notFound } from "next/navigation";
 
 export async function listJobsForUser(userId: string) {
   return db.select().from(schema.jobs).where(eq(schema.jobs.userId, userId)).orderBy(desc(schema.jobs.createdAt));
@@ -12,6 +13,16 @@ export async function getJobForUser(userId: string, jobId: string) {
     .from(schema.jobs)
     .where(and(eq(schema.jobs.id, jobId), eq(schema.jobs.userId, userId)));
   return rows[0] ?? null;
+}
+
+/**
+ * Load a job for the current user or 404 out. Use in every server action
+ * before any child-record mutation — provides the tenant-isolation guard.
+ */
+export async function requireJobForUser(userId: string, jobId: string) {
+  const job = await getJobForUser(userId, jobId);
+  if (!job) notFound();
+  return job;
 }
 
 export async function listClientsForUser(userId: string) {

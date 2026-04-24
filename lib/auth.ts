@@ -1,10 +1,12 @@
 import { db, schema } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, lt } from "drizzle-orm";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 
 const SESSION_COOKIE = "appraise_sid";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
+const IS_PROD = process.env.NODE_ENV === "production";
 
 export function hashPassword(password: string): string {
   const salt = randomBytes(16);
@@ -27,6 +29,8 @@ export function randomId(bytes = 16): string {
 }
 
 export async function createSession(userId: string): Promise<string> {
+  // Opportunistically clean expired sessions on every login.
+  await db.delete(schema.sessions).where(lt(schema.sessions.expiresAt, new Date()));
   const id = randomId(32);
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
   await db.insert(schema.sessions).values({ id, userId, expiresAt });
@@ -34,6 +38,7 @@ export async function createSession(userId: string): Promise<string> {
   jar.set(SESSION_COOKIE, id, {
     httpOnly: true,
     sameSite: "lax",
+    secure: IS_PROD,
     path: "/",
     expires: expiresAt,
   });
@@ -69,6 +74,6 @@ export async function getCurrentUser() {
 
 export async function requireUser() {
   const user = await getCurrentUser();
-  if (!user) throw new Response("Unauthorized", { status: 401 });
+  if (!user) redirect("/login");
   return user;
 }
