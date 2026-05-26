@@ -9,14 +9,28 @@ import http from "node:http";
 const PORT = process.env.PORT ? Number(process.env.PORT) : 8787;
 const SECRET = process.env.BIDDIFF_SECRET ?? "dev-secret";
 
+// Reasonable upper bound on a request body. Real endpoints take small
+// JSON (a license key, a few clause numbers, a telemetry event). The
+// /ocr path takes a base64 PDF — capped at 75 MB encoded (~55 MB raw)
+// to match the extension's MAX_DOCUMENT_BYTES with base64 overhead.
+const MAX_BODY_BYTES = 75 * 1024 * 1024;
+
 async function readBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
+    let size = 0;
     // Collect Buffers and decode once at the end. `buf += chunk`
     // would do an implicit toString per chunk and corrupt any
     // multi-byte UTF-8 sequence that happened to straddle a chunk
     // boundary.
-    req.on("data", (c) => chunks.push(c));
+    req.on("data", (c) => {
+      size += c.length;
+      if (size > MAX_BODY_BYTES) {
+        req.destroy(new Error("body too large"));
+        return;
+      }
+      chunks.push(c);
+    });
     req.on("end", () => {
       try {
         const body = Buffer.concat(chunks).toString("utf8");
