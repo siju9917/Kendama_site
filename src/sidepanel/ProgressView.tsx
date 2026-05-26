@@ -12,9 +12,11 @@ export function ProgressView({
       <div style={{ fontWeight: 600 }}>{note || "Working…"}</div>
       <div
         className="progressbar"
+        role="progressbar"
         aria-valuenow={percent}
         aria-valuemin={0}
         aria-valuemax={100}
+        aria-label="Diff progress"
       >
         <div className="progressbar__fill" style={{ width: `${Math.max(4, percent)}%` }} />
       </div>
