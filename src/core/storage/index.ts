@@ -12,9 +12,6 @@ import type { DiffSummary, IStorage } from "../interfaces.js";
 import { STORAGE_HARD_CAP_BYTES } from "../../shared/constants.js";
 import { idbAvailable, idbDelete, idbGet, idbPut } from "./idb.js";
 
-/** A payload larger than this goes to IndexedDB; smaller stays in chrome.storage. */
-const PAYLOAD_IDB_THRESHOLD_BYTES = 4 * 1024 * 1024;
-
 const SUMMARY_INDEX_KEY = "biddiff.diffs.index";
 const PAYLOAD_PREFIX = "biddiff.diff.";
 
@@ -173,7 +170,14 @@ export class DiffStorage implements IStorage {
 
   private async _saveDiff(result: DiffResult): Promise<void> {
     const payload = JSON.stringify(result);
-    const useIdb = payload.length > PAYLOAD_IDB_THRESHOLD_BYTES && (await idbAvailable());
+    // Prefer IDB whenever available: chrome.storage.local has a 10 MB
+    // per-extension quota shared across every key (without the
+    // `unlimitedStorage` permission). Five 2 MB diffs would hit that
+    // cap even though each is under the old IDB threshold. The IDB
+    // store has no such cap, so route every payload there when we
+    // can. Fall back to chrome.storage only when IDB is unavailable
+    // (Node tests, environments without it).
+    const useIdb = await idbAvailable();
 
     // Two-phase write so a failure does not leave half-state:
     //   1. Write the payload. If this fails, we throw — index untouched.
