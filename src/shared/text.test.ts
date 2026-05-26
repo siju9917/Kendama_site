@@ -28,6 +28,18 @@ describe("normalizeText", () => {
     expect(normalizeText("exam-\nple")).toBe("example");
   });
 
+  it("rejoins clause numbers broken across whitespace", () => {
+    expect(normalizeText("See 52. 204-21 and 252. 204-7012.")).toBe(
+      "See 52.204-21 and 252.204-7012.",
+    );
+  });
+
+  it("does not collapse sentence-ending periods", () => {
+    expect(normalizeText("Item 2. The proposal must include details.")).toBe(
+      "Item 2. The proposal must include details.",
+    );
+  });
+
   it("is idempotent", () => {
     const once = normalizeText("ﬁle  with\n“quotes”");
     expect(normalizeText(once)).toBe(once);

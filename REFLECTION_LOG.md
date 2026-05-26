@@ -252,3 +252,58 @@ Findings + fixes:
   - All thresholds are constants in `shared/constants.ts` and `DIFF_THRESHOLDS`.
 
 **Phase 3 converged after 1 round of fixes. The moat holds.**
+
+---
+
+## Phase 4 — Extension shell — DEEP reflection
+
+### Round 1 — Correctness
+
+Findings + fixes:
+
+1. **Integration-isolation test caught its own scaffolding.** Interface name
+   `ISamIntegration` and types `SamAttachment` / `SamAmendmentMeta` exposed
+   "SAM.gov" naming outside the content/sam folder. **Fix:** renamed to
+   `IOpportunitySite` / `OpportunityAttachment` / `OpportunityAmendmentMeta`.
+   This is also a correctness win — the interface should be generic so a
+   future portal can implement it.
+2. **`pdf-lib`'s `doc.save()` Uint8Array** has a `SharedArrayBuffer`-shaped
+   union type as backing. **Fix:** copy bytes to a fresh `ArrayBuffer`
+   before passing to `Blob`. Same fix already applied in extractor tests.
+3. **Unused `usableHeight`** in the PDF export draw helper — kept for
+   symmetry with `usableWidth`, but not referenced. **Fix:** removed.
+
+### Round 2 — Adversarial
+
+- All four UI states (`EMPTY` / `RUNNING` / `DONE` / `ERROR`) can be
+  reached from the file picker. `ERROR` correctly surfaces the
+  `userMessage` from a typed `ExtractionError` rather than the raw stack.
+- Storage layer was tested with the in-memory fallback (Node has no
+  `chrome.storage`); LRU prune correctly drops oldest-access entries
+  when over the cap.
+- Service-worker `OPEN_SIDE_PANEL` handler is async-correct (returns
+  `true` from `onMessage.addListener` to keep the channel open).
+- Content script uses `MutationObserver` so SAM.gov SPA route changes
+  re-inject the affordance.
+
+### Round 3 — Professional elevation
+
+- Side-panel header always shows "Start over" once a diff is loaded, so
+  the user can re-pick documents without hunting.
+- Filter chips show their counts in parentheses ("All changes (12)" /
+  "Critical (3)"); the empty-filter case renders an empty state.
+- Summary surfaces per-category counts inline ("Dates & deadlines: 1 ·
+  Clauses: 2 · …") so the user sees the shape of the amendment at a glance.
+- PDF report places critical changes FIRST, in their own section, with
+  the critical-color accent. Disclaimer is on the last page.
+- Single canonical disclaimer in `src/shared/disclaimer.ts` so every
+  surface uses the exact same wording.
+
+### Round 4 — Convergence
+
+- 123/123 tests pass; typecheck clean; lint clean; extension build clean.
+- The integration-isolation test now guards both the SAM-selector rule
+  and the privacy boundary (licensing can't import model/diff/extract).
+- No regression in earlier phases (corpus audit still 100%).
+
+**Phase 4 converged after 1 round of fixes.**

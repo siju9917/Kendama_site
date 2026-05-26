@@ -41,4 +41,13 @@ describe("exportPdfReport", () => {
     expect(blob.type).toBe("application/pdf");
     expect(blob.size).toBeGreaterThan(1000);
   }, 15_000);
+
+  it("does not crash on absurdly long unbreakable tokens", async () => {
+    const r = makeResult("it-svc-001-due-date-shift");
+    // Inject a 2000-char "word" into a change's afterText.
+    const longWord = "x".repeat(2000);
+    const cloned = { ...r, changes: r.changes.map((c) => ({ ...c, afterText: longWord })) };
+    const blob = await exportPdfReport(cloned);
+    expect(blob.size).toBeGreaterThan(500);
+  }, 30_000);
 });

@@ -117,14 +117,35 @@ export async function exportPdfReport(result: DiffResult, fileName?: string): Pr
       y -= lineHeight;
       line = "";
     };
-    for (const w of words) {
-      const candidate = line ? line + " " + w : w;
-      const width = f.widthOfTextAtSize(candidate, size);
-      if (width > usableWidth && line) {
-        flushLine();
-        line = w;
-      } else {
-        line = candidate;
+    // Hard-break very long unbreakable runs that would overflow.
+    const breakLongRun = (w: string): string[] => {
+      const segs: string[] = [];
+      let s = w;
+      while (s.length > 0 && f.widthOfTextAtSize(s, size) > usableWidth) {
+        let lo = 1;
+        let hi = s.length;
+        while (lo < hi) {
+          const mid = Math.floor((lo + hi + 1) / 2);
+          if (f.widthOfTextAtSize(s.slice(0, mid), size) <= usableWidth) lo = mid;
+          else hi = mid - 1;
+        }
+        segs.push(s.slice(0, lo));
+        s = s.slice(lo);
+      }
+      if (s.length > 0) segs.push(s);
+      return segs;
+    };
+    for (const raw of words) {
+      const subs = breakLongRun(raw);
+      for (const w of subs) {
+        const candidate = line ? line + " " + w : w;
+        const width = f.widthOfTextAtSize(candidate, size);
+        if (width > usableWidth && line) {
+          flushLine();
+          line = w;
+        } else {
+          line = candidate;
+        }
       }
     }
     flushLine();

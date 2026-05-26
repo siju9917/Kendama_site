@@ -11,6 +11,7 @@
  *   - DATE handles three explicit formats + deadline phrases.
  */
 import type { Anchor, AnchorType } from "../../model/types.js";
+import { normalizeText } from "../../../shared/text.js";
 
 export interface DetectorContext {
   /** When true, allow CLIN matching (Section B only). */
@@ -85,6 +86,12 @@ const DAY_MONTH_YEAR_RE = new RegExp(
   "gi",
 );
 
+// "15th day of August, 2026" / "the 1st day of January, 2027" — legal-style.
+const DAY_ORDINAL_MONTH_YEAR_RE = new RegExp(
+  String.raw`\b(\d{1,2})(?:st|nd|rd|th)\s+day\s+of\s+(${Object.keys(MONTH_NAMES).join("|")})(?:,)?\s+(20\d{2})\b`,
+  "gi",
+);
+
 function isoDate(year: number, month: number, day: number): string {
   const mm = String(month).padStart(2, "0");
   const dd = String(day).padStart(2, "0");
@@ -146,6 +153,23 @@ export function detectDates(text: string): Anchor[] {
   // Day month year
   DAY_MONTH_YEAR_RE.lastIndex = 0;
   while ((m = DAY_MONTH_YEAR_RE.exec(text)) !== null) {
+    const mn = MONTH_NAMES[m[2].toLowerCase()];
+    const day = Number(m[1]);
+    const year = Number(m[3]);
+    if (mn) {
+      pushIfValid({
+        type: "DATE",
+        raw: m[0],
+        normalized: isoDate(year, mn, day),
+        charStart: m.index,
+        charEnd: m.index + m[0].length,
+      });
+    }
+  }
+
+  // Legal-style: "15th day of August, 2026"
+  DAY_ORDINAL_MONTH_YEAR_RE.lastIndex = 0;
+  while ((m = DAY_ORDINAL_MONTH_YEAR_RE.exec(text)) !== null) {
     const mn = MONTH_NAMES[m[2].toLowerCase()];
     const day = Number(m[1]);
     const year = Number(m[3]);
@@ -271,13 +295,16 @@ export function sortAnchors(anchors: ReadonlyArray<Anchor>): Anchor[] {
 }
 
 export function detectAllAnchors(text: string, ctx: DetectorContext = {}): Anchor[] {
+  // Normalize first so anchors survive PDF reformatting (broken clause
+  // numbers, ligatures, curly quotes, soft hyphens, line wraps).
+  const normalized = normalizeText(text);
   const all: Anchor[] = [
-    ...detectClauseRefs(text),
-    ...detectDates(text),
-    ...detectMoney(text),
-    ...detectPageLimits(text),
-    ...(ctx.allowClin ? detectClins(text) : []),
-    ...detectSectionRefs(text),
+    ...detectClauseRefs(normalized),
+    ...detectDates(normalized),
+    ...detectMoney(normalized),
+    ...detectPageLimits(normalized),
+    ...(ctx.allowClin ? detectClins(normalized) : []),
+    ...detectSectionRefs(normalized),
   ];
   return sortAnchors(dedupSpans(all));
 }

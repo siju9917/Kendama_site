@@ -10,6 +10,10 @@
 import type { DiffResult } from "../diff/types.js";
 import type { DiffSummary, IStorage } from "../interfaces.js";
 import { STORAGE_HARD_CAP_BYTES } from "../../shared/constants.js";
+import { idbAvailable, idbDelete, idbGet, idbPut } from "./idb.js";
+
+/** A payload larger than this goes to IndexedDB; smaller stays in chrome.storage. */
+const PAYLOAD_IDB_THRESHOLD_BYTES = 4 * 1024 * 1024;
 
 const SUMMARY_INDEX_KEY = "biddiff.diffs.index";
 const PAYLOAD_PREFIX = "biddiff.diff.";
@@ -19,6 +23,8 @@ interface DiffIndexEntry extends DiffSummary {
   sizeBytes: number;
   /** Last-access epoch ms; updated on read or write. */
   lastAccess: number;
+  /** Where the full payload is stored. */
+  storage: "kv" | "idb";
 }
 
 interface IndexFile {
@@ -111,7 +117,12 @@ export class DiffStorage implements IStorage {
 
   async saveDiff(result: DiffResult): Promise<void> {
     const payload = JSON.stringify(result);
-    await this.kv.set(PAYLOAD_PREFIX + result.id, payload);
+    const useIdb = payload.length > PAYLOAD_IDB_THRESHOLD_BYTES && (await idbAvailable());
+    if (useIdb) {
+      await idbPut(result.id, payload);
+    } else {
+      await this.kv.set(PAYLOAD_PREFIX + result.id, payload);
+    }
     const idx = await this.readIndex();
     const summary: DiffIndexEntry = {
       id: result.id,
@@ -123,6 +134,7 @@ export class DiffStorage implements IStorage {
       solicitationId: result.currentDoc.solicitationId,
       sizeBytes: payload.length,
       lastAccess: Date.now(),
+      storage: useIdb ? "idb" : "kv",
     };
     idx.entries = idx.entries.filter((e) => e.id !== result.id);
     idx.entries.push(summary);
@@ -147,16 +159,30 @@ export class DiffStorage implements IStorage {
   }
 
   async getDiff(id: string): Promise<DiffResult | null> {
-    const payload = await this.kv.get<string>(PAYLOAD_PREFIX + id);
-    if (!payload) return null;
-    // Touch last-access.
     const idx = await this.readIndex();
     const e = idx.entries.find((x) => x.id === id);
+    let payload: string | null = null;
+    if (e?.storage === "idb") {
+      payload = await idbGet(id);
+    } else {
+      payload = await this.kv.get<string>(PAYLOAD_PREFIX + id);
+    }
+    if (!payload) return null;
+    // Touch last-access.
     if (e) {
       e.lastAccess = Date.now();
       await this.writeIndex(idx);
     }
     return JSON.parse(payload) as DiffResult;
+  }
+
+  async deleteDiff(id: string): Promise<void> {
+    const idx = await this.readIndex();
+    const e = idx.entries.find((x) => x.id === id);
+    if (e?.storage === "idb") await idbDelete(id);
+    else await this.kv.remove(PAYLOAD_PREFIX + id);
+    idx.entries = idx.entries.filter((x) => x.id !== id);
+    await this.writeIndex(idx);
   }
 
   async pruneToLimit(maxBytes: number): Promise<void> {
@@ -167,7 +193,8 @@ export class DiffStorage implements IStorage {
     const sorted = [...idx.entries].sort((a, b) => a.lastAccess - b.lastAccess);
     for (const e of sorted) {
       if (total <= maxBytes) break;
-      await this.kv.remove(PAYLOAD_PREFIX + e.id);
+      if (e.storage === "idb") await idbDelete(e.id);
+      else await this.kv.remove(PAYLOAD_PREFIX + e.id);
       total -= e.sizeBytes;
       idx.entries = idx.entries.filter((x) => x.id !== e.id);
     }

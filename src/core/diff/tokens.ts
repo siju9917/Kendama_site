@@ -21,8 +21,13 @@ export function tokenDiff(
     else if (o.op === "delete") opName = "delete";
     else opName = "insert";
     const last = spans[spans.length - 1];
+    // Avoid inserting a space before standalone punctuation tokens
+    // ("." / "," / ";" / ":" / "!" / "?" / closing brackets), which is how the
+    // tokenizer represents them.
+    const isStandalonePunct = /^[.,;:!?)\]}»"']$/.test(o.value);
+    const sep = isStandalonePunct ? "" : " ";
     if (last && last.op === opName) {
-      last.text = last.text + " " + o.value;
+      last.text = last.text === "" ? o.value : last.text + sep + o.value;
     } else {
       spans.push({ op: opName, text: o.value });
     }

@@ -32,6 +32,11 @@ export function normalizeText(input: string): string {
   s = s.replace(/([A-Za-z])-\n([a-z])/g, "$1$2");
   // Collapse runs of whitespace to single spaces; trim ends.
   s = s.replace(/\s+/g, " ").trim();
+  // Rejoin clause numbers broken across PDF line wrap or reformatting:
+  // "52. 204-21" -> "52.204-21" and "252. 204-7012" -> "252.204-7012".
+  // The trailing portion (\d{3}-\d{1,4}) makes this specific enough to
+  // never affect sentence punctuation like "2. The proposal must …".
+  s = s.replace(/\b(\d{2,4})\.\s+(\d{3}-\d{1,4})\b/g, "$1.$2");
   return s;
 }
 
