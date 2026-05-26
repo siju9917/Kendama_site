@@ -291,7 +291,11 @@ function dedupSpans(anchors: ReadonlyArray<Anchor>): Anchor[] {
 }
 
 export function sortAnchors(anchors: ReadonlyArray<Anchor>): Anchor[] {
-  return [...anchors].sort((a, b) => a.charStart - b.charStart || a.type.localeCompare(b.type));
+  // Code-point comparison rather than localeCompare so output stays
+  // identical across hosts with different default locales.
+  return [...anchors].sort(
+    (a, b) => a.charStart - b.charStart || (a.type === b.type ? 0 : a.type < b.type ? -1 : 1),
+  );
 }
 
 export function detectAllAnchors(text: string, ctx: DetectorContext = {}): Anchor[] {

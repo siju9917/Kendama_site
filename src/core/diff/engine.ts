@@ -142,7 +142,12 @@ export class DiffEngine implements IDiffEngine {
       const bLoc = locationSortKey(b.c);
       if (aLoc !== bLoc) return aLoc < bLoc ? -1 : 1;
       if (a.ord !== b.ord) return a.ord - b.ord;
-      return a.c.changeType.localeCompare(b.c.changeType);
+      // Code-point comparison rather than localeCompare — the latter
+      // depends on the host locale and could in theory break
+      // determinism across systems.
+      const at = a.c.changeType;
+      const bt = b.c.changeType;
+      return at === bt ? 0 : at < bt ? -1 : 1;
     });
     const sortedChanges = paired.map((x) => x.c);
 
