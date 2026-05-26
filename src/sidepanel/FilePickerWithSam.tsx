@@ -4,12 +4,20 @@ import { SamAttachments } from "./SamAttachments.js";
 import type { OpportunityAttachment } from "../core/interfaces.js";
 
 async function downloadAttachmentAsFile(a: OpportunityAttachment): Promise<File> {
-  const resp = await fetch(a.url);
-  if (!resp.ok) throw new Error(`download failed (${resp.status})`);
-  const blob = await resp.blob();
-  return new File([blob], a.fileName, {
-    type: blob.type || a.mimeType || "application/octet-stream",
-  });
+  // 5-minute timeout so a slow / hung server doesn't lock the button
+  // indefinitely. The user can retry.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5 * 60 * 1000);
+  try {
+    const resp = await fetch(a.url, { signal: controller.signal });
+    if (!resp.ok) throw new Error(`download failed (${resp.status})`);
+    const blob = await resp.blob();
+    return new File([blob], a.fileName, {
+      type: blob.type || a.mimeType || "application/octet-stream",
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export function FilePickerWithSam({
