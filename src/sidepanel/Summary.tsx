@@ -36,6 +36,9 @@ export function Summary({ result }: Props): React.ReactElement {
   const totalChanges = result.changes.length;
   const [feedback, setFeedback] = useState<string>("");
   const [busy, setBusy] = useState<"" | "pdf" | "text" | "md">("");
+  // Synchronous mirror of `busy` so a rapid double-click can't slip
+  // through between setBusy and the re-render that disables the button.
+  const busyRef = useRef<"" | "pdf" | "text" | "md">("");
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     return () => {
@@ -55,7 +58,8 @@ export function Summary({ result }: Props): React.ReactElement {
   };
 
   const onExportPdf = async (): Promise<void> => {
-    if (busy) return;
+    if (busyRef.current) return;
+    busyRef.current = "pdf";
     setBusy("pdf");
     try {
       const blob = await exportPdfReport(result);
@@ -76,11 +80,13 @@ export function Summary({ result }: Props): React.ReactElement {
       console.error("Export failed:", e);
       flash("Export failed — see console");
     } finally {
+      busyRef.current = "";
       setBusy("");
     }
   };
   const onCopyText = async (): Promise<void> => {
-    if (busy) return;
+    if (busyRef.current) return;
+    busyRef.current = "text";
     setBusy("text");
     try {
       await copySummaryToClipboard(result);
@@ -89,11 +95,13 @@ export function Summary({ result }: Props): React.ReactElement {
       console.error("Copy failed:", e);
       flash("Copy failed — check clipboard permission");
     } finally {
+      busyRef.current = "";
       setBusy("");
     }
   };
   const onCopyMarkdown = async (): Promise<void> => {
-    if (busy) return;
+    if (busyRef.current) return;
+    busyRef.current = "md";
     setBusy("md");
     try {
       await copyMarkdownToClipboard(result);
@@ -102,6 +110,7 @@ export function Summary({ result }: Props): React.ReactElement {
       console.error("Copy failed:", e);
       flash("Copy failed — check clipboard permission");
     } finally {
+      busyRef.current = "";
       setBusy("");
     }
   };
