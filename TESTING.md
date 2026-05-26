@@ -21,11 +21,46 @@
 - License check tamper-resistant; offline degrades gracefully.
 - `npm run build && npm run lint && npm test` passes with zero errors.
 
-## Phase 0 results (current)
+## Phase 0 results
 
-- `npm test`: **24/24 passing** (text, hash, model/build).
+- `npm test`: 24/24 passing (text, hash, model/build).
 - `npm run typecheck`: clean.
 - `npm run lint`: clean (zero warnings, max-warnings=0).
+
+## Phase 1 results
+
+- 40 amendment pairs / 80 documents, hand-labeled by generator.
+- 33 unit tests passing.
+- Corpus harness validates against any `IDiffEngine`.
+
+## Phase 2 results
+
+- 100 unit tests passing.
+- PDF extraction end-to-end in Node (PDF.js legacy + fake worker).
+- DOCX extraction end-to-end in Node (JSZip + custom XML walker).
+
+## Phase 3 results — THE MOAT
+
+Final corpus miss-rate audit (Phase 3.12, the hard floor):
+
+```
+Pairs:              40
+Expected changes:   57
+Actual changes:     57
+Hits:               57
+Missed (total):     0
+Critical expected:  51
+Critical missed:    0   <-- HARD FLOOR: must be 0
+False positives:    0
+FP on null pairs:   0   <-- HARD FLOOR: must be 0
+Recall:             100.00%   <-- must be ≥98%
+Precision:          100.00%
+```
+
+- 113/113 unit + integration tests passing.
+- Determinism: byte-identical repeat runs across every corpus pair.
+- Typecheck clean. Lint clean.
+
 - Build not yet runnable (no entry HTMLs); next at Phase 4.
 
 ## Accuracy-claim audit (Phase 6.10)

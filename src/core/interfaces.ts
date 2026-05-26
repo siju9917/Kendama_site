@@ -1,6 +1,6 @@
 /**
  * Module interfaces. Every core module implements one of these so modules
- * are independently testable and the SAM.gov layer is swappable.
+ * are independently testable and site-specific integrations are swappable.
  */
 import type { StructuredDocument } from "./model/types.js";
 import type { ClauseInfo, DiffResult } from "./diff/types.js";
@@ -21,7 +21,7 @@ export interface IClauseClient {
   lookup(clauseNumbers: string[]): Promise<Map<string, ClauseInfo>>;
 }
 
-export interface SamAttachment {
+export interface OpportunityAttachment {
   id: string;
   fileName: string;
   url: string;
@@ -31,18 +31,22 @@ export interface SamAttachment {
   sizeBytes: number | null;
 }
 
-export interface SamAmendmentMeta {
+export interface OpportunityAmendmentMeta {
   amendmentNumber: string;
   postedAt: string | null;
   description: string | null;
 }
 
-/** SAM.gov integration: ALL SAM.gov-specific selectors live behind this. */
-export interface ISamIntegration {
+/**
+ * Opportunity-site integration. ALL site-specific selectors and URL
+ * patterns live in the concrete implementation under src/content/, not here.
+ */
+export interface IOpportunitySite {
   isOpportunityPage(): boolean;
-  findAttachments(): Promise<SamAttachment[]>;
-  readAmendmentMetadata(): Promise<SamAmendmentMeta[]>;
+  findAttachments(): Promise<OpportunityAttachment[]>;
+  readAmendmentMetadata(): Promise<OpportunityAmendmentMeta[]>;
 }
+
 
 export interface DiffSummary {
   id: string;

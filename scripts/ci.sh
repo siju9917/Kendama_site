@@ -12,7 +12,7 @@ npm run lint
 echo "==> test"
 npm test
 
-echo "==> build (skipped until extension entry points exist; uncomment after Phase 4)"
-# npm run build
+echo "==> build"
+npm run build
 
 echo "==> ALL GATES PASSED"

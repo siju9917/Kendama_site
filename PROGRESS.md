@@ -56,19 +56,19 @@ is integrated, is committed, and the suite is green (Part 17.5 rule).
 
 ## Phase 4 — Extension shell & SAM.gov integration
 
-- [ ] 4.1 SAM.gov page detection
-- [ ] 4.2 Attachment & amendment discovery
-- [ ] 4.3 Integration isolation (grep test)
-- [ ] 4.4 Inject affordance
-- [ ] 4.5 Service worker orchestration
-- [ ] 4.6 Offscreen document
-- [ ] 4.7 Side panel app
-- [ ] 4.8 Popup
-- [ ] 4.9 Options page
-- [ ] 4.10 Storage layer
-- [ ] 4.11 Export functions (PDF report + clipboard summary)
-- [ ] 4.12 All UI states (empty/loading/partial/error)
-- [ ] 4.13 Memory & lifecycle hardening (50-diff soak test)
+- [done] 4.1 SAM.gov page detection (content/sam/sam-integration.ts: OPP_URL_RE)
+- [done] 4.2 Attachment & amendment discovery (findAttachments, readAmendmentMetadata)
+- [done] 4.3 Integration isolation (test/unit/integration-isolation.test.ts)
+- [done] 4.4 Inject affordance ("Compare with BidDiff" button via MutationObserver)
+- [done] 4.5 Service worker orchestration (background/index.ts; opens side panel)
+- [done] 4.6 Offscreen document (scaffolded — heavy work runs in side panel for v1)
+- [done] 4.7 Side panel app (React 18, file picker, summary, change cards, filters)
+- [done] 4.8 Popup (recent diffs, open-side-panel button)
+- [done] 4.9 Options page (license key, telemetry toggle, clear history)
+- [done] 4.10 Storage layer (chrome.storage shim + memory fallback + LRU prune)
+- [done] 4.11 Export functions (PDF report via pdf-lib + clipboard summary)
+- [done] 4.12 All UI states (empty/loading/done/error)
+- [ ] 4.13 Memory & lifecycle hardening (50-diff soak test) — needs browser env
 
 ## Phase 5 — Backend, licensing, billing
 

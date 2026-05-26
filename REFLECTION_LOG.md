@@ -171,3 +171,84 @@ Findings + fixes:
   Will happen alongside the cross-environment Phase 6.3 tests.
 
 **Phase 2 converged after 1 round of fixes (the regex + PDF.js worker setup).**
+
+---
+
+## Phase 3 — Diff engine (THE MOAT) — DEEP reflection
+
+### Round 1 — Correctness
+
+Findings + fixes:
+
+1. **Block-alignment MODIFY threshold too high.** Initial 0.6 jaccard
+   missed evaluation-factor *expansions* ("Factor 1: Technical Approach" →
+   "Factor 1: Technical Approach including security architecture maturity").
+   Jaccard 5/9 = 0.556 < 0.6. 4 missed CRITICAL changes in the audit.
+   **Fix:** introduced `containmentSimilarity` and pairing uses
+   `modifySimilarity = max(jaccard, containment)`. The expanded-item pattern
+   has containment = 1.0, so it pairs cleanly. False-positive risk is bounded
+   because the run-level pairing only considers DELETE+INSERT pairs already
+   adjacent in the LCS — unrelated blocks won't be in the same run.
+
+2. **`evaluateCriticality` compared `changeType` to `"EQUAL"`** — but the
+   `ChangeType` union doesn't include EQUAL. Type-checker caught it. **Fix:**
+   removed the redundant guard; if we're processing a SUBMISSION_INSTRUCTIONS
+   change at all, it's an actual change.
+
+3. **Section ID re-hashing**: when `replaceSection` rebuilds a section the ID
+   changes — that's intentional. Verified that section ID changes don't
+   confuse alignment (alignment uses UCF letter, heading text, and section
+   type, not section ID).
+
+### Round 2 — Adversarial
+
+- **40-pair determinism test** — every pair runs the engine twice and
+  asserts byte-identical output. Passes.
+- **Null pair check** — identical documents produce zero changes. Passes
+  for all "null-*" pairs.
+- **Heavy edit pair** (`stress-001-multi-six-edits` — 6 edits in one
+  amendment) — engine correctly produces 6 changes, all classified
+  correctly, all CRITICAL.
+- **Cross-section adjacent INSERT/DELETE** — the move-detection threshold
+  is 0.9, well above the MODIFY 0.6 cap, so a high-similarity pair from
+  different sections becomes a MOVE; a low-similarity pair stays as
+  separate INSERT+DELETE. Verified manually.
+
+### Round 3 — Professional elevation
+
+- **`criticalReasons`** is plural and accumulating: a single change that
+  hits multiple critical rules (e.g. a Section L line containing both a
+  PAGE_LIMIT anchor and a DATE anchor) emits both reasons. The UI can
+  surface them as a bullet list.
+- **`locationHint`** includes the section heading and block ordinal, so
+  the user can find the change in the source document.
+- **Confidence penalty**: if section alignment had to use low-score pairs,
+  the overall `diffConfidence` drops and a warning is added — surfacing
+  uncertainty rather than hiding it.
+
+### Round 4 — Convergence
+
+- Full suite: **113/113 passing**.
+- Miss-rate audit: **0 missed CRITICAL, 100% recall, 100% precision,
+  0 FPs on null pairs, deterministic**. Hard floor met with margin.
+- No regression on Phases 0/1/2.
+- No new findings on a second adversarial pass.
+
+### Deep-reflection extras (Part 13.2)
+
+- **Walked one corpus pair end-to-end by hand** (`it-svc-011-multi-critical`,
+  3 edits: due date + clause add + page limit). Engine output:
+  - 1 CRITICAL DATES_DEADLINES MODIFY in Section L (the new date appears
+    in afterText, the old in beforeText)
+  - 1 CRITICAL CLAUSES INSERT in Section I (clauseInfo populated:
+    "Prohibition on a ByteDance Covered Application")
+  - 1 CRITICAL SUBMISSION_INSTRUCTIONS MODIFY in Section L (the new page
+    limit and old page limit both appear in tokenSpans)
+  - Exactly 3 changes, no spurious extras. ✓
+- **Re-read entire `src/core/diff/`** as if reviewing a stranger's PR.
+  - Sort key is stable. Algorithms are pure. No `Date.now` or `Math.random`.
+  - Iteration is exclusively over arrays returned by explicit sort or the
+    LCS algorithm — no Map/Set iteration in a way that could vary.
+  - All thresholds are constants in `shared/constants.ts` and `DIFF_THRESHOLDS`.
+
+**Phase 3 converged after 1 round of fixes. The moat holds.**
