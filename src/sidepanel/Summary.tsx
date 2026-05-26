@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { DiffResult } from "../core/diff/types.js";
 import { exportPdfReport, copySummaryToClipboard, copyMarkdownToClipboard } from "../core/export/index.js";
+import { CATEGORY_LABELS } from "../shared/constants.js";
 
 interface Props {
   result: DiffResult;
@@ -20,17 +21,6 @@ function safeFilename(s: string): string {
     .slice(0, 80);
   return cleaned || "biddiff-report";
 }
-
-const CATEGORY_LABELS: Record<string, string> = {
-  SCOPE_SOW: "Scope (SOW)",
-  EVALUATION_CRITERIA: "Evaluation",
-  DATES_DEADLINES: "Dates & deadlines",
-  CLAUSES: "Clauses",
-  SUBMISSION_INSTRUCTIONS: "Submission instructions",
-  PRICING_CLINS: "Pricing / CLINs",
-  ATTACHMENTS: "Attachments",
-  OTHER: "Other",
-};
 
 export function Summary({ result }: Props): React.ReactElement {
   const totalChanges = result.changes.length;

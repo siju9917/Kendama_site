@@ -25,3 +25,20 @@ export const EXTRACTION_LOW_CONFIDENCE_THRESHOLD = 0.7;
 
 /** Storage cap (bytes) before LRU pruning kicks in. */
 export const STORAGE_HARD_CAP_BYTES = 50 * 1024 * 1024;
+
+/**
+ * Display labels for ChangeCategory. Single source of truth — the
+ * in-app summary chips and the exported PDF/Markdown/text reports all
+ * read from here so a user can't see "Evaluation" in the panel and
+ * "Evaluation Criteria" in the exported PDF for the same change.
+ */
+export const CATEGORY_LABELS: Record<string, string> = {
+  SCOPE_SOW: "Scope (SOW)",
+  EVALUATION_CRITERIA: "Evaluation Criteria",
+  DATES_DEADLINES: "Dates & Deadlines",
+  CLAUSES: "Clauses",
+  SUBMISSION_INSTRUCTIONS: "Submission Instructions",
+  PRICING_CLINS: "Pricing / CLINs",
+  ATTACHMENTS: "Attachments",
+  OTHER: "Other",
+};

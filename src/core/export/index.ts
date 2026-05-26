@@ -5,17 +5,7 @@
  */
 import type { Change, DiffResult } from "../diff/types.js";
 import { DISCLAIMER_TEXT } from "../../shared/disclaimer.js";
-
-const CATEGORY_LABELS: Record<string, string> = {
-  SCOPE_SOW: "Scope (SOW)",
-  EVALUATION_CRITERIA: "Evaluation Criteria",
-  DATES_DEADLINES: "Dates & Deadlines",
-  CLAUSES: "Clauses",
-  SUBMISSION_INSTRUCTIONS: "Submission Instructions",
-  PRICING_CLINS: "Pricing / CLINs",
-  ATTACHMENTS: "Attachments",
-  OTHER: "Other",
-};
+import { CATEGORY_LABELS } from "../../shared/constants.js";
 
 function prettyGeneratedAt(iso: string): string {
   const d = new Date(iso);
