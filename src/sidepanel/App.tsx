@@ -82,7 +82,12 @@ export function App(): React.ReactElement {
           </div>
         )}
 
-        {state.phase === "DONE" && state.result && <DiffView result={state.result} />}
+        {state.phase === "DONE" && state.result && (
+          // Key on the diff ID so per-diff view state (reviewed,
+          // filters, focused index, dismissed tip) resets when a
+          // different diff is loaded.
+          <DiffView key={state.result.id} result={state.result} />
+        )}
       </main>
 
       <footer className="footer">

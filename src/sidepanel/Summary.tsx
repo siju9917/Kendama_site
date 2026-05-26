@@ -99,26 +99,8 @@ export function Summary({ result }: Props): React.ReactElement {
           title="Confidence the underlying extraction was clean. Lower values mean the source PDFs were complex (scanned, two-column, etc.) — review the diff more carefully."
         >
           <span className="summary__stat-label">
-            Confidence{" "}
-            <span
-              aria-hidden="true"
-              style={{
-                display: "inline-block",
-                width: 12,
-                height: 12,
-                borderRadius: "50%",
-                background: "var(--bg-overlay)",
-                color: "var(--fg-muted)",
-                fontSize: 9,
-                fontWeight: 700,
-                textAlign: "center",
-                lineHeight: "12px",
-                verticalAlign: "middle",
-                marginLeft: 2,
-              }}
-            >
-              i
-            </span>
+            Confidence
+            <span className="info-pill" aria-hidden="true">i</span>
           </span>
           <span className="summary__stat-value">{(result.diffConfidence * 100).toFixed(0)}%</span>
         </div>
@@ -159,10 +141,7 @@ export function Summary({ result }: Props): React.ReactElement {
       )}
 
       {feedback && (
-        <div
-          aria-live="polite"
-          style={{ marginTop: 8, fontSize: 12, color: "var(--accent)" }}
-        >
+        <div className="feedback-line" aria-live="polite">
           {feedback}
         </div>
       )}

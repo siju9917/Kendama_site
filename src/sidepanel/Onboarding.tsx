@@ -26,8 +26,9 @@ export function Onboarding(): React.ReactElement | null {
       <div className="onboarding__head">
         <h2>Welcome to BidDiff</h2>
         <button
-          onClick={dismiss}
-          style={{ fontSize: 11, padding: "2px 8px" }}
+          className="ghost"
+          onClick={() => void dismiss()}
+          style={{ fontSize: 11 }}
           aria-label="Dismiss the getting-started card"
         >
           Dismiss

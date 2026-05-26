@@ -123,10 +123,7 @@ export function DiffView({ result }: Props): React.ReactElement {
           Critical ({result.criticalCount})
         </button>
         {reviewedCount > 0 && (
-          <span
-            style={{ fontSize: 12, color: "var(--fg-muted)", alignSelf: "center" }}
-            aria-live="polite"
-          >
+          <span className="section-chip-counts" aria-live="polite">
             {reviewedCount}/{filtered.length} reviewed
           </span>
         )}
@@ -187,22 +184,11 @@ export function DiffView({ result }: Props): React.ReactElement {
         ))
       )}
       {tipSeen === false && (
-        <div
-          style={{
-            color: "var(--fg-faint)",
-            fontSize: 11,
-            marginTop: 16,
-            textAlign: "center",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-          }}
-        >
+        <div className="tip">
           <span>Tip: J/K to move · R to mark reviewed · / to focus filter</span>
           <button
             className="ghost"
-            style={{ fontSize: 11, padding: "2px 6px" }}
+            style={{ fontSize: 11 }}
             onClick={dismissTip}
             aria-label="Dismiss keyboard shortcut tip"
           >
