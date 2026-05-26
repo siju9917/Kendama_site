@@ -19,11 +19,14 @@ export function FilePickerWithSam({
 }): React.ReactElement {
   const [, setPending] = useState<{ current?: File; prior?: File }>({});
   const [error, setError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState<Set<string>>(new Set());
   const onChoose = async (
     slot: "current" | "prior",
     a: OpportunityAttachment,
   ): Promise<void> => {
     setError(null);
+    const dlKey = `${slot}:${a.id}`;
+    setDownloading((s) => new Set(s).add(dlKey));
     try {
       const file = await downloadAttachmentAsFile(a);
       // Functional setState so two concurrent downloads merging in
@@ -42,6 +45,12 @@ export function FilePickerWithSam({
       if (curRef && priRef) onRun(curRef, priRef);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDownloading((s) => {
+        const next = new Set(s);
+        next.delete(dlKey);
+        return next;
+      });
     }
   };
   return (
@@ -55,6 +64,7 @@ export function FilePickerWithSam({
       <SamAttachments
         onChooseCurrent={(a) => onChoose("current", a)}
         onChoosePrior={(a) => onChoose("prior", a)}
+        downloading={downloading}
       />
     </>
   );

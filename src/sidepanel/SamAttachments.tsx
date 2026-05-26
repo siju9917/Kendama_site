@@ -10,6 +10,8 @@ import type { LastAttachmentsResponse } from "../shared/messages.js";
 interface Props {
   onChooseCurrent: (attachment: OpportunityAttachment) => void;
   onChoosePrior: (attachment: OpportunityAttachment) => void;
+  /** Set of "slot:attachmentId" keys currently downloading. */
+  downloading?: ReadonlySet<string>;
 }
 
 async function fetchLastAttachments(): Promise<OpportunityAttachment[]> {
@@ -23,6 +25,7 @@ async function fetchLastAttachments(): Promise<OpportunityAttachment[]> {
 export function SamAttachments({
   onChooseCurrent,
   onChoosePrior,
+  downloading,
 }: Props): React.ReactElement | null {
   const [items, setItems] = useState<OpportunityAttachment[] | null>(null);
 
@@ -53,15 +56,17 @@ export function SamAttachments({
               onClick={() => onChooseCurrent(a)}
               title="Use as new (amendment) version"
               className="sam-attachments__btn"
+              disabled={downloading?.has(`current:${a.id}`) ?? false}
             >
-              As new
+              {downloading?.has(`current:${a.id}`) ? "Loading…" : "As new"}
             </button>
             <button
               onClick={() => onChoosePrior(a)}
               title="Use as prior version"
               className="sam-attachments__btn"
+              disabled={downloading?.has(`prior:${a.id}`) ?? false}
             >
-              As prior
+              {downloading?.has(`prior:${a.id}`) ? "Loading…" : "As prior"}
             </button>
           </li>
         ))}
