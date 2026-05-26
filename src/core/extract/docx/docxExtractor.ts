@@ -146,15 +146,20 @@ function extractRunText(body: string): string {
   return parts.join("").trim();
 }
 
+function safeCodePoint(n: number): string {
+  if (!Number.isFinite(n) || n < 0 || n > 0x10ffff) return " ";
+  return String.fromCodePoint(n);
+}
+
 function decodeXmlEntities(s: string): string {
   return s
     // Numeric entities — produced by some non-Word DOCX writers
     // (Pandoc, etc.). Decode before the named-entity pass so a
-    // payload like "&amp;#39;" doesn't double-decode.
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
-      String.fromCodePoint(parseInt(hex, 16) || 0x20),
-    )
-    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10) || 0x20))
+    // payload like "&amp;#39;" doesn't double-decode. Clamp to the
+    // Unicode max so a malformed entity like &#x110000 (above the
+    // valid range) doesn't make String.fromCodePoint throw.
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => safeCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => safeCodePoint(parseInt(dec, 10)))
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
