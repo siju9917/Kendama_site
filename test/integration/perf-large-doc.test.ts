@@ -69,7 +69,9 @@ let pdfjs: PdfJsLike;
 
 beforeAll(async () => {
 
-  const mod: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const mod = (await import("pdfjs-dist/legacy/build/pdf.mjs")) as unknown as {
+    GlobalWorkerOptions: { workerSrc: string };
+  } & PdfJsLike;
   const path = await import("node:path");
   const { createRequire } = await import("node:module");
   const req = createRequire(import.meta.url);
@@ -82,7 +84,7 @@ beforeAll(async () => {
   } catch {
     /* ignore */
   }
-  pdfjs = mod as PdfJsLike;
+  pdfjs = mod;
 });
 
 describe("Performance on a large document (Phase 6.7)", () => {

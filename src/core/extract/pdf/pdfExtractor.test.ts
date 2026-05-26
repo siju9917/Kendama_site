@@ -30,7 +30,12 @@ async function renderSimplePdf(lines: ReadonlyArray<string>): Promise<ArrayBuffe
 
 let pdfjs: PdfJsLike;
 beforeAll(async () => {
-  const mod: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  // PDF.js's published types don't expose GlobalWorkerOptions on the
+  // module namespace, so narrow to the subset we use. The cast is local
+  // to test setup, not production code.
+  const mod = (await import("pdfjs-dist/legacy/build/pdf.mjs")) as unknown as {
+    GlobalWorkerOptions: { workerSrc: string };
+  } & PdfJsLike;
   // PDF.js requires GlobalWorkerOptions.workerSrc even when running the fake
   // worker. Resolve the worker file's path inside node_modules and feed it
   // to PDF.js as a file:// URL.
@@ -46,7 +51,7 @@ beforeAll(async () => {
   } catch {
     /* ignore */
   }
-  pdfjs = mod as PdfJsLike;
+  pdfjs = mod;
 });
 
 describe("PdfExtractor", () => {

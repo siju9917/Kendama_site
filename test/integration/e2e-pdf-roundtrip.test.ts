@@ -75,7 +75,11 @@ let pdfjs: PdfJsLike;
 
 beforeAll(async () => {
 
-  const mod: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  // Narrow to the subset of pdfjs-dist's exports we actually use; the
+  // published types don't expose GlobalWorkerOptions on the namespace.
+  const mod = (await import("pdfjs-dist/legacy/build/pdf.mjs")) as unknown as {
+    GlobalWorkerOptions: { workerSrc: string };
+  } & PdfJsLike;
   const path = await import("node:path");
   const { createRequire } = await import("node:module");
   const req = createRequire(import.meta.url);
@@ -88,7 +92,7 @@ beforeAll(async () => {
   } catch {
     /* ignore */
   }
-  pdfjs = mod as PdfJsLike;
+  pdfjs = mod;
 });
 
 describe("End-to-end PDF round-trip", () => {
