@@ -385,7 +385,8 @@ export async function exportPdfReport(result: DiffResult, fileName?: string): Pr
     space(2);
     const groups = new Map<string, number>();
     for (const c of result.changes) {
-      const k = `Section ${c.ucfLetter ?? "?"} — ${CATEGORY_LABELS[c.category] ?? c.category}`;
+      const sec = c.ucfLetter ? `Section ${c.ucfLetter}` : "Other";
+      const k = `${sec} — ${CATEGORY_LABELS[c.category] ?? c.category}`;
       groups.set(k, (groups.get(k) ?? 0) + 1);
     }
     for (const [k, n] of groups) {
@@ -410,7 +411,7 @@ export async function exportPdfReport(result: DiffResult, fileName?: string): Pr
       // doesn't appear on the wrong page.
       const startPage = page;
       const startY = y;
-      drawWrapped(`[Section ${c.ucfLetter ?? "?"}] ${CATEGORY_LABELS[c.category] ?? c.category} — ${c.changeType}`, {
+      drawWrapped(`${c.ucfLetter ? `[Section ${c.ucfLetter}] ` : ""}${CATEGORY_LABELS[c.category] ?? c.category} — ${c.changeType}`, {
         bold: true,
         size: 12,
       });
@@ -452,7 +453,7 @@ export async function exportPdfReport(result: DiffResult, fileName?: string): Pr
     });
     space(8);
     for (const c of other) {
-      drawWrapped(`[Section ${c.ucfLetter ?? "?"}] ${CATEGORY_LABELS[c.category] ?? c.category} — ${c.changeType}`, {
+      drawWrapped(`${c.ucfLetter ? `[Section ${c.ucfLetter}] ` : ""}${CATEGORY_LABELS[c.category] ?? c.category} — ${c.changeType}`, {
         bold: true,
         size: 12,
       });
