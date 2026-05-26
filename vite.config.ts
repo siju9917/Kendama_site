@@ -22,7 +22,18 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["test/**/*.test.ts", "src/**/*.test.ts", "server/**/*.test.ts"],
+    environmentMatchGlobs: [
+      ["src/**/*.tsx.test.ts", "jsdom"],
+      ["src/sidepanel/**/*.test.tsx", "jsdom"],
+      ["src/popup/**/*.test.tsx", "jsdom"],
+      ["src/options/**/*.test.tsx", "jsdom"],
+    ],
+    include: [
+      "test/**/*.test.ts",
+      "src/**/*.test.ts",
+      "src/**/*.test.tsx",
+      "server/**/*.test.ts",
+    ],
     coverage: {
       reporter: ["text", "html"],
       include: ["src/core/**/*.ts"],

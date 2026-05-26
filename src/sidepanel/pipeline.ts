@@ -13,6 +13,7 @@
  * result is dropped on return).
  */
 import type { DiffResult } from "../core/diff/types.js";
+import { isBidDiffMessage, type DiffJobMsg } from "../shared/messages.js";
 
 export type ProgressCb = (note: string, percent?: number) => void;
 
@@ -61,25 +62,15 @@ async function runViaOffscreen(
       if (signal) signal.removeEventListener("abort", abortHandler);
       fn();
     };
-    interface AnyOffscreenMsg {
-      jobId?: string;
-      kind?: string;
-      note?: string;
-      percent?: number;
-      result?: DiffResult;
-      code?: string;
-      message?: string;
-    }
     const handler = (m: unknown): void => {
-      const msg = (m ?? {}) as AnyOffscreenMsg;
-      if (msg.jobId !== jobId) return;
-      if (msg.kind === "biddiff/progress") {
-        onProgress(msg.note ?? "Working…", msg.percent);
-      } else if (msg.kind === "biddiff/result" && msg.result) {
-        const r = msg.result;
-        settle(() => resolve(r));
-      } else if (msg.kind === "biddiff/error") {
-        settle(() => reject(new OffscreenJobError(msg.code ?? "UNKNOWN", msg.message ?? "Failed")));
+      if (!isBidDiffMessage(m)) return;
+      if (!("jobId" in m) || m.jobId !== jobId) return;
+      if (m.kind === "biddiff/progress") {
+        onProgress(m.note, m.percent);
+      } else if (m.kind === "biddiff/result") {
+        settle(() => resolve(m.result));
+      } else if (m.kind === "biddiff/error") {
+        settle(() => reject(new OffscreenJobError(m.code, m.message)));
       }
     };
     const abortHandler = (): void => settle(() => reject(new DOMException("Aborted", "AbortError")));
@@ -88,14 +79,15 @@ async function runViaOffscreen(
       signal.addEventListener("abort", abortHandler);
     }
     chrome.runtime.onMessage.addListener(handler);
-    chrome.runtime.sendMessage({
+    const job: DiffJobMsg = {
       kind: "biddiff/diff",
       jobId,
       currentBytes,
       currentName: current.name,
       priorBytes,
       priorName: prior.name,
-    });
+    };
+    chrome.runtime.sendMessage(job);
   });
 }
 

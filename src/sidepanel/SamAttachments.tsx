@@ -5,6 +5,10 @@
  */
 import React, { useEffect, useState } from "react";
 import type { OpportunityAttachment } from "../core/interfaces.js";
+import type {
+  GetLastAttachmentsMsg,
+  LastAttachmentsResponse,
+} from "../shared/messages.js";
 
 interface Props {
   onChooseCurrent: (attachment: OpportunityAttachment) => void;
@@ -20,7 +24,8 @@ async function fetchLastAttachments(): Promise<OpportunityAttachment[]> {
       return;
     }
     try {
-      api.runtime.sendMessage({ type: "GET_LAST_ATTACHMENTS" }, (resp: { attachments?: OpportunityAttachment[] } | undefined) => {
+      const msg: GetLastAttachmentsMsg = { kind: "biddiff/get-last-attachments" };
+      api.runtime.sendMessage(msg, (resp: LastAttachmentsResponse | undefined) => {
         resolve(resp?.attachments ?? []);
       });
     } catch {

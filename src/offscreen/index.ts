@@ -1,22 +1,21 @@
 /**
  * Offscreen document — heavy CPU host.
  *
- * The side panel sends a JOB message; the offscreen document runs the
- * extract→diff pipeline and posts incremental progress + the final result
- * back. The offscreen document has full DOM APIs, so PDF.js (worker URL,
- * canvas-style ops) and Tesseract.js (when wired) live here.
- *
- * Message protocol on chrome.runtime:
- *   request:  { kind: "biddiff/diff", jobId, currentBytes, currentName, priorBytes, priorName }
- *   progress: { kind: "biddiff/progress", jobId, note, percent }
- *   result:   { kind: "biddiff/result", jobId, result }     // DiffResult
- *   error:    { kind: "biddiff/error",  jobId, code, message }
+ * The side panel sends a DiffJobMsg; this document runs the extract→diff
+ * pipeline and posts progress + the final result back via the typed
+ * BidDiffMessage protocol in src/shared/messages.ts.
  */
 import { DiffEngine } from "../core/diff/engine.js";
 import { LocalClauseClient } from "../core/clauses/client.js";
 import { validateInput } from "../core/extract/validate.js";
 import type { PdfJsLike } from "../core/extract/pdf/extract.js";
 import type { IExtractor } from "../core/interfaces.js";
+import {
+  isBidDiffMessage,
+  type DiffErrorMsg,
+  type DiffProgressMsg,
+  type DiffResultMsg,
+} from "../shared/messages.js";
 
 let pdfjsCache: PdfJsLike | null = null;
 async function loadPdfJs(): Promise<PdfJsLike> {
@@ -44,30 +43,13 @@ async function makeExtractor(bytes: ArrayBuffer, fileName: string): Promise<IExt
   return new DocxExtractor();
 }
 
-interface DiffJobMessage {
-  kind: "biddiff/diff";
-  jobId: string;
-  currentBytes: ArrayBuffer;
-  currentName: string;
-  priorBytes: ArrayBuffer;
-  priorName: string;
-}
-
-function isDiffJob(m: unknown): m is DiffJobMessage {
-  return (
-    !!m &&
-    typeof m === "object" &&
-    (m as { kind?: unknown }).kind === "biddiff/diff" &&
-    typeof (m as { jobId?: unknown }).jobId === "string"
-  );
-}
-
 function progress(jobId: string, note: string, percent: number): void {
-  chrome.runtime.sendMessage({ kind: "biddiff/progress", jobId, note, percent });
+  const m: DiffProgressMsg = { kind: "biddiff/progress", jobId, note, percent };
+  chrome.runtime.sendMessage(m);
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (!isDiffJob(msg)) return false;
+  if (!isBidDiffMessage(msg) || msg.kind !== "biddiff/diff") return false;
   const job = msg;
   void (async () => {
     try {
@@ -82,11 +64,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       const result = engine.diff(currentDoc, priorDoc);
       result.generatedAt = new Date().toISOString();
       progress(job.jobId, "Done", 100);
-      chrome.runtime.sendMessage({ kind: "biddiff/result", jobId: job.jobId, result });
+      const done: DiffResultMsg = { kind: "biddiff/result", jobId: job.jobId, result };
+      chrome.runtime.sendMessage(done);
     } catch (e) {
       const code = (e as { code?: string })?.code ?? "UNKNOWN";
-      const message = (e as { userMessage?: string })?.userMessage ?? (e instanceof Error ? e.message : String(e));
-      chrome.runtime.sendMessage({ kind: "biddiff/error", jobId: job.jobId, code, message });
+      const message =
+        (e as { userMessage?: string })?.userMessage ??
+        (e instanceof Error ? e.message : String(e));
+      const err: DiffErrorMsg = { kind: "biddiff/error", jobId: job.jobId, code, message };
+      chrome.runtime.sendMessage(err);
     }
   })();
   sendResponse({ accepted: true });
