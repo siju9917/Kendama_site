@@ -113,6 +113,8 @@ function LicenseChip({ license }: { license: LicenseState | null }): React.React
 export function App(): React.ReactElement {
   const [state, setState] = useState<UiState>(INITIAL_STATE);
   const [filter, setFilter] = useState<"ALL" | "CRITICAL">("ALL");
+  const [sectionFilter, setSectionFilter] = useState<string | "ALL">("ALL");
+  const [textFilter, setTextFilter] = useState<string>("");
   const [license, setLicense] = useState<LicenseState | null>(null);
   const storage = useMemo(() => new DiffStorage(), []);
 
@@ -170,11 +172,38 @@ export function App(): React.ReactElement {
     setFilter("ALL");
   }, []);
 
+  const availableSections = useMemo(() => {
+    if (!state.result) return [] as string[];
+    const set = new Set<string>();
+    for (const c of state.result.changes) {
+      set.add(c.ucfLetter ?? "?");
+    }
+    return [...set].sort();
+  }, [state.result]);
+
   const filteredChanges = useMemo(() => {
     if (!state.result) return [];
-    if (filter === "ALL") return state.result.changes;
-    return state.result.changes.filter((c) => c.severity === "CRITICAL");
-  }, [state.result, filter]);
+    let out = state.result.changes;
+    if (filter === "CRITICAL") out = out.filter((c) => c.severity === "CRITICAL");
+    if (sectionFilter !== "ALL") {
+      out = out.filter((c) => (c.ucfLetter ?? "?") === sectionFilter);
+    }
+    const needle = textFilter.trim().toLowerCase();
+    if (needle.length > 0) {
+      out = out.filter((c) => {
+        const hay = [
+          c.sectionHeading,
+          c.beforeText ?? "",
+          c.afterText ?? "",
+          c.criticalReasons.join(" "),
+        ]
+          .join(" ")
+          .toLowerCase();
+        return hay.includes(needle);
+      });
+    }
+    return out;
+  }, [state.result, filter, sectionFilter, textFilter]);
 
   return (
     <div className="app">
@@ -230,6 +259,41 @@ export function App(): React.ReactElement {
               >
                 Critical ({state.result.criticalCount})
               </button>
+            </div>
+            {availableSections.length > 1 && (
+              <div className="filters" role="group" aria-label="Section filter">
+                <button
+                  className={`filter-chip ${sectionFilter === "ALL" ? "filter-chip--active" : ""}`}
+                  onClick={() => setSectionFilter("ALL")}
+                >
+                  All sections
+                </button>
+                {availableSections.map((s) => (
+                  <button
+                    key={s}
+                    className={`filter-chip ${sectionFilter === s ? "filter-chip--active" : ""}`}
+                    onClick={() => setSectionFilter(s)}
+                  >
+                    Section {s}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div style={{ marginBottom: 12 }}>
+              <input
+                type="search"
+                placeholder="Filter by text…"
+                aria-label="Filter changes by text"
+                value={textFilter}
+                onChange={(e) => setTextFilter(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  borderRadius: 6,
+                  border: "1px solid var(--border-strong)",
+                  fontSize: 13,
+                }}
+              />
             </div>
             {filteredChanges.length === 0 && (
               <div className="empty">No changes match the current filter.</div>
