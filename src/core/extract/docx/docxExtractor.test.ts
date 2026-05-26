@@ -59,6 +59,30 @@ describe("parseDocumentXml", () => {
     expect(paras[2].text).toContain("30 pages");
   });
 
+  it("emits table rows with cells pipe-joined (real solicitations use tables for CLINs)", () => {
+    const tableXml = `<?xml version="1.0"?>
+<w:document xmlns:w="x"><w:body>
+  <w:p><w:r><w:t>CLIN Schedule</w:t></w:r></w:p>
+  <w:tbl>
+    <w:tr><w:tc><w:p><w:r><w:t>CLIN 0001</w:t></w:r></w:p></w:tc>
+           <w:tc><w:p><w:r><w:t>Help Desk Services</w:t></w:r></w:p></w:tc>
+           <w:tc><w:p><w:r><w:t>12 Months</w:t></w:r></w:p></w:tc></w:tr>
+    <w:tr><w:tc><w:p><w:r><w:t>CLIN 0002</w:t></w:r></w:p></w:tc>
+           <w:tc><w:p><w:r><w:t>Optional Tier 3 Support</w:t></w:r></w:p></w:tc>
+           <w:tc><w:p><w:r><w:t>12 Months</w:t></w:r></w:p></w:tc></w:tr>
+  </w:tbl>
+</w:body></w:document>`;
+    const paras = parseDocumentXml(tableXml);
+    const texts = paras.map((p) => p.text);
+    // One header paragraph + two table rows.
+    expect(texts).toContain("CLIN Schedule");
+    expect(texts).toContain("CLIN 0001 | Help Desk Services | 12 Months");
+    expect(texts).toContain("CLIN 0002 | Optional Tier 3 Support | 12 Months");
+    // Table rows should be tagged.
+    const tableRows = paras.filter((p) => p.styleName === "TableRow");
+    expect(tableRows.length).toBe(2);
+  });
+
   it("decodes XML entities", () => {
     const xml =
       "<w:document xmlns:w=\"x\"><w:body><w:p><w:r><w:t>at &amp; sign &lt;here&gt;</w:t></w:r></w:p></w:body></w:document>";
