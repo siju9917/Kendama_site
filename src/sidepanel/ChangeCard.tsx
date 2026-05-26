@@ -56,7 +56,6 @@ export function ChangeCard({
         (change.severity === "CRITICAL" ? " change--critical" : "") +
         (reviewed ? " change--reviewed" : "")
       }
-      tabIndex={0}
       aria-expanded={expanded}
     >
       <header className="change__header">

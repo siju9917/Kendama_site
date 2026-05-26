@@ -30,7 +30,16 @@ function Options(): React.ReactElement {
   };
 
   const clearHistory = async (): Promise<void> => {
-    // Best-effort: remove the index; the next save rebuilds it.
+    // Walk every index entry and delete its payload (chrome.storage OR
+    // IndexedDB) before nuking the index. Avoids orphan payloads that
+    // would otherwise live forever and count against storage quota.
+    const { DiffStorage } = await import("../core/storage/index.js");
+    const s = new DiffStorage();
+    const list = await s.listDiffs();
+    for (const e of list) {
+      await s.deleteDiff(e.id);
+    }
+    // Belt-and-suspenders: drop the index key too.
     await kv.remove("biddiff.diffs.index");
     setStatus("History cleared.");
     setTimeout(() => setStatus(""), 1500);
