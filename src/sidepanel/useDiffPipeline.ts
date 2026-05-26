@@ -6,8 +6,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DiffResult } from "../core/diff/types.js";
 import { prewarmPipeline, runDiffPipeline } from "./pipeline.js";
-import { DiffStorage } from "../core/storage/index.js";
+import { DiffStorage, makeKv } from "../core/storage/index.js";
 import { noteDiffSucceeded } from "./ReviewPrompt.js";
+
+function markOnboardingSeen(): void {
+  // Fire-and-forget; key matches Onboarding's SEEN_KEY.
+  makeKv()
+    .set("biddiff.onboarding.seen", true)
+    .catch(() => {});
+}
 
 export type Phase = "EMPTY" | "RUNNING" | "DONE" | "ERROR";
 
@@ -90,6 +97,10 @@ export function useDiffPipeline(): {
         // .catch swallows so a transient storage error in the review
         // counter doesn't surface as an unhandled rejection.
         noteDiffSucceeded().catch(() => {});
+        // After the first successful diff, treat onboarding as seen —
+        // otherwise the user re-sees the "Welcome to BidDiff" card on
+        // every Start over until they explicitly dismiss it.
+        markOnboardingSeen();
         setState({
           phase: "DONE",
           result,
