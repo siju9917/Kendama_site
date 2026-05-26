@@ -11,6 +11,7 @@ import { DISCLAIMER_TEXT } from "../shared/disclaimer.js";
 import { LocalLicenseClient } from "../core/licensing/client.js";
 import type { LicenseState } from "../core/interfaces.js";
 import { makeKv } from "../core/storage/index.js";
+import { openOptionsPage } from "../shared/chrome-rt.js";
 import { DiffView } from "./DiffView.js";
 import { FilePickerWithSam } from "./FilePickerWithSam.js";
 import { History } from "./History.js";
@@ -97,7 +98,11 @@ export function App(): React.ReactElement {
           // Key on the diff ID so per-diff view state (reviewed,
           // filters, focused index, dismissed tip) resets when a
           // different diff is loaded.
-          <DiffView key={state.result.id} result={state.result} />
+          <DiffView
+            key={state.result.id}
+            result={state.result}
+            sessionNotices={state.sessionNotices}
+          />
         )}
       </main>
 
@@ -105,9 +110,7 @@ export function App(): React.ReactElement {
         <span>Processed on your device. BidDiff assists — it does not advise.</span>
         <button
           className="footer__link"
-          onClick={() => {
-            if (typeof chrome !== "undefined") chrome.runtime?.openOptionsPage?.();
-          }}
+          onClick={openOptionsPage}
           title="Open BidDiff settings (license, telemetry, clear history)"
         >
           Settings

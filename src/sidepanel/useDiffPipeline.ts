@@ -16,6 +16,10 @@ function markOnboardingSeen(): void {
     .catch(() => {});
 }
 
+/** The popup writes this key when the user clicks a recent-diffs item.
+ *  We read + clear it on side panel mount and auto-open the diff. */
+const PENDING_OPEN_DIFF_ID_KEY = "biddiff.pendingOpenDiffId";
+
 export type Phase = "EMPTY" | "RUNNING" | "DONE" | "ERROR";
 
 export interface UiState {
@@ -24,6 +28,14 @@ export interface UiState {
   error: string | null;
   loadingNote: string;
   loadingPercent: number;
+  /**
+   * Session-only notices about the diff itself — not part of the
+   * engine's result.warnings (those describe extraction issues and
+   * are included in exports). saveFailed lives here so we can warn
+   * the user that this diff isn't in History, without that note
+   * bleeding into the exported PDF / Markdown / clipboard summary.
+   */
+  sessionNotices: string[];
 }
 
 const INITIAL_STATE: UiState = {
@@ -32,6 +44,7 @@ const INITIAL_STATE: UiState = {
   error: null,
   loadingNote: "",
   loadingPercent: 0,
+  sessionNotices: [],
 };
 
 export function useDiffPipeline(): {
@@ -56,6 +69,43 @@ export function useDiffPipeline(): {
     };
   }, []);
 
+  // openSaved is defined below; capture via ref so the mount-time and
+  // storage-onChanged effects can call it without taking it as a dep.
+  const openSavedRef = useRef<((id: string) => Promise<void>) | null>(null);
+
+  useEffect(() => {
+    // Trigger paths for the popup → side panel "open this diff" flow:
+    //
+    //   1. Panel was CLOSED when the popup clicked: panel mounts fresh,
+    //      reads PENDING_OPEN_DIFF_ID_KEY here, opens the diff.
+    //   2. Panel was already OPEN: chrome.storage.onChanged fires when
+    //      the popup writes the key — the listener picks it up.
+    //
+    // Either way, clear the key after reading so a stale value can't
+    // fire on subsequent mounts.
+    const kv = makeKv();
+    const consume = (id: unknown): void => {
+      if (typeof id !== "string" || id.length === 0) return;
+      kv.remove(PENDING_OPEN_DIFF_ID_KEY).catch(() => {});
+      void openSavedRef.current?.(id);
+    };
+    kv.get<string>(PENDING_OPEN_DIFF_ID_KEY).then(consume).catch(() => {});
+
+    if (typeof chrome === "undefined" || !chrome.storage?.onChanged?.addListener) {
+      return;
+    }
+    const listener = (
+      changes: { [key: string]: { newValue?: unknown } },
+      area: string,
+    ): void => {
+      if (area !== "local") return;
+      const c = changes[PENDING_OPEN_DIFF_ID_KEY];
+      if (c) consume(c.newValue);
+    };
+    chrome.storage.onChanged.addListener(listener);
+    return () => chrome.storage.onChanged.removeListener(listener);
+  }, []);
+
   const run = useCallback(
     async (currentFile: File, priorFile: File): Promise<void> => {
       abortRef.current?.abort();
@@ -67,6 +117,7 @@ export function useDiffPipeline(): {
         error: null,
         loadingNote: "Reading documents…",
         loadingPercent: 5,
+        sessionNotices: [],
       });
       try {
         const result = await runDiffPipeline(
@@ -82,17 +133,17 @@ export function useDiffPipeline(): {
           ctrl.signal,
         );
         if (ctrl.signal.aborted) return;
+        const sessionNotices: string[] = [];
         try {
           await storage.saveDiff(result);
         } catch (e) {
           console.warn("save failed:", e);
-          // Surface to the user so they know this diff won't appear
-          // in History. The result is still shown; only persistence
-          // failed (typically a chrome.storage quota error).
-          result.warnings = [
-            ...result.warnings,
+          // Session notice (not result.warnings) so this stays out of
+          // the exported PDF / Markdown — the export audience doesn't
+          // care that local persistence failed for this viewer.
+          sessionNotices.push(
             "Couldn't save this diff to history (local storage may be full).",
-          ];
+          );
         }
         // .catch swallows so a transient storage error in the review
         // counter doesn't surface as an unhandled rejection.
@@ -107,6 +158,7 @@ export function useDiffPipeline(): {
           error: null,
           loadingNote: "",
           loadingPercent: 100,
+          sessionNotices,
         });
       } catch (e) {
         if (ctrl.signal.aborted) return;
@@ -118,6 +170,7 @@ export function useDiffPipeline(): {
           error: userMessage,
           loadingNote: "",
           loadingPercent: 0,
+          sessionNotices: [],
         });
       }
     },
@@ -136,6 +189,7 @@ export function useDiffPipeline(): {
             error: null,
             loadingNote: "",
             loadingPercent: 100,
+            sessionNotices: [],
           });
         } else {
           // Entry was in the index but the payload is gone — either
@@ -148,6 +202,7 @@ export function useDiffPipeline(): {
             error: "That saved diff is no longer available. Try removing it from history.",
             loadingNote: "",
             loadingPercent: 0,
+            sessionNotices: [],
           });
         }
       } catch (e) {
@@ -161,11 +216,14 @@ export function useDiffPipeline(): {
           error: `Couldn't open that saved diff (${msg}). Try deleting it from history.`,
           loadingNote: "",
           loadingPercent: 0,
+          sessionNotices: [],
         });
       }
     },
     [storage],
   );
+  // Keep the ref in sync so the mount-time effect above can call it.
+  openSavedRef.current = openSaved;
 
   const reset = useCallback((): void => {
     abortRef.current?.abort();

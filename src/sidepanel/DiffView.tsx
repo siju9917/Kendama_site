@@ -25,9 +25,13 @@ function firstVisibleChangeIndex(list: ReadonlyArray<Change>): number {
 
 interface Props {
   result: DiffResult;
+  /** Notices about this viewing session (e.g. save failed). Distinct
+   *  from result.warnings, which describe extraction issues and are
+   *  included in exports. */
+  sessionNotices?: ReadonlyArray<string>;
 }
 
-export function DiffView({ result }: Props): React.ReactElement {
+export function DiffView({ result, sessionNotices }: Props): React.ReactElement {
   const [filter, setFilter] = useState<"ALL" | "CRITICAL">("ALL");
   const [sectionFilter, setSectionFilter] = useState<string | "ALL">("ALL");
   const [textFilter, setTextFilter] = useState<string>("");
@@ -199,6 +203,16 @@ export function DiffView({ result }: Props): React.ReactElement {
           </ul>
         </div>
       )}
+      {sessionNotices && sessionNotices.length > 0 && (
+        <div className="warning-banner" role="status" aria-live="polite">
+          <div className="warning-banner__title">This session</div>
+          <ul className="reset-list" style={{ paddingLeft: 18, margin: 0 }}>
+            {sessionNotices.map((n, i) => (
+              <li key={i}>{n}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <Summary result={result} />
       <div className="filter-bar">
       <div className="filters">
@@ -272,7 +286,9 @@ export function DiffView({ result }: Props): React.ReactElement {
         <div className="empty">
           <p style={{ marginTop: 0 }}>
             {result.changes.length === 0
-              ? "No changes detected. These two versions appear to be identical."
+              ? result.warnings.length > 0
+                ? "No textual differences detected — but the warnings above mean extraction may not have read all of the content."
+                : "No changes detected. These two versions appear to be identical."
               : "No changes match the current filter."}
           </p>
           {hasActiveFilter && (

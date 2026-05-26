@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { DiffStorage } from "../core/storage/index.js";
+import { DiffStorage, makeKv } from "../core/storage/index.js";
 import type { DiffSummary } from "../core/interfaces.js";
+import { openOptionsPage } from "../shared/chrome-rt.js";
+
+/**
+ * Key the side panel reads at mount to auto-open a specific saved
+ * diff. The popup writes it before opening the panel; the panel
+ * reads + clears it on mount.
+ */
+const PENDING_OPEN_DIFF_ID_KEY = "biddiff.pendingOpenDiffId";
 
 function Popup(): React.ReactElement {
   const [recent, setRecent] = useState<DiffSummary[]>([]);
@@ -10,10 +18,20 @@ function Popup(): React.ReactElement {
     new DiffStorage().listDiffs().then(setRecent).catch(() => setRecent([]));
   }, []);
 
-  const openSidePanel = async (): Promise<void> => {
+  const openSidePanel = async (pendingDiffId?: string): Promise<void> => {
     if (typeof chrome === "undefined" || !chrome.sidePanel?.open) {
       setOpenError("Side panel API not available — update Chrome to 114+.");
       return;
+    }
+    // sidePanel.open needs a user gesture. The gesture survives short
+    // sync work but is consumed by an `await`, so fire the storage
+    // write WITHOUT awaiting it and rely on chrome.storage's internal
+    // serialization (the panel's mount-time read happens after the
+    // write completes).
+    if (pendingDiffId) {
+      makeKv()
+        .set(PENDING_OPEN_DIFF_ID_KEY, pendingDiffId)
+        .catch(() => {});
     }
     try {
       const w = await chrome.windows.getCurrent();
@@ -41,6 +59,11 @@ function Popup(): React.ReactElement {
       >
         Open side panel
       </button>
+      {/* sidePanel.open requires a USER gesture in Chrome — calling it
+         from an async chain that's already awaited a non-trivial promise
+         can throw "must be called from a user gesture". We do the
+         storage write first, then the gesture-driven open in the same
+         click handler, to keep both inside the gesture window. */}
       {openError && (
         <div className="error" role="alert" style={{ marginTop: 12 }}>
           {openError}
@@ -63,31 +86,44 @@ function Popup(): React.ReactElement {
           </h2>
           <ul style={{ listStyle: "none", padding: 0, marginTop: 8 }}>
             {recent.slice(0, 5).map((s) => (
-              <li key={s.id} style={{ padding: "4px 0", borderBottom: "1px solid var(--border)" }}>
-                <div
+              <li key={s.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                <button
+                  onClick={() => void openSidePanel(s.id)}
+                  title={`Open: ${s.solicitationId ?? s.currentFileName}`}
                   style={{
-                    fontWeight: 600,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
+                    width: "100%",
+                    textAlign: "left",
+                    background: "transparent",
+                    border: "0",
+                    padding: "8px 6px",
+                    font: "inherit",
+                    cursor: "pointer",
+                    color: "inherit",
+                    borderRadius: "var(--radius-sm)",
                   }}
-                  title={s.solicitationId ?? s.currentFileName}
                 >
-                  {s.solicitationId ?? s.currentFileName}
-                </div>
-                <div style={{ color: "var(--fg-muted)", fontSize: 11 }}>
-                  {s.totalChanges} changes
-                  {s.criticalCount > 0 ? ` · ${s.criticalCount} critical` : ""}
-                </div>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {s.solicitationId ?? s.currentFileName}
+                  </div>
+                  <div style={{ color: "var(--fg-muted)", fontSize: 11 }}>
+                    {s.totalChanges} changes
+                    {s.criticalCount > 0 ? ` · ${s.criticalCount} critical` : ""}
+                  </div>
+                </button>
               </li>
             ))}
           </ul>
         </>
       )}
       <button
-        onClick={() => {
-          if (typeof chrome !== "undefined") chrome.runtime?.openOptionsPage?.();
-        }}
+        onClick={openOptionsPage}
         style={{
           marginTop: 16,
           background: "transparent",

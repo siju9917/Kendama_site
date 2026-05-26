@@ -1,5 +1,6 @@
 import React from "react";
 import type { LicenseState } from "../core/interfaces.js";
+import { openOptionsPage } from "../shared/chrome-rt.js";
 
 export function LicenseChip({
   license,
@@ -42,11 +43,7 @@ export function LicenseChip({
       {label}
       {upgrade && (
         <button
-          onClick={() => {
-            // @types/chrome makes chrome global; guard in case the panel
-            // is run outside an extension (dev preview).
-            if (typeof chrome !== "undefined") chrome.runtime?.openOptionsPage?.();
-          }}
+          onClick={openOptionsPage}
           style={{
             marginLeft: 6,
             fontWeight: 600,

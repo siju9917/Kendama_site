@@ -41,3 +41,25 @@ export function postRuntime(msg: BidDiffMessage): void {
     /* swallow */
   }
 }
+
+/**
+ * Open the extension's options page. Idempotent. Safely no-ops outside
+ * an extension context (dev preview) and swallows the rejection that
+ * chrome.runtime.openOptionsPage can produce (no options_page set,
+ * extension context invalidated, etc.) so callers don't have to
+ * thread a try/catch around every call site.
+ */
+export function openOptionsPage(): void {
+  if (typeof chrome === "undefined") return;
+  try {
+    const r = chrome.runtime?.openOptionsPage?.();
+    // In MV3 this returns a Promise<void>. In MV2 / older Chrome it
+    // may return undefined and take a callback. Either way, we don't
+    // care about the result — just don't unhandled-reject.
+    if (r && typeof (r as { catch?: (h: () => void) => unknown }).catch === "function") {
+      (r as Promise<void>).catch(() => {});
+    }
+  } catch {
+    /* swallow */
+  }
+}
