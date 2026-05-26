@@ -1,0 +1,20 @@
+{
+  "pairId": "af-009-pop-extend",
+  "description": "AF: period of performance extended to 36 months.",
+  "currentFile": "synthetic/af-009-pop-extend/current.json",
+  "priorFile": "synthetic/af-009-pop-extend/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "DATES_DEADLINES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section F — Period of Performance",
+      "summary": "Period of performance changed to 36 months",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "36 months"
+      ]
+    }
+  ]
+}

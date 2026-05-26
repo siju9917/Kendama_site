@@ -1,0 +1,17 @@
+{
+  "pairId": "af-008-sow-phase-add",
+  "description": "AF: additional inspection paragraph inserted.",
+  "currentFile": "synthetic/af-008-sow-phase-add/current.json",
+  "priorFile": "synthetic/af-008-sow-phase-add/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "INSERT",
+      "category": "SCOPE_SOW",
+      "severity": "NORMAL",
+      "locationDescription": "Section C — new paragraph",
+      "summary": "SOW paragraph added: \"Independent third-party inspections shall be performed at completion of foundati…\"",
+      "mustDetect": true
+    }
+  ]
+}

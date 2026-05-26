@@ -1,0 +1,77 @@
+{
+  "pairId": "stress-009-all-categories",
+  "description": "Stress: at least one edit in every CRITICAL category.",
+  "currentFile": "synthetic/stress-009-all-categories/current.json",
+  "priorFile": "synthetic/stress-009-all-categories/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "DATES_DEADLINES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section L — Instructions to Offerors, proposal due date paragraph",
+      "summary": "Proposal due date changed from 2026-08-15 to 2026-09-20",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "2026-09-20"
+      ]
+    },
+    {
+      "changeType": "MODIFY",
+      "category": "SUBMISSION_INSTRUCTIONS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section L — page limit",
+      "summary": "Page limit changed from 30 to 32 pages",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "32 pages"
+      ]
+    },
+    {
+      "changeType": "INSERT",
+      "category": "CLAUSES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section I — Contract Clauses",
+      "summary": "Clause 52.204-25 added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "52.204-25"
+      ]
+    },
+    {
+      "changeType": "MODIFY",
+      "category": "EVALUATION_CRITERIA",
+      "severity": "CRITICAL",
+      "locationDescription": "Section M — Factor 1",
+      "summary": "Evaluation factor changed: was \"Factor 1: Technical Approach\", now \"Factor 1: Technical Approach with proven help-desk track record\"",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "Technical Approach with proven help-desk track record"
+      ]
+    },
+    {
+      "changeType": "INSERT",
+      "category": "PRICING_CLINS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section B — CLIN structure",
+      "summary": "CLIN 0004 added (Optional Tier 4 Escalation)",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "CLIN 0004",
+        "Optional Tier 4 Escalation"
+      ]
+    },
+    {
+      "changeType": "INSERT",
+      "category": "ATTACHMENTS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section J — List of Attachments",
+      "summary": "Attachment 4 (ITIL Compliance Statement) added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "4",
+        "ITIL Compliance Statement"
+      ]
+    }
+  ]
+}

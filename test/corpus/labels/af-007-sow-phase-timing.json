@@ -1,0 +1,17 @@
+{
+  "pairId": "af-007-sow-phase-timing",
+  "description": "AF: Phase I deliverable extended from 120 to 150 days.",
+  "currentFile": "synthetic/af-007-sow-phase-timing/current.json",
+  "priorFile": "synthetic/af-007-sow-phase-timing/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "SCOPE_SOW",
+      "severity": "NORMAL",
+      "locationDescription": "Section C — paragraph 4",
+      "summary": "SOW paragraph revised. Was: \"Phase I deliverables include site preparation and foundation pour, due 120 days …\"",
+      "mustDetect": true
+    }
+  ]
+}

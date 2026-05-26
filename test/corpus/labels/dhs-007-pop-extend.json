@@ -1,0 +1,20 @@
+{
+  "pairId": "dhs-007-pop-extend",
+  "description": "DHS: base period extended to 24 months.",
+  "currentFile": "synthetic/dhs-007-pop-extend/current.json",
+  "priorFile": "synthetic/dhs-007-pop-extend/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "DATES_DEADLINES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section F — Period of Performance",
+      "summary": "Period of performance changed to 24 months",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "24 months"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "pairId": "stress-006-many-attachments",
+  "description": "Stress: 3 attachments added, 1 removed.",
+  "currentFile": "synthetic/stress-006-many-attachments/current.json",
+  "priorFile": "synthetic/stress-006-many-attachments/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "INSERT",
+      "category": "ATTACHMENTS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section J — List of Attachments",
+      "summary": "Attachment E (Site Safety Plan) added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "E",
+        "Site Safety Plan"
+      ]
+    },
+    {
+      "changeType": "INSERT",
+      "category": "ATTACHMENTS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section J — List of Attachments",
+      "summary": "Attachment F (Erosion Control Plan) added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "F",
+        "Erosion Control Plan"
+      ]
+    },
+    {
+      "changeType": "INSERT",
+      "category": "ATTACHMENTS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section J — List of Attachments",
+      "summary": "Attachment G (Demolition Sequencing Plan) added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "G",
+        "Demolition Sequencing Plan"
+      ]
+    },
+    {
+      "changeType": "DELETE",
+      "category": "ATTACHMENTS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section J — List of Attachments",
+      "summary": "Attachment D removed (was: Attachment D: Geotechnical Survey)",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "D"
+      ]
+    }
+  ]
+}

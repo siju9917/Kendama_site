@@ -1,0 +1,20 @@
+{
+  "pairId": "dhs-010-clause-remove",
+  "description": "DHS: FAR 52.219-14 removed.",
+  "currentFile": "synthetic/dhs-010-clause-remove/current.json",
+  "priorFile": "synthetic/dhs-010-clause-remove/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "DELETE",
+      "category": "CLAUSES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section I — Contract Clauses",
+      "summary": "Clause 52.219-14 removed",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "52.219-14"
+      ]
+    }
+  ]
+}

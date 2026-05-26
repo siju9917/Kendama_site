@@ -1,0 +1,10 @@
+{
+  "pairId": "dhs-002-page-limit",
+  "description": "DHS page limit lowered to 30.",
+  "tags": [
+    "instructions",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

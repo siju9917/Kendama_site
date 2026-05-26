@@ -1,0 +1,10 @@
+{
+  "pairId": "af-002-page-limit",
+  "description": "AF page limit reduced to 35.",
+  "tags": [
+    "instructions",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

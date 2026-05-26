@@ -1,0 +1,20 @@
+{
+  "pairId": "dhs-005-clin-qty",
+  "description": "DHS: Option Year 2 CLIN quantity changed.",
+  "currentFile": "synthetic/dhs-005-clin-qty/current.json",
+  "priorFile": "synthetic/dhs-005-clin-qty/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "PRICING_CLINS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section B — CLIN 2001",
+      "summary": "CLIN 2001 quantity changed to 6",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "CLIN 2001"
+      ]
+    }
+  ]
+}

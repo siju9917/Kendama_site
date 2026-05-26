@@ -1,0 +1,21 @@
+{
+  "pairId": "af-010-clin-add",
+  "description": "AF: punch-list completion CLIN added.",
+  "currentFile": "synthetic/af-010-clin-add/current.json",
+  "priorFile": "synthetic/af-010-clin-add/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "INSERT",
+      "category": "PRICING_CLINS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section B — CLIN structure",
+      "summary": "CLIN 0003 added (Punch-list Completion)",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "CLIN 0003",
+        "Punch-list Completion"
+      ]
+    }
+  ]
+}

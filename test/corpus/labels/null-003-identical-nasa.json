@@ -1,0 +1,8 @@
+{
+  "pairId": "null-003-identical-nasa",
+  "description": "Identical NASA documents.",
+  "currentFile": "synthetic/null-003-identical-nasa/current.json",
+  "priorFile": "synthetic/null-003-identical-nasa/prior.json",
+  "origin": "generated",
+  "expectedChanges": []
+}

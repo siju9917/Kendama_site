@@ -1,0 +1,20 @@
+{
+  "pairId": "dhs-004-eval-add-small-biz",
+  "description": "DHS: Small Business Participation factor language strengthened.",
+  "currentFile": "synthetic/dhs-004-eval-add-small-biz/current.json",
+  "priorFile": "synthetic/dhs-004-eval-add-small-biz/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "EVALUATION_CRITERIA",
+      "severity": "CRITICAL",
+      "locationDescription": "Section M — Factor 4",
+      "summary": "Evaluation factor changed: was \"Factor 4: Small Business Participation\", now \"Factor 4: Small Business Participation including required subcontracting commitments\"",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "Small Business Participation including required subcontracting commitments"
+      ]
+    }
+  ]
+}

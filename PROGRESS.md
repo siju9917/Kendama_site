@@ -85,16 +85,16 @@ is integrated, is committed, and the suite is green (Part 17.5 rule).
 
 ## Phase 6 — Hardening & full QA
 
-- [ ] 6.1 Expand corpus to 75+ docs
-- [ ] 6.2 Full regression + miss-rate audit
-- [ ] 6.3 Cross-environment tests
-- [ ] 6.4 SAM.gov-change drill
-- [ ] 6.5 Security audit
-- [ ] 6.6 Compliance pass
-- [ ] 6.7 Performance & load tests
-- [ ] 6.8 Accessibility pass
-- [ ] 6.9 Playwright e2e suite
-- [ ] 6.10 Accuracy-claim audit
+- [done] 6.1 Expanded corpus to 75 pairs / 150 docs (5 base templates)
+- [done] 6.2 Full regression: 100% recall, 100% precision, 0 missed critical, 0 FPs on null pairs
+- [ ] 6.3 Cross-environment tests — needs Playwright with Chrome
+- [done] 6.4 SAM.gov-change drill (architectural isolation enforced by test)
+- [done] 6.5 Security audit (`docs/security-audit.md`)
+- [done] 6.6 Compliance pass (no-advisory-language test + clause-note audit)
+- [ ] 6.7 Performance & load tests — needs >200 page synthetic
+- [done] 6.8 Accessibility pass (ARIA labels, contrast checks, aria-live regions)
+- [ ] 6.9 Playwright e2e suite — needs Chromium available at runtime
+- [done] 6.10 Accuracy-claim audit (`TESTING.md` traces every claim to a measurement)
 
 ## Phase 7 — Launch assets
 

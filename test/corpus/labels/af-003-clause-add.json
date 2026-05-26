@@ -1,0 +1,20 @@
+{
+  "pairId": "af-003-clause-add",
+  "description": "AF: minimum wage clause added.",
+  "currentFile": "synthetic/af-003-clause-add/current.json",
+  "priorFile": "synthetic/af-003-clause-add/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "INSERT",
+      "category": "CLAUSES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section I — Contract Clauses",
+      "summary": "Clause 52.222-55 added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "52.222-55"
+      ]
+    }
+  ]
+}

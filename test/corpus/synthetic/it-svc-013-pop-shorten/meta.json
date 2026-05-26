@@ -1,0 +1,10 @@
+{
+  "pairId": "it-svc-013-pop-shorten",
+  "description": "PoP shortened to 6 months.",
+  "tags": [
+    "dates",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

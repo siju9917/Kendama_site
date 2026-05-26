@@ -1,0 +1,10 @@
+{
+  "pairId": "it-svc-014-two-clauses-add",
+  "description": "Two clauses added at once.",
+  "tags": [
+    "clauses",
+    "multi-edit",
+    "critical"
+  ],
+  "editCount": 2
+}

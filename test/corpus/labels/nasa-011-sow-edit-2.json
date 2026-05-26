@@ -1,0 +1,17 @@
+{
+  "pairId": "nasa-011-sow-edit-2",
+  "description": "NASA: monthly status report cadence clarified.",
+  "currentFile": "synthetic/nasa-011-sow-edit-2/current.json",
+  "priorFile": "synthetic/nasa-011-sow-edit-2/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "SCOPE_SOW",
+      "severity": "NORMAL",
+      "locationDescription": "Section C — paragraph 2",
+      "summary": "SOW paragraph revised. Was: \"Monthly status reports and quarterly technical reports are required deliverables…\"",
+      "mustDetect": true
+    }
+  ]
+}

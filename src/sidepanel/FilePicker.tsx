@@ -42,14 +42,19 @@ export function FilePicker({ onRun }: Props): React.ReactElement {
         }}
         onDragLeave={() => setDragging(null)}
         onDrop={onDrop("current")}
+        aria-label="New version drop zone"
       >
-        <div style={{ fontWeight: 600 }}>New version (the amendment)</div>
+        <label htmlFor="bd-current-file" style={{ fontWeight: 600, cursor: "pointer" }}>
+          New version (the amendment)
+        </label>
         <div style={{ color: "var(--fg-muted)", marginTop: 4 }}>
           {current ? current.name : "Drop file or click to choose"}
         </div>
         <input
+          id="bd-current-file"
           type="file"
           accept=".pdf,.docx"
+          aria-label="Choose new version file"
           style={{ marginTop: 8 }}
           onChange={(e) => setCurrent(e.target.files?.[0] ?? null)}
         />
@@ -63,14 +68,19 @@ export function FilePicker({ onRun }: Props): React.ReactElement {
         }}
         onDragLeave={() => setDragging(null)}
         onDrop={onDrop("prior")}
+        aria-label="Prior version drop zone"
       >
-        <div style={{ fontWeight: 600 }}>Prior version</div>
+        <label htmlFor="bd-prior-file" style={{ fontWeight: 600, cursor: "pointer" }}>
+          Prior version
+        </label>
         <div style={{ color: "var(--fg-muted)", marginTop: 4 }}>
           {prior ? prior.name : "Drop file or click to choose"}
         </div>
         <input
+          id="bd-prior-file"
           type="file"
           accept=".pdf,.docx"
+          aria-label="Choose prior version file"
           style={{ marginTop: 8 }}
           onChange={(e) => setPrior(e.target.files?.[0] ?? null)}
         />

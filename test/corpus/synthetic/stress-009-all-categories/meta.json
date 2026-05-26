@@ -1,0 +1,11 @@
+{
+  "pairId": "stress-009-all-categories",
+  "description": "Stress: at least one edit in every CRITICAL category.",
+  "tags": [
+    "multi-edit",
+    "stress",
+    "critical",
+    "all-categories"
+  ],
+  "editCount": 6
+}

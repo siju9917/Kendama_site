@@ -1,0 +1,9 @@
+{
+  "pairId": "dhs-009-multi-three-critical",
+  "description": "DHS: three-edit critical amendment.",
+  "tags": [
+    "multi-edit",
+    "critical"
+  ],
+  "editCount": 3
+}

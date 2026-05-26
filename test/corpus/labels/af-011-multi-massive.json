@@ -1,0 +1,85 @@
+{
+  "pairId": "af-011-multi-massive",
+  "description": "AF: massive amendment — due date, page limit, two clauses, two attachments, sow edit.",
+  "currentFile": "synthetic/af-011-multi-massive/current.json",
+  "priorFile": "synthetic/af-011-multi-massive/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "DATES_DEADLINES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section L — Instructions to Offerors, proposal due date paragraph",
+      "summary": "Proposal due date changed from 2026-11-12 to 2026-12-01",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "2026-12-01"
+      ]
+    },
+    {
+      "changeType": "MODIFY",
+      "category": "SUBMISSION_INSTRUCTIONS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section L — page limit",
+      "summary": "Page limit changed from 40 to 45 pages",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "45 pages"
+      ]
+    },
+    {
+      "changeType": "INSERT",
+      "category": "CLAUSES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section I — Contract Clauses",
+      "summary": "Clause 52.222-55 added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "52.222-55"
+      ]
+    },
+    {
+      "changeType": "INSERT",
+      "category": "CLAUSES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section I — Contract Clauses",
+      "summary": "Clause 52.204-27 added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "52.204-27"
+      ]
+    },
+    {
+      "changeType": "INSERT",
+      "category": "ATTACHMENTS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section J — List of Attachments",
+      "summary": "Attachment E (Site Safety Plan) added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "E",
+        "Site Safety Plan"
+      ]
+    },
+    {
+      "changeType": "INSERT",
+      "category": "ATTACHMENTS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section J — List of Attachments",
+      "summary": "Attachment F (Quality Assurance Plan) added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "F",
+        "Quality Assurance Plan"
+      ]
+    },
+    {
+      "changeType": "MODIFY",
+      "category": "SCOPE_SOW",
+      "severity": "NORMAL",
+      "locationDescription": "Section C — paragraph 1",
+      "summary": "SOW paragraph revised. Was: \"The Contractor shall provide all labor, materials, and equipment to construct th…\"",
+      "mustDetect": true
+    }
+  ]
+}

@@ -475,6 +475,424 @@
       "currentFile": "synthetic/null-002-identical-navy/current.json",
       "priorFile": "synthetic/null-002-identical-navy/prior.json",
       "labelFile": "labels/null-002-identical-navy.json"
+    },
+    {
+      "pairId": "null-003-identical-nasa",
+      "description": "Identical NASA documents.",
+      "tags": [
+        "null",
+        "sanity"
+      ],
+      "currentFile": "synthetic/null-003-identical-nasa/current.json",
+      "priorFile": "synthetic/null-003-identical-nasa/prior.json",
+      "labelFile": "labels/null-003-identical-nasa.json"
+    },
+    {
+      "pairId": "null-004-identical-af",
+      "description": "Identical Air Force documents.",
+      "tags": [
+        "null",
+        "sanity"
+      ],
+      "currentFile": "synthetic/null-004-identical-af/current.json",
+      "priorFile": "synthetic/null-004-identical-af/prior.json",
+      "labelFile": "labels/null-004-identical-af.json"
+    },
+    {
+      "pairId": "af-001-due-date",
+      "description": "AF due date pushed back two weeks.",
+      "tags": [
+        "dates",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/af-001-due-date/current.json",
+      "priorFile": "synthetic/af-001-due-date/prior.json",
+      "labelFile": "labels/af-001-due-date.json"
+    },
+    {
+      "pairId": "af-002-page-limit",
+      "description": "AF page limit reduced to 35.",
+      "tags": [
+        "instructions",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/af-002-page-limit/current.json",
+      "priorFile": "synthetic/af-002-page-limit/prior.json",
+      "labelFile": "labels/af-002-page-limit.json"
+    },
+    {
+      "pairId": "af-003-clause-add",
+      "description": "AF: minimum wage clause added.",
+      "tags": [
+        "clauses",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/af-003-clause-add/current.json",
+      "priorFile": "synthetic/af-003-clause-add/prior.json",
+      "labelFile": "labels/af-003-clause-add.json"
+    },
+    {
+      "pairId": "af-004-attachment-add",
+      "description": "AF: site safety plan attachment added.",
+      "tags": [
+        "attachments",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/af-004-attachment-add/current.json",
+      "priorFile": "synthetic/af-004-attachment-add/prior.json",
+      "labelFile": "labels/af-004-attachment-add.json"
+    },
+    {
+      "pairId": "af-005-attachment-remove",
+      "description": "AF: geotechnical survey removed (out of scope).",
+      "tags": [
+        "attachments",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/af-005-attachment-remove/current.json",
+      "priorFile": "synthetic/af-005-attachment-remove/prior.json",
+      "labelFile": "labels/af-005-attachment-remove.json"
+    },
+    {
+      "pairId": "af-006-eval-rebalance",
+      "description": "AF: Management Plan factor language tightened.",
+      "tags": [
+        "evaluation",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/af-006-eval-rebalance/current.json",
+      "priorFile": "synthetic/af-006-eval-rebalance/prior.json",
+      "labelFile": "labels/af-006-eval-rebalance.json"
+    },
+    {
+      "pairId": "af-007-sow-phase-timing",
+      "description": "AF: Phase I deliverable extended from 120 to 150 days.",
+      "tags": [
+        "sow",
+        "single-edit",
+        "normal"
+      ],
+      "currentFile": "synthetic/af-007-sow-phase-timing/current.json",
+      "priorFile": "synthetic/af-007-sow-phase-timing/prior.json",
+      "labelFile": "labels/af-007-sow-phase-timing.json"
+    },
+    {
+      "pairId": "af-008-sow-phase-add",
+      "description": "AF: additional inspection paragraph inserted.",
+      "tags": [
+        "sow",
+        "single-edit",
+        "normal"
+      ],
+      "currentFile": "synthetic/af-008-sow-phase-add/current.json",
+      "priorFile": "synthetic/af-008-sow-phase-add/prior.json",
+      "labelFile": "labels/af-008-sow-phase-add.json"
+    },
+    {
+      "pairId": "af-009-pop-extend",
+      "description": "AF: period of performance extended to 36 months.",
+      "tags": [
+        "dates",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/af-009-pop-extend/current.json",
+      "priorFile": "synthetic/af-009-pop-extend/prior.json",
+      "labelFile": "labels/af-009-pop-extend.json"
+    },
+    {
+      "pairId": "af-010-clin-add",
+      "description": "AF: punch-list completion CLIN added.",
+      "tags": [
+        "pricing",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/af-010-clin-add/current.json",
+      "priorFile": "synthetic/af-010-clin-add/prior.json",
+      "labelFile": "labels/af-010-clin-add.json"
+    },
+    {
+      "pairId": "af-011-multi-massive",
+      "description": "AF: massive amendment — due date, page limit, two clauses, two attachments, sow edit.",
+      "tags": [
+        "multi-edit",
+        "stress",
+        "critical"
+      ],
+      "currentFile": "synthetic/af-011-multi-massive/current.json",
+      "priorFile": "synthetic/af-011-multi-massive/prior.json",
+      "labelFile": "labels/af-011-multi-massive.json"
+    },
+    {
+      "pairId": "dhs-001-due-date",
+      "description": "DHS proposal due date extended.",
+      "tags": [
+        "dates",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/dhs-001-due-date/current.json",
+      "priorFile": "synthetic/dhs-001-due-date/prior.json",
+      "labelFile": "labels/dhs-001-due-date.json"
+    },
+    {
+      "pairId": "dhs-002-page-limit",
+      "description": "DHS page limit lowered to 30.",
+      "tags": [
+        "instructions",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/dhs-002-page-limit/current.json",
+      "priorFile": "synthetic/dhs-002-page-limit/prior.json",
+      "labelFile": "labels/dhs-002-page-limit.json"
+    },
+    {
+      "pairId": "dhs-003-clause-add",
+      "description": "DHS: anti-trafficking clause added (52.222-50 confirms in clauses if missing).",
+      "tags": [
+        "clauses",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/dhs-003-clause-add/current.json",
+      "priorFile": "synthetic/dhs-003-clause-add/prior.json",
+      "labelFile": "labels/dhs-003-clause-add.json"
+    },
+    {
+      "pairId": "dhs-004-eval-add-small-biz",
+      "description": "DHS: Small Business Participation factor language strengthened.",
+      "tags": [
+        "evaluation",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/dhs-004-eval-add-small-biz/current.json",
+      "priorFile": "synthetic/dhs-004-eval-add-small-biz/prior.json",
+      "labelFile": "labels/dhs-004-eval-add-small-biz.json"
+    },
+    {
+      "pairId": "dhs-005-clin-qty",
+      "description": "DHS: Option Year 2 CLIN quantity changed.",
+      "tags": [
+        "pricing",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/dhs-005-clin-qty/current.json",
+      "priorFile": "synthetic/dhs-005-clin-qty/prior.json",
+      "labelFile": "labels/dhs-005-clin-qty.json"
+    },
+    {
+      "pairId": "dhs-006-attachment-add",
+      "description": "DHS: classified-handling attachment added.",
+      "tags": [
+        "attachments",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/dhs-006-attachment-add/current.json",
+      "priorFile": "synthetic/dhs-006-attachment-add/prior.json",
+      "labelFile": "labels/dhs-006-attachment-add.json"
+    },
+    {
+      "pairId": "dhs-007-pop-extend",
+      "description": "DHS: base period extended to 24 months.",
+      "tags": [
+        "dates",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/dhs-007-pop-extend/current.json",
+      "priorFile": "synthetic/dhs-007-pop-extend/prior.json",
+      "labelFile": "labels/dhs-007-pop-extend.json"
+    },
+    {
+      "pairId": "dhs-008-sow-edit",
+      "description": "DHS: scope clarified to limit to fraud-only investigations.",
+      "tags": [
+        "sow",
+        "single-edit",
+        "normal"
+      ],
+      "currentFile": "synthetic/dhs-008-sow-edit/current.json",
+      "priorFile": "synthetic/dhs-008-sow-edit/prior.json",
+      "labelFile": "labels/dhs-008-sow-edit.json"
+    },
+    {
+      "pairId": "dhs-009-multi-three-critical",
+      "description": "DHS: three-edit critical amendment.",
+      "tags": [
+        "multi-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/dhs-009-multi-three-critical/current.json",
+      "priorFile": "synthetic/dhs-009-multi-three-critical/prior.json",
+      "labelFile": "labels/dhs-009-multi-three-critical.json"
+    },
+    {
+      "pairId": "dhs-010-clause-remove",
+      "description": "DHS: FAR 52.219-14 removed.",
+      "tags": [
+        "clauses",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/dhs-010-clause-remove/current.json",
+      "priorFile": "synthetic/dhs-010-clause-remove/prior.json",
+      "labelFile": "labels/dhs-010-clause-remove.json"
+    },
+    {
+      "pairId": "stress-005-many-clauses",
+      "description": "Stress: 5 clause adds + 2 clause removes in one amendment.",
+      "tags": [
+        "clauses",
+        "stress",
+        "critical"
+      ],
+      "currentFile": "synthetic/stress-005-many-clauses/current.json",
+      "priorFile": "synthetic/stress-005-many-clauses/prior.json",
+      "labelFile": "labels/stress-005-many-clauses.json"
+    },
+    {
+      "pairId": "stress-006-many-attachments",
+      "description": "Stress: 3 attachments added, 1 removed.",
+      "tags": [
+        "attachments",
+        "stress",
+        "critical"
+      ],
+      "currentFile": "synthetic/stress-006-many-attachments/current.json",
+      "priorFile": "synthetic/stress-006-many-attachments/prior.json",
+      "labelFile": "labels/stress-006-many-attachments.json"
+    },
+    {
+      "pairId": "stress-007-eval-three-factors",
+      "description": "Stress: three evaluation factors changed.",
+      "tags": [
+        "evaluation",
+        "stress",
+        "critical"
+      ],
+      "currentFile": "synthetic/stress-007-eval-three-factors/current.json",
+      "priorFile": "synthetic/stress-007-eval-three-factors/prior.json",
+      "labelFile": "labels/stress-007-eval-three-factors.json"
+    },
+    {
+      "pairId": "stress-008-clin-rewrite",
+      "description": "Stress: 3 CLINs added + 2 quantity changes.",
+      "tags": [
+        "pricing",
+        "stress",
+        "critical"
+      ],
+      "currentFile": "synthetic/stress-008-clin-rewrite/current.json",
+      "priorFile": "synthetic/stress-008-clin-rewrite/prior.json",
+      "labelFile": "labels/stress-008-clin-rewrite.json"
+    },
+    {
+      "pairId": "it-svc-013-pop-shorten",
+      "description": "PoP shortened to 6 months.",
+      "tags": [
+        "dates",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/it-svc-013-pop-shorten/current.json",
+      "priorFile": "synthetic/it-svc-013-pop-shorten/prior.json",
+      "labelFile": "labels/it-svc-013-pop-shorten.json"
+    },
+    {
+      "pairId": "it-svc-014-two-clauses-add",
+      "description": "Two clauses added at once.",
+      "tags": [
+        "clauses",
+        "multi-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/it-svc-014-two-clauses-add/current.json",
+      "priorFile": "synthetic/it-svc-014-two-clauses-add/prior.json",
+      "labelFile": "labels/it-svc-014-two-clauses-add.json"
+    },
+    {
+      "pairId": "it-svc-015-attachment-removed",
+      "description": "Past Performance Questionnaire attachment removed.",
+      "tags": [
+        "attachments",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/it-svc-015-attachment-removed/current.json",
+      "priorFile": "synthetic/it-svc-015-attachment-removed/prior.json",
+      "labelFile": "labels/it-svc-015-attachment-removed.json"
+    },
+    {
+      "pairId": "it-svc-016-eval-factor-reorder",
+      "description": "Factor 4 (Price) replaced with stronger language.",
+      "tags": [
+        "evaluation",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/it-svc-016-eval-factor-reorder/current.json",
+      "priorFile": "synthetic/it-svc-016-eval-factor-reorder/prior.json",
+      "labelFile": "labels/it-svc-016-eval-factor-reorder.json"
+    },
+    {
+      "pairId": "it-svc-017-clin-multi-changes",
+      "description": "Two CLIN quantity changes.",
+      "tags": [
+        "pricing",
+        "multi-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/it-svc-017-clin-multi-changes/current.json",
+      "priorFile": "synthetic/it-svc-017-clin-multi-changes/prior.json",
+      "labelFile": "labels/it-svc-017-clin-multi-changes.json"
+    },
+    {
+      "pairId": "nasa-011-sow-edit-2",
+      "description": "NASA: monthly status report cadence clarified.",
+      "tags": [
+        "sow",
+        "single-edit",
+        "normal"
+      ],
+      "currentFile": "synthetic/nasa-011-sow-edit-2/current.json",
+      "priorFile": "synthetic/nasa-011-sow-edit-2/prior.json",
+      "labelFile": "labels/nasa-011-sow-edit-2.json"
+    },
+    {
+      "pairId": "navy-013-sow-insert",
+      "description": "Navy: new SOW paragraph on packaging requirements.",
+      "tags": [
+        "sow",
+        "single-edit",
+        "normal"
+      ],
+      "currentFile": "synthetic/navy-013-sow-insert/current.json",
+      "priorFile": "synthetic/navy-013-sow-insert/prior.json",
+      "labelFile": "labels/navy-013-sow-insert.json"
+    },
+    {
+      "pairId": "stress-009-all-categories",
+      "description": "Stress: at least one edit in every CRITICAL category.",
+      "tags": [
+        "multi-edit",
+        "stress",
+        "critical",
+        "all-categories"
+      ],
+      "currentFile": "synthetic/stress-009-all-categories/current.json",
+      "priorFile": "synthetic/stress-009-all-categories/prior.json",
+      "labelFile": "labels/stress-009-all-categories.json"
     }
   ]
 }

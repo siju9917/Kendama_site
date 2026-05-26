@@ -1,0 +1,10 @@
+{
+  "pairId": "it-svc-017-clin-multi-changes",
+  "description": "Two CLIN quantity changes.",
+  "tags": [
+    "pricing",
+    "multi-edit",
+    "critical"
+  ],
+  "editCount": 2
+}

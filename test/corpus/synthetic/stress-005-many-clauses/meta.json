@@ -1,0 +1,10 @@
+{
+  "pairId": "stress-005-many-clauses",
+  "description": "Stress: 5 clause adds + 2 clause removes in one amendment.",
+  "tags": [
+    "clauses",
+    "stress",
+    "critical"
+  ],
+  "editCount": 7
+}

@@ -41,15 +41,17 @@
 
 ## Phase 3 results — THE MOAT
 
-Final corpus miss-rate audit (Phase 3.12, the hard floor):
+Initial corpus miss-rate audit at 40 pairs.
+
+## Phase 6 expanded audit (75 pairs / 150 docs)
 
 ```
-Pairs:              40
-Expected changes:   57
-Actual changes:     57
-Hits:               57
+Pairs:              75
+Expected changes:   120
+Actual changes:     120
+Hits:               120
 Missed (total):     0
-Critical expected:  51
+Critical expected:  108
 Critical missed:    0   <-- HARD FLOOR: must be 0
 False positives:    0
 FP on null pairs:   0   <-- HARD FLOOR: must be 0
@@ -57,11 +59,36 @@ Recall:             100.00%   <-- must be ≥98%
 Precision:          100.00%
 ```
 
-- 113/113 unit + integration tests passing.
+- 168/168 unit + integration tests passing.
 - Determinism: byte-identical repeat runs across every corpus pair.
-- Typecheck clean. Lint clean.
+- End-to-end PDF round-trip (render via pdf-lib → extract via PDF.js → diff):
+  5 representative pairs, zero missed criticals.
+- Reformatting-noise pairs (ligatures, curly quotes, broken clause numbers
+  across whitespace, extra whitespace): zero changes emitted.
+- Real-world prose anchor recall: ISO/US/Month-Day-Year/Day-Month-Year/
+  legal-style dates; FAR/DFARS/GSAR/NFS clause prefixes; PDF-broken clause
+  numbers; 5 common page-limit phrasings.
+- Typecheck clean. Lint clean. Build clean.
 
-- Build not yet runnable (no entry HTMLs); next at Phase 4.
+## Accuracy claims (traceable to measurements)
+
+| Claim                                                          | Measurement |
+| -------------------------------------------------------------- | ----------- |
+| "Zero missed critical-category changes" (store listing, docs)  | 75-pair corpus + 5 e2e-PDF + 5 noise-buried — all zero missed CRITICAL |
+| "100% recall on the labeled corpus"                            | corpus miss-rate audit |
+| "Deterministic"                                                 | 75 pairs × 2 runs each, byte-identical |
+| "Survives reformatting"                                         | reformatting-noise test (3 samples, zero changes) + noise-plus-change test (5 samples) |
+
+## Accessibility
+
+- All 6 design-system color contrasts pass WCAG AA.
+- File-picker dropzones have ARIA labels and explicit label/input pairs.
+- Loading state has aria-live="polite".
+
+## Compliance
+
+- No-advisory-language test passes against the disclaimer, export prose,
+  and every clause's plainLanguageNote.
 
 ## Accuracy-claim audit (Phase 6.10)
 

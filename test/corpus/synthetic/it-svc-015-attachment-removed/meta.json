@@ -1,0 +1,10 @@
+{
+  "pairId": "it-svc-015-attachment-removed",
+  "description": "Past Performance Questionnaire attachment removed.",
+  "tags": [
+    "attachments",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

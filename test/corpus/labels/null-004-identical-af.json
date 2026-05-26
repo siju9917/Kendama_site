@@ -1,0 +1,8 @@
+{
+  "pairId": "null-004-identical-af",
+  "description": "Identical Air Force documents.",
+  "currentFile": "synthetic/null-004-identical-af/current.json",
+  "priorFile": "synthetic/null-004-identical-af/prior.json",
+  "origin": "generated",
+  "expectedChanges": []
+}

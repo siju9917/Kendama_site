@@ -1,0 +1,20 @@
+{
+  "pairId": "dhs-003-clause-add",
+  "description": "DHS: anti-trafficking clause added (52.222-50 confirms in clauses if missing).",
+  "currentFile": "synthetic/dhs-003-clause-add/current.json",
+  "priorFile": "synthetic/dhs-003-clause-add/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "INSERT",
+      "category": "CLAUSES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section I — Contract Clauses",
+      "summary": "Clause 52.219-9 added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "52.219-9"
+      ]
+    }
+  ]
+}

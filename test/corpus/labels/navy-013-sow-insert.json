@@ -1,0 +1,17 @@
+{
+  "pairId": "navy-013-sow-insert",
+  "description": "Navy: new SOW paragraph on packaging requirements.",
+  "currentFile": "synthetic/navy-013-sow-insert/current.json",
+  "priorFile": "synthetic/navy-013-sow-insert/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "INSERT",
+      "category": "SCOPE_SOW",
+      "severity": "NORMAL",
+      "locationDescription": "Section C — new paragraph",
+      "summary": "SOW paragraph added: \"Packaging shall conform to MIL-STD-2073-1E for protected items.…\"",
+      "mustDetect": true
+    }
+  ]
+}

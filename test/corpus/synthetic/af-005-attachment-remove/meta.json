@@ -1,0 +1,10 @@
+{
+  "pairId": "af-005-attachment-remove",
+  "description": "AF: geotechnical survey removed (out of scope).",
+  "tags": [
+    "attachments",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

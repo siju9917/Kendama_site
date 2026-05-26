@@ -1,0 +1,10 @@
+{
+  "pairId": "it-svc-016-eval-factor-reorder",
+  "description": "Factor 4 (Price) replaced with stronger language.",
+  "tags": [
+    "evaluation",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

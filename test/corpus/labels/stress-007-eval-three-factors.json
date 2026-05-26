@@ -1,0 +1,42 @@
+{
+  "pairId": "stress-007-eval-three-factors",
+  "description": "Stress: three evaluation factors changed.",
+  "currentFile": "synthetic/stress-007-eval-three-factors/current.json",
+  "priorFile": "synthetic/stress-007-eval-three-factors/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "EVALUATION_CRITERIA",
+      "severity": "CRITICAL",
+      "locationDescription": "Section M — Factor 1",
+      "summary": "Evaluation factor changed: was \"Factor 1: Scientific/Technical Merit\", now \"Factor 1: Scientific/Technical Merit with emphasis on autonomy\"",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "Scientific/Technical Merit with emphasis on autonomy"
+      ]
+    },
+    {
+      "changeType": "MODIFY",
+      "category": "EVALUATION_CRITERIA",
+      "severity": "CRITICAL",
+      "locationDescription": "Section M — Factor 2",
+      "summary": "Evaluation factor changed: was \"Factor 2: Cost Realism\", now \"Factor 2: Cost Realism with detailed labor-mix justification\"",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "Cost Realism with detailed labor-mix justification"
+      ]
+    },
+    {
+      "changeType": "MODIFY",
+      "category": "EVALUATION_CRITERIA",
+      "severity": "CRITICAL",
+      "locationDescription": "Section M — Factor 3",
+      "summary": "Evaluation factor changed: was \"Factor 3: Past Performance\", now \"Factor 3: Past Performance on similar NASA research awards\"",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "Past Performance on similar NASA research awards"
+      ]
+    }
+  ]
+}

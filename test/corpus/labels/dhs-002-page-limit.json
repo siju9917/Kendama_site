@@ -1,0 +1,20 @@
+{
+  "pairId": "dhs-002-page-limit",
+  "description": "DHS page limit lowered to 30.",
+  "currentFile": "synthetic/dhs-002-page-limit/current.json",
+  "priorFile": "synthetic/dhs-002-page-limit/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "SUBMISSION_INSTRUCTIONS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section L — page limit",
+      "summary": "Page limit changed from 35 to 30 pages",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "30 pages"
+      ]
+    }
+  ]
+}

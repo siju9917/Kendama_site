@@ -1,0 +1,43 @@
+{
+  "pairId": "dhs-009-multi-three-critical",
+  "description": "DHS: three-edit critical amendment.",
+  "currentFile": "synthetic/dhs-009-multi-three-critical/current.json",
+  "priorFile": "synthetic/dhs-009-multi-three-critical/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "DATES_DEADLINES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section L — Instructions to Offerors, proposal due date paragraph",
+      "summary": "Proposal due date changed from 2026-09-10 to 2026-10-01",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "2026-10-01"
+      ]
+    },
+    {
+      "changeType": "INSERT",
+      "category": "CLAUSES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section I — Contract Clauses",
+      "summary": "Clause 52.219-9 added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "52.219-9"
+      ]
+    },
+    {
+      "changeType": "INSERT",
+      "category": "ATTACHMENTS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section J — List of Attachments",
+      "summary": "Attachment 4 (Security Cleared Personnel List) added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "4",
+        "Security Cleared Personnel List"
+      ]
+    }
+  ]
+}

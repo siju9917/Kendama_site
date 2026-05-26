@@ -1,0 +1,10 @@
+{
+  "pairId": "af-010-clin-add",
+  "description": "AF: punch-list completion CLIN added.",
+  "tags": [
+    "pricing",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

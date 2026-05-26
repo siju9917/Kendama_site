@@ -1,0 +1,10 @@
+{
+  "pairId": "af-004-attachment-add",
+  "description": "AF: site safety plan attachment added.",
+  "tags": [
+    "attachments",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

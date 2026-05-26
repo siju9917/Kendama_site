@@ -1,0 +1,17 @@
+{
+  "pairId": "dhs-008-sow-edit",
+  "description": "DHS: scope clarified to limit to fraud-only investigations.",
+  "currentFile": "synthetic/dhs-008-sow-edit/current.json",
+  "priorFile": "synthetic/dhs-008-sow-edit/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "SCOPE_SOW",
+      "severity": "NORMAL",
+      "locationDescription": "Section C — paragraph 1",
+      "summary": "SOW paragraph revised. Was: \"The Contractor shall provide investigative support services to support DHS count…\"",
+      "mustDetect": true
+    }
+  ]
+}

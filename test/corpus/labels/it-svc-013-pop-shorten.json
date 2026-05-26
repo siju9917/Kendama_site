@@ -1,0 +1,20 @@
+{
+  "pairId": "it-svc-013-pop-shorten",
+  "description": "PoP shortened to 6 months.",
+  "currentFile": "synthetic/it-svc-013-pop-shorten/current.json",
+  "priorFile": "synthetic/it-svc-013-pop-shorten/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "DATES_DEADLINES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section F — Period of Performance",
+      "summary": "Period of performance changed to 6 months",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "6 months"
+      ]
+    }
+  ]
+}

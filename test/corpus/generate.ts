@@ -139,7 +139,85 @@ const baseResearchTemplate: TemplateOptions = {
   ],
 };
 
-// ---- Pair plans: 12 templates × multiple edit configurations = 40+ pairs ----
+const baseAfConstructionTemplate: TemplateOptions = {
+  id: "tpl-af-construction",
+  agencyName: "Department of the Air Force",
+  solicitationId: "FA8771-26-R-1500",
+  isDefense: true,
+  proposalDueDate: "2026-11-12",
+  pageLimit: 40,
+  evaluationFactors: ["Technical Approach", "Management Plan", "Past Performance", "Price"],
+  clins: [
+    { number: "0001", description: "Base Award Construction", qty: 1, unit: "LOT" },
+    { number: "0002", description: "Option 1: Phase II Construction", qty: 1, unit: "LOT" },
+  ],
+  clauses: [
+    "52.212-1",
+    "52.212-4",
+    "52.212-5",
+    "52.204-21",
+    "52.219-14",
+    "52.222-41",
+    "52.247-34",
+    "252.225-7001",
+  ],
+  attachments: [
+    { id: "A", title: "Drawings Set 1 of 3" },
+    { id: "B", title: "Drawings Set 2 of 3" },
+    { id: "C", title: "Drawings Set 3 of 3" },
+    { id: "D", title: "Geotechnical Survey" },
+  ],
+  sowParagraphs: [
+    "The Contractor shall provide all labor, materials, and equipment to construct the facility described in Attachments A through C.",
+    "Performance shall be in accordance with the United Facilities Criteria and applicable building codes.",
+    "Site work, foundations, structural, mechanical, electrical, and finishes shall be completed in two phases.",
+    "Phase I deliverables include site preparation and foundation pour, due 120 days from notice to proceed.",
+    "Phase II deliverables include all remaining construction, including punch-list completion, due 300 days from notice to proceed.",
+  ],
+};
+
+const baseR8aTemplate: TemplateOptions = {
+  id: "tpl-r-8a",
+  agencyName: "Department of Homeland Security",
+  solicitationId: "70SBUR26R0001",
+  isDefense: false,
+  proposalDueDate: "2026-09-10",
+  pageLimit: 35,
+  evaluationFactors: [
+    "Technical Capability",
+    "Management Approach",
+    "Relevant Experience",
+    "Small Business Participation",
+    "Cost",
+  ],
+  clins: [
+    { number: "0001", description: "Investigative Support Services", qty: 12, unit: "Months" },
+    { number: "1001", description: "Option Year 1", qty: 12, unit: "Months" },
+    { number: "2001", description: "Option Year 2", qty: 12, unit: "Months" },
+  ],
+  clauses: [
+    "52.212-1",
+    "52.212-2",
+    "52.212-3",
+    "52.212-4",
+    "52.204-21",
+    "52.219-14",
+    "52.222-41",
+    "52.222-50",
+  ],
+  attachments: [
+    { id: "1", title: "Performance Work Statement" },
+    { id: "2", title: "Security Requirements" },
+    { id: "3", title: "Wage Determination" },
+  ],
+  sowParagraphs: [
+    "The Contractor shall provide investigative support services to support DHS counter-fraud operations.",
+    "Personnel shall hold an active Secret clearance and complete agency-specific training.",
+    "Quarterly progress reviews are required and shall include performance metrics defined in the PWS.",
+  ],
+};
+
+// ---- Pair plans: 5 templates × multiple edit configurations = 75+ pairs ----
 
 const PAIRS: PairPlan[] = [
   // ---- IT Services template variants ----
@@ -507,6 +585,351 @@ const PAIRS: PairPlan[] = [
     tags: ["null", "sanity"],
     base: baseSuppliesNavyTemplate,
     edits: [],
+  },
+  {
+    pairId: "null-003-identical-nasa",
+    description: "Identical NASA documents.",
+    tags: ["null", "sanity"],
+    base: baseResearchTemplate,
+    edits: [],
+  },
+  {
+    pairId: "null-004-identical-af",
+    description: "Identical Air Force documents.",
+    tags: ["null", "sanity"],
+    base: baseAfConstructionTemplate,
+    edits: [],
+  },
+
+  // ---- Air Force construction ----
+  {
+    pairId: "af-001-due-date",
+    description: "AF due date pushed back two weeks.",
+    tags: ["dates", "single-edit", "critical"],
+    base: baseAfConstructionTemplate,
+    edits: [(d) => changeProposalDueDate(d, "2026-11-26")],
+  },
+  {
+    pairId: "af-002-page-limit",
+    description: "AF page limit reduced to 35.",
+    tags: ["instructions", "single-edit", "critical"],
+    base: baseAfConstructionTemplate,
+    edits: [(d) => changePageLimit(d, 35)],
+  },
+  {
+    pairId: "af-003-clause-add",
+    description: "AF: minimum wage clause added.",
+    tags: ["clauses", "single-edit", "critical"],
+    base: baseAfConstructionTemplate,
+    edits: [(d) => addClause(d, "52.222-55")],
+  },
+  {
+    pairId: "af-004-attachment-add",
+    description: "AF: site safety plan attachment added.",
+    tags: ["attachments", "single-edit", "critical"],
+    base: baseAfConstructionTemplate,
+    edits: [(d) => addAttachment(d, "E", "Site Safety Plan")],
+  },
+  {
+    pairId: "af-005-attachment-remove",
+    description: "AF: geotechnical survey removed (out of scope).",
+    tags: ["attachments", "single-edit", "critical"],
+    base: baseAfConstructionTemplate,
+    edits: [(d) => removeAttachment(d, "D")],
+  },
+  {
+    pairId: "af-006-eval-rebalance",
+    description: "AF: Management Plan factor language tightened.",
+    tags: ["evaluation", "single-edit", "critical"],
+    base: baseAfConstructionTemplate,
+    edits: [
+      (d) =>
+        replaceEvaluationFactor(d, 1, "Management Plan including subcontractor management and reporting cadence"),
+    ],
+  },
+  {
+    pairId: "af-007-sow-phase-timing",
+    description: "AF: Phase I deliverable extended from 120 to 150 days.",
+    tags: ["sow", "single-edit", "normal"],
+    base: baseAfConstructionTemplate,
+    edits: [
+      (d) =>
+        modifySowParagraph(
+          d,
+          3,
+          "Phase I deliverables include site preparation and foundation pour, due 150 days from notice to proceed.",
+        ),
+    ],
+  },
+  {
+    pairId: "af-008-sow-phase-add",
+    description: "AF: additional inspection paragraph inserted.",
+    tags: ["sow", "single-edit", "normal"],
+    base: baseAfConstructionTemplate,
+    edits: [
+      (d) =>
+        insertSowParagraph(
+          d,
+          "Independent third-party inspections shall be performed at completion of foundation, structural, and final phases.",
+        ),
+    ],
+  },
+  {
+    pairId: "af-009-pop-extend",
+    description: "AF: period of performance extended to 36 months.",
+    tags: ["dates", "single-edit", "critical"],
+    base: baseAfConstructionTemplate,
+    edits: [(d) => changePeriodOfPerformance(d, 36)],
+  },
+  {
+    pairId: "af-010-clin-add",
+    description: "AF: punch-list completion CLIN added.",
+    tags: ["pricing", "single-edit", "critical"],
+    base: baseAfConstructionTemplate,
+    edits: [(d) => addClin(d, { number: "0003", description: "Punch-list Completion", qty: 1, unit: "LOT" })],
+  },
+  {
+    pairId: "af-011-multi-massive",
+    description: "AF: massive amendment — due date, page limit, two clauses, two attachments, sow edit.",
+    tags: ["multi-edit", "stress", "critical"],
+    base: baseAfConstructionTemplate,
+    edits: [
+      (d) => changeProposalDueDate(d, "2026-12-01"),
+      (d) => changePageLimit(d, 45),
+      (d) => addClause(d, "52.222-55"),
+      (d) => addClause(d, "52.204-27"),
+      (d) => addAttachment(d, "E", "Site Safety Plan"),
+      (d) => addAttachment(d, "F", "Quality Assurance Plan"),
+      (d) =>
+        modifySowParagraph(
+          d,
+          0,
+          "The Contractor shall provide all labor, materials, equipment, and quality-assurance personnel to construct the facility described in Attachments A through C.",
+        ),
+    ],
+  },
+
+  // ---- DHS 8(a) services template ----
+  {
+    pairId: "dhs-001-due-date",
+    description: "DHS proposal due date extended.",
+    tags: ["dates", "single-edit", "critical"],
+    base: baseR8aTemplate,
+    edits: [(d) => changeProposalDueDate(d, "2026-09-24")],
+  },
+  {
+    pairId: "dhs-002-page-limit",
+    description: "DHS page limit lowered to 30.",
+    tags: ["instructions", "single-edit", "critical"],
+    base: baseR8aTemplate,
+    edits: [(d) => changePageLimit(d, 30)],
+  },
+  {
+    pairId: "dhs-003-clause-add",
+    description: "DHS: anti-trafficking clause added (52.222-50 confirms in clauses if missing).",
+    tags: ["clauses", "single-edit", "critical"],
+    base: baseR8aTemplate,
+    edits: [(d) => addClause(d, "52.219-9")],
+  },
+  {
+    pairId: "dhs-004-eval-add-small-biz",
+    description: "DHS: Small Business Participation factor language strengthened.",
+    tags: ["evaluation", "single-edit", "critical"],
+    base: baseR8aTemplate,
+    edits: [
+      (d) =>
+        replaceEvaluationFactor(
+          d,
+          3,
+          "Small Business Participation including required subcontracting commitments",
+        ),
+    ],
+  },
+  {
+    pairId: "dhs-005-clin-qty",
+    description: "DHS: Option Year 2 CLIN quantity changed.",
+    tags: ["pricing", "single-edit", "critical"],
+    base: baseR8aTemplate,
+    edits: [(d) => changeClinQty(d, "2001", 6)],
+  },
+  {
+    pairId: "dhs-006-attachment-add",
+    description: "DHS: classified-handling attachment added.",
+    tags: ["attachments", "single-edit", "critical"],
+    base: baseR8aTemplate,
+    edits: [(d) => addAttachment(d, "4", "Classified Handling Requirements")],
+  },
+  {
+    pairId: "dhs-007-pop-extend",
+    description: "DHS: base period extended to 24 months.",
+    tags: ["dates", "single-edit", "critical"],
+    base: baseR8aTemplate,
+    edits: [(d) => changePeriodOfPerformance(d, 24)],
+  },
+  {
+    pairId: "dhs-008-sow-edit",
+    description: "DHS: scope clarified to limit to fraud-only investigations.",
+    tags: ["sow", "single-edit", "normal"],
+    base: baseR8aTemplate,
+    edits: [
+      (d) =>
+        modifySowParagraph(
+          d,
+          0,
+          "The Contractor shall provide investigative support services to support DHS counter-fraud operations, excluding criminal investigations.",
+        ),
+    ],
+  },
+  {
+    pairId: "dhs-009-multi-three-critical",
+    description: "DHS: three-edit critical amendment.",
+    tags: ["multi-edit", "critical"],
+    base: baseR8aTemplate,
+    edits: [
+      (d) => changeProposalDueDate(d, "2026-10-01"),
+      (d) => addClause(d, "52.219-9"),
+      (d) => addAttachment(d, "4", "Security Cleared Personnel List"),
+    ],
+  },
+  {
+    pairId: "dhs-010-clause-remove",
+    description: "DHS: FAR 52.219-14 removed.",
+    tags: ["clauses", "single-edit", "critical"],
+    base: baseR8aTemplate,
+    edits: [(d) => removeClause(d, "52.219-14")],
+  },
+
+  // ---- Stress / pathological ----
+  {
+    pairId: "stress-005-many-clauses",
+    description: "Stress: 5 clause adds + 2 clause removes in one amendment.",
+    tags: ["clauses", "stress", "critical"],
+    base: baseSuppliesNavyTemplate,
+    edits: [
+      (d) => addClause(d, "52.204-25"),
+      (d) => addClause(d, "52.204-27"),
+      (d) => addClause(d, "252.204-7019"),
+      (d) => addClause(d, "252.204-7020"),
+      (d) => addClause(d, "252.204-7021"),
+      (d) => removeClause(d, "52.212-1"),
+      (d) => removeClause(d, "252.225-7048"),
+    ],
+  },
+  {
+    pairId: "stress-006-many-attachments",
+    description: "Stress: 3 attachments added, 1 removed.",
+    tags: ["attachments", "stress", "critical"],
+    base: baseAfConstructionTemplate,
+    edits: [
+      (d) => addAttachment(d, "E", "Site Safety Plan"),
+      (d) => addAttachment(d, "F", "Erosion Control Plan"),
+      (d) => addAttachment(d, "G", "Demolition Sequencing Plan"),
+      (d) => removeAttachment(d, "D"),
+    ],
+  },
+  {
+    pairId: "stress-007-eval-three-factors",
+    description: "Stress: three evaluation factors changed.",
+    tags: ["evaluation", "stress", "critical"],
+    base: baseResearchTemplate,
+    edits: [
+      (d) => replaceEvaluationFactor(d, 0, "Scientific/Technical Merit with emphasis on autonomy"),
+      (d) => replaceEvaluationFactor(d, 1, "Cost Realism with detailed labor-mix justification"),
+      (d) => replaceEvaluationFactor(d, 2, "Past Performance on similar NASA research awards"),
+    ],
+  },
+  {
+    pairId: "stress-008-clin-rewrite",
+    description: "Stress: 3 CLINs added + 2 quantity changes.",
+    tags: ["pricing", "stress", "critical"],
+    base: baseR8aTemplate,
+    edits: [
+      (d) => addClin(d, { number: "0002", description: "Surge Investigative Support", qty: 100, unit: "HR" }),
+      (d) => addClin(d, { number: "0003", description: "Travel Reimbursement", qty: 1, unit: "LOT" }),
+      (d) => addClin(d, { number: "0004", description: "Specialized Equipment", qty: 5, unit: "EA" }),
+      (d) => changeClinQty(d, "0001", 18),
+      (d) => changeClinQty(d, "1001", 6),
+    ],
+  },
+  // ---- More IT services variants for repeated coverage on the most-common base ----
+  {
+    pairId: "it-svc-013-pop-shorten",
+    description: "PoP shortened to 6 months.",
+    tags: ["dates", "single-edit", "critical"],
+    base: baseServicesITTemplate,
+    edits: [(d) => changePeriodOfPerformance(d, 6)],
+  },
+  {
+    pairId: "it-svc-014-two-clauses-add",
+    description: "Two clauses added at once.",
+    tags: ["clauses", "multi-edit", "critical"],
+    base: baseServicesITTemplate,
+    edits: [(d) => addClause(d, "52.204-25"), (d) => addClause(d, "52.204-27")],
+  },
+  {
+    pairId: "it-svc-015-attachment-removed",
+    description: "Past Performance Questionnaire attachment removed.",
+    tags: ["attachments", "single-edit", "critical"],
+    base: baseServicesITTemplate,
+    edits: [(d) => removeAttachment(d, "3")],
+  },
+  {
+    pairId: "it-svc-016-eval-factor-reorder",
+    description: "Factor 4 (Price) replaced with stronger language.",
+    tags: ["evaluation", "single-edit", "critical"],
+    base: baseServicesITTemplate,
+    edits: [(d) => replaceEvaluationFactor(d, 3, "Price, with realism analysis at the labor-category level")],
+  },
+  {
+    pairId: "it-svc-017-clin-multi-changes",
+    description: "Two CLIN quantity changes.",
+    tags: ["pricing", "multi-edit", "critical"],
+    base: baseServicesITTemplate,
+    edits: [(d) => changeClinQty(d, "0001", 18), (d) => changeClinQty(d, "0002", 0)],
+  },
+
+  // ---- A handful of small SOW-only normal edits (low-severity coverage) ----
+  {
+    pairId: "nasa-011-sow-edit-2",
+    description: "NASA: monthly status report cadence clarified.",
+    tags: ["sow", "single-edit", "normal"],
+    base: baseResearchTemplate,
+    edits: [
+      (d) =>
+        modifySowParagraph(
+          d,
+          1,
+          "Monthly status reports, quarterly technical reports, and an annual program review are required deliverables.",
+        ),
+    ],
+  },
+  {
+    pairId: "navy-013-sow-insert",
+    description: "Navy: new SOW paragraph on packaging requirements.",
+    tags: ["sow", "single-edit", "normal"],
+    base: baseSuppliesNavyTemplate,
+    edits: [
+      (d) =>
+        insertSowParagraph(
+          d,
+          "Packaging shall conform to MIL-STD-2073-1E for protected items.",
+        ),
+    ],
+  },
+
+  {
+    pairId: "stress-009-all-categories",
+    description: "Stress: at least one edit in every CRITICAL category.",
+    tags: ["multi-edit", "stress", "critical", "all-categories"],
+    base: baseServicesITTemplate,
+    edits: [
+      (d) => changeProposalDueDate(d, "2026-09-20"), // DATES_DEADLINES
+      (d) => changePageLimit(d, 32), // SUBMISSION_INSTRUCTIONS
+      (d) => addClause(d, "52.204-25"), // CLAUSES
+      (d) => replaceEvaluationFactor(d, 0, "Technical Approach with proven help-desk track record"), // EVAL
+      (d) => addClin(d, { number: "0004", description: "Optional Tier 4 Escalation", qty: 12, unit: "Months" }), // PRICING
+      (d) => addAttachment(d, "4", "ITIL Compliance Statement"), // ATTACHMENTS
+    ],
   },
 ];
 

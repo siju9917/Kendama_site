@@ -1,0 +1,974 @@
+{
+  "metadata": {
+    "sourceFileName": "dhs-005-clin-qty-prior.synthetic",
+    "sourceFileHash": "tpl-r-8a",
+    "solicitationId": "70SBUR26R0001",
+    "amendmentNumber": null,
+    "extractedAt": "1970-01-01T00:00:00.000Z",
+    "overallExtractionConfidence": 1,
+    "extractionWarnings": [],
+    "pageCount": 25
+  },
+  "sections": [
+    {
+      "id": "5968fc31bd161789",
+      "heading": "Section A - Solicitation/Contract Form",
+      "headingLevel": 1,
+      "ucfLetter": "A",
+      "sectionType": "ADMIN",
+      "blocks": [
+        {
+          "id": "8a04403002737988",
+          "blockType": "PARAGRAPH",
+          "text": "Solicitation Number: 70SBUR26R0001",
+          "tokens": [
+            "Solicitation",
+            "Number",
+            ":",
+            "70SBUR26R0001"
+          ],
+          "anchors": [],
+          "ordinal": 0,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "123c238e7858f8fc",
+          "blockType": "PARAGRAPH",
+          "text": "Issuing Agency: Department of Homeland Security",
+          "tokens": [
+            "Issuing",
+            "Agency",
+            ":",
+            "Department",
+            "of",
+            "Homeland",
+            "Security"
+          ],
+          "anchors": [],
+          "ordinal": 1,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "de017e2250a7a5a0",
+          "blockType": "PARAGRAPH",
+          "text": "This solicitation is issued for the procurement described in Section C.",
+          "tokens": [
+            "This",
+            "solicitation",
+            "is",
+            "issued",
+            "for",
+            "the",
+            "procurement",
+            "described",
+            "in",
+            "Section",
+            "C",
+            "."
+          ],
+          "anchors": [],
+          "ordinal": 2,
+          "extractionConfidence": 1
+        }
+      ],
+      "ordinal": 0
+    },
+    {
+      "id": "c07f5b4de589d3eb",
+      "heading": "Section B - Supplies or Services and Prices/Costs",
+      "headingLevel": 1,
+      "ucfLetter": "B",
+      "sectionType": "PRICING",
+      "blocks": [
+        {
+          "id": "8a4acebfc1fcbc9d",
+          "blockType": "PARAGRAPH",
+          "text": "The Contractor shall furnish the supplies or services in accordance with the following Contract Line Item Numbers (CLINs).",
+          "tokens": [
+            "The",
+            "Contractor",
+            "shall",
+            "furnish",
+            "the",
+            "supplies",
+            "or",
+            "services",
+            "in",
+            "accordance",
+            "with",
+            "the",
+            "following",
+            "Contract",
+            "Line",
+            "Item",
+            "Numbers",
+            "(",
+            "CLINs",
+            ")",
+            "."
+          ],
+          "anchors": [],
+          "ordinal": 0,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "f4130d5279bded1e",
+          "blockType": "TABLE_ROW",
+          "text": "CLIN | Description | Quantity | Unit",
+          "tokens": [
+            "CLIN",
+            "|",
+            "Description",
+            "|",
+            "Quantity",
+            "|",
+            "Unit"
+          ],
+          "anchors": [],
+          "ordinal": 1,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "a332f82e072b921a",
+          "blockType": "TABLE_ROW",
+          "text": "CLIN 0001 | Investigative Support Services | 12 | Months",
+          "tokens": [
+            "CLIN",
+            "0001",
+            "|",
+            "Investigative",
+            "Support",
+            "Services",
+            "|",
+            "12",
+            "|",
+            "Months"
+          ],
+          "anchors": [],
+          "ordinal": 2,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "7f6151781ef1b1fe",
+          "blockType": "TABLE_ROW",
+          "text": "CLIN 1001 | Option Year 1 | 12 | Months",
+          "tokens": [
+            "CLIN",
+            "1001",
+            "|",
+            "Option",
+            "Year",
+            "1",
+            "|",
+            "12",
+            "|",
+            "Months"
+          ],
+          "anchors": [],
+          "ordinal": 3,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "7d08840309231beb",
+          "blockType": "TABLE_ROW",
+          "text": "CLIN 2001 | Option Year 2 | 12 | Months",
+          "tokens": [
+            "CLIN",
+            "2001",
+            "|",
+            "Option",
+            "Year",
+            "2",
+            "|",
+            "12",
+            "|",
+            "Months"
+          ],
+          "anchors": [],
+          "ordinal": 4,
+          "extractionConfidence": 1
+        }
+      ],
+      "ordinal": 1
+    },
+    {
+      "id": "6e14d2fec3ab139c",
+      "heading": "Section C - Description / Specifications / Statement of Work",
+      "headingLevel": 1,
+      "ucfLetter": "C",
+      "sectionType": "SOW",
+      "blocks": [
+        {
+          "id": "b963e60d80542def",
+          "blockType": "PARAGRAPH",
+          "text": "The Contractor shall provide investigative support services to support DHS counter-fraud operations.",
+          "tokens": [
+            "The",
+            "Contractor",
+            "shall",
+            "provide",
+            "investigative",
+            "support",
+            "services",
+            "to",
+            "support",
+            "DHS",
+            "counter-fraud",
+            "operations",
+            "."
+          ],
+          "anchors": [],
+          "ordinal": 0,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "40dd2fb03c69dd24",
+          "blockType": "PARAGRAPH",
+          "text": "Personnel shall hold an active Secret clearance and complete agency-specific training.",
+          "tokens": [
+            "Personnel",
+            "shall",
+            "hold",
+            "an",
+            "active",
+            "Secret",
+            "clearance",
+            "and",
+            "complete",
+            "agency-specific",
+            "training",
+            "."
+          ],
+          "anchors": [],
+          "ordinal": 1,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "74f1bf666078f570",
+          "blockType": "PARAGRAPH",
+          "text": "Quarterly progress reviews are required and shall include performance metrics defined in the PWS.",
+          "tokens": [
+            "Quarterly",
+            "progress",
+            "reviews",
+            "are",
+            "required",
+            "and",
+            "shall",
+            "include",
+            "performance",
+            "metrics",
+            "defined",
+            "in",
+            "the",
+            "PWS",
+            "."
+          ],
+          "anchors": [],
+          "ordinal": 2,
+          "extractionConfidence": 1
+        }
+      ],
+      "ordinal": 2
+    },
+    {
+      "id": "56a839662c4396b6",
+      "heading": "Section D - Packaging and Marking",
+      "headingLevel": 1,
+      "ucfLetter": "D",
+      "sectionType": "OTHER",
+      "blocks": [
+        {
+          "id": "b768df6ed292ca88",
+          "blockType": "PARAGRAPH",
+          "text": "Standard commercial packaging is acceptable. All shipments shall be marked with the contract number and CLIN.",
+          "tokens": [
+            "Standard",
+            "commercial",
+            "packaging",
+            "is",
+            "acceptable",
+            ".",
+            "All",
+            "shipments",
+            "shall",
+            "be",
+            "marked",
+            "with",
+            "the",
+            "contract",
+            "number",
+            "and",
+            "CLIN",
+            "."
+          ],
+          "anchors": [],
+          "ordinal": 0,
+          "extractionConfidence": 1
+        }
+      ],
+      "ordinal": 3
+    },
+    {
+      "id": "ad9816c9a02c84bf",
+      "heading": "Section E - Inspection and Acceptance",
+      "headingLevel": 1,
+      "ucfLetter": "E",
+      "sectionType": "OTHER",
+      "blocks": [
+        {
+          "id": "cbe738272579a5d7",
+          "blockType": "PARAGRAPH",
+          "text": "Inspection and acceptance of supplies and services shall be performed at destination by the Government.",
+          "tokens": [
+            "Inspection",
+            "and",
+            "acceptance",
+            "of",
+            "supplies",
+            "and",
+            "services",
+            "shall",
+            "be",
+            "performed",
+            "at",
+            "destination",
+            "by",
+            "the",
+            "Government",
+            "."
+          ],
+          "anchors": [],
+          "ordinal": 0,
+          "extractionConfidence": 1
+        }
+      ],
+      "ordinal": 4
+    },
+    {
+      "id": "8042e7c8ed300b26",
+      "heading": "Section F - Deliveries or Performance",
+      "headingLevel": 1,
+      "ucfLetter": "F",
+      "sectionType": "DELIVERIES",
+      "blocks": [
+        {
+          "id": "2c899b0de3931e91",
+          "blockType": "PARAGRAPH",
+          "text": "The period of performance shall be twelve (12) months from the date of award.",
+          "tokens": [
+            "The",
+            "period",
+            "of",
+            "performance",
+            "shall",
+            "be",
+            "twelve",
+            "(",
+            "12",
+            ")",
+            "months",
+            "from",
+            "the",
+            "date",
+            "of",
+            "award",
+            "."
+          ],
+          "anchors": [],
+          "ordinal": 0,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "3ff6ef80ae4564e8",
+          "blockType": "PARAGRAPH",
+          "text": "Deliveries shall be made F.o.b. destination per FAR 52.247-34.",
+          "tokens": [
+            "Deliveries",
+            "shall",
+            "be",
+            "made",
+            "F.o.b",
+            ".",
+            "destination",
+            "per",
+            "FAR",
+            "52.247-34",
+            "."
+          ],
+          "anchors": [],
+          "ordinal": 1,
+          "extractionConfidence": 1
+        }
+      ],
+      "ordinal": 5
+    },
+    {
+      "id": "40092dd7674247bf",
+      "heading": "Section G - Contract Administration Data",
+      "headingLevel": 1,
+      "ucfLetter": "G",
+      "sectionType": "ADMIN",
+      "blocks": [
+        {
+          "id": "a69f27d4f8dba1d6",
+          "blockType": "PARAGRAPH",
+          "text": "Invoicing shall be submitted monthly through the Government invoicing system. The Contracting Officer's Representative (COR) will be designated post-award.",
+          "tokens": [
+            "Invoicing",
+            "shall",
+            "be",
+            "submitted",
+            "monthly",
+            "through",
+            "the",
+            "Government",
+            "invoicing",
+            "system",
+            ".",
+            "The",
+            "Contracting",
+            "Officer",
+            "'",
+            "s",
+            "Representative",
+            "(",
+            "COR",
+            ")",
+            "will",
+            "be",
+            "designated",
+            "post-award",
+            "."
+          ],
+          "anchors": [],
+          "ordinal": 0,
+          "extractionConfidence": 1
+        }
+      ],
+      "ordinal": 6
+    },
+    {
+      "id": "1154f5708b353ed8",
+      "heading": "Section H - Special Contract Requirements",
+      "headingLevel": 1,
+      "ucfLetter": "H",
+      "sectionType": "OTHER",
+      "blocks": [
+        {
+          "id": "bdef28e68a3d103a",
+          "blockType": "PARAGRAPH",
+          "text": "Key personnel substitutions require prior written approval of the Contracting Officer.",
+          "tokens": [
+            "Key",
+            "personnel",
+            "substitutions",
+            "require",
+            "prior",
+            "written",
+            "approval",
+            "of",
+            "the",
+            "Contracting",
+            "Officer",
+            "."
+          ],
+          "anchors": [],
+          "ordinal": 0,
+          "extractionConfidence": 1
+        }
+      ],
+      "ordinal": 7
+    },
+    {
+      "id": "43fc17c0cf76645e",
+      "heading": "Section I - Contract Clauses",
+      "headingLevel": 1,
+      "ucfLetter": "I",
+      "sectionType": "CLAUSES",
+      "blocks": [
+        {
+          "id": "796ab6f80841de6a",
+          "blockType": "PARAGRAPH",
+          "text": "The following clauses are incorporated by reference, with the same force and effect as if given in full text.",
+          "tokens": [
+            "The",
+            "following",
+            "clauses",
+            "are",
+            "incorporated",
+            "by",
+            "reference",
+            ",",
+            "with",
+            "the",
+            "same",
+            "force",
+            "and",
+            "effect",
+            "as",
+            "if",
+            "given",
+            "in",
+            "full",
+            "text",
+            "."
+          ],
+          "anchors": [],
+          "ordinal": 0,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "d4508049220444cb",
+          "blockType": "CLAUSE_REFERENCE",
+          "text": "52.212-1",
+          "tokens": [
+            "52.212-1"
+          ],
+          "anchors": [],
+          "ordinal": 0,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "38005d3d8ea89dff",
+          "blockType": "CLAUSE_REFERENCE",
+          "text": "52.212-2",
+          "tokens": [
+            "52.212-2"
+          ],
+          "anchors": [],
+          "ordinal": 1,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "f5add64db0e074d3",
+          "blockType": "CLAUSE_REFERENCE",
+          "text": "52.212-3",
+          "tokens": [
+            "52.212-3"
+          ],
+          "anchors": [],
+          "ordinal": 2,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "755abb79c5341e4f",
+          "blockType": "CLAUSE_REFERENCE",
+          "text": "52.212-4",
+          "tokens": [
+            "52.212-4"
+          ],
+          "anchors": [],
+          "ordinal": 3,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "bccb4dea376df8c8",
+          "blockType": "CLAUSE_REFERENCE",
+          "text": "52.204-21",
+          "tokens": [
+            "52.204-21"
+          ],
+          "anchors": [],
+          "ordinal": 4,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "d8d71817190e3baf",
+          "blockType": "CLAUSE_REFERENCE",
+          "text": "52.219-14",
+          "tokens": [
+            "52.219-14"
+          ],
+          "anchors": [],
+          "ordinal": 5,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "595d486e9713d1ec",
+          "blockType": "CLAUSE_REFERENCE",
+          "text": "52.222-41",
+          "tokens": [
+            "52.222-41"
+          ],
+          "anchors": [],
+          "ordinal": 6,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "256914ef523a1cef",
+          "blockType": "CLAUSE_REFERENCE",
+          "text": "52.222-50",
+          "tokens": [
+            "52.222-50"
+          ],
+          "anchors": [],
+          "ordinal": 7,
+          "extractionConfidence": 1
+        }
+      ],
+      "ordinal": 8
+    },
+    {
+      "id": "a648628a2a93556a",
+      "heading": "Section J - List of Attachments",
+      "headingLevel": 1,
+      "ucfLetter": "J",
+      "sectionType": "ATTACHMENT_LIST",
+      "blocks": [
+        {
+          "id": "767520528612874a",
+          "blockType": "LIST_ITEM",
+          "text": "Attachment 1: Performance Work Statement",
+          "tokens": [
+            "Attachment",
+            "1",
+            ":",
+            "Performance",
+            "Work",
+            "Statement"
+          ],
+          "anchors": [],
+          "ordinal": 0,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "0b48008211cf5b58",
+          "blockType": "LIST_ITEM",
+          "text": "Attachment 2: Security Requirements",
+          "tokens": [
+            "Attachment",
+            "2",
+            ":",
+            "Security",
+            "Requirements"
+          ],
+          "anchors": [],
+          "ordinal": 1,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "67578853db2e0bd1",
+          "blockType": "LIST_ITEM",
+          "text": "Attachment 3: Wage Determination",
+          "tokens": [
+            "Attachment",
+            "3",
+            ":",
+            "Wage",
+            "Determination"
+          ],
+          "anchors": [],
+          "ordinal": 2,
+          "extractionConfidence": 1
+        }
+      ],
+      "ordinal": 9
+    },
+    {
+      "id": "585b72027892dea8",
+      "heading": "Section K - Representations, Certifications, and Other Statements of Offerors",
+      "headingLevel": 1,
+      "ucfLetter": "K",
+      "sectionType": "REPS_CERTS",
+      "blocks": [
+        {
+          "id": "59058b4a17309f5c",
+          "blockType": "PARAGRAPH",
+          "text": "Offerors shall complete the representations and certifications at FAR 52.212-3, available in SAM.",
+          "tokens": [
+            "Offerors",
+            "shall",
+            "complete",
+            "the",
+            "representations",
+            "and",
+            "certifications",
+            "at",
+            "FAR",
+            "52.212-3",
+            ",",
+            "available",
+            "in",
+            "SAM",
+            "."
+          ],
+          "anchors": [],
+          "ordinal": 0,
+          "extractionConfidence": 1
+        }
+      ],
+      "ordinal": 10
+    },
+    {
+      "id": "dcdc929e9190aaa6",
+      "heading": "Section L - Instructions, Conditions, and Notices to Offerors",
+      "headingLevel": 1,
+      "ucfLetter": "L",
+      "sectionType": "INSTRUCTIONS",
+      "blocks": [
+        {
+          "id": "83e13bae5a662a36",
+          "blockType": "PARAGRAPH",
+          "text": "Offers are due no later than 2:00 PM Eastern Time on 2026-09-10.",
+          "tokens": [
+            "Offers",
+            "are",
+            "due",
+            "no",
+            "later",
+            "than",
+            "2",
+            ":",
+            "00",
+            "PM",
+            "Eastern",
+            "Time",
+            "on",
+            "2026-09-10",
+            "."
+          ],
+          "anchors": [],
+          "ordinal": 0,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "672bc2d1695ad4ed",
+          "blockType": "PARAGRAPH",
+          "text": "The proposal shall not exceed 35 pages, single-sided, 12-point Times New Roman font, with one-inch margins.",
+          "tokens": [
+            "The",
+            "proposal",
+            "shall",
+            "not",
+            "exceed",
+            "35",
+            "pages",
+            ",",
+            "single-sided",
+            ",",
+            "12-point",
+            "Times",
+            "New",
+            "Roman",
+            "font",
+            ",",
+            "with",
+            "one-inch",
+            "margins",
+            "."
+          ],
+          "anchors": [],
+          "ordinal": 1,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "d8d2f387ada488f5",
+          "blockType": "PARAGRAPH",
+          "text": "The proposal shall be submitted in two volumes: Volume I - Technical; Volume II - Price.",
+          "tokens": [
+            "The",
+            "proposal",
+            "shall",
+            "be",
+            "submitted",
+            "in",
+            "two",
+            "volumes",
+            ":",
+            "Volume",
+            "I",
+            "-",
+            "Technical",
+            ";",
+            "Volume",
+            "II",
+            "-",
+            "Price",
+            "."
+          ],
+          "anchors": [],
+          "ordinal": 2,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "5faab935a4a21439",
+          "blockType": "PARAGRAPH",
+          "text": "Questions shall be submitted in writing to the Contracting Officer not later than ten (10) days before the proposal due date.",
+          "tokens": [
+            "Questions",
+            "shall",
+            "be",
+            "submitted",
+            "in",
+            "writing",
+            "to",
+            "the",
+            "Contracting",
+            "Officer",
+            "not",
+            "later",
+            "than",
+            "ten",
+            "(",
+            "10",
+            ")",
+            "days",
+            "before",
+            "the",
+            "proposal",
+            "due",
+            "date",
+            "."
+          ],
+          "anchors": [],
+          "ordinal": 3,
+          "extractionConfidence": 1
+        }
+      ],
+      "ordinal": 11
+    },
+    {
+      "id": "3a7ac2098dd4445b",
+      "heading": "Section M - Evaluation Factors for Award",
+      "headingLevel": 1,
+      "ucfLetter": "M",
+      "sectionType": "EVALUATION_CRITERIA",
+      "blocks": [
+        {
+          "id": "738f1124e67bb7f6",
+          "blockType": "PARAGRAPH",
+          "text": "Award will be made on the basis of best value to the Government, considering the following factors in descending order of importance:",
+          "tokens": [
+            "Award",
+            "will",
+            "be",
+            "made",
+            "on",
+            "the",
+            "basis",
+            "of",
+            "best",
+            "value",
+            "to",
+            "the",
+            "Government",
+            ",",
+            "considering",
+            "the",
+            "following",
+            "factors",
+            "in",
+            "descending",
+            "order",
+            "of",
+            "importance",
+            ":"
+          ],
+          "anchors": [],
+          "ordinal": 0,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "26af115c1b0eaf90",
+          "blockType": "LIST_ITEM",
+          "text": "Factor 1: Technical Capability",
+          "tokens": [
+            "Factor",
+            "1",
+            ":",
+            "Technical",
+            "Capability"
+          ],
+          "anchors": [],
+          "ordinal": 0,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "7c40dea012f78116",
+          "blockType": "LIST_ITEM",
+          "text": "Factor 2: Management Approach",
+          "tokens": [
+            "Factor",
+            "2",
+            ":",
+            "Management",
+            "Approach"
+          ],
+          "anchors": [],
+          "ordinal": 1,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "26c293a26cdadf34",
+          "blockType": "LIST_ITEM",
+          "text": "Factor 3: Relevant Experience",
+          "tokens": [
+            "Factor",
+            "3",
+            ":",
+            "Relevant",
+            "Experience"
+          ],
+          "anchors": [],
+          "ordinal": 2,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "f8360b690a5b2ff3",
+          "blockType": "LIST_ITEM",
+          "text": "Factor 4: Small Business Participation",
+          "tokens": [
+            "Factor",
+            "4",
+            ":",
+            "Small",
+            "Business",
+            "Participation"
+          ],
+          "anchors": [],
+          "ordinal": 3,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "8e170f46396bfe56",
+          "blockType": "LIST_ITEM",
+          "text": "Factor 5: Cost",
+          "tokens": [
+            "Factor",
+            "5",
+            ":",
+            "Cost"
+          ],
+          "anchors": [],
+          "ordinal": 4,
+          "extractionConfidence": 1
+        },
+        {
+          "id": "2891d32ee15e844e",
+          "blockType": "PARAGRAPH",
+          "text": "Technical factors, when combined, are significantly more important than Price.",
+          "tokens": [
+            "Technical",
+            "factors",
+            ",",
+            "when",
+            "combined",
+            ",",
+            "are",
+            "significantly",
+            "more",
+            "important",
+            "than",
+            "Price",
+            "."
+          ],
+          "anchors": [],
+          "ordinal": 6,
+          "extractionConfidence": 1
+        }
+      ],
+      "ordinal": 12
+    }
+  ]
+}

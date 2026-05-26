@@ -1,0 +1,21 @@
+{
+  "pairId": "af-004-attachment-add",
+  "description": "AF: site safety plan attachment added.",
+  "currentFile": "synthetic/af-004-attachment-add/current.json",
+  "priorFile": "synthetic/af-004-attachment-add/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "INSERT",
+      "category": "ATTACHMENTS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section J — List of Attachments",
+      "summary": "Attachment E (Site Safety Plan) added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "E",
+        "Site Safety Plan"
+      ]
+    }
+  ]
+}

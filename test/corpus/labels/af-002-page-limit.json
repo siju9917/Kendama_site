@@ -1,0 +1,20 @@
+{
+  "pairId": "af-002-page-limit",
+  "description": "AF page limit reduced to 35.",
+  "currentFile": "synthetic/af-002-page-limit/current.json",
+  "priorFile": "synthetic/af-002-page-limit/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "SUBMISSION_INSTRUCTIONS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section L — page limit",
+      "summary": "Page limit changed from 40 to 35 pages",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "35 pages"
+      ]
+    }
+  ]
+}

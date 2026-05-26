@@ -1,0 +1,21 @@
+{
+  "pairId": "dhs-006-attachment-add",
+  "description": "DHS: classified-handling attachment added.",
+  "currentFile": "synthetic/dhs-006-attachment-add/current.json",
+  "priorFile": "synthetic/dhs-006-attachment-add/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "INSERT",
+      "category": "ATTACHMENTS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section J — List of Attachments",
+      "summary": "Attachment 4 (Classified Handling Requirements) added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "4",
+        "Classified Handling Requirements"
+      ]
+    }
+  ]
+}

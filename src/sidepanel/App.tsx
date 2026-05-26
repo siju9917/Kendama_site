@@ -80,8 +80,8 @@ export function App(): React.ReactElement {
         {state.phase === "EMPTY" && <FilePicker onRun={onRun} />}
 
         {state.phase === "RUNNING" && (
-          <div className="empty">
-            <div className="spinner" /> {state.loadingNote || "Working…"}
+          <div className="empty" role="status" aria-live="polite">
+            <div className="spinner" aria-hidden="true" /> {state.loadingNote || "Working…"}
           </div>
         )}
 

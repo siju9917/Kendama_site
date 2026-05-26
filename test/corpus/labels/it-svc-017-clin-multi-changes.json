@@ -1,0 +1,31 @@
+{
+  "pairId": "it-svc-017-clin-multi-changes",
+  "description": "Two CLIN quantity changes.",
+  "currentFile": "synthetic/it-svc-017-clin-multi-changes/current.json",
+  "priorFile": "synthetic/it-svc-017-clin-multi-changes/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "PRICING_CLINS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section B — CLIN 0001",
+      "summary": "CLIN 0001 quantity changed to 18",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "CLIN 0001"
+      ]
+    },
+    {
+      "changeType": "MODIFY",
+      "category": "PRICING_CLINS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section B — CLIN 0002",
+      "summary": "CLIN 0002 quantity changed to 0",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "CLIN 0002"
+      ]
+    }
+  ]
+}

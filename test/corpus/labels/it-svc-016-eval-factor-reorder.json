@@ -1,0 +1,20 @@
+{
+  "pairId": "it-svc-016-eval-factor-reorder",
+  "description": "Factor 4 (Price) replaced with stronger language.",
+  "currentFile": "synthetic/it-svc-016-eval-factor-reorder/current.json",
+  "priorFile": "synthetic/it-svc-016-eval-factor-reorder/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "EVALUATION_CRITERIA",
+      "severity": "CRITICAL",
+      "locationDescription": "Section M — Factor 4",
+      "summary": "Evaluation factor changed: was \"Factor 4: Price\", now \"Factor 4: Price, with realism analysis at the labor-category level\"",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "Price, with realism analysis at the labor-category level"
+      ]
+    }
+  ]
+}

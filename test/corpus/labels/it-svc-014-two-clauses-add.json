@@ -1,0 +1,31 @@
+{
+  "pairId": "it-svc-014-two-clauses-add",
+  "description": "Two clauses added at once.",
+  "currentFile": "synthetic/it-svc-014-two-clauses-add/current.json",
+  "priorFile": "synthetic/it-svc-014-two-clauses-add/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "INSERT",
+      "category": "CLAUSES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section I — Contract Clauses",
+      "summary": "Clause 52.204-25 added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "52.204-25"
+      ]
+    },
+    {
+      "changeType": "INSERT",
+      "category": "CLAUSES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section I — Contract Clauses",
+      "summary": "Clause 52.204-27 added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "52.204-27"
+      ]
+    }
+  ]
+}

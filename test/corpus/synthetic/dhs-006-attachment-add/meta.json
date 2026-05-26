@@ -1,0 +1,10 @@
+{
+  "pairId": "dhs-006-attachment-add",
+  "description": "DHS: classified-handling attachment added.",
+  "tags": [
+    "attachments",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

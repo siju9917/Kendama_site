@@ -1,0 +1,20 @@
+{
+  "pairId": "it-svc-015-attachment-removed",
+  "description": "Past Performance Questionnaire attachment removed.",
+  "currentFile": "synthetic/it-svc-015-attachment-removed/current.json",
+  "priorFile": "synthetic/it-svc-015-attachment-removed/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "DELETE",
+      "category": "ATTACHMENTS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section J — List of Attachments",
+      "summary": "Attachment 3 removed (was: Attachment 3: Past Performance Questionnaire)",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "3"
+      ]
+    }
+  ]
+}

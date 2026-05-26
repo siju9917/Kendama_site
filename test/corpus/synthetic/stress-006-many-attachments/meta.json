@@ -1,0 +1,10 @@
+{
+  "pairId": "stress-006-many-attachments",
+  "description": "Stress: 3 attachments added, 1 removed.",
+  "tags": [
+    "attachments",
+    "stress",
+    "critical"
+  ],
+  "editCount": 4
+}

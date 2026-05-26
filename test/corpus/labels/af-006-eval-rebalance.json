@@ -1,0 +1,20 @@
+{
+  "pairId": "af-006-eval-rebalance",
+  "description": "AF: Management Plan factor language tightened.",
+  "currentFile": "synthetic/af-006-eval-rebalance/current.json",
+  "priorFile": "synthetic/af-006-eval-rebalance/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "EVALUATION_CRITERIA",
+      "severity": "CRITICAL",
+      "locationDescription": "Section M — Factor 2",
+      "summary": "Evaluation factor changed: was \"Factor 2: Management Plan\", now \"Factor 2: Management Plan including subcontractor management and reporting cadence\"",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "Management Plan including subcontractor management and reporting cadence"
+      ]
+    }
+  ]
+}

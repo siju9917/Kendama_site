@@ -1,0 +1,20 @@
+{
+  "pairId": "af-005-attachment-remove",
+  "description": "AF: geotechnical survey removed (out of scope).",
+  "currentFile": "synthetic/af-005-attachment-remove/current.json",
+  "priorFile": "synthetic/af-005-attachment-remove/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "DELETE",
+      "category": "ATTACHMENTS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section J — List of Attachments",
+      "summary": "Attachment D removed (was: Attachment D: Geotechnical Survey)",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "D"
+      ]
+    }
+  ]
+}

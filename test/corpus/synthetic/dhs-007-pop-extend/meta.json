@@ -1,0 +1,10 @@
+{
+  "pairId": "dhs-007-pop-extend",
+  "description": "DHS: base period extended to 24 months.",
+  "tags": [
+    "dates",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}
