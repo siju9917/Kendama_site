@@ -61,7 +61,7 @@ function Options(): React.ReactElement {
       </p>
 
       <div className="option">
-        <h3>License key</h3>
+        <h2>License key</h2>
         <input
           type="text"
           value={settings.licenseKey}
@@ -72,7 +72,7 @@ function Options(): React.ReactElement {
       </div>
 
       <div className="option">
-        <h3>Anonymous usage statistics</h3>
+        <h2>Anonymous usage statistics</h2>
         <label>
           <input
             type="checkbox"
@@ -84,12 +84,12 @@ function Options(): React.ReactElement {
       </div>
 
       <div className="option">
-        <h3>Clear stored diff history</h3>
+        <h2>Clear stored diff history</h2>
         <button onClick={clearHistory}>Clear history</button>
       </div>
 
       <div className="option">
-        <h3>Disclaimer</h3>
+        <h2>Disclaimer</h2>
         <p style={{ color: "var(--fg-muted)", fontSize: 12, marginTop: 0 }}>
           The disclaimer banner can be hidden from the side panel. Restore it here.
         </p>
@@ -105,7 +105,7 @@ function Options(): React.ReactElement {
       </div>
 
       <div className="option">
-        <h3>Reset onboarding</h3>
+        <h2>Reset onboarding</h2>
         <button
           onClick={async () => {
             await kv.remove("biddiff.onboarding.seen");
@@ -118,7 +118,13 @@ function Options(): React.ReactElement {
         </button>
       </div>
 
-      <div style={{ color: "var(--fg-muted)", fontSize: 12, marginTop: 16 }}>{status}</div>
+      <div
+        role="status"
+        aria-live="polite"
+        style={{ color: "var(--fg-muted)", fontSize: 12, marginTop: 16, minHeight: 18 }}
+      >
+        {status}
+      </div>
     </div>
   );
 }
