@@ -1,0 +1,118 @@
+# Build Progress
+
+Live checklist of every phase and half-step. Each item is `[ ]`, `[in-progress]`, or `[done]`.
+A half-step is `[done]` ONLY when its deliverable exists in the codebase, is tested,
+is integrated, is committed, and the suite is green (Part 17.5 rule).
+
+## Phase 0 — Project setup & scaffold
+
+- [done] 0.1 Initialize repo, create directory tree, `package.json`
+- [done] 0.2 Configure TypeScript (strict), Vite, React, Vitest, ESLint, Prettier
+- [done] 0.3 Write `manifest.config.ts` (MV3, minimal permissions)
+- [done] 0.4 Set up CI (`.github/workflows/ci.yml`)
+- [done] 0.5 Create all repo-root tracking docs
+- [done] 0.6 Implement canonical data model (`src/core/model/types.ts`, `src/core/diff/types.ts`, `src/core/interfaces.ts`) + unit tests
+- [done] 0.7 Commit, push, run reflection protocol
+
+## Phase 1 — Test corpus
+
+- [ ] 1.1 Corpus acquisition (≥40 docs in `test/corpus/`)
+- [ ] 1.2 Corpus diversity (scanned, DOCX, two-column, large, malformed, encrypted)
+- [ ] 1.3 Labeling schema
+- [ ] 1.4 Hand-label every amendment pair
+- [ ] 1.5 Build corpus test harness
+
+## Phase 2 — Document extraction pipeline
+
+- [ ] 2.1 PDF text extraction (PDF.js)
+- [ ] 2.2 DOCX extraction
+- [ ] 2.3 Line/block reconstruction + two-column handling
+- [ ] 2.4 Heading detection
+- [ ] 2.5 Section assembly & UCF mapping
+- [ ] 2.6 Section-type classification
+- [ ] 2.7 Tokenizer (done in shared/text.ts; re-verify against corpus)
+- [ ] 2.8 Anchor detection (CLAUSE_REF, DATE, MONEY, PAGE_LIMIT, CLIN, SECTION_REF)
+- [ ] 2.9 Normalization pipeline (compose 2.1–2.8)
+- [ ] 2.10 OCR fallback (Tesseract WASM)
+- [ ] 2.11 Malformed-input handling
+- [ ] 2.12 Extraction-confidence gate
+- [ ] 2.13 Performance pass
+
+## Phase 3 — Diff & classification engine (THE MOAT)
+
+- [ ] 3.1 Section alignment
+- [ ] 3.2 Block alignment within sections (Myers diff over block identity)
+- [ ] 3.3 Move detection
+- [ ] 3.4 Token-level diff for MODIFY changes
+- [ ] 3.5 Build Change records
+- [ ] 3.6 Change classification
+- [ ] 3.7 Critical-change detection (Part 1.5 ruleset)
+- [ ] 3.8 False-positive suppression
+- [ ] 3.9 Determinism audit
+- [ ] 3.10 Clause intelligence integration
+- [ ] 3.11 Assemble DiffResult
+- [ ] 3.12 Miss-rate audit (zero missed CRITICAL; recall ≥98%)
+- [ ] 3.13 Freeze regression suite in CI
+
+## Phase 4 — Extension shell & SAM.gov integration
+
+- [ ] 4.1 SAM.gov page detection
+- [ ] 4.2 Attachment & amendment discovery
+- [ ] 4.3 Integration isolation (grep test)
+- [ ] 4.4 Inject affordance
+- [ ] 4.5 Service worker orchestration
+- [ ] 4.6 Offscreen document
+- [ ] 4.7 Side panel app
+- [ ] 4.8 Popup
+- [ ] 4.9 Options page
+- [ ] 4.10 Storage layer
+- [ ] 4.11 Export functions (PDF report + clipboard summary)
+- [ ] 4.12 All UI states (empty/loading/partial/error)
+- [ ] 4.13 Memory & lifecycle hardening (50-diff soak test)
+
+## Phase 5 — Backend, licensing, billing
+
+- [ ] 5.1 Serverless backend skeleton
+- [ ] 5.2 Clause-intelligence dataset & API
+- [ ] 5.3 Licensing service
+- [ ] 5.4 Merchant-of-record billing integration
+- [ ] 5.5 Trial logic (14-day, self-serve tiers)
+- [ ] 5.6 Dunning / card-failure handling
+- [ ] 5.7 Customer billing portal link
+- [ ] 5.8 License-validation hardening
+- [ ] 5.9 Anonymous telemetry (content-free)
+- [ ] 5.10 Opt-in server OCR
+
+## Phase 6 — Hardening & full QA
+
+- [ ] 6.1 Expand corpus to 75+ docs
+- [ ] 6.2 Full regression + miss-rate audit
+- [ ] 6.3 Cross-environment tests
+- [ ] 6.4 SAM.gov-change drill
+- [ ] 6.5 Security audit
+- [ ] 6.6 Compliance pass
+- [ ] 6.7 Performance & load tests
+- [ ] 6.8 Accessibility pass
+- [ ] 6.9 Playwright e2e suite
+- [ ] 6.10 Accuracy-claim audit
+
+## Phase 7 — Launch assets
+
+- [ ] 7.1 Web Store listing copy
+- [ ] 7.2 Visual assets spec
+- [ ] 7.3 Single-page marketing site
+- [ ] 7.4 Help center
+- [ ] 7.5 In-product onboarding
+- [ ] 7.6 Support system
+- [ ] 7.7 Pricing finalized
+- [ ] 7.8 Review-generation flow
+- [ ] 7.9 Analytics & error dashboards
+- [ ] 7.10 Release runbook
+
+## Phase 8 — Package & launch-ready
+
+- [ ] 8.1 Production build & package (.zip)
+- [ ] 8.2 Final full-suite run
+- [ ] 8.3 Final security & compliance signoff
+- [ ] 8.4 Submission package
+- [ ] 8.5 `BUILD_COMPLETE.md`
