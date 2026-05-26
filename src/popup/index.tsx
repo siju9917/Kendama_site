@@ -64,7 +64,17 @@ function Popup(): React.ReactElement {
           <ul style={{ listStyle: "none", padding: 0, marginTop: 8 }}>
             {recent.slice(0, 5).map((s) => (
               <li key={s.id} style={{ padding: "4px 0", borderBottom: "1px solid var(--border)" }}>
-                <div style={{ fontWeight: 600 }}>{s.solicitationId ?? s.currentFileName}</div>
+                <div
+                  style={{
+                    fontWeight: 600,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                  title={s.solicitationId ?? s.currentFileName}
+                >
+                  {s.solicitationId ?? s.currentFileName}
+                </div>
                 <div style={{ color: "var(--fg-muted)", fontSize: 11 }}>
                   {s.totalChanges} changes
                   {s.criticalCount > 0 ? ` · ${s.criticalCount} critical` : ""}
