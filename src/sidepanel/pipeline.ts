@@ -61,7 +61,12 @@ async function runViaOffscreen(
   signal?: AbortSignal,
 ): Promise<DiffResult> {
   await ensureOffscreenDocument();
-  const jobId = crypto.randomUUID();
+  // crypto.randomUUID requires Chrome 92+. MV3 itself only requires 88+,
+  // so on the rare older browser fall back to a timestamp + random.
+  const jobId =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   const currentBytes = await current.arrayBuffer();
   const priorBytes = await prior.arrayBuffer();
 
