@@ -18,7 +18,10 @@ export function ProgressView({
         aria-valuemax={100}
         aria-label="Diff progress"
       >
-        <div className="progressbar__fill" style={{ width: `${Math.max(4, percent)}%` }} />
+        <div
+          className="progressbar__fill"
+          style={{ width: `${Math.min(100, Math.max(4, percent))}%` }}
+        />
       </div>
       <div style={{ marginTop: 12 }}>
         <div className="skeleton" style={{ height: 12, width: "60%", marginBottom: 8 }} />
