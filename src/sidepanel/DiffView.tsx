@@ -180,6 +180,16 @@ export function DiffView({ result }: Props): React.ReactElement {
             {reviewedCount}/{filtered.length} reviewed
           </span>
         )}
+        {hasActiveFilter && (
+          <button
+            className="ghost"
+            onClick={clearFilters}
+            style={{ fontSize: 11, marginLeft: "auto" }}
+            title="Clear all filters"
+          >
+            Clear filters
+          </button>
+        )}
       </div>
       {availableSections.length > 1 && (
         <div className="filters" role="group" aria-label="Section filter">
