@@ -46,6 +46,9 @@ export function ChangeCard({
   defaultCollapsed = false,
 }: Props): React.ReactElement {
   const [expanded, setExpanded] = useState<boolean>(!defaultCollapsed);
+  const [sideBySide, setSideBySide] = useState<boolean>(false);
+  const canSideBySide =
+    change.changeType === "MODIFY" && !!change.beforeText && !!change.afterText;
   return (
     <article
       className={
@@ -81,8 +84,23 @@ export function ChangeCard({
 
       {expanded ? (
         <>
-          {change.changeType === "MODIFY" && change.tokenSpans ? (
+          {change.changeType === "MODIFY" && change.tokenSpans && !sideBySide ? (
             <div className="change__tokens">{renderTokenSpans(change.tokenSpans)}</div>
+          ) : sideBySide && change.beforeText && change.afterText ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div className="change__before" style={{ marginBottom: 0 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--delete)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Prior
+                </div>
+                {change.beforeText}
+              </div>
+              <div className="change__after">
+                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--insert)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  New
+                </div>
+                {change.afterText}
+              </div>
+            </div>
           ) : (
             <>
               {change.beforeText && <div className="change__before">{change.beforeText}</div>}
@@ -108,6 +126,16 @@ export function ChangeCard({
         <button className="ghost" onClick={() => setExpanded((v) => !v)}>
           {expanded ? "Collapse" : "Expand"}
         </button>
+        {expanded && canSideBySide && (
+          <button
+            className="ghost"
+            onClick={() => setSideBySide((v) => !v)}
+            aria-pressed={sideBySide}
+            title="Toggle side-by-side view"
+          >
+            {sideBySide ? "Inline diff" : "Side by side"}
+          </button>
+        )}
         <button
           className="ghost"
           onClick={onToggleReviewed}

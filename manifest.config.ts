@@ -9,6 +9,12 @@ export default defineManifest({
     "Diff amended U.S. federal solicitations against prior versions. Categorized changes, critical-flagged, on-device.",
   permissions: ["storage", "sidePanel", "offscreen"],
   host_permissions: ["*://sam.gov/*", "*://*.sam.gov/*"],
+  // Explicit Content Security Policy. MV3 defaults already prohibit
+  // remote script and inline execution; we restate it here so a future
+  // manifest edit can't accidentally loosen it.
+  content_security_policy: {
+    extension_pages: "script-src 'self'; object-src 'self'",
+  },
   action: {
     default_popup: "src/popup/index.html",
     default_title: "BidDiff",
