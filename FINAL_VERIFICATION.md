@@ -8,7 +8,7 @@ Last run: 2026-05-26.
 | -------------------------------------------------------- | --------- |
 | `npm run typecheck`                                      | clean     |
 | `npm run lint`                                           | clean     |
-| `npm test` — unit + integration                          | 178/178   |
+| `npm test` — unit + integration + components             | 207/207   |
 | `npm run build`                                          | clean     |
 | `scripts/package.sh` — production zip                    | 1.7 MB    |
 
@@ -73,7 +73,7 @@ test runner; deferred per `BLOCKERS.md`.)
 | 5 | End-to-end Playwright tests                                                        | code written; runtime needs browser binary (BLOCKERS.md) |
 | 6 | Reflection protocol converged for every phase                                       | done — `REFLECTION_LOG.md` |
 | 7 | Tracking docs current                                                              | done |
-| 8 | Packaged `.zip` ready for Web Store                                                | done — `biddiff-v0.1.0.zip` (1.7 MB) |
+| 8 | Packaged `.zip` ready for Web Store                                                | done — `dist-zips/biddiff-v0.1.0.zip` (1.8 MB) |
 | 9 | Part 17 protocols followed throughout                                              | done — PREFLIGHT/STATE/SELF_AUDIT/REFLECTION_LOG/FINAL_VERIFICATION all present |
 
 ## Outstanding (genuine external blockers only — see `BLOCKERS.md`)

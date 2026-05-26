@@ -7,10 +7,10 @@ the final list at the bottom of this document.
 
 | Metric | Result |
 | --- | --- |
-| Tests | 206 / 206 passing across 37 files |
+| Tests | 207 / 207 passing across 37 files |
 | Typecheck | clean (strict mode) |
 | Lint | clean (`max-warnings=0`) |
-| Extension build | clean — 1.8 MB `biddiff-v0.1.0.zip` |
+| Extension build | clean — 1.8 MB `dist-zips/biddiff-v0.1.0.zip` |
 | Corpus miss-rate audit (75 pairs / 150 docs) | 100% recall, 100% precision, 0 missed CRITICAL, 0 FP on null pairs, deterministic |
 | End-to-end PDF round-trip (render → extract → diff) | 5 / 5 pairs |
 | 250-page PDF (render + extract + diff) | 11s (budget 30s) |
@@ -63,7 +63,7 @@ a `schemaVersion` for future migrations.
 | 5 | Backend handlers (clauses, license HMAC, content-free telemetry, OCR stub) + license client + telemetry client | code-complete; deployment needs human creds |
 | 6 | Hardening (e2e PDF roundtrip, reformatting noise, hand-crafted adversarial, anchor recall, perf, memory soak, security audit, compliance, accessibility) | done |
 | 7 | Launch assets (store listing, privacy policy, ToS, help center, marketing site, support macros, visual specs, release runbook, branded PDF report) | done |
-| 8 | Production packaging | done — `biddiff-v0.1.0.zip` 1.8 MB |
+| 8 | Production packaging | done — `dist-zips/biddiff-v0.1.0.zip` 1.8 MB |
 
 ## Quality gates verified in this build
 
@@ -134,7 +134,7 @@ code cannot make. Nothing else is outstanding.
    browser runtime is missing here).
 
 8. **Submit the extension.** Run `bash scripts/package.sh`. Upload
-   `biddiff-v0.1.0.zip` to the Web Store developer console. Paste the
+   `dist-zips/biddiff-v0.1.0.zip` to the Web Store developer console. Paste the
    listing copy. Submit for review. See `docs/release-runbook.md` for
    staged-rollout and rollback procedure.
 
@@ -143,4 +143,4 @@ That's the entire list. The code work is done.
 ## Repository
 
 Branch: `claude/biddiff-extension-ijZiE`
-Latest packaged artifact: `biddiff-v0.1.0.zip` (1.8 MB)
+Latest packaged artifact: `dist-zips/biddiff-v0.1.0.zip` (1.8 MB)
