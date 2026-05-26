@@ -67,6 +67,46 @@ describe("itemsToRawLines (two-column)", () => {
   });
 });
 
+describe("mergeCrossPageContinuations", () => {
+  it("merges a mid-sentence line break across pages", () => {
+    const items: PageTextItem[] = [
+      baseItem({ text: "The contractor shall provide", x: 50, y: 200, page: 0 }),
+      baseItem({ text: "supplies in accordance with", x: 50, y: 720, page: 1 }),
+    ];
+    const lines = itemsToRawLines(items);
+    expect(lines.length).toBe(1);
+    expect(lines[0].text).toContain("provide supplies in accordance with");
+  });
+
+  it("does NOT merge across a heading-like boundary", () => {
+    const items: PageTextItem[] = [
+      baseItem({ text: "End of section.", x: 50, y: 200, page: 0 }),
+      baseItem({ text: "SECTION D — PACKAGING", x: 50, y: 720, page: 1 }),
+    ];
+    const lines = itemsToRawLines(items);
+    expect(lines.length).toBe(2);
+  });
+
+  it("does NOT merge after sentence-ending punctuation", () => {
+    const items: PageTextItem[] = [
+      baseItem({ text: "Section ends here.", x: 50, y: 200, page: 0 }),
+      baseItem({ text: "next sentence continues", x: 50, y: 720, page: 1 }),
+    ];
+    const lines = itemsToRawLines(items);
+    expect(lines.length).toBe(2);
+  });
+
+  it("rejoins hyphen-broken words across pages", () => {
+    const items: PageTextItem[] = [
+      baseItem({ text: "perfor-", x: 50, y: 200, page: 0 }),
+      baseItem({ text: "mance shall be", x: 50, y: 720, page: 1 }),
+    ];
+    const lines = itemsToRawLines(items);
+    expect(lines.length).toBe(1);
+    expect(lines[0].text).toBe("performance shall be");
+  });
+});
+
 describe("itemsToRawLines (single-column)", () => {
   it("preserves reading order top to bottom", () => {
     const items: PageTextItem[] = [

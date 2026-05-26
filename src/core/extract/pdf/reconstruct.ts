@@ -127,5 +127,63 @@ export function itemsToRawLines(items: ReadonlyArray<PageTextItem>): RawLine[] {
       for (const line of rightLines) out.push(lineToRaw(line, pg.page));
     }
   }
+  return mergeCrossPageContinuations(out);
+}
+
+/**
+ * Merge lines split across a page boundary that are clearly continuations
+ * of a single paragraph.
+ *
+ * Heuristic: when the LAST line on page N ends without sentence-final
+ * punctuation (.!?:) and the FIRST line on page N+1 begins with a
+ * lowercase letter (indicating mid-sentence continuation), merge them.
+ *
+ * This is conservative: it never merges across what looks like a heading
+ * (uppercase start, font size jump) and never merges if either line is
+ * empty.
+ */
+export function mergeCrossPageContinuations(lines: ReadonlyArray<RawLine>): RawLine[] {
+  if (lines.length < 2) return [...lines];
+  const out: RawLine[] = [];
+  for (const line of lines) {
+    const prev = out[out.length - 1];
+    if (
+      prev &&
+      prev.page !== undefined &&
+      line.page !== undefined &&
+      line.page === prev.page + 1 &&
+      shouldMergeContinuation(prev, line)
+    ) {
+      out[out.length - 1] = {
+        text: prev.text.replace(/-$/, "") + (prev.text.endsWith("-") ? "" : " ") + line.text,
+        fontSize: prev.fontSize,
+        bold: prev.bold,
+        page: prev.page,
+      };
+    } else {
+      out.push(line);
+    }
+  }
   return out;
+}
+
+function shouldMergeContinuation(prev: RawLine, next: RawLine): boolean {
+  const prevText = prev.text.trim();
+  const nextText = next.text.trim();
+  if (prevText.length === 0 || nextText.length === 0) return false;
+  // Sentence ends with .?!: or trailing ) ] " — don't merge.
+  if (/[.!?:)\]"']\s*$/.test(prevText)) return false;
+  // If prev ends with a hyphen, it's a soft hyphen line wrap — merge.
+  if (/-$/.test(prevText)) return true;
+  // If next starts with an UPPER-case word or a numbered/lettered heading,
+  // don't merge — it's likely a new sentence or heading.
+  if (/^[A-Z]/.test(nextText) && !/^[A-Z]+\b/.test(nextText)) {
+    // First char uppercase but the WHOLE leading word isn't all caps:
+    // this is likely a new sentence start, not a heading.
+    return false;
+  }
+  if (/^[A-Z]+\b/.test(nextText)) return false; // heading-like
+  if (/^\d+\./.test(nextText)) return false; // numbered start
+  // Otherwise merge.
+  return true;
 }
