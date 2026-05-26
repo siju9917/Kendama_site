@@ -116,7 +116,15 @@ export function FilePicker({ onRun }: Props): React.ReactElement {
   const canRun = current !== null && prior !== null;
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>): void => {
-    if (e.key === "Enter" && canRun) onRun(current!, prior!);
+    if (e.key !== "Enter" || !canRun) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    // Don't fire Compare when Enter is pressed inside the hidden file
+    // input — the user is usually trying to open the file picker
+    // (which Chrome blocks for security) and definitely doesn't mean
+    // to launch the diff.
+    const target = e.target as HTMLElement | null;
+    if (target?.tagName === "INPUT" || target?.tagName === "BUTTON") return;
+    onRun(current!, prior!);
   };
 
   return (
