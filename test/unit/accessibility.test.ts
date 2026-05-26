@@ -68,3 +68,32 @@ describe("Design system contrast (WCAG AA)", () => {
     expect(contrast(ACCENT, BG)).toBeGreaterThanOrEqual(4.5);
   });
 });
+
+describe("Design system contrast — dark mode", () => {
+  const BG = "#0e1116";
+  const FG = "#e9edf2";
+  const FG_MUTED = "#a4adb8";
+  const FG_FAINT = "#7d8694";
+  const ACCENT = "#6ea1ff";
+  const ACCENT_FG = "#0b1220";
+  const CRITICAL = "#ff6b88";
+
+  it("body text on dark background passes AA", () => {
+    expect(contrast(FG, BG)).toBeGreaterThanOrEqual(4.5);
+  });
+  it("muted text on dark background passes AA", () => {
+    expect(contrast(FG_MUTED, BG)).toBeGreaterThanOrEqual(4.5);
+  });
+  it("faint text on dark background — at minimum AA-large", () => {
+    expect(contrast(FG_FAINT, BG)).toBeGreaterThanOrEqual(3.0);
+  });
+  it("accent button text on dark accent background passes AA", () => {
+    expect(contrast(ACCENT_FG, ACCENT)).toBeGreaterThanOrEqual(4.5);
+  });
+  it("critical text on dark background passes AA", () => {
+    expect(contrast(CRITICAL, BG)).toBeGreaterThanOrEqual(4.5);
+  });
+  it("accent on dark background passes AA", () => {
+    expect(contrast(ACCENT, BG)).toBeGreaterThanOrEqual(4.5);
+  });
+});
