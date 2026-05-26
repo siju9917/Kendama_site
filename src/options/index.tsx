@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { makeKv } from "../core/storage/index.js";
 
@@ -18,15 +18,34 @@ function Options(): React.ReactElement {
   const kv = useMemo(() => makeKv(), []);
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
   const [status, setStatus] = useState("");
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     kv.get<Settings>(SETTINGS_KEY).then((s) => setSettings(s ?? DEFAULTS));
   }, [kv]);
+  // Flush any pending save on unmount so a fast close doesn't lose input.
+  useEffect(() => {
+    return () => {
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current);
+      }
+    };
+  }, []);
 
-  const save = async (next: Settings): Promise<void> => {
+  /**
+   * Update state synchronously, then persist to chrome.storage after a
+   * short debounce. Typing into the license key field used to fire one
+   * storage write per character.
+   */
+  const save = (next: Settings, debounceMs = 250): void => {
     setSettings(next);
-    await kv.set(SETTINGS_KEY, next);
-    setStatus("Saved.");
-    setTimeout(() => setStatus(""), 1500);
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      void (async () => {
+        await kv.set(SETTINGS_KEY, next);
+        setStatus("Saved.");
+        setTimeout(() => setStatus(""), 2500);
+      })();
+    }, debounceMs);
   };
 
   const clearHistory = async (): Promise<void> => {
@@ -77,7 +96,9 @@ function Options(): React.ReactElement {
           <input
             type="checkbox"
             checked={settings.allowAnonymousTelemetry}
-            onChange={(e) => save({ ...settings, allowAnonymousTelemetry: e.target.checked })}
+            onChange={(e) =>
+              save({ ...settings, allowAnonymousTelemetry: e.target.checked }, 0)
+            }
           />{" "}
           Send anonymous usage statistics (counts and error types only — never document content)
         </label>
