@@ -121,7 +121,19 @@ export class DiffStorage implements IStorage {
 
   private async readIndex(): Promise<IndexFile> {
     const f = await this.kv.get<IndexFile>(SUMMARY_INDEX_KEY);
-    return f ?? { entries: [] };
+    if (!f) return { entries: [] };
+    // Defensive: if the stored shape is broken (downgrade, manual edit,
+    // corrupted blob), recover gracefully rather than crashing the UI.
+    if (!f.entries || !Array.isArray(f.entries)) return { entries: [] };
+    // Filter entries that are missing required fields or have invalid types.
+    const valid = f.entries.filter(
+      (e): e is DiffIndexEntry =>
+        !!e &&
+        typeof e.id === "string" &&
+        typeof e.sizeBytes === "number" &&
+        typeof e.lastAccess === "number",
+    );
+    return { entries: valid };
   }
   private async writeIndex(idx: IndexFile): Promise<void> {
     await this.kv.set(SUMMARY_INDEX_KEY, idx);

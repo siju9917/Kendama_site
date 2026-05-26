@@ -83,4 +83,44 @@ describe("DiffStorage", () => {
     const s = new DiffStorage();
     expect(await s.getDiff("nope")).toBeNull();
   });
+
+  it("recovers gracefully from a corrupted index", async () => {
+    const { makeKv } = await import("./index.js");
+    const kv = makeKv();
+    // Set a broken index manually.
+    await kv.set("biddiff.diffs.index", { entries: "not an array" });
+    const s = new DiffStorage();
+    expect(await s.listDiffs()).toEqual([]);
+    // Should also be able to save fresh after corruption.
+    await s.saveDiff(fakeResult("recover"));
+    const list = await s.listDiffs();
+    expect(list.length).toBe(1);
+  });
+
+  it("filters out malformed entries", async () => {
+    const { makeKv } = await import("./index.js");
+    const kv = makeKv();
+    await kv.set("biddiff.diffs.index", {
+      entries: [
+        {
+          id: "good",
+          sizeBytes: 100,
+          lastAccess: 1,
+          generatedAt: "x",
+          currentFileName: "a",
+          priorFileName: "b",
+          criticalCount: 0,
+          totalChanges: 0,
+          solicitationId: null,
+          storage: "kv",
+        },
+        { id: "missing-fields" }, // missing required fields
+        null,
+        "garbage",
+      ],
+    });
+    const s = new DiffStorage();
+    const list = await s.listDiffs();
+    expect(list.map((e) => e.id)).toEqual(["good"]);
+  });
 });
