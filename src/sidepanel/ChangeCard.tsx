@@ -60,7 +60,9 @@ export function ChangeCard({
     >
       <header className="change__header">
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 600 }}>{change.sectionHeading}</div>
+          <h3 style={{ fontWeight: 600, fontSize: 13, margin: 0 }}>
+            {change.sectionHeading}
+          </h3>
           <div className="change__location">{change.locationHint}</div>
         </div>
         <div className="change__badges">

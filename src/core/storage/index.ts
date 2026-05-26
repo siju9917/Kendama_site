@@ -245,8 +245,11 @@ export class DiffStorage implements IStorage {
   }
 
   async getDiff(id: string): Promise<DiffResult | null> {
-    const idx = await this.readIndex();
-    const e = idx.entries.find((x) => x.id === id);
+    // Read the payload outside the lock (no mutation), then touch
+    // last-access inside the lock so concurrent reads don't trample
+    // the index.
+    const preIdx = await this.readIndex();
+    const e = preIdx.entries.find((x) => x.id === id);
     let payload: string | null = null;
     if (e?.storage === "idb") {
       payload = await idbGet(id);
@@ -254,10 +257,15 @@ export class DiffStorage implements IStorage {
       payload = await this.kv.get<string>(PAYLOAD_PREFIX + id);
     }
     if (!payload) return null;
-    // Touch last-access.
     if (e) {
-      e.lastAccess = Date.now();
-      await this.writeIndex(idx);
+      await this.serialize(async () => {
+        const idx = await this.readIndex();
+        const live = idx.entries.find((x) => x.id === id);
+        if (live) {
+          live.lastAccess = Date.now();
+          await this.writeIndex(idx);
+        }
+      });
     }
     return JSON.parse(payload) as DiffResult;
   }
