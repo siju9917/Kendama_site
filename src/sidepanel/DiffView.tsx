@@ -63,6 +63,9 @@ export function DiffView({ result }: Props): React.ReactElement {
     const handler = (e: KeyboardEvent): void => {
       const target = e.target as HTMLElement | null;
       if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") return;
+      // Skip when any modifier is held so we don't hijack browser
+      // shortcuts (Cmd+R reload, Cmd+J downloads, Cmd+/ show shortcuts).
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
       const list = filteredRef.current;
       if (e.key === "j" || e.key === "ArrowDown") {
         e.preventDefault();

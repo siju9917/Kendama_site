@@ -186,6 +186,10 @@ export class DiffStorage implements IStorage {
 
     try {
       const idx = await this.readIndex();
+      // If we're overwriting an existing entry (same content hash → same
+      // id), preserve its lastViewedAt so a re-run of an already-viewed
+      // diff doesn't regress to the "new" badge.
+      const existing = idx.entries.find((e) => e.id === result.id);
       const summary: DiffIndexEntry = {
         id: result.id,
         generatedAt: result.generatedAt,
@@ -197,7 +201,7 @@ export class DiffStorage implements IStorage {
         sizeBytes: payload.length,
         lastAccess: Date.now(),
         storage: useIdb ? "idb" : "kv",
-        lastViewedAt: null,
+        lastViewedAt: existing?.lastViewedAt ?? null,
       };
       idx.entries = idx.entries.filter((e) => e.id !== result.id);
       idx.entries.push(summary);
