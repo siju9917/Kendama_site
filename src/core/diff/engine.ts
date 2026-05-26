@@ -20,7 +20,7 @@ import type {
 import { emptyCategoryCounts } from "./types.js";
 import type { IClauseClient, IDiffEngine } from "../interfaces.js";
 import { contentHash } from "../../shared/hash.js";
-import { EXTRACTION_LOW_CONFIDENCE_THRESHOLD } from "../../shared/constants.js";
+import { DIFF_THRESHOLDS, EXTRACTION_LOW_CONFIDENCE_THRESHOLD } from "../../shared/constants.js";
 import { alignSections, type SectionPair } from "./align/sections.js";
 import { alignBlocks, type BlockAlignmentItem } from "./align/blocks.js";
 import {
@@ -167,9 +167,22 @@ export class DiffEngine implements IDiffEngine {
       current.metadata.overallExtractionConfidence,
       prior.metadata.overallExtractionConfidence,
     );
-    const lowScoredPairs = sectionPairs.filter(
-      (sp) => sp.current && sp.prior && sp.score < 0.7,
-    ).length;
+    // Threshold is relative to the maximum score a pair COULD achieve:
+    // pairs whose UCF letters could match cap at 1.0; pairs without UCF
+    // letters cap at ucfWeight + sectionTypeWeight + headingSimWeight
+    // minus the ucf-match contribution. Using a fixed 0.7 threshold
+    // wrongly penalized every non-UCF-letter section pair (a numbered
+    // spec or RFP excerpt) for being unable to score above 0.6.
+    const TH = DIFF_THRESHOLDS;
+    const ucfPossibleMax = TH.weightUcfMatch + TH.weightSectionTypeMatch + TH.weightHeadingSim;
+    const nonUcfMax = TH.weightSectionTypeMatch + TH.weightHeadingSim;
+    const lowScoredPairs = sectionPairs.filter((sp) => {
+      if (!sp.current || !sp.prior) return false;
+      const ucfPossible = !!sp.current.ucfLetter && !!sp.prior.ucfLetter;
+      const max = ucfPossible ? ucfPossibleMax : nonUcfMax;
+      // "Low" = below 70 % of what this pair was even able to score.
+      return sp.score < 0.7 * max;
+    }).length;
     const confPenalty = Math.min(0.3, lowScoredPairs * 0.05);
     // Clamp to [0, 1] — defensive against malformed overallExtractionConfidence.
     // NaN propagates through Math.min/max, so use a guarded fallback.
