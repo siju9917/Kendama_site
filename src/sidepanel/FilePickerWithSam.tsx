@@ -17,7 +17,7 @@ export function FilePickerWithSam({
 }: {
   onRun: (current: File, prior: File) => void;
 }): React.ReactElement {
-  const [pending, setPending] = useState<{ current?: File; prior?: File }>({});
+  const [, setPending] = useState<{ current?: File; prior?: File }>({});
   const [error, setError] = useState<string | null>(null);
   const onChoose = async (
     slot: "current" | "prior",
@@ -26,9 +26,20 @@ export function FilePickerWithSam({
     setError(null);
     try {
       const file = await downloadAttachmentAsFile(a);
-      const next = { ...pending, [slot]: file };
-      setPending(next);
-      if (next.current && next.prior) onRun(next.current, next.prior);
+      // Functional setState so two concurrent downloads merging in
+      // either order don't overwrite each other (the captured
+      // `pending` reference would be stale).
+      let curRef: File | undefined;
+      let priRef: File | undefined;
+      setPending((prev) => {
+        const next = { ...prev, [slot]: file };
+        curRef = next.current;
+        priRef = next.prior;
+        return next;
+      });
+      // Fire onRun outside the updater so strict-mode double-invocation
+      // doesn't call it twice.
+      if (curRef && priRef) onRun(curRef, priRef);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
