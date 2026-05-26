@@ -219,11 +219,12 @@ export function DiffView({ result, sessionNotices }: Props): React.ReactElement 
         </div>
       )}
       <Summary result={result} />
-      <div className="filter-bar">
-      <div className="filters">
+      <div className="filter-bar" role="search" aria-label="Filter changes">
+      <div className="filters" role="group" aria-label="Severity filter">
         <button
           className={`filter-chip ${filter === "ALL" ? "filter-chip--active" : ""}`}
           onClick={() => setFilter("ALL")}
+          aria-pressed={filter === "ALL"}
         >
           All ({result.changes.length})
         </button>
@@ -231,6 +232,7 @@ export function DiffView({ result, sessionNotices }: Props): React.ReactElement 
           className={`filter-chip ${filter === "CRITICAL" ? "filter-chip--active" : ""}`}
           onClick={() => setFilter("CRITICAL")}
           disabled={result.criticalCount === 0}
+          aria-pressed={filter === "CRITICAL"}
           title={
             result.criticalCount === 0
               ? "No critical changes in this diff"
@@ -260,6 +262,7 @@ export function DiffView({ result, sessionNotices }: Props): React.ReactElement 
           <button
             className={`filter-chip ${sectionFilter === "ALL" ? "filter-chip--active" : ""}`}
             onClick={() => setSectionFilter("ALL")}
+            aria-pressed={sectionFilter === "ALL"}
           >
             All sections
           </button>
@@ -268,6 +271,7 @@ export function DiffView({ result, sessionNotices }: Props): React.ReactElement 
               key={s}
               className={`filter-chip ${sectionFilter === s ? "filter-chip--active" : ""}`}
               onClick={() => setSectionFilter(s)}
+              aria-pressed={sectionFilter === s}
             >
               {s === "?" ? "Other" : `Section ${s}`} ({n})
             </button>
