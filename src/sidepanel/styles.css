@@ -798,6 +798,46 @@ input[type="text"]:focus-visible {
   font-size: 12px;
 }
 
+.sam-attachments {
+  margin-top: var(--space-5);
+}
+.sam-attachments__row {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  background: var(--bg-elev);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+}
+.sam-attachments__main {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.sam-attachments__name {
+  font-weight: 600;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sam-attachments__mime {
+  color: var(--fg-muted);
+  font-size: 11px;
+}
+.sam-attachments__btn {
+  font-size: 11px;
+}
+.sam-attachments__hint {
+  color: var(--fg-muted);
+  font-size: 11px;
+  margin-top: var(--space-2);
+}
+
 .section-heading {
   font-size: 11px;
   color: var(--fg-muted);

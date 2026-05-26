@@ -20,7 +20,10 @@ async function fetchLastAttachments(): Promise<OpportunityAttachment[]> {
   return resp?.attachments ?? [];
 }
 
-export function SamAttachments({ onChooseCurrent, onChoosePrior }: Props): React.ReactElement | null {
+export function SamAttachments({
+  onChooseCurrent,
+  onChoosePrior,
+}: Props): React.ReactElement | null {
   const [items, setItems] = useState<OpportunityAttachment[] | null>(null);
 
   useEffect(() => {
@@ -31,60 +34,36 @@ export function SamAttachments({ onChooseCurrent, onChoosePrior }: Props): React
   if (items.length === 0) return null;
 
   return (
-    <section style={{ marginTop: 24 }}>
-      <h2
-        style={{
-          fontSize: 13,
-          color: "var(--fg-muted)",
-          textTransform: "uppercase",
-          letterSpacing: "0.05em",
-        }}
-      >
-        Attachments on this SAM.gov page
-      </h2>
-      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+    <section className="sam-attachments">
+      <h2 className="section-heading">Attachments on this SAM.gov page</h2>
+      <ul className="reset-list">
         {items.map((a) => (
-          <li
-            key={a.id}
-            style={{
-              padding: "8px 12px",
-              border: "1px solid var(--border)",
-              borderRadius: 6,
-              marginBottom: 6,
-              background: "var(--bg-elev)",
-              display: "flex",
-              gap: 8,
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <div style={{ flex: 1, overflow: "hidden" }}>
-              <div style={{ fontWeight: 600, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <li key={a.id} className="sam-attachments__row">
+            <div className="sam-attachments__main">
+              <div className="sam-attachments__name" title={a.fileName}>
                 {a.fileName}
               </div>
-              {a.mimeType && (
-                <div style={{ color: "var(--fg-muted)", fontSize: 11 }}>{a.mimeType}</div>
-              )}
+              {a.mimeType && <div className="sam-attachments__mime">{a.mimeType}</div>}
             </div>
             <button
               onClick={() => onChooseCurrent(a)}
               title="Use as new (amendment) version"
-              style={{ fontSize: 11 }}
+              className="sam-attachments__btn"
             >
               As new
             </button>
             <button
               onClick={() => onChoosePrior(a)}
               title="Use as prior version"
-              style={{ fontSize: 11 }}
+              className="sam-attachments__btn"
             >
               As prior
             </button>
           </li>
         ))}
       </ul>
-      <p style={{ color: "var(--fg-muted)", fontSize: 11, marginTop: 8 }}>
-        Click 'As new' or 'As prior' to download and use this attachment.
+      <p className="sam-attachments__hint">
+        Click &lsquo;As new&rsquo; or &lsquo;As prior&rsquo; to download and use this attachment.
       </p>
     </section>
   );
