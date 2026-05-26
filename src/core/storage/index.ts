@@ -77,10 +77,12 @@ class ChromeKv implements KVStore {
     return new Promise((resolve, reject) => {
       const api = chromeLocal();
       if (!api) return resolve(null);
-      api.get(key, (items: Record<string, unknown>) => {
+      api.get(key, (items?: Record<string, unknown>) => {
         const err = chrome.runtime?.lastError;
         if (err) return reject(new Error(err.message));
-        resolve((items[key] as T) ?? null);
+        // Defensive: if Chrome ever calls back with no items dict AND no
+        // lastError, treat as missing rather than crashing on items[key].
+        resolve((items ? (items[key] as T) : null) ?? null);
       });
     });
   }
