@@ -14,9 +14,11 @@ export function Onboarding(): React.ReactElement | null {
     kv.get<boolean>(SEEN_KEY).then((v) => setShow(!v));
   }, [kv]);
 
-  const dismiss = async (): Promise<void> => {
-    await kv.set(SEEN_KEY, true);
+  const dismiss = (): void => {
+    // Hide first so the click is instant; persist after. A persist
+    // failure would only resurface the card on next reload.
     setShow(false);
+    void kv.set(SEEN_KEY, true);
   };
 
   if (show !== true) return null;
@@ -27,7 +29,7 @@ export function Onboarding(): React.ReactElement | null {
         <h2>Welcome to BidDiff</h2>
         <button
           className="ghost"
-          onClick={() => void dismiss()}
+          onClick={dismiss}
           style={{ fontSize: 11 }}
           aria-label="Dismiss the getting-started card"
         >

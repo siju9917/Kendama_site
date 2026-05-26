@@ -70,7 +70,14 @@ const observer = new MutationObserver(() => {
   if (pendingFrame !== null) return;
   pendingFrame = requestAnimationFrame(() => {
     pendingFrame = null;
-    inject();
+    // Affordance injection is a best-effort UX nicety on top of a
+    // foreign page — don't let a transient DOM exception escape to
+    // the page console.
+    try {
+      inject();
+    } catch {
+      /* best-effort */
+    }
   });
 });
 observer.observe(document.body, { childList: true, subtree: true });

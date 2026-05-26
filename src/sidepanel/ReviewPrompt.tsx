@@ -44,9 +44,10 @@ export function ReviewPrompt(): React.ReactElement | null {
     })();
   }, []);
 
-  const onDone = async (): Promise<void> => {
-    await kv.set(DISMISSED_KEY, true);
+  const onDone = (): void => {
+    // Hide first so the click is instant; persist after.
     setShow(false);
+    void kv.set(DISMISSED_KEY, true);
   };
 
   if (show !== true) return null;
@@ -66,12 +67,12 @@ export function ReviewPrompt(): React.ReactElement | null {
               "_blank",
               "noopener,noreferrer",
             );
-            void onDone();
+            onDone();
           }}
         >
           Leave a review
         </button>
-        <button onClick={() => void onDone()} className="review-prompt__cta">
+        <button onClick={onDone} className="review-prompt__cta">
           No thanks
         </button>
       </div>

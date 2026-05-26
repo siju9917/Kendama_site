@@ -32,9 +32,13 @@ export function App(): React.ReactElement {
     kv.get<boolean>(DISCLAIMER_DISMISSED_KEY).then((v) => setDisclaimerShown(!v));
   }, [kv]);
 
-  const dismissDisclaimer = async (): Promise<void> => {
-    await kv.set(DISCLAIMER_DISMISSED_KEY, true);
+  const dismissDisclaimer = (): void => {
+    // Hide locally first so the click feels instant; persist after.
+    // A persist failure would only mean the disclaimer reappears on
+    // next reload — better than the user clicking Hide and seeing
+    // nothing happen.
     setDisclaimerShown(false);
+    void kv.set(DISCLAIMER_DISMISSED_KEY, true);
   };
 
   return (
@@ -56,7 +60,7 @@ export function App(): React.ReactElement {
             {DISCLAIMER_TEXT}{" "}
             <button
               className="disclaimer__toggle"
-              onClick={() => void dismissDisclaimer()}
+              onClick={dismissDisclaimer}
               aria-label="Hide the disclaimer (can be restored from Settings)"
             >
               Hide
