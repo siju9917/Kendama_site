@@ -55,12 +55,12 @@ describe("ChangeCard", () => {
     expect(screen.getByRole("button", { name: /Expand/i })).toBeTruthy();
   });
 
-  it("invokes onToggleReviewed when Mark reviewed clicked", () => {
+  it("invokes onToggleReviewed when Mark as reviewed clicked", () => {
     const onToggle = vi.fn();
     render(
       <ChangeCard change={baseChange} reviewed={false} onToggleReviewed={onToggle} />,
     );
-    fireEvent.click(screen.getByRole("button", { name: /Mark reviewed/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Mark as reviewed/i }));
     expect(onToggle).toHaveBeenCalled();
   });
 

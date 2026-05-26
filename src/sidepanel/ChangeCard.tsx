@@ -163,7 +163,7 @@ export const ChangeCard = React.memo(function ChangeCard({
           aria-pressed={reviewed}
           title={reviewed ? "Mark as not reviewed" : "Mark as reviewed"}
         >
-          {reviewed ? "✓ Reviewed" : "Mark reviewed"}
+          {reviewed ? "✓ Reviewed" : "Mark as reviewed"}
         </button>
       </div>
     </article>

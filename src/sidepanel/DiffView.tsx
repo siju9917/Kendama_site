@@ -330,7 +330,7 @@ export function DiffView({ result, sessionNotices }: Props): React.ReactElement 
       )}
       {tipSeen === false && (
         <div className="tip">
-          <span>Tip: J/K to move · R to mark reviewed · / to focus filter</span>
+          <span>Keyboard: J/K (next/previous) · R (mark reviewed) · / (search)</span>
           <button
             className="ghost"
             style={{ fontSize: 11 }}
