@@ -25,11 +25,18 @@ interface DiffIndexEntry extends DiffSummary {
   lastAccess: number;
   /** Where the full payload is stored. */
   storage: "kv" | "idb";
+  /** ISO-8601 when the user last opened this diff. null = unseen. */
+  lastViewedAt: string | null;
 }
 
 interface IndexFile {
+  /** Schema version. Bump when DiffIndexEntry shape changes. */
+  schemaVersion?: number;
   entries: DiffIndexEntry[];
 }
+
+/** Current index schema version. Bump on backwards-incompatible changes. */
+const INDEX_SCHEMA_VERSION = 1;
 
 // --- chrome.storage shim --------------------------------------------------
 
@@ -121,11 +128,10 @@ export class DiffStorage implements IStorage {
 
   private async readIndex(): Promise<IndexFile> {
     const f = await this.kv.get<IndexFile>(SUMMARY_INDEX_KEY);
-    if (!f) return { entries: [] };
-    // Defensive: if the stored shape is broken (downgrade, manual edit,
-    // corrupted blob), recover gracefully rather than crashing the UI.
-    if (!f.entries || !Array.isArray(f.entries)) return { entries: [] };
-    // Filter entries that are missing required fields or have invalid types.
+    if (!f) return { schemaVersion: INDEX_SCHEMA_VERSION, entries: [] };
+    if (!f.entries || !Array.isArray(f.entries)) {
+      return { schemaVersion: INDEX_SCHEMA_VERSION, entries: [] };
+    }
     const valid = f.entries.filter(
       (e): e is DiffIndexEntry =>
         !!e &&
@@ -133,42 +139,60 @@ export class DiffStorage implements IStorage {
         typeof e.sizeBytes === "number" &&
         typeof e.lastAccess === "number",
     );
-    return { entries: valid };
+    // Future: when INDEX_SCHEMA_VERSION bumps, branch on f.schemaVersion
+    // here to migrate older shapes forward.
+    return { schemaVersion: INDEX_SCHEMA_VERSION, entries: valid };
   }
   private async writeIndex(idx: IndexFile): Promise<void> {
-    await this.kv.set(SUMMARY_INDEX_KEY, idx);
+    await this.kv.set(SUMMARY_INDEX_KEY, { ...idx, schemaVersion: INDEX_SCHEMA_VERSION });
   }
 
   async saveDiff(result: DiffResult): Promise<void> {
     const payload = JSON.stringify(result);
     const useIdb = payload.length > PAYLOAD_IDB_THRESHOLD_BYTES && (await idbAvailable());
+
+    // Two-phase write so a failure does not leave half-state:
+    //   1. Write the payload. If this fails, we throw — index untouched.
+    //   2. Write the updated index. If THIS fails, roll the payload back.
     if (useIdb) {
       await idbPut(result.id, payload);
     } else {
       await this.kv.set(PAYLOAD_PREFIX + result.id, payload);
     }
-    const idx = await this.readIndex();
-    const summary: DiffIndexEntry = {
-      id: result.id,
-      generatedAt: result.generatedAt,
-      currentFileName: result.currentDoc.sourceFileName,
-      priorFileName: result.priorDoc.sourceFileName,
-      criticalCount: result.criticalCount,
-      totalChanges: result.changes.length,
-      solicitationId: result.currentDoc.solicitationId,
-      sizeBytes: payload.length,
-      lastAccess: Date.now(),
-      storage: useIdb ? "idb" : "kv",
-    };
-    idx.entries = idx.entries.filter((e) => e.id !== result.id);
-    idx.entries.push(summary);
-    await this.writeIndex(idx);
+
+    try {
+      const idx = await this.readIndex();
+      const summary: DiffIndexEntry = {
+        id: result.id,
+        generatedAt: result.generatedAt,
+        currentFileName: result.currentDoc.sourceFileName,
+        priorFileName: result.priorDoc.sourceFileName,
+        criticalCount: result.criticalCount,
+        totalChanges: result.changes.length,
+        solicitationId: result.currentDoc.solicitationId,
+        sizeBytes: payload.length,
+        lastAccess: Date.now(),
+        storage: useIdb ? "idb" : "kv",
+        lastViewedAt: null,
+      };
+      idx.entries = idx.entries.filter((e) => e.id !== result.id);
+      idx.entries.push(summary);
+      await this.writeIndex(idx);
+    } catch (e) {
+      // Roll back the payload so we never leave an orphaned write.
+      try {
+        if (useIdb) await idbDelete(result.id);
+        else await this.kv.remove(PAYLOAD_PREFIX + result.id);
+      } catch {
+        /* best-effort rollback */
+      }
+      throw e;
+    }
     await this.pruneToLimit(STORAGE_HARD_CAP_BYTES);
   }
 
   async listDiffs(): Promise<DiffSummary[]> {
     const idx = await this.readIndex();
-    // Newest first.
     return idx.entries
       .map((e) => ({
         id: e.id,
@@ -178,8 +202,18 @@ export class DiffStorage implements IStorage {
         criticalCount: e.criticalCount,
         totalChanges: e.totalChanges,
         solicitationId: e.solicitationId,
+        lastViewedAt: e.lastViewedAt ?? null,
       }))
       .sort((a, b) => b.generatedAt.localeCompare(a.generatedAt));
+  }
+
+  async markViewed(id: string): Promise<void> {
+    const idx = await this.readIndex();
+    const e = idx.entries.find((x) => x.id === id);
+    if (!e) return;
+    e.lastViewedAt = new Date().toISOString();
+    e.lastAccess = Date.now();
+    await this.writeIndex(idx);
   }
 
   async getDiff(id: string): Promise<DiffResult | null> {

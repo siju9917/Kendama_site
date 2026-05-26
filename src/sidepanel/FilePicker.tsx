@@ -4,87 +4,126 @@ interface Props {
   onRun: (current: File, prior: File) => void;
 }
 
+const ACCEPTED = [".pdf", ".docx"];
+
+function isAccepted(file: File): boolean {
+  const lower = file.name.toLowerCase();
+  return ACCEPTED.some((ext) => lower.endsWith(ext));
+}
+
+function Dropzone({
+  slot,
+  file,
+  onPick,
+  active,
+  setActive,
+}: {
+  slot: "current" | "prior";
+  file: File | null;
+  onPick: (f: File | null) => void;
+  active: boolean;
+  setActive: (a: boolean) => void;
+}): React.ReactElement {
+  const label = slot === "current" ? "New version (the amendment)" : "Prior version";
+  const hint = file ? null : "Drop a PDF or .docx, or click to choose";
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const f = e.target.files?.[0] ?? null;
+    if (f && !isAccepted(f)) {
+      onPick(null);
+      return;
+    }
+    onPick(f);
+  };
+  const onDrop = (e: React.DragEvent<HTMLDivElement>): void => {
+    e.preventDefault();
+    setActive(false);
+    const f = e.dataTransfer.files?.[0];
+    if (!f) return;
+    if (!isAccepted(f)) {
+      onPick(null);
+      return;
+    }
+    onPick(f);
+  };
+  return (
+    <div
+      className={`dropzone ${active ? "dropzone--active" : ""}`}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setActive(true);
+      }}
+      onDragLeave={() => setActive(false)}
+      onDrop={onDrop}
+      aria-label={`${label} drop zone`}
+    >
+      <div className="dropzone__icon" aria-hidden="true" />
+      <div className="dropzone__label">{label}</div>
+      {file ? (
+        <div className="dropzone__filename">{file.name}</div>
+      ) : (
+        <div className="dropzone__hint">{hint}</div>
+      )}
+      <input
+        type="file"
+        accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        onChange={onChange}
+        aria-label={`Choose ${label}`}
+      />
+    </div>
+  );
+}
+
 export function FilePicker({ onRun }: Props): React.ReactElement {
   const [current, setCurrent] = useState<File | null>(null);
   const [prior, setPrior] = useState<File | null>(null);
-  const [dragging, setDragging] = useState<null | "current" | "prior">(null);
+  const [activeSlot, setActiveSlot] = useState<null | "current" | "prior">(null);
+  const [rejectMsg, setRejectMsg] = useState<string | null>(null);
 
-  const onDrop = useCallback(
-    (slot: "current" | "prior") => (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      setDragging(null);
-      const f = e.dataTransfer.files?.[0];
-      if (!f) return;
-      if (slot === "current") setCurrent(f);
-      else setPrior(f);
-    },
-    [],
-  );
+  const setCurrentSafe = useCallback((f: File | null) => {
+    if (!f) {
+      setRejectMsg("Only PDF (.pdf) and Word (.docx) files are supported.");
+      return;
+    }
+    setRejectMsg(null);
+    setCurrent(f);
+  }, []);
+  const setPriorSafe = useCallback((f: File | null) => {
+    if (!f) {
+      setRejectMsg("Only PDF (.pdf) and Word (.docx) files are supported.");
+      return;
+    }
+    setRejectMsg(null);
+    setPrior(f);
+  }, []);
 
-  const canRun = current && prior;
+  const canRun = current !== null && prior !== null;
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>): void => {
+    if (e.key === "Enter" && canRun) onRun(current!, prior!);
+  };
 
   return (
-    <div>
-      <div className="empty">
-        <p>
-          <strong>Drop the new and prior versions of the solicitation</strong>
-        </p>
-        <p style={{ marginTop: 0, color: "var(--fg-muted)" }}>
-          PDF or Word (.docx). Files stay on this device.
-        </p>
-      </div>
+    <div onKeyDown={onKeyDown}>
+      <Dropzone
+        slot="current"
+        file={current}
+        onPick={setCurrentSafe}
+        active={activeSlot === "current"}
+        setActive={(a) => setActiveSlot(a ? "current" : null)}
+      />
+      <Dropzone
+        slot="prior"
+        file={prior}
+        onPick={setPriorSafe}
+        active={activeSlot === "prior"}
+        setActive={(a) => setActiveSlot(a ? "prior" : null)}
+      />
 
-      <div
-        className={`dropzone ${dragging === "current" ? "dropzone--active" : ""}`}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragging("current");
-        }}
-        onDragLeave={() => setDragging(null)}
-        onDrop={onDrop("current")}
-        aria-label="New version drop zone"
-      >
-        <label htmlFor="bd-current-file" style={{ fontWeight: 600, cursor: "pointer" }}>
-          New version (the amendment)
-        </label>
-        <div style={{ color: "var(--fg-muted)", marginTop: 4 }}>
-          {current ? current.name : "Drop file or click to choose"}
+      {rejectMsg && (
+        <div className="error" role="alert">
+          {rejectMsg}
         </div>
-        <input
-          id="bd-current-file"
-          type="file"
-          accept=".pdf,.docx"
-          aria-label="Choose new version file"
-          style={{ marginTop: 8 }}
-          onChange={(e) => setCurrent(e.target.files?.[0] ?? null)}
-        />
-      </div>
-
-      <div
-        className={`dropzone ${dragging === "prior" ? "dropzone--active" : ""}`}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragging("prior");
-        }}
-        onDragLeave={() => setDragging(null)}
-        onDrop={onDrop("prior")}
-        aria-label="Prior version drop zone"
-      >
-        <label htmlFor="bd-prior-file" style={{ fontWeight: 600, cursor: "pointer" }}>
-          Prior version
-        </label>
-        <div style={{ color: "var(--fg-muted)", marginTop: 4 }}>
-          {prior ? prior.name : "Drop file or click to choose"}
-        </div>
-        <input
-          id="bd-prior-file"
-          type="file"
-          accept=".pdf,.docx"
-          aria-label="Choose prior version file"
-          style={{ marginTop: 8 }}
-          onChange={(e) => setPrior(e.target.files?.[0] ?? null)}
-        />
-      </div>
+      )}
 
       <div style={{ textAlign: "center", marginTop: 16 }}>
         <button
@@ -92,7 +131,7 @@ export function FilePicker({ onRun }: Props): React.ReactElement {
           disabled={!canRun}
           onClick={() => canRun && onRun(current!, prior!)}
         >
-          Compare versions
+          Compare versions  {canRun ? "↵" : ""}
         </button>
       </div>
     </div>

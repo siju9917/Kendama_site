@@ -1,14 +1,7 @@
 /**
  * Side panel — the main workspace.
- *
- * Flow:
- *   1. Empty state — user drops the current and prior amendment files,
- *      or opens a saved diff from history.
- *   2. Loading state — extract + diff is running.
- *   3. Diff state — categorized changes with critical-flagged.
- *   4. Error state — typed ExtractionError shown with userMessage.
  */
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DiffResult } from "../core/diff/types.js";
 import { runDiffPipeline } from "./pipeline.js";
 import { ChangeCard } from "./ChangeCard.js";
@@ -39,6 +32,7 @@ interface UiState {
   result: DiffResult | null;
   error: string | null;
   loadingNote: string;
+  loadingPercent: number;
 }
 
 const INITIAL_STATE: UiState = {
@@ -46,13 +40,84 @@ const INITIAL_STATE: UiState = {
   result: null,
   error: null,
   loadingNote: "",
+  loadingPercent: 0,
 };
 
-function FilePickerWithSam({ onRun }: { onRun: (a: File, b: File) => void }): React.ReactElement {
+function LicenseChip({ license }: { license: LicenseState | null }): React.ReactElement | null {
+  if (!license) return null;
+  let label = "";
+  let upgrade = false;
+  if (license.tier === "trial" && license.status === "active") {
+    label = `Trial · ${license.trialDaysLeft ?? 0}d left`;
+    upgrade = (license.trialDaysLeft ?? 0) <= 3;
+  } else if (license.status === "active") {
+    label = `${license.tier} · active`;
+  } else if (license.status === "grace") {
+    label = "Trial expired · grace";
+    upgrade = true;
+  } else if (license.status === "expired") {
+    label = "Subscribe to continue";
+    upgrade = true;
+  } else {
+    label = `License ${license.status}`;
+    upgrade = true;
+  }
+  return (
+    <span
+      style={{
+        fontSize: 11,
+        color: upgrade ? "var(--critical)" : "var(--fg-muted)",
+        marginLeft: 8,
+        padding: "2px 8px",
+        background: upgrade ? "var(--critical-soft)" : "var(--bg-subtle)",
+        borderRadius: 999,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {label}
+      {upgrade && (
+        <a
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            chrome.runtime?.openOptionsPage?.();
+          }}
+          style={{ marginLeft: 6, fontWeight: 600 }}
+        >
+          Upgrade
+        </a>
+      )}
+    </span>
+  );
+}
+
+function ProgressView({ note, percent }: { note: string; percent: number }): React.ReactElement {
+  return (
+    <div role="status" aria-live="polite">
+      <div style={{ fontWeight: 600 }}>{note || "Working…"}</div>
+      <div className="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
+        <div className="progressbar__fill" style={{ width: `${Math.max(4, percent)}%` }} />
+      </div>
+      <div style={{ marginTop: 12 }}>
+        <div className="skeleton" style={{ height: 12, width: "60%", marginBottom: 8 }} />
+        <div className="skeleton" style={{ height: 12, width: "90%", marginBottom: 8 }} />
+        <div className="skeleton" style={{ height: 12, width: "75%" }} />
+      </div>
+    </div>
+  );
+}
+
+function FilePickerWithSam({
+  onRun,
+}: {
+  onRun: (a: File, b: File) => void;
+}): React.ReactElement {
   const [pending, setPending] = useState<{ current?: File; prior?: File }>({});
   const [error, setError] = useState<string | null>(null);
-
-  const onChoose = async (slot: "current" | "prior", a: OpportunityAttachment): Promise<void> => {
+  const onChoose = async (
+    slot: "current" | "prior",
+    a: OpportunityAttachment,
+  ): Promise<void> => {
     setError(null);
     try {
       const file = await downloadAttachmentAsFile(a);
@@ -63,7 +128,6 @@ function FilePickerWithSam({ onRun }: { onRun: (a: File, b: File) => void }): Re
       setError(e instanceof Error ? e.message : String(e));
     }
   };
-
   return (
     <>
       <FilePicker onRun={onRun} />
@@ -80,42 +144,17 @@ function FilePickerWithSam({ onRun }: { onRun: (a: File, b: File) => void }): Re
   );
 }
 
-function LicenseChip({ license }: { license: LicenseState | null }): React.ReactElement | null {
-  if (!license) return null;
-  let label = "";
-  if (license.tier === "trial" && license.status === "active") {
-    label = `Trial — ${license.trialDaysLeft ?? 0} days left`;
-  } else if (license.status === "active") {
-    label = `${license.tier} — active`;
-  } else if (license.status === "grace") {
-    label = "Trial expired — grace period";
-  } else if (license.status === "expired") {
-    label = "Trial expired — subscribe to continue";
-  } else {
-    label = `License ${license.status}`;
-  }
-  return (
-    <span
-      style={{
-        fontSize: 11,
-        color: "var(--fg-muted)",
-        marginLeft: 8,
-        padding: "2px 8px",
-        background: "var(--bg-subtle)",
-        borderRadius: 999,
-      }}
-    >
-      {label}
-    </span>
-  );
-}
-
 export function App(): React.ReactElement {
   const [state, setState] = useState<UiState>(INITIAL_STATE);
   const [filter, setFilter] = useState<"ALL" | "CRITICAL">("ALL");
   const [sectionFilter, setSectionFilter] = useState<string | "ALL">("ALL");
   const [textFilter, setTextFilter] = useState<string>("");
+  const [reviewed, setReviewed] = useState<Set<string>>(new Set());
+  const [disclaimerShown, setDisclaimerShown] = useState<boolean>(true);
   const [license, setLicense] = useState<LicenseState | null>(null);
+  const [focusedIndex, setFocusedIndex] = useState<number>(0);
+  const filterInputRef = useRef<HTMLInputElement | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const storage = useMemo(() => new DiffStorage(), []);
 
   useEffect(() => {
@@ -135,25 +174,35 @@ export function App(): React.ReactElement {
 
   const onRun = useCallback(
     async (currentFile: File, priorFile: File) => {
+      abortRef.current?.abort();
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
+      setReviewed(new Set());
       setState({
         phase: "RUNNING",
         result: null,
         error: null,
         loadingNote: "Reading documents…",
+        loadingPercent: 5,
       });
       try {
-        const result = await runDiffPipeline(currentFile, priorFile, (note) => {
-          setState((s) => ({ ...s, loadingNote: note }));
-        });
+        const result = await runDiffPipeline(
+          currentFile,
+          priorFile,
+          (note, percent) => {
+            setState((s) => ({ ...s, loadingNote: note, loadingPercent: percent ?? s.loadingPercent }));
+          },
+          ctrl.signal,
+        );
+        if (ctrl.signal.aborted) return;
         await persistDiff(result);
-        // Track for the review prompt (Phase 7.8).
         void noteDiffSucceeded();
-        setState({ phase: "DONE", result, error: null, loadingNote: "" });
+        setState({ phase: "DONE", result, error: null, loadingNote: "", loadingPercent: 100 });
       } catch (e) {
+        if (ctrl.signal.aborted) return;
         const msg = e instanceof Error ? e.message : String(e);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const userMessage = (e as any)?.userMessage ?? msg;
-        setState({ phase: "ERROR", result: null, error: userMessage, loadingNote: "" });
+        const userMessage = (e as { userMessage?: string })?.userMessage ?? msg;
+        setState({ phase: "ERROR", result: null, error: userMessage, loadingNote: "", loadingPercent: 0 });
       }
     },
     [persistDiff],
@@ -162,22 +211,27 @@ export function App(): React.ReactElement {
   const onOpenSaved = useCallback(
     async (id: string) => {
       const r = await storage.getDiff(id);
-      if (r) setState({ phase: "DONE", result: r, error: null, loadingNote: "" });
+      if (r) {
+        await storage.markViewed(id);
+        setState({ phase: "DONE", result: r, error: null, loadingNote: "", loadingPercent: 100 });
+      }
     },
     [storage],
   );
 
   const onReset = useCallback(() => {
+    abortRef.current?.abort();
     setState(INITIAL_STATE);
     setFilter("ALL");
+    setSectionFilter("ALL");
+    setTextFilter("");
+    setReviewed(new Set());
   }, []);
 
   const availableSections = useMemo(() => {
     if (!state.result) return [] as string[];
     const set = new Set<string>();
-    for (const c of state.result.changes) {
-      set.add(c.ucfLetter ?? "?");
-    }
+    for (const c of state.result.changes) set.add(c.ucfLetter ?? "?");
     return [...set].sort();
   }, [state.result]);
 
@@ -185,9 +239,7 @@ export function App(): React.ReactElement {
     if (!state.result) return [];
     let out = state.result.changes;
     if (filter === "CRITICAL") out = out.filter((c) => c.severity === "CRITICAL");
-    if (sectionFilter !== "ALL") {
-      out = out.filter((c) => (c.ucfLetter ?? "?") === sectionFilter);
-    }
+    if (sectionFilter !== "ALL") out = out.filter((c) => (c.ucfLetter ?? "?") === sectionFilter);
     const needle = textFilter.trim().toLowerCase();
     if (needle.length > 0) {
       out = out.filter((c) => {
@@ -205,6 +257,49 @@ export function App(): React.ReactElement {
     return out;
   }, [state.result, filter, sectionFilter, textFilter]);
 
+  // Keyboard navigation: J / K to move, R to toggle reviewed on focused, / to focus filter.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent): void => {
+      if (state.phase !== "DONE") return;
+      const target = e.target as HTMLElement | null;
+      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") return;
+      if (e.key === "j" || e.key === "ArrowDown") {
+        e.preventDefault();
+        setFocusedIndex((i) => Math.min(filteredChanges.length - 1, i + 1));
+      } else if (e.key === "k" || e.key === "ArrowUp") {
+        e.preventDefault();
+        setFocusedIndex((i) => Math.max(0, i - 1));
+      } else if (e.key === "r") {
+        const c = filteredChanges[focusedIndex];
+        if (c) {
+          setReviewed((s) => {
+            const next = new Set(s);
+            if (next.has(c.id)) next.delete(c.id);
+            else next.add(c.id);
+            return next;
+          });
+        }
+      } else if (e.key === "/") {
+        e.preventDefault();
+        filterInputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [state.phase, filteredChanges, focusedIndex]);
+
+  // Scroll focused card into view
+  useEffect(() => {
+    if (state.phase !== "DONE") return;
+    const c = filteredChanges[focusedIndex];
+    if (!c) return;
+    const el = document.querySelector<HTMLElement>(`[data-change-id="${c.id}"]`);
+    el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    el?.focus({ preventScroll: true });
+  }, [focusedIndex, state.phase, filteredChanges]);
+
+  const reviewedCount = filteredChanges.filter((c) => reviewed.has(c.id)).length;
+
   return (
     <div className="app">
       <header className="app__header">
@@ -212,14 +307,21 @@ export function App(): React.ReactElement {
         <span className="app__subtitle">Federal solicitation amendment diff</span>
         <LicenseChip license={license} />
         {state.phase !== "EMPTY" && (
-          <button onClick={onReset} style={{ marginLeft: "auto" }}>
+          <button className="ghost" onClick={onReset} style={{ marginLeft: "auto" }}>
             Start over
           </button>
         )}
       </header>
 
       <main className="app__body">
-        <p className="disclaimer">{DISCLAIMER_TEXT}</p>
+        {disclaimerShown && (
+          <p className="disclaimer">
+            {DISCLAIMER_TEXT}
+            <button className="disclaimer__toggle" onClick={() => setDisclaimerShown(false)}>
+              Hide
+            </button>
+          </p>
+        )}
 
         {state.phase === "EMPTY" && (
           <>
@@ -230,15 +332,16 @@ export function App(): React.ReactElement {
         )}
 
         {state.phase === "RUNNING" && (
-          <div className="empty" role="status" aria-live="polite">
-            <div className="spinner" aria-hidden="true" /> {state.loadingNote || "Working…"}
-          </div>
+          <ProgressView note={state.loadingNote} percent={state.loadingPercent} />
         )}
 
         {state.phase === "ERROR" && state.error && (
           <div className="error" role="alert">
             <strong>Could not diff these documents.</strong>
             <div>{state.error}</div>
+            <div style={{ marginTop: 12 }}>
+              <button onClick={onReset}>Try again</button>
+            </div>
           </div>
         )}
 
@@ -251,7 +354,7 @@ export function App(): React.ReactElement {
                 className={`filter-chip ${filter === "ALL" ? "filter-chip--active" : ""}`}
                 onClick={() => setFilter("ALL")}
               >
-                All changes ({state.result.changes.length})
+                All ({state.result.changes.length})
               </button>
               <button
                 className={`filter-chip ${filter === "CRITICAL" ? "filter-chip--active" : ""}`}
@@ -259,6 +362,14 @@ export function App(): React.ReactElement {
               >
                 Critical ({state.result.criticalCount})
               </button>
+              {reviewedCount > 0 && (
+                <span
+                  style={{ fontSize: 12, color: "var(--fg-muted)", alignSelf: "center" }}
+                  aria-live="polite"
+                >
+                  {reviewedCount}/{filteredChanges.length} reviewed
+                </span>
+              )}
             </div>
             {availableSections.length > 1 && (
               <div className="filters" role="group" aria-label="Section filter">
@@ -281,33 +392,42 @@ export function App(): React.ReactElement {
             )}
             <div style={{ marginBottom: 12 }}>
               <input
+                ref={filterInputRef}
                 type="search"
-                placeholder="Filter by text…"
+                placeholder="Filter by text…  (press / to focus)"
                 aria-label="Filter changes by text"
                 value={textFilter}
                 onChange={(e) => setTextFilter(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "8px 12px",
-                  borderRadius: 6,
-                  border: "1px solid var(--border-strong)",
-                  fontSize: 13,
-                }}
               />
             </div>
-            {filteredChanges.length === 0 && (
+            {filteredChanges.length === 0 ? (
               <div className="empty">No changes match the current filter.</div>
+            ) : (
+              filteredChanges.map((c) => (
+                <div key={c.id} data-change-id={c.id}>
+                  <ChangeCard
+                    change={c}
+                    reviewed={reviewed.has(c.id)}
+                    onToggleReviewed={() =>
+                      setReviewed((s) => {
+                        const next = new Set(s);
+                        if (next.has(c.id)) next.delete(c.id);
+                        else next.add(c.id);
+                        return next;
+                      })
+                    }
+                  />
+                </div>
+              ))
             )}
-            {filteredChanges.map((c) => (
-              <ChangeCard key={c.id} change={c} />
-            ))}
+            <div style={{ color: "var(--fg-faint)", fontSize: 11, marginTop: 16, textAlign: "center" }}>
+              Tip: J/K to move between changes · R to mark reviewed · / to focus filter
+            </div>
           </>
         )}
       </main>
 
-      <footer className="footer">
-        Processed on your device. BidDiff assists professional review; it does not replace it.
-      </footer>
+      <footer className="footer">Processed on your device. BidDiff assists — it does not advise.</footer>
     </div>
   );
 }

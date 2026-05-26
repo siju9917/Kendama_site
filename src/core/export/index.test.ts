@@ -34,6 +34,16 @@ describe("buildSummaryText", () => {
   });
 });
 
+describe("buildSummaryMarkdown", () => {
+  it("emits valid markdown structure with disclaimer", async () => {
+    const { buildSummaryMarkdown } = await import("./index.js");
+    const md = buildSummaryMarkdown(makeResult("stress-001-multi-six-edits"));
+    expect(md).toMatch(/^# BidDiff/);
+    expect(md).toContain("## Critical changes");
+    expect(md).toMatch(/\*[^*]+\*$/m); // italicized line (the disclaimer)
+  });
+});
+
 describe("exportPdfReport", () => {
   it("produces a non-empty PDF blob", async () => {
     const r = makeResult("stress-001-multi-six-edits");

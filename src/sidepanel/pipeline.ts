@@ -1,74 +1,168 @@
 /**
- * Side-panel pipeline: file -> extract -> diff -> result.
+ * Side-panel pipeline.
  *
- * Runs entirely on the user's device. The extractors are loaded lazily
- * so initial side-panel load stays fast.
+ * In an extension context, jobs are routed to the offscreen document
+ * (chrome.offscreen) so heavy PDF/DOCX work doesn't block the panel UI.
+ * In a non-extension context (Node tests, dev preview), the pipeline runs
+ * locally as a fallback.
+ *
+ * Either way, the surface is the same: runDiffPipeline(current, prior, onProgress).
+ *
+ * The returned promise carries `signal` semantics: pass an AbortSignal and
+ * the in-flight job is cancelled (the offscreen worker continues but its
+ * result is dropped on return).
  */
 import type { DiffResult } from "../core/diff/types.js";
-import type { IExtractor } from "../core/interfaces.js";
-import { DiffEngine } from "../core/diff/engine.js";
-import { LocalClauseClient } from "../core/clauses/client.js";
-import { validateInput } from "../core/extract/validate.js";
 
-async function loadPdfJs(): Promise<unknown> {
-  // Lazy-load PDF.js. In the extension we configure the worker via the
-  // extension's bundled worker URL; in a browser dev environment, vite
-  // bundles it. The legacy build runs in both.
+export type ProgressCb = (note: string, percent?: number) => void;
+
+const OFFSCREEN_DOCUMENT_PATH = "src/offscreen/index.html";
+
+async function ensureOffscreenDocument(): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mod: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  if (typeof window !== "undefined" && "chrome" in window) {
-    // Inside an extension: point at the bundled worker.
-    try {
-      // The worker file is included by Vite/CRXJS via the legacy build.
-      const workerUrl = new URL(
-        "pdfjs-dist/legacy/build/pdf.worker.mjs",
-        import.meta.url,
-      );
-      mod.GlobalWorkerOptions.workerSrc = workerUrl.href;
-    } catch {
-      /* ignore */
-    }
-  }
-  return mod;
+  const api = (globalThis as any).chrome;
+  if (!api?.offscreen?.hasDocument) return;
+  const has = await api.offscreen.hasDocument();
+  if (has) return;
+  await api.offscreen.createDocument({
+    url: OFFSCREEN_DOCUMENT_PATH,
+    reasons: ["WORKERS"],
+    justification: "Run PDF/DOCX extraction and diff off the UI thread.",
+  });
 }
 
-async function makeExtractorFor(file: File): Promise<IExtractor> {
-  const buf = await file.arrayBuffer();
-  const kind = validateInput(buf, file.name);
-  if (kind === "PDF") {
-    const pdfjs = (await loadPdfJs()) as import("../core/extract/pdf/extract.js").PdfJsLike;
-    const { PdfExtractor } = await import("../core/extract/pdf/pdfExtractor.js");
-    return new PdfExtractor(pdfjs);
+class OffscreenJobError extends Error {
+  readonly code: string;
+  readonly userMessage: string;
+  constructor(code: string, message: string) {
+    super(message);
+    this.code = code;
+    this.userMessage = message;
   }
-  if (kind === "DOCX") {
+}
+
+async function runViaOffscreen(
+  current: File,
+  prior: File,
+  onProgress: ProgressCb,
+  signal?: AbortSignal,
+): Promise<DiffResult> {
+  await ensureOffscreenDocument();
+  const jobId = crypto.randomUUID();
+  const currentBytes = await current.arrayBuffer();
+  const priorBytes = await prior.arrayBuffer();
+
+  return new Promise<DiffResult>((resolve, reject) => {
+    let settled = false;
+    const settle = (fn: () => void): void => {
+      if (settled) return;
+      settled = true;
+      chrome.runtime.onMessage.removeListener(handler);
+      if (signal) signal.removeEventListener("abort", abortHandler);
+      fn();
+    };
+    interface AnyOffscreenMsg {
+      jobId?: string;
+      kind?: string;
+      note?: string;
+      percent?: number;
+      result?: DiffResult;
+      code?: string;
+      message?: string;
+    }
+    const handler = (m: unknown): void => {
+      const msg = (m ?? {}) as AnyOffscreenMsg;
+      if (msg.jobId !== jobId) return;
+      if (msg.kind === "biddiff/progress") {
+        onProgress(msg.note ?? "Working…", msg.percent);
+      } else if (msg.kind === "biddiff/result" && msg.result) {
+        const r = msg.result;
+        settle(() => resolve(r));
+      } else if (msg.kind === "biddiff/error") {
+        settle(() => reject(new OffscreenJobError(msg.code ?? "UNKNOWN", msg.message ?? "Failed")));
+      }
+    };
+    const abortHandler = (): void => settle(() => reject(new DOMException("Aborted", "AbortError")));
+    if (signal) {
+      if (signal.aborted) return abortHandler();
+      signal.addEventListener("abort", abortHandler);
+    }
+    chrome.runtime.onMessage.addListener(handler);
+    chrome.runtime.sendMessage({
+      kind: "biddiff/diff",
+      jobId,
+      currentBytes,
+      currentName: current.name,
+      priorBytes,
+      priorName: prior.name,
+    });
+  });
+}
+
+async function runLocalFallback(
+  currentFile: File,
+  priorFile: File,
+  onProgress: ProgressCb,
+  signal?: AbortSignal,
+): Promise<DiffResult> {
+  if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+  const { validateInput } = await import("../core/extract/validate.js");
+  const { DiffEngine } = await import("../core/diff/engine.js");
+  const { LocalClauseClient } = await import("../core/clauses/client.js");
+
+  async function makeExtractorFor(file: File) {
+    const buf = await file.arrayBuffer();
+    const kind = validateInput(buf, file.name);
+    if (kind === "PDF") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mod: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      try {
+        const workerUrl = new URL("pdfjs-dist/legacy/build/pdf.worker.mjs", import.meta.url);
+        mod.GlobalWorkerOptions.workerSrc = workerUrl.href;
+      } catch {
+        /* ignore */
+      }
+      const { PdfExtractor } = await import("../core/extract/pdf/pdfExtractor.js");
+      return new PdfExtractor(mod);
+    }
     const { DocxExtractor } = await import("../core/extract/docx/docxExtractor.js");
     return new DocxExtractor();
   }
-  throw new Error(`Unsupported kind ${kind}`);
+
+  onProgress("Reading the new version…", 10);
+  const currentExt = await makeExtractorFor(currentFile);
+  const currentBuf = await currentFile.arrayBuffer();
+  const currentDoc = await currentExt.extract(currentBuf, currentFile.name);
+  if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+
+  onProgress("Reading the prior version…", 45);
+  const priorExt = await makeExtractorFor(priorFile);
+  const priorBuf = await priorFile.arrayBuffer();
+  const priorDoc = await priorExt.extract(priorBuf, priorFile.name);
+  if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+
+  onProgress("Diffing…", 75);
+  const engine = new DiffEngine(new LocalClauseClient());
+  const result = engine.diff(currentDoc, priorDoc);
+  result.generatedAt = new Date().toISOString();
+  onProgress("Done", 100);
+  return result;
 }
 
-export type ProgressCb = (note: string) => void;
+function hasOffscreenSupport(): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const api = (globalThis as any).chrome;
+  return !!api?.offscreen?.createDocument && !!api?.runtime?.sendMessage;
+}
 
 export async function runDiffPipeline(
   currentFile: File,
   priorFile: File,
   onProgress: ProgressCb = () => {},
+  signal?: AbortSignal,
 ): Promise<DiffResult> {
-  onProgress("Reading the new version…");
-  const currentExtractor = await makeExtractorFor(currentFile);
-  const currentBuf = await currentFile.arrayBuffer();
-  const currentDoc = await currentExtractor.extract(currentBuf, currentFile.name);
-
-  onProgress("Reading the prior version…");
-  const priorExtractor = await makeExtractorFor(priorFile);
-  const priorBuf = await priorFile.arrayBuffer();
-  const priorDoc = await priorExtractor.extract(priorBuf, priorFile.name);
-
-  onProgress("Diffing…");
-  const engine = new DiffEngine(new LocalClauseClient());
-  const result = engine.diff(currentDoc, priorDoc);
-  // generatedAt set here (the only non-deterministic field).
-  result.generatedAt = new Date().toISOString();
-  onProgress("Done.");
-  return result;
+  if (hasOffscreenSupport()) {
+    return runViaOffscreen(currentFile, priorFile, onProgress, signal);
+  }
+  return runLocalFallback(currentFile, priorFile, onProgress, signal);
 }

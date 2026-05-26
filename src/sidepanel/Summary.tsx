@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import type { DiffResult } from "../core/diff/types.js";
-import { exportPdfReport, copySummaryToClipboard } from "../core/export/index.js";
+import { exportPdfReport, copySummaryToClipboard, copyMarkdownToClipboard } from "../core/export/index.js";
 
 interface Props {
   result: DiffResult;
@@ -19,16 +19,43 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export function Summary({ result }: Props): React.ReactElement {
   const totalChanges = result.changes.length;
+  const [feedback, setFeedback] = useState<string>("");
+
+  const flash = (text: string): void => {
+    setFeedback(text);
+    setTimeout(() => setFeedback(""), 1500);
+  };
+
   const onExportPdf = async (): Promise<void> => {
     try {
-      await exportPdfReport(result);
+      const blob = await exportPdfReport(result);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const sol = result.currentDoc.solicitationId ?? "biddiff-report";
+      a.download = `${sol}-amendment-diff.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      flash("PDF downloaded");
     } catch (e) {
       console.error("Export failed:", e);
+      flash("Export failed");
     }
   };
-  const onCopy = async (): Promise<void> => {
+  const onCopyText = async (): Promise<void> => {
     try {
       await copySummaryToClipboard(result);
+      flash("Summary copied");
+    } catch (e) {
+      console.error("Copy failed:", e);
+    }
+  };
+  const onCopyMarkdown = async (): Promise<void> => {
+    try {
+      await copyMarkdownToClipboard(result);
+      flash("Markdown copied");
     } catch (e) {
       console.error("Copy failed:", e);
     }
@@ -36,21 +63,41 @@ export function Summary({ result }: Props): React.ReactElement {
 
   return (
     <div className="summary">
-      <h2 className="summary__title">Summary</h2>
+      <div className="summary__head">
+        <h2 className="summary__title">Summary</h2>
+        <div className="summary__actions">
+          <button className="primary" onClick={onExportPdf}>
+            Export PDF
+          </button>
+          <button onClick={onCopyText} title="Copy plain-text summary">
+            Copy
+          </button>
+          <button onClick={onCopyMarkdown} title="Copy as Markdown">
+            ⌃ Markdown
+          </button>
+        </div>
+      </div>
+
       <div className="summary__stats">
-        <span className="summary__stat-label">Total changes</span>
-        <span className="summary__stat-value">{totalChanges}</span>
-        <span className="summary__stat-label">Critical</span>
-        <span
-          className={
-            "summary__stat-value " +
-            (result.criticalCount > 0 ? "summary__stat-value--critical" : "")
-          }
-        >
-          {result.criticalCount}
-        </span>
-        <span className="summary__stat-label">Confidence</span>
-        <span className="summary__stat-value">{(result.diffConfidence * 100).toFixed(0)}%</span>
+        <div className="summary__stat">
+          <span className="summary__stat-label">Total</span>
+          <span className="summary__stat-value">{totalChanges}</span>
+        </div>
+        <div className="summary__stat">
+          <span className="summary__stat-label">Critical</span>
+          <span
+            className={
+              "summary__stat-value " +
+              (result.criticalCount > 0 ? "summary__stat-value--critical" : "")
+            }
+          >
+            {result.criticalCount}
+          </span>
+        </div>
+        <div className="summary__stat">
+          <span className="summary__stat-label">Confidence</span>
+          <span className="summary__stat-value">{(result.diffConfidence * 100).toFixed(0)}%</span>
+        </div>
       </div>
 
       <div style={{ marginTop: 12, fontSize: 12, color: "var(--fg-muted)" }}>
@@ -68,12 +115,14 @@ export function Summary({ result }: Props): React.ReactElement {
         </ul>
       )}
 
-      <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-        <button className="primary" onClick={onExportPdf}>
-          Export PDF report
-        </button>
-        <button onClick={onCopy}>Copy summary</button>
-      </div>
+      {feedback && (
+        <div
+          aria-live="polite"
+          style={{ marginTop: 8, fontSize: 12, color: "var(--accent)" }}
+        >
+          {feedback}
+        </div>
+      )}
     </div>
   );
 }

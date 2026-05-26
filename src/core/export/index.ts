@@ -79,7 +79,71 @@ export async function copySummaryToClipboard(result: DiffResult): Promise<void> 
     await navigator.clipboard.writeText(text);
     return;
   }
-  // Fallback for non-browser test envs.
+  throw new Error("Clipboard not available in this environment.");
+}
+
+/**
+ * Build a Markdown version of the summary — for pasting into Slack,
+ * Notion, GitHub issues, etc., where rich formatting is preserved.
+ */
+export function buildSummaryMarkdown(result: DiffResult): string {
+  const lines: string[] = [];
+  lines.push("# BidDiff — Solicitation Amendment Comparison");
+  if (result.currentDoc.solicitationId) {
+    lines.push(`**Solicitation:** \`${result.currentDoc.solicitationId}\``);
+  }
+  lines.push(`**Compared:** \`${result.currentDoc.sourceFileName}\` vs. \`${result.priorDoc.sourceFileName}\``);
+  if (result.generatedAt) lines.push(`**Generated:** ${result.generatedAt}`);
+  lines.push("");
+  lines.push(`- **Total changes:** ${result.changes.length}`);
+  lines.push(`- **Critical:** ${result.criticalCount}`);
+  lines.push(`- **Confidence:** ${(result.diffConfidence * 100).toFixed(0)}%`);
+  if (result.warnings.length) {
+    lines.push("");
+    lines.push("**Warnings**");
+    for (const w of result.warnings) lines.push(`- ${w}`);
+  }
+  lines.push("");
+
+  const critical = result.changes.filter((c) => c.severity === "CRITICAL");
+  if (critical.length) {
+    lines.push("## Critical changes");
+    for (const c of critical) lines.push(formatChangeMd(c));
+    lines.push("");
+  }
+  const normal = result.changes.filter((c) => c.severity !== "CRITICAL");
+  if (normal.length) {
+    lines.push("## Other changes");
+    for (const c of normal) lines.push(formatChangeMd(c));
+    lines.push("");
+  }
+  lines.push("---");
+  lines.push(`*${DISCLAIMER_TEXT}*`);
+  return lines.join("\n");
+}
+
+function formatChangeMd(c: Change): string {
+  const cat = CATEGORY_LABELS[c.category] ?? c.category;
+  const section = c.ucfLetter ? `[Section ${c.ucfLetter}] ` : "";
+  const lines: string[] = [];
+  lines.push(`- **${section}${cat} — ${c.changeType}**`);
+  for (const r of c.criticalReasons) lines.push(`  - _${r}_`);
+  if (c.beforeText) lines.push(`  - was: \`${truncate(c.beforeText, 100)}\``);
+  if (c.afterText) lines.push(`  - now: \`${truncate(c.afterText, 100)}\``);
+  if (c.clauseInfo) {
+    lines.push(
+      `  - ${c.clauseInfo.regulation} ${c.clauseInfo.clauseNumber} — ${c.clauseInfo.title}`,
+    );
+  }
+  return lines.join("\n");
+}
+
+export async function copyMarkdownToClipboard(result: DiffResult): Promise<void> {
+  const md = buildSummaryMarkdown(result);
+  if (typeof navigator !== "undefined" && navigator.clipboard) {
+    await navigator.clipboard.writeText(md);
+    return;
+  }
   throw new Error("Clipboard not available in this environment.");
 }
 
@@ -237,6 +301,24 @@ export async function exportPdfReport(result: DiffResult, fileName?: string): Pr
   space(14);
   rule();
   space(6);
+
+  // Table of contents for reports with many changes — gives the reader a
+  // quick map of what's coming.
+  if (result.changes.length >= 10) {
+    drawWrapped("CONTENTS", { bold: true, size: 11, color: [0.36, 0.4, 0.45] });
+    space(2);
+    const groups = new Map<string, number>();
+    for (const c of result.changes) {
+      const k = `Section ${c.ucfLetter ?? "?"} — ${CATEGORY_LABELS[c.category] ?? c.category}`;
+      groups.set(k, (groups.get(k) ?? 0) + 1);
+    }
+    for (const [k, n] of groups) {
+      drawWrapped(`  ${k}: ${n}`, { size: 11 });
+    }
+    space(8);
+    rule();
+    space(6);
+  }
 
   // ---- Critical changes ----
   const critical = result.changes.filter((c) => c.severity === "CRITICAL");

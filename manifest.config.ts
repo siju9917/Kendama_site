@@ -21,6 +21,14 @@ export default defineManifest({
     service_worker: "src/background/index.ts",
     type: "module",
   },
+  // The offscreen document is created at runtime via chrome.offscreen.
+  // Listing it as a web-accessible resource ensures CRXJS bundles it.
+  web_accessible_resources: [
+    {
+      resources: ["src/offscreen/index.html"],
+      matches: ["<all_urls>"],
+    },
+  ],
   content_scripts: [
     {
       matches: ["*://sam.gov/*", "*://*.sam.gov/*"],

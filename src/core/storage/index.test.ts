@@ -97,6 +97,50 @@ describe("DiffStorage", () => {
     expect(list.length).toBe(1);
   });
 
+  it("deleteDiff removes payload and index entry", async () => {
+    const s = new DiffStorage();
+    await s.saveDiff(fakeResult("del1"));
+    await s.saveDiff(fakeResult("del2"));
+    expect((await s.listDiffs()).length).toBe(2);
+    await s.deleteDiff("del1");
+    const list = await s.listDiffs();
+    expect(list.length).toBe(1);
+    expect(list[0].id).toBe("del2");
+    expect(await s.getDiff("del1")).toBeNull();
+  });
+
+  it("markViewed updates lastViewedAt; listDiffs returns it", async () => {
+    const s = new DiffStorage();
+    await s.saveDiff(fakeResult("v1"));
+    let list = await s.listDiffs();
+    expect(list[0].lastViewedAt).toBeNull();
+    await s.markViewed("v1");
+    list = await s.listDiffs();
+    expect(list[0].lastViewedAt).toBeTruthy();
+  });
+
+  it("rolls back payload write when index write throws", async () => {
+    // Construct a kv whose set throws when writing the index, but succeeds
+    // for payloads. Verify that after the failed save, the payload is gone.
+    const real = new Map<string, unknown>();
+    const kv = {
+      async get<T>(k: string): Promise<T | null> {
+        return (real.get(k) as T) ?? null;
+      },
+      async set(k: string, v: unknown): Promise<void> {
+        if (k === "biddiff.diffs.index") throw new Error("simulated index write failure");
+        real.set(k, v);
+      },
+      async remove(k: string): Promise<void> {
+        real.delete(k);
+      },
+    };
+    const s = new DiffStorage(kv);
+    await expect(s.saveDiff(fakeResult("rb1"))).rejects.toThrow();
+    // The payload should have been rolled back.
+    expect(real.has("biddiff.diff.rb1")).toBe(false);
+  });
+
   it("filters out malformed entries", async () => {
     const { makeKv } = await import("./index.js");
     const kv = makeKv();

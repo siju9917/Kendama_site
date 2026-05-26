@@ -212,15 +212,13 @@ export class DiffEngine implements IDiffEngine {
         ? tokenDiff(beforeBlock.tokens, afterBlock.tokens)
         : null;
 
-    // Clause info: look in the local dataset if the engine was constructed with one.
+    // Clause info: look in the local dataset if the engine was constructed
+    // with a clause client. The interface guarantees lookupSync exists; a
+    // client without a local cache returns null.
     let clauseInfo: ClauseInfo | null = null;
     if (this.clauseClient && anchorsInvolved.some((a) => a.type === "CLAUSE_REF")) {
       const num = anchorsInvolved.find((a) => a.type === "CLAUSE_REF")!.normalized;
-      // Synchronous fetch via the local map embedded in the client.
-      // The engine stays sync; async augmentation happens after.
-      const localInfo = (this.clauseClient as unknown as { lookupSync?: (n: string) => ClauseInfo | null })
-        .lookupSync?.(num);
-      if (localInfo) clauseInfo = localInfo;
+      clauseInfo = this.clauseClient.lookupSync(num);
     }
 
     const sectionHeading = p.section?.heading ?? "(Unattached)";
