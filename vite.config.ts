@@ -23,7 +23,6 @@ export default defineConfig({
     globals: true,
     environment: "node",
     environmentMatchGlobs: [
-      ["src/**/*.tsx.test.ts", "jsdom"],
       ["src/sidepanel/**/*.test.tsx", "jsdom"],
       ["src/popup/**/*.test.tsx", "jsdom"],
       ["src/options/**/*.test.tsx", "jsdom"],

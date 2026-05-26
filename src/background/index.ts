@@ -29,9 +29,10 @@ async function readLastAttachments(): Promise<OpportunityAttachment[]> {
   const store = getSessionStore();
   if (!store) return [];
   return new Promise((resolve) => {
-    store.get(ATTACHMENTS_KEY, (items: Record<string, unknown>) => {
+    store.get(ATTACHMENTS_KEY, (items?: Record<string, unknown>) => {
       void chrome.runtime?.lastError;
-      const v = items[ATTACHMENTS_KEY];
+      // On error chrome calls the callback with items=undefined.
+      const v = items ? items[ATTACHMENTS_KEY] : undefined;
       resolve(Array.isArray(v) ? (v as OpportunityAttachment[]) : []);
     });
   });
