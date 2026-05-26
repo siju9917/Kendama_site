@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { FilePicker } from "./FilePicker.js";
 import { SamAttachments } from "./SamAttachments.js";
 import type { OpportunityAttachment } from "../core/interfaces.js";
@@ -20,12 +20,17 @@ export function FilePickerWithSam({
   const [, setPending] = useState<{ current?: File; prior?: File }>({});
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<Set<string>>(new Set());
+  // Synchronous mirror so a double-click can't trigger two downloads
+  // before React updates the disabled prop on the button.
+  const downloadingRef = useRef<Set<string>>(new Set());
   const onChoose = async (
     slot: "current" | "prior",
     a: OpportunityAttachment,
   ): Promise<void> => {
-    setError(null);
     const dlKey = `${slot}:${a.id}`;
+    if (downloadingRef.current.has(dlKey)) return;
+    downloadingRef.current.add(dlKey);
+    setError(null);
     setDownloading((s) => new Set(s).add(dlKey));
     try {
       const file = await downloadAttachmentAsFile(a);
@@ -46,6 +51,7 @@ export function FilePickerWithSam({
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
+      downloadingRef.current.delete(dlKey);
       setDownloading((s) => {
         const next = new Set(s);
         next.delete(dlKey);
