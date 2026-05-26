@@ -92,7 +92,7 @@ function Popup(): React.ReactElement {
           marginTop: 16,
           background: "transparent",
           border: "0",
-          padding: 0,
+          padding: "6px 0",
           color: "var(--accent)",
           font: "inherit",
           cursor: "pointer",
