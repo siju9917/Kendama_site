@@ -80,11 +80,14 @@ describe("No advisory language in BidDiff-authored prose", () => {
     // report, not advise.
     const sources = [
       path.join(ROOT, "src", "core", "diff", "engine.ts"),
+      path.join(ROOT, "src", "core", "diff", "critical.ts"),
+      path.join(ROOT, "src", "core", "diff", "classify.ts"),
       path.join(ROOT, "src", "core", "extract", "pdf", "extract.ts"),
       path.join(ROOT, "src", "core", "extract", "pdf", "pdfExtractor.ts"),
       path.join(ROOT, "src", "core", "extract", "docx", "docxExtractor.ts"),
       path.join(ROOT, "src", "core", "extract", "normalize.ts"),
       path.join(ROOT, "src", "core", "extract", "validate.ts"),
+      path.join(ROOT, "src", "core", "interfaces.ts"),
     ];
     for (const src of sources) {
       const txt = readSafe(src);

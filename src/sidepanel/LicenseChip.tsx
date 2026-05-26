@@ -40,9 +40,9 @@ export function LicenseChip({
       {upgrade && (
         <button
           onClick={() => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const api = (globalThis as any).chrome;
-            api?.runtime?.openOptionsPage?.();
+            // @types/chrome makes chrome global; guard in case the panel
+            // is run outside an extension (dev preview).
+            if (typeof chrome !== "undefined") chrome.runtime?.openOptionsPage?.();
           }}
           style={{
             marginLeft: 6,
