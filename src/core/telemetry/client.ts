@@ -90,11 +90,9 @@ export class TelemetryClient {
     if (!(await this.enabled())) return;
     const sessionId = await this.session();
     const body = { ...event, sessionId };
+    if (typeof fetch === "undefined") return;
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const f = (globalThis as any).fetch as typeof fetch | undefined;
-      if (!f) return;
-      await f(`${this.endpointBase}/telemetry`, {
+      await fetch(`${this.endpointBase}/telemetry`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),

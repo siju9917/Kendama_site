@@ -71,15 +71,17 @@ class MemoryKv implements KVStore {
   }
 }
 
+function chromeLocal(): chrome.storage.LocalStorageArea | undefined {
+  return typeof chrome !== "undefined" ? chrome.storage?.local : undefined;
+}
+
 class ChromeKv implements KVStore {
   async get<T>(key: string): Promise<T | null> {
     return new Promise((resolve, reject) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const api = (globalThis as any).chrome?.storage?.local;
+      const api = chromeLocal();
       if (!api) return resolve(null);
       api.get(key, (items: Record<string, unknown>) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const err = (globalThis as any).chrome?.runtime?.lastError;
+        const err = chrome.runtime?.lastError;
         if (err) return reject(new Error(err.message));
         resolve((items[key] as T) ?? null);
       });
@@ -87,12 +89,10 @@ class ChromeKv implements KVStore {
   }
   async set<T>(key: string, value: T): Promise<void> {
     return new Promise((resolve, reject) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const api = (globalThis as any).chrome?.storage?.local;
+      const api = chromeLocal();
       if (!api) return resolve();
       api.set({ [key]: value }, () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const err = (globalThis as any).chrome?.runtime?.lastError;
+        const err = chrome.runtime?.lastError;
         if (err) return reject(new Error(err.message));
         resolve();
       });
@@ -100,12 +100,10 @@ class ChromeKv implements KVStore {
   }
   async remove(key: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const api = (globalThis as any).chrome?.storage?.local;
+      const api = chromeLocal();
       if (!api) return resolve();
       api.remove(key, () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const err = (globalThis as any).chrome?.runtime?.lastError;
+        const err = chrome.runtime?.lastError;
         if (err) return reject(new Error(err.message));
         resolve();
       });
@@ -114,11 +112,7 @@ class ChromeKv implements KVStore {
 }
 
 export function makeKv(): KVStore {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (typeof (globalThis as any).chrome !== "undefined" && (globalThis as any).chrome?.storage?.local) {
-    return new ChromeKv();
-  }
-  return new MemoryKv();
+  return chromeLocal() ? new ChromeKv() : new MemoryKv();
 }
 
 // --- The actual storage implementation ----------------------------------
