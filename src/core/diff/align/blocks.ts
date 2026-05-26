@@ -1,11 +1,16 @@
 /**
  * Block alignment within a paired section (Phase 3.2).
  *
- * Two-pass algorithm:
- *   1. Myers/LCS on block identity (same normalized text) — gives a clean
- *      INSERT/DELETE/EQUAL sequence.
- *   2. Pair-up nearby DELETE/INSERT spans whose token Jaccard exceeds the
- *      MODIFY threshold; reclassify as MODIFY changes.
+ * Fast path: if `current` and `prior` are textually identical in the same
+ * order, return all EQUALs without running LCS. This is by far the common
+ * case (most sections are unchanged in any single amendment) and saves the
+ * O(n·m) dp allocation for the many unchanged sections of a real doc.
+ *
+ * Otherwise:
+ *   1. LCS on block text equality — gives an INSERT/DELETE/EQUAL sequence
+ *      preserving order.
+ *   2. Pair adjacent DELETE/INSERT spans whose modify-similarity exceeds
+ *      the MODIFY threshold; reclassify as MODIFY changes.
  */
 import type { Block } from "../../model/types.js";
 import { diffSequence } from "../myers.js";
@@ -22,7 +27,25 @@ export function alignBlocks(
   current: ReadonlyArray<Block>,
   prior: ReadonlyArray<Block>,
 ): BlockAlignmentItem[] {
-  // Phase 1: text-equality diff.
+  // Fast path: identical sequences (most sections are unchanged).
+  if (current.length === prior.length) {
+    let allEqual = true;
+    for (let i = 0; i < current.length; i++) {
+      if (current[i].text !== prior[i].text) {
+        allEqual = false;
+        break;
+      }
+    }
+    if (allEqual) {
+      const out: BlockAlignmentItem[] = new Array(current.length);
+      for (let i = 0; i < current.length; i++) {
+        out[i] = { kind: "EQUAL", current: current[i], prior: prior[i] };
+      }
+      return out;
+    }
+  }
+
+  // General case: full LCS over block text.
   const ops = diffSequence(current, prior, (a, b) => a.text === b.text);
   // ops are in source order (a=current, b=prior).
   // Note: in diffSequence, "delete" = absent from B, "insert" = absent from A.

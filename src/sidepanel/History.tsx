@@ -11,6 +11,9 @@ function relativeTime(iso: string): string {
   const d = Date.parse(iso);
   if (Number.isNaN(d)) return "";
   const diff = Date.now() - d;
+  // Clock skew: a future timestamp would emit a misleading "0m ago".
+  // Fall back to an absolute date when the timestamp is ahead of now.
+  if (diff < 0) return new Date(d).toLocaleDateString();
   const min = Math.floor(diff / 60000);
   if (min < 1) return "just now";
   if (min < 60) return `${min}m ago`;
@@ -61,11 +64,17 @@ export function History({ storage, onOpen }: Props): React.ReactElement | null {
               aria-label={`Open diff: ${s.solicitationId ?? s.currentFileName}`}
             >
               <div className="history-item__main">
-                <div className="history-item__title">
+                <div
+                  className="history-item__title"
+                  title={`${s.solicitationId ? s.solicitationId + " · " : ""}${s.currentFileName} vs. ${s.priorFileName}`}
+                >
                   {unseen && <span className="history-item__unseen" aria-label="New" title="Not yet opened" />}
                   {s.solicitationId ?? s.currentFileName}
                 </div>
-                <div className="history-item__meta">
+                <div
+                  className="history-item__meta"
+                  title={`Compared on ${new Date(s.generatedAt).toLocaleString()}`}
+                >
                   {s.totalChanges} changes
                   {s.criticalCount > 0 ? ` · ${s.criticalCount} critical` : ""}
                   {" · "}

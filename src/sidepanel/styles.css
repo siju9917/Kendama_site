@@ -358,11 +358,27 @@ input[type="text"]:focus-visible {
   color: var(--critical);
 }
 
+.filter-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg);
+  padding-top: var(--space-2);
+  margin: 0 calc(-1 * var(--space-4)) var(--space-2);
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+
 .filters {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
   margin-bottom: var(--space-3);
+}
+.filters[role="group"] .filter-chip {
+  background: var(--bg);
 }
 .filter-chip {
   padding: 4px 10px;

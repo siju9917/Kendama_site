@@ -7,6 +7,7 @@
  */
 import { SamIntegration } from "./sam-integration.js";
 import { isBidDiffMessage, type OpenSidePanelMsg } from "../../shared/messages.js";
+import { postRuntime } from "../../shared/chrome-rt.js";
 
 const integration = new SamIntegration();
 
@@ -43,7 +44,7 @@ function inject(): void {
       kind: "biddiff/open-side-panel",
       attachments,
     };
-    chrome.runtime.sendMessage(msg);
+    postRuntime(msg);
   });
   document.body.appendChild(btn);
 }

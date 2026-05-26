@@ -9,12 +9,15 @@ echo "==> running all gates"
 bash scripts/ci.sh
 
 VERSION=$(node -e "console.log(require('./package.json').version)")
-ZIP="biddiff-v${VERSION}.zip"
+OUT_DIR="dist-zips"
+ZIP_NAME="biddiff-v${VERSION}.zip"
+ZIP="${OUT_DIR}/${ZIP_NAME}"
 
 echo "==> building"
 npm run build
 
 echo "==> packaging"
+mkdir -p "$OUT_DIR"
 rm -f "$ZIP"
 ( cd dist && zip -qr "../$ZIP" . )
 

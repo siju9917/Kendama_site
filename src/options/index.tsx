@@ -72,6 +72,36 @@ function Options(): React.ReactElement {
         <button onClick={clearHistory}>Clear history</button>
       </div>
 
+      <div className="option">
+        <h3>Disclaimer</h3>
+        <p style={{ color: "var(--fg-muted)", fontSize: 12, marginTop: 0 }}>
+          The disclaimer banner can be hidden from the side panel. Restore it here.
+        </p>
+        <button
+          onClick={async () => {
+            await kv.remove("biddiff.disclaimer.dismissed");
+            setStatus("Disclaimer will appear again next time the side panel opens.");
+            setTimeout(() => setStatus(""), 2500);
+          }}
+        >
+          Show disclaimer again
+        </button>
+      </div>
+
+      <div className="option">
+        <h3>Reset onboarding</h3>
+        <button
+          onClick={async () => {
+            await kv.remove("biddiff.onboarding.seen");
+            await kv.remove("biddiff.tip.kbd.seen");
+            setStatus("Onboarding will appear again next time the side panel opens.");
+            setTimeout(() => setStatus(""), 2500);
+          }}
+        >
+          Reset onboarding
+        </button>
+      </div>
+
       <div style={{ color: "var(--fg-muted)", fontSize: 12, marginTop: 16 }}>{status}</div>
     </div>
   );

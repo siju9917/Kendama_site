@@ -13,3 +13,4 @@ test/corpus/raw/*
 playwright-report
 test-results
 biddiff-v*.zip
+dist-zips/

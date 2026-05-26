@@ -329,6 +329,10 @@ export async function exportPdfReport(result: DiffResult, fileName?: string): Pr
     });
     space(8);
     for (const c of critical) {
+      // Capture the (page, y) BEFORE this block. If the block flows across a
+      // page break, we'll draw the accent bar only on the starting page so it
+      // doesn't appear on the wrong page.
+      const startPage = page;
       const startY = y;
       drawWrapped(`[Section ${c.ucfLetter ?? "?"}] ${CATEGORY_LABELS[c.category] ?? c.category} — ${c.changeType}`, {
         bold: true,
@@ -346,12 +350,17 @@ export async function exportPdfReport(result: DiffResult, fileName?: string): Pr
           drawWrapped(`   ${c.clauseInfo.plainLanguageNote}`, { color: [0.36, 0.4, 0.45], size: 10 });
         }
       }
-      // Accent bar
-      const heightOfBlock = startY - y;
-      const savedY = y;
-      y = startY;
-      drawAccentBar(heightOfBlock, [0.69, 0, 0.12]);
-      y = savedY;
+      // Draw the accent bar only when the block stayed on a single page.
+      if (page === startPage) {
+        const heightOfBlock = startY - y;
+        const savedY = y;
+        const savedPage = page;
+        y = startY;
+        page = startPage;
+        drawAccentBar(heightOfBlock, [0.69, 0, 0.12]);
+        y = savedY;
+        page = savedPage;
+      }
       space(8);
     }
   }

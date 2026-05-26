@@ -16,6 +16,7 @@ import {
   type DiffProgressMsg,
   type DiffResultMsg,
 } from "../shared/messages.js";
+import { postRuntime } from "../shared/chrome-rt.js";
 
 let pdfjsCache: PdfJsLike | null = null;
 async function loadPdfJs(): Promise<PdfJsLike> {
@@ -45,7 +46,7 @@ async function makeExtractor(bytes: ArrayBuffer, fileName: string): Promise<IExt
 
 function progress(jobId: string, note: string, percent: number): void {
   const m: DiffProgressMsg = { kind: "biddiff/progress", jobId, note, percent };
-  chrome.runtime.sendMessage(m);
+  postRuntime(m);
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -65,14 +66,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       result.generatedAt = new Date().toISOString();
       progress(job.jobId, "Done", 100);
       const done: DiffResultMsg = { kind: "biddiff/result", jobId: job.jobId, result };
-      chrome.runtime.sendMessage(done);
+      postRuntime(done);
     } catch (e) {
       const code = (e as { code?: string })?.code ?? "UNKNOWN";
       const message =
         (e as { userMessage?: string })?.userMessage ??
         (e instanceof Error ? e.message : String(e));
       const err: DiffErrorMsg = { kind: "biddiff/error", jobId: job.jobId, code, message };
-      chrome.runtime.sendMessage(err);
+      postRuntime(err);
     }
   })();
   sendResponse({ accepted: true });

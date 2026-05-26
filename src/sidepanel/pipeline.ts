@@ -14,6 +14,7 @@
  */
 import type { DiffResult } from "../core/diff/types.js";
 import { isBidDiffMessage, type DiffJobMsg } from "../shared/messages.js";
+import { postRuntime } from "../shared/chrome-rt.js";
 
 export type ProgressCb = (note: string, percent?: number) => void;
 
@@ -87,7 +88,7 @@ async function runViaOffscreen(
       priorBytes,
       priorName: prior.name,
     };
-    chrome.runtime.sendMessage(job);
+    postRuntime(job);
   });
 }
 

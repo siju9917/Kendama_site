@@ -38,7 +38,11 @@ export function Onboarding(): React.ReactElement | null {
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <h2 style={{ margin: 0, fontSize: 14 }}>Welcome to BidDiff</h2>
-        <button onClick={dismiss} style={{ fontSize: 11, padding: "2px 8px" }}>
+        <button
+          onClick={dismiss}
+          style={{ fontSize: 11, padding: "2px 8px" }}
+          aria-label="Dismiss the getting-started card"
+        >
           Dismiss
         </button>
       </div>
@@ -56,10 +60,6 @@ export function Onboarding(): React.ReactElement | null {
           one-paste summary for Slack.
         </li>
       </ol>
-      <p style={{ marginTop: 8, fontSize: 11, color: "var(--fg-faint)" }}>
-        Everything happens on this device. BidDiff identifies textual differences to assist
-        professional review; it does not provide legal, contracting, or capture advice.
-      </p>
     </section>
   );
 }

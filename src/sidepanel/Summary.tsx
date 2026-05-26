@@ -69,11 +69,11 @@ export function Summary({ result }: Props): React.ReactElement {
           <button className="primary" onClick={onExportPdf}>
             Export PDF
           </button>
-          <button onClick={onCopyText} title="Copy plain-text summary">
-            Copy
+          <button onClick={onCopyText} title="Copy a plain-text summary to the clipboard">
+            Copy text
           </button>
-          <button onClick={onCopyMarkdown} title="Copy as Markdown">
-            ⌃ Markdown
+          <button onClick={onCopyMarkdown} title="Copy as Markdown for Slack / GitHub / Notion">
+            Copy Markdown
           </button>
         </div>
       </div>
@@ -94,17 +94,39 @@ export function Summary({ result }: Props): React.ReactElement {
             {result.criticalCount}
           </span>
         </div>
-        <div className="summary__stat">
+        <div
+          className="summary__stat"
+          title="Confidence the underlying extraction was clean. Lower values mean the source PDFs were complex (scanned, two-column, etc.) — review the diff more carefully."
+        >
           <span className="summary__stat-label">Confidence</span>
           <span className="summary__stat-value">{(result.diffConfidence * 100).toFixed(0)}%</span>
         </div>
       </div>
 
-      <div style={{ marginTop: 12, fontSize: 12, color: "var(--fg-muted)" }}>
+      <div
+        style={{
+          marginTop: 12,
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 6,
+        }}
+      >
         {Object.entries(result.changeCountByCategory)
           .filter(([, n]) => n > 0)
-          .map(([k, n]) => `${CATEGORY_LABELS[k] ?? k}: ${n}`)
-          .join(" · ")}
+          .map(([k, n]) => (
+            <span
+              key={k}
+              style={{
+                fontSize: 11,
+                padding: "2px 8px",
+                background: "var(--bg-subtle)",
+                color: "var(--fg-muted)",
+                borderRadius: 999,
+              }}
+            >
+              {CATEGORY_LABELS[k] ?? k}: {n}
+            </span>
+          ))}
       </div>
 
       {result.warnings.length > 0 && (
