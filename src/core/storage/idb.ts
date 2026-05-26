@@ -14,14 +14,12 @@ const STORE = "diffs";
 const VERSION = 1;
 
 function hasIndexedDb(): boolean {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return typeof (globalThis as any).indexedDB !== "undefined";
+  return typeof indexedDB !== "undefined";
 }
 
 async function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const req = (globalThis as any).indexedDB.open(DB_NAME, VERSION) as IDBOpenDBRequest;
+    const req = indexedDB.open(DB_NAME, VERSION);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE)) {

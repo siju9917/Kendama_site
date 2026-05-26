@@ -21,15 +21,13 @@ export type ProgressCb = (note: string, percent?: number) => void;
 const OFFSCREEN_DOCUMENT_PATH = "src/offscreen/index.html";
 
 async function ensureOffscreenDocument(): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const api = (globalThis as any).chrome;
-  if (!api?.offscreen?.hasDocument) return;
-  const has = await api.offscreen.hasDocument();
+  if (typeof chrome === "undefined" || !chrome.offscreen?.hasDocument) return;
+  const has = await chrome.offscreen.hasDocument();
   if (has) return;
   try {
-    await api.offscreen.createDocument({
+    await chrome.offscreen.createDocument({
       url: OFFSCREEN_DOCUMENT_PATH,
-      reasons: ["WORKERS"],
+      reasons: [chrome.offscreen.Reason.WORKERS],
       justification: "Run PDF/DOCX extraction and diff off the UI thread.",
     });
   } catch (e) {
@@ -169,9 +167,11 @@ async function runLocalFallback(
 }
 
 function hasOffscreenSupport(): boolean {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const api = (globalThis as any).chrome;
-  return !!api?.offscreen?.createDocument && !!api?.runtime?.sendMessage;
+  return (
+    typeof chrome !== "undefined" &&
+    !!chrome.offscreen?.createDocument &&
+    !!chrome.runtime?.sendMessage
+  );
 }
 
 export async function runDiffPipeline(
