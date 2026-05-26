@@ -28,7 +28,6 @@ export interface TelemetryEvent {
   errorCode?: string;
 }
 
-const SESSION_KEY = "biddiff.telemetry.session";
 const ENABLED_KEY = "biddiff.settings"; // matches options page key
 
 interface SettingsShape {
@@ -64,14 +63,13 @@ export class TelemetryClient {
   }
 
   private async session(): Promise<string> {
+    // Ephemeral session ID — regenerated each TelemetryClient instance
+    // (effectively each page load). Persisting it would make this a de
+    // facto install identifier, which the Privacy Policy disclaims.
+    // The server can still aggregate events at the per-session level
+    // without being able to correlate users across sessions.
     if (!this.sessionPromise) {
-      this.sessionPromise = (async () => {
-        const existing = await this.kv.get<string>(SESSION_KEY);
-        if (existing) return existing;
-        const id = uuid();
-        await this.kv.set(SESSION_KEY, id);
-        return id;
-      })();
+      this.sessionPromise = Promise.resolve(uuid());
     }
     return this.sessionPromise;
   }

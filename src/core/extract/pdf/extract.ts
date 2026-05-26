@@ -99,8 +99,10 @@ export async function extractPdfTextItems(
   // Heuristic: if more than half the pages had no text content, treat as scanned.
   const appearsScanned = doc.numPages > 0 && nonEmptyPages / doc.numPages < 0.5;
   if (appearsScanned) {
+    // Reports, does not advise. The user decides whether to use the
+    // opt-in OCR path.
     warnings.push(
-      "Document appears to be a scanned image — text extraction may be incomplete; OCR fallback recommended.",
+      "This PDF appears to be a scanned image. Text extraction may be incomplete; OCR is required to read it.",
     );
   }
 

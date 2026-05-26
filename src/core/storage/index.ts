@@ -126,6 +126,27 @@ export function makeKv(): KVStore {
 export class DiffStorage implements IStorage {
   constructor(private readonly kv: KVStore = makeKv()) {}
 
+  /**
+   * A single chain of in-flight mutations so concurrent saveDiff /
+   * deleteDiff / markViewed calls do not interleave their read-modify-
+   * write of the index. chrome.storage offers no transactions; without
+   * this lock, two simultaneous saves from two side-panel windows
+   * could lose an entry (both read [], both write their own [x]).
+   */
+  private mutationQueue: Promise<void> = Promise.resolve();
+
+  private async serialize<T>(fn: () => Promise<T>): Promise<T> {
+    const prev = this.mutationQueue;
+    let resolveNext!: () => void;
+    this.mutationQueue = new Promise<void>((r) => (resolveNext = r));
+    await prev;
+    try {
+      return await fn();
+    } finally {
+      resolveNext();
+    }
+  }
+
   private async readIndex(): Promise<IndexFile> {
     const f = await this.kv.get<IndexFile>(SUMMARY_INDEX_KEY);
     if (!f) return { schemaVersion: INDEX_SCHEMA_VERSION, entries: [] };
@@ -148,6 +169,10 @@ export class DiffStorage implements IStorage {
   }
 
   async saveDiff(result: DiffResult): Promise<void> {
+    return this.serialize(() => this._saveDiff(result));
+  }
+
+  private async _saveDiff(result: DiffResult): Promise<void> {
     const payload = JSON.stringify(result);
     const useIdb = payload.length > PAYLOAD_IDB_THRESHOLD_BYTES && (await idbAvailable());
 
@@ -188,7 +213,8 @@ export class DiffStorage implements IStorage {
       }
       throw e;
     }
-    await this.pruneToLimit(STORAGE_HARD_CAP_BYTES);
+    // Already inside the serialize() lock; call the unlocked variant.
+    await this._pruneToLimit(STORAGE_HARD_CAP_BYTES);
   }
 
   async listDiffs(): Promise<DiffSummary[]> {
@@ -208,12 +234,14 @@ export class DiffStorage implements IStorage {
   }
 
   async markViewed(id: string): Promise<void> {
-    const idx = await this.readIndex();
-    const e = idx.entries.find((x) => x.id === id);
-    if (!e) return;
-    e.lastViewedAt = new Date().toISOString();
-    e.lastAccess = Date.now();
-    await this.writeIndex(idx);
+    return this.serialize(async () => {
+      const idx = await this.readIndex();
+      const e = idx.entries.find((x) => x.id === id);
+      if (!e) return;
+      e.lastViewedAt = new Date().toISOString();
+      e.lastAccess = Date.now();
+      await this.writeIndex(idx);
+    });
   }
 
   async getDiff(id: string): Promise<DiffResult | null> {
@@ -235,15 +263,21 @@ export class DiffStorage implements IStorage {
   }
 
   async deleteDiff(id: string): Promise<void> {
-    const idx = await this.readIndex();
-    const e = idx.entries.find((x) => x.id === id);
-    if (e?.storage === "idb") await idbDelete(id);
-    else await this.kv.remove(PAYLOAD_PREFIX + id);
-    idx.entries = idx.entries.filter((x) => x.id !== id);
-    await this.writeIndex(idx);
+    return this.serialize(async () => {
+      const idx = await this.readIndex();
+      const e = idx.entries.find((x) => x.id === id);
+      if (e?.storage === "idb") await idbDelete(id);
+      else await this.kv.remove(PAYLOAD_PREFIX + id);
+      idx.entries = idx.entries.filter((x) => x.id !== id);
+      await this.writeIndex(idx);
+    });
   }
 
   async pruneToLimit(maxBytes: number): Promise<void> {
+    return this.serialize(() => this._pruneToLimit(maxBytes));
+  }
+
+  private async _pruneToLimit(maxBytes: number): Promise<void> {
     const idx = await this.readIndex();
     let total = idx.entries.reduce((n, e) => n + e.sizeBytes, 0);
     if (total <= maxBytes) return;

@@ -73,13 +73,24 @@ describe("No advisory language in BidDiff-authored prose", () => {
     }
   });
 
-  it("dynamic engine warnings do not advise", () => {
-    // The diff engine pushes warning strings into DiffResult.warnings.
-    // Those strings appear in the side-panel UI and in exports. They
-    // must report, not advise.
-    const txt = readSafe(path.join(ROOT, "src", "core", "diff", "engine.ts"));
-    for (const re of FORBIDDEN_PHRASES) {
-      expect(re.test(txt)).toBe(false);
+  it("dynamic engine + extractor warnings do not advise", () => {
+    // The diff engine and the extractors push warning strings into
+    // DiffResult.warnings / DocMetadata.extractionWarnings. Those
+    // strings appear in the side-panel UI and in exports. They must
+    // report, not advise.
+    const sources = [
+      path.join(ROOT, "src", "core", "diff", "engine.ts"),
+      path.join(ROOT, "src", "core", "extract", "pdf", "extract.ts"),
+      path.join(ROOT, "src", "core", "extract", "pdf", "pdfExtractor.ts"),
+      path.join(ROOT, "src", "core", "extract", "docx", "docxExtractor.ts"),
+      path.join(ROOT, "src", "core", "extract", "normalize.ts"),
+      path.join(ROOT, "src", "core", "extract", "validate.ts"),
+    ];
+    for (const src of sources) {
+      const txt = readSafe(src);
+      for (const re of FORBIDDEN_PHRASES) {
+        expect(re.test(txt), `${src} contains advisory phrasing matching ${re}`).toBe(false);
+      }
     }
   });
 

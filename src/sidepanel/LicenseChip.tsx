@@ -38,17 +38,26 @@ export function LicenseChip({
     >
       {label}
       {upgrade && (
-        <a
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
+        <button
+          onClick={() => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (chrome as any).runtime?.openOptionsPage?.();
+            const api = (globalThis as any).chrome;
+            api?.runtime?.openOptionsPage?.();
           }}
-          style={{ marginLeft: 6, fontWeight: 600 }}
+          style={{
+            marginLeft: 6,
+            fontWeight: 600,
+            background: "transparent",
+            border: "0",
+            padding: "0",
+            color: "var(--accent)",
+            cursor: "pointer",
+            font: "inherit",
+            textDecoration: "underline",
+          }}
         >
           Upgrade
-        </a>
+        </button>
       )}
     </span>
   );

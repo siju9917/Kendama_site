@@ -141,6 +141,15 @@ describe("DiffStorage", () => {
     expect(real.has("biddiff.diff.rb1")).toBe(false);
   });
 
+  it("concurrent saves do not lose entries (serialize lock)", async () => {
+    const s = new DiffStorage();
+    // Fire 10 saves in parallel without awaiting individual results.
+    const ps = Array.from({ length: 10 }, (_, i) => s.saveDiff(fakeResult(`c${i}`)));
+    await Promise.all(ps);
+    const list = await s.listDiffs();
+    expect(list.length).toBe(10);
+  });
+
   it("filters out malformed entries", async () => {
     const { makeKv } = await import("./index.js");
     const kv = makeKv();

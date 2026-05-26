@@ -26,11 +26,21 @@ async function ensureOffscreenDocument(): Promise<void> {
   if (!api?.offscreen?.hasDocument) return;
   const has = await api.offscreen.hasDocument();
   if (has) return;
-  await api.offscreen.createDocument({
-    url: OFFSCREEN_DOCUMENT_PATH,
-    reasons: ["WORKERS"],
-    justification: "Run PDF/DOCX extraction and diff off the UI thread.",
-  });
+  try {
+    await api.offscreen.createDocument({
+      url: OFFSCREEN_DOCUMENT_PATH,
+      reasons: ["WORKERS"],
+      justification: "Run PDF/DOCX extraction and diff off the UI thread.",
+    });
+  } catch (e) {
+    // Race: another side-panel window may have created the doc between
+    // our hasDocument check and the createDocument call. Chrome rejects
+    // a second creation with "Only one offscreen document can be created
+    // at a time." Treat that as success.
+    const msg = e instanceof Error ? e.message : String(e);
+    if (/only one offscreen document/i.test(msg)) return;
+    throw e;
+  }
 }
 
 class OffscreenJobError extends Error {
