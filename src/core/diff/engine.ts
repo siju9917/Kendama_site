@@ -156,12 +156,25 @@ export class DiffEngine implements IDiffEngine {
     const confPenalty = Math.min(0.3, lowScoredPairs * 0.05);
     const diffConfidence = Math.max(0, baseConf - confPenalty);
 
+    // Surface per-document extractor warnings (e.g. "this PDF appears
+    // to be a scanned image") through the diff result so the UI's
+    // warning banner can show them. The engine's own warnings
+    // (diff-confidence threshold) are appended after.
     const warnings: string[] = [];
+    const seen = new Set<string>();
+    const pushUnique = (w: string): void => {
+      if (!seen.has(w)) {
+        seen.add(w);
+        warnings.push(w);
+      }
+    };
+    for (const w of current.metadata.extractionWarnings ?? []) pushUnique(w);
+    for (const w of prior.metadata.extractionWarnings ?? []) pushUnique(w);
     if (diffConfidence < EXTRACTION_LOW_CONFIDENCE_THRESHOLD) {
       // Note: deliberately not advisory. The disclaimer (rendered once at
       // the panel root and in every export) is the single canonical
       // place that says the human must review.
-      warnings.push(
+      pushUnique(
         `Extraction confidence is ${(diffConfidence * 100).toFixed(0)}% — lower than typical for clean text PDFs.`,
       );
     }

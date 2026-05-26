@@ -4,6 +4,39 @@ import { LocalClauseClient } from "../clauses/client.js";
 import { loadAllPairs } from "../../../test/corpus/harness.js";
 import { enrichStructuredDocument } from "../extract/normalize.js";
 
+describe("DiffEngine — warning propagation", () => {
+  it("merges per-document extractionWarnings into result.warnings", () => {
+    const engine = new DiffEngine(new LocalClauseClient());
+    const pair = loadAllPairs().find((b) => b.pairId.startsWith("null-"))!;
+    const current = enrichStructuredDocument({
+      ...pair.current,
+      metadata: {
+        ...pair.current.metadata,
+        extractionWarnings: ["This PDF appears to be a scanned image."],
+      },
+    });
+    const prior = enrichStructuredDocument(pair.prior);
+    const result = engine.diff(current, prior);
+    expect(result.warnings).toContain("This PDF appears to be a scanned image.");
+  });
+
+  it("does not duplicate identical warnings from both sides", () => {
+    const engine = new DiffEngine(new LocalClauseClient());
+    const pair = loadAllPairs().find((b) => b.pairId.startsWith("null-"))!;
+    const w = "Both sides scanned.";
+    const current = enrichStructuredDocument({
+      ...pair.current,
+      metadata: { ...pair.current.metadata, extractionWarnings: [w] },
+    });
+    const prior = enrichStructuredDocument({
+      ...pair.prior,
+      metadata: { ...pair.prior.metadata, extractionWarnings: [w] },
+    });
+    const result = engine.diff(current, prior);
+    expect(result.warnings.filter((x) => x === w).length).toBe(1);
+  });
+});
+
 describe("DiffEngine — null pairs", () => {
   it("identical documents produce zero changes", () => {
     const engine = new DiffEngine(new LocalClauseClient());
