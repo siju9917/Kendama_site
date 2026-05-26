@@ -66,6 +66,9 @@ export function DiffView({ result }: Props): React.ReactElement {
       // Skip when any modifier is held so we don't hijack browser
       // shortcuts (Cmd+R reload, Cmd+J downloads, Cmd+/ show shortcuts).
       if (e.ctrlKey || e.metaKey || e.altKey) return;
+      // Skip during IME composition so j/k presses while typing in a
+      // non-Latin script don't navigate.
+      if (e.isComposing) return;
       const list = filteredRef.current;
       if (e.key === "j" || e.key === "ArrowDown") {
         e.preventDefault();
