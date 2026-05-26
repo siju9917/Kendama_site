@@ -67,6 +67,49 @@ describe("itemsToRawLines (two-column)", () => {
   });
 });
 
+describe("stripHeadersFooters", () => {
+  it("removes repeating header text across pages", () => {
+    const items: PageTextItem[] = [];
+    // Header on every page
+    for (let p = 0; p < 5; p++) {
+      items.push(baseItem({ text: "Solicitation FA8771-26-R-1500", x: 50, y: 760, page: p }));
+    }
+    // Page-specific content on each page
+    items.push(baseItem({ text: "Hello from page 0", x: 50, y: 700, page: 0 }));
+    items.push(baseItem({ text: "Hello from page 1", x: 50, y: 700, page: 1 }));
+    items.push(baseItem({ text: "Hello from page 2", x: 50, y: 700, page: 2 }));
+    items.push(baseItem({ text: "Hello from page 3", x: 50, y: 700, page: 3 }));
+    items.push(baseItem({ text: "Hello from page 4", x: 50, y: 700, page: 4 }));
+
+    const lines = itemsToRawLines(items);
+    const texts = lines.map((l) => l.text);
+    expect(texts.some((t) => t.includes("Solicitation"))).toBe(false);
+    expect(texts.filter((t) => t.startsWith("Hello")).length).toBe(5);
+  });
+
+  it("collapses page-number patterns (Page 1 of 5 → Page 2 of 5 …)", () => {
+    const items: PageTextItem[] = [];
+    for (let p = 0; p < 4; p++) {
+      items.push(baseItem({ text: `Page ${p + 1} of 4`, x: 280, y: 30, page: p }));
+      items.push(baseItem({ text: `Body content ${p}`, x: 50, y: 700, page: p }));
+    }
+    const lines = itemsToRawLines(items);
+    expect(lines.map((l) => l.text).some((t) => /^Page\s+\d+\s+of/.test(t))).toBe(false);
+  });
+
+  it("does not over-strip when there are only 2 pages", () => {
+    const items: PageTextItem[] = [
+      baseItem({ text: "Header text", x: 50, y: 760, page: 0 }),
+      baseItem({ text: "Header text", x: 50, y: 760, page: 1 }),
+      baseItem({ text: "Body 0", x: 50, y: 700, page: 0 }),
+      baseItem({ text: "Body 1", x: 50, y: 700, page: 1 }),
+    ];
+    const lines = itemsToRawLines(items);
+    // 2 pages is below the strip threshold; the header survives.
+    expect(lines.map((l) => l.text).filter((t) => t === "Header text").length).toBe(2);
+  });
+});
+
 describe("mergeCrossPageContinuations", () => {
   it("merges a mid-sentence line break across pages", () => {
     const items: PageTextItem[] = [

@@ -19,6 +19,68 @@ interface PageGroup {
   items: PageTextItem[];
 }
 
+/**
+ * Detect and remove repeated page-header / page-footer text.
+ *
+ * A line is a header/footer if its text appears at approximately the same
+ * y-coordinate on at least 50% of pages (with at least 3 pages total).
+ * Page-numbers ("Page N of M") also count as a header/footer.
+ *
+ * Returns the items list with header/footer items removed.
+ */
+export function stripHeadersFooters(items: ReadonlyArray<PageTextItem>): PageTextItem[] {
+  const pages = new Map<number, PageTextItem[]>();
+  for (const it of items) {
+    const arr = pages.get(it.page) ?? [];
+    arr.push(it);
+    pages.set(it.page, arr);
+  }
+  if (pages.size < 3) return [...items];
+
+  // Bucket items by (textBucket, y-rounded). textBucket normalizes
+  // recognized page-number patterns only — never numbers inside content
+  // — so "Page 1 of 5" and "Page 2 of 5" coalesce, but "Hello page 0"
+  // and "Hello page 1" remain distinct.
+  const yTol = 6; // points
+  const PAGE_NUMBER_PATTERNS: ReadonlyArray<[RegExp, string]> = [
+    [/^\s*page\s+\d{1,4}\s+of\s+\d{1,4}\s*$/i, "page # of #"],
+    [/^\s*page\s+\d{1,4}\s*$/i, "page #"],
+    [/^\s*-\s*\d{1,4}\s*-\s*$/, "- # -"],
+    [/^\s*\d{1,4}\s*$/, "#"], // bare page number
+  ];
+  const textOf = (t: PageTextItem): string => {
+    const raw = t.text.replace(/\s+/g, " ").trim();
+    for (const [re, replacement] of PAGE_NUMBER_PATTERNS) {
+      if (re.test(raw)) return replacement;
+    }
+    return raw.toLowerCase();
+  };
+
+  type Bucket = { textBucket: string; yRounded: number; pages: Set<number> };
+  const buckets = new Map<string, Bucket>();
+  for (const it of items) {
+    const tb = textOf(it);
+    if (tb.length === 0) continue;
+    const yr = Math.round(it.y / yTol) * yTol;
+    const key = `${tb}@${yr}`;
+    const b = buckets.get(key) ?? { textBucket: tb, yRounded: yr, pages: new Set<number>() };
+    b.pages.add(it.page);
+    buckets.set(key, b);
+  }
+
+  const threshold = Math.max(2, Math.ceil(pages.size * 0.5));
+  const headerFooterKeys = new Set<string>();
+  for (const [key, b] of buckets) {
+    if (b.pages.size >= threshold) headerFooterKeys.add(key);
+  }
+
+  return items.filter((it) => {
+    const yr = Math.round(it.y / yTol) * yTol;
+    const key = `${textOf(it)}@${yr}`;
+    return !headerFooterKeys.has(key);
+  });
+}
+
 function groupByPage(items: ReadonlyArray<PageTextItem>): PageGroup[] {
   const m = new Map<number, PageTextItem[]>();
   for (const it of items) {
@@ -111,7 +173,8 @@ function lineToRaw(line: PageTextItem[], page: number): RawLine {
 }
 
 export function itemsToRawLines(items: ReadonlyArray<PageTextItem>): RawLine[] {
-  const pages = groupByPage(items);
+  const cleaned = stripHeadersFooters(items);
+  const pages = groupByPage(cleaned);
   const out: RawLine[] = [];
   for (const pg of pages) {
     const split = detectColumnSplit(pg.items);
