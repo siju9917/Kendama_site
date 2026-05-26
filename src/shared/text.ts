@@ -108,6 +108,13 @@ export function modifySimilarity(a: ReadonlyArray<string>, b: ReadonlyArray<stri
 export function levenshteinRatio(a: string, b: string): number {
   if (a === b) return 1;
   if (a.length === 0 || b.length === 0) return 0;
+  // Truncate pathological inputs so a 10k-char heading doesn't freeze
+  // section alignment (100M dp ops). Anything past 1k chars is
+  // already so different that the prefix gives a representative
+  // similarity.
+  const MAX_LEN = 1024;
+  if (a.length > MAX_LEN) a = a.slice(0, MAX_LEN);
+  if (b.length > MAX_LEN) b = b.slice(0, MAX_LEN);
   const m = a.length;
   const n = b.length;
   const prev = new Array<number>(n + 1);
