@@ -131,8 +131,7 @@ async function runLocalFallback(
     const buf = await file.arrayBuffer();
     const kind = validateInput(buf, file.name);
     if (kind === "PDF") {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mod: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      const mod = await import("pdfjs-dist/legacy/build/pdf.mjs");
       try {
         const workerUrl = new URL("pdfjs-dist/legacy/build/pdf.worker.mjs", import.meta.url);
         mod.GlobalWorkerOptions.workerSrc = workerUrl.href;
@@ -140,7 +139,8 @@ async function runLocalFallback(
         /* ignore */
       }
       const { PdfExtractor } = await import("../core/extract/pdf/pdfExtractor.js");
-      return new PdfExtractor(mod);
+      const pdfjs = mod as unknown as import("../core/extract/pdf/extract.js").PdfJsLike;
+      return new PdfExtractor(pdfjs);
     }
     const { DocxExtractor } = await import("../core/extract/docx/docxExtractor.js");
     return new DocxExtractor();

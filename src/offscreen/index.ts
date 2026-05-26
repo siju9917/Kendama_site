@@ -21,15 +21,14 @@ import { postRuntime } from "../shared/chrome-rt.js";
 let pdfjsCache: PdfJsLike | null = null;
 async function loadPdfJs(): Promise<PdfJsLike> {
   if (pdfjsCache) return pdfjsCache;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mod: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const mod = await import("pdfjs-dist/legacy/build/pdf.mjs");
   try {
     const workerUrl = new URL("pdfjs-dist/legacy/build/pdf.worker.mjs", import.meta.url);
     mod.GlobalWorkerOptions.workerSrc = workerUrl.href;
   } catch {
     /* ignore */
   }
-  pdfjsCache = mod as PdfJsLike;
+  pdfjsCache = mod as unknown as PdfJsLike;
   return pdfjsCache;
 }
 
