@@ -19,7 +19,7 @@ and the final list of human-action-only items at the bottom of that file.
 - Vite + CRXJS (Manifest V3 build)
 - React 18 (side panel, popup, options) with dark mode via `prefers-color-scheme`
 - Vitest (unit / integration) + @testing-library/react (components)
-- Playwright (extension e2e — test code present; runtime requires Chromium)
+- Playwright recommended for e2e (not currently a dependency; reinstall when a Chromium binary is available)
 - PDF.js + custom DOCX XML walker; Tesseract.js for OCR (stubbed for offline)
 - pdf-lib for the PDF export
 - Offscreen document hosts extraction + diff so the side panel stays responsive

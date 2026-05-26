@@ -7,8 +7,10 @@
    storage round-trips, etc.).
 3. **Corpus regression** (`test/integration/corpus.test.ts`) — every labeled
    amendment pair is an automated test. Frozen at the Phase 3.13 gate.
-4. **End-to-end** (`test/e2e/`, Playwright) — install extension into a real
-   Chromium, drive the three core journeys.
+4. **End-to-end (recommended addition)** — install extension into a real
+   Chromium via Playwright and drive the three core journeys. Not part
+   of this codebase yet; add `@playwright/test` when wiring up a CI
+   environment that has a Chromium binary available.
 
 ## Required gates (Part 14)
 

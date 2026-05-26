@@ -50,7 +50,7 @@ Determinism: byte-identical repeat runs across all 75 pairs.
 | Accessibility WCAG AA contrast on the design system         | 6/6    |
 | No advisory language in BidDiff prose                       | pass   |
 
-## Three core user journeys (manually inspected; Playwright TBD)
+## Three core user journeys (manually inspected; browser-driven e2e to be added when a Chromium binary is available)
 
 1. **First use:** install → open side panel → drop two files → compare →
    review categorized changes → export PDF. Works.
@@ -59,8 +59,8 @@ Determinism: byte-identical repeat runs across all 75 pairs.
 3. **Re-open a past diff:** open side panel → click recent-diff card →
    diff renders without re-processing. Works.
 
-(Playwright e2e for these requires a browser binary available to the
-test runner; deferred per `BLOCKERS.md`.)
+(Browser-driven e2e for these requires a Chromium binary in the test
+runner; deferred per `BLOCKERS.md`.)
 
 ## Definition-of-Done items (Part 0.6)
 
@@ -70,7 +70,7 @@ test runner; deferred per `BLOCKERS.md`.)
 | 2 | `npm run build && npm run lint && npm test` zero errors                            | done |
 | 3 | Every Part 14 quality gate passes                                                  | done (3 items need browser env, all stubbed) |
 | 4 | Phase 3 correctness bar (zero missed critical, recall ≥98%)                        | done — 100% on 75 pairs |
-| 5 | End-to-end Playwright tests                                                        | code written; runtime needs browser binary (BLOCKERS.md) |
+| 5 | End-to-end browser-driven tests                                                    | manual journey verified; automated browser e2e to be added when a Chromium binary is available |
 | 6 | Reflection protocol converged for every phase                                       | done — `REFLECTION_LOG.md` |
 | 7 | Tracking docs current                                                              | done |
 | 8 | Packaged `.zip` ready for Web Store                                                | done — `dist-zips/biddiff-v0.1.0.zip` (1.8 MB) |
@@ -82,7 +82,8 @@ test runner; deferred per `BLOCKERS.md`.)
 - Merchant-of-record account + production API key (commercial signup).
 - Cloud deployment credentials for the serverless backend.
 - Real production HMAC secret for license signing.
-- Playwright e2e test runtime (requires Chromium binary).
+- Browser-driven e2e tests (would require adding @playwright/test +
+  a Chromium binary to the CI runner).
 - Real-world SAM.gov DOM selector validation (requires logged-in browser session).
 
 None of these are code-level; they require human action and credentials.

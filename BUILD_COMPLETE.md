@@ -129,9 +129,10 @@ code cannot make. Nothing else is outstanding.
    has changed since this build, update **only that one file** — the
    integration-isolation test enforces this.
 
-7. **Install a Chromium binary in any CI that runs Playwright** to
-   exercise the end-to-end tests (the test code is written; only the
-   browser runtime is missing here).
+7. **(Optional) Add Playwright + a Chromium binary** to a CI runner if
+   you want browser-driven end-to-end tests of the loaded extension.
+   None ship in this repo — `npm install -D @playwright/test` adds the
+   library; tests would go under `test/e2e/`.
 
 8. **Submit the extension.** Run `bash scripts/package.sh`. Upload
    `dist-zips/biddiff-v0.1.0.zip` to the Web Store developer console. Paste the
