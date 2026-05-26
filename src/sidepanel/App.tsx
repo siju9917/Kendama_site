@@ -32,13 +32,17 @@ export function App(): React.ReactElement {
   const kv = useMemo(() => makeKv(), []);
 
   useEffect(() => {
-    new LocalLicenseClient().validate().then(setLicense).catch(() => setLicense(null));
+    const revalidateLicense = (): void => {
+      new LocalLicenseClient().validate().then(setLicense).catch(() => setLicense(null));
+    };
+    revalidateLicense();
     kv.get<boolean>(DISCLAIMER_DISMISSED_KEY)
       .then((v) => setDisclaimerShown(!v))
       .catch(() => setDisclaimerShown(true));
-    // Cross-window sync: if another side panel dismisses the
-    // disclaimer (or the user clicks "Show disclaimer again" in
-    // Options), reflect the change here without needing a reload.
+    // Cross-window sync: pick up disclaimer changes and re-validate
+    // the license if its stored state moves under us (e.g. trial
+    // grace ended in another tab, or the user pasted a key on the
+    // Options page).
     if (typeof chrome === "undefined" || !chrome.storage?.onChanged?.addListener) {
       return;
     }
@@ -49,6 +53,7 @@ export function App(): React.ReactElement {
       if (area !== "local") return;
       const c = changes[DISCLAIMER_DISMISSED_KEY];
       if (c) setDisclaimerShown(!c.newValue);
+      if ("biddiff.license.state" in changes) revalidateLicense();
     };
     chrome.storage.onChanged.addListener(listener);
     return () => chrome.storage.onChanged.removeListener(listener);
