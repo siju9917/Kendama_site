@@ -22,16 +22,26 @@ function Popup(): React.ReactElement {
 
   return (
     <div>
-      <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>BidDiff</div>
+      <h1 style={{ fontWeight: 700, fontSize: 16, marginBottom: 8, marginTop: 0 }}>BidDiff</h1>
       <p style={{ color: "var(--fg-muted)", marginTop: 0 }}>
         Federal solicitation amendment diff.
       </p>
       <button className="primary" style={{ width: "100%" }} onClick={openSidePanel}>
         Open side panel
       </button>
-      <div style={{ marginTop: 16, fontSize: 12, color: "var(--fg-muted)" }}>
+      <h2
+        style={{
+          marginTop: 16,
+          marginBottom: 0,
+          fontSize: 12,
+          fontWeight: 600,
+          color: "var(--fg-muted)",
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+        }}
+      >
         Recent diffs ({recent.length})
-      </div>
+      </h2>
       <ul style={{ listStyle: "none", padding: 0, marginTop: 8 }}>
         {recent.slice(0, 5).map((s) => (
           <li key={s.id} style={{ padding: "4px 0", borderBottom: "1px solid var(--border)" }}>

@@ -34,7 +34,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       return (
         <div className="app">
           <header className="app__header">
-            <span className="app__title">BidDiff</span>
+            <h1 className="app__title">BidDiff</h1>
           </header>
           <main className="app__body">
             <div className="error" role="alert">

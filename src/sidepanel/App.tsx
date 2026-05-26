@@ -40,7 +40,7 @@ export function App(): React.ReactElement {
   return (
     <div className="app">
       <header className="app__header">
-        <span className="app__title">BidDiff</span>
+        <h1 className="app__title">BidDiff</h1>
         <span className="app__subtitle">Federal solicitation amendment diff</span>
         <LicenseChip license={license} />
         {state.phase !== "EMPTY" && (
