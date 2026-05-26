@@ -107,6 +107,11 @@ export function ChangeCard({
                 {change.afterText}
               </div>
             </div>
+          ) : change.changeType === "MOVE" && change.beforeText === change.afterText ? (
+            // Pure MOVE: same content in two places. Showing the text
+            // twice with red/green borders looks like a diff that's
+            // actually identical — collapse to a single block.
+            change.afterText && <div className="change__after">{change.afterText}</div>
           ) : (
             <>
               {change.beforeText && <div className="change__before">{change.beforeText}</div>}
