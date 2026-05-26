@@ -52,35 +52,21 @@ export function ReviewPrompt(): React.ReactElement | null {
   if (show !== true) return null;
 
   return (
-    <div
-      role="region"
-      aria-label="Enjoying BidDiff?"
-      style={{
-        background: "var(--bg-elev)",
-        border: "1px solid var(--border)",
-        borderLeft: "3px solid var(--accent)",
-        borderRadius: 6,
-        padding: 12,
-        marginBottom: 12,
-      }}
-    >
-      <div style={{ fontWeight: 600, marginBottom: 6 }}>Enjoying BidDiff?</div>
-      <div style={{ color: "var(--fg-muted)", fontSize: 12, marginBottom: 8 }}>
+    <div className="review-prompt" role="region" aria-label="Enjoying BidDiff?">
+      <div className="review-prompt__title">Enjoying BidDiff?</div>
+      <div className="review-prompt__body">
         Reviews on the Chrome Web Store help other proposal and capture teams find us.
       </div>
-      <div style={{ display: "flex", gap: 8 }}>
+      <div className="review-prompt__actions">
         <a
           href="https://chromewebstore.google.com/category/extensions"
           target="_blank"
           rel="noreferrer noopener"
           onClick={() => void onDone()}
-          style={{ textDecoration: "none" }}
         >
-          <button className="primary" style={{ fontSize: 12 }}>
-            Leave a review
-          </button>
+          <button className="primary review-prompt__cta">Leave a review</button>
         </a>
-        <button onClick={() => void onDone()} style={{ fontSize: 12 }}>
+        <button onClick={() => void onDone()} className="review-prompt__cta">
           No thanks
         </button>
       </div>

@@ -769,6 +769,35 @@ input[type="text"]:focus-visible {
   margin-bottom: 4px;
 }
 
+.review-prompt {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.review-prompt__title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.review-prompt__body {
+  color: var(--fg-muted);
+  font-size: 12px;
+  margin-bottom: var(--space-2);
+}
+.review-prompt__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.review-prompt__actions a {
+  text-decoration: none;
+}
+.review-prompt__cta {
+  font-size: 12px;
+}
+
 .section-heading {
   font-size: 11px;
   color: var(--fg-muted);
