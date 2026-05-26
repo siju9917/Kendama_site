@@ -23,13 +23,21 @@ function Options(): React.ReactElement {
     kv.get<Settings>(SETTINGS_KEY).then((s) => setSettings(s ?? DEFAULTS));
   }, [kv]);
   // Flush any pending save on unmount so a fast close doesn't lose input.
+  // We can't await in a cleanup, but kv.set returns a Promise that the
+  // chrome.storage API queues to disk; firing it before clearing the
+  // timer ensures the latest value is persisted.
+  const pendingSettingsRef = useRef<Settings | null>(null);
   useEffect(() => {
     return () => {
       if (saveTimer.current) {
         clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+        if (pendingSettingsRef.current) {
+          void kv.set(SETTINGS_KEY, pendingSettingsRef.current);
+        }
       }
     };
-  }, []);
+  }, [kv]);
 
   /**
    * Update state synchronously, then persist to chrome.storage after a
@@ -38,8 +46,11 @@ function Options(): React.ReactElement {
    */
   const save = (next: Settings, debounceMs = 250): void => {
     setSettings(next);
+    pendingSettingsRef.current = next;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
+      saveTimer.current = null;
+      pendingSettingsRef.current = null;
       void (async () => {
         await kv.set(SETTINGS_KEY, next);
         setStatus("Saved.");
