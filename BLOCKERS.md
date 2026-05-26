@@ -20,6 +20,14 @@ by code. Each is stubbed behind an interface so the build proceeds.
       `TelemetryClient` and the license client so the extension can
       call the deployed backend.
 - [ ] **Chrome Web Store submission.** Submission itself requires a human at the developer dashboard.
+- [ ] **Validate SAM.gov attachment hosts vs. manifest `host_permissions`.**
+      The "Compare with BidDiff" affordance downloads attachments from URLs
+      it finds on the opportunity page. If SAM serves files from a host
+      OTHER than `*.sam.gov` (e.g. a CDN like S3), the `fetch` will fail
+      with a CORS error and the user will see "Couldn't download". After
+      observing a real SAM.gov page in production, either: (a) the URLs
+      remain on `*.sam.gov` — no change; (b) widen `host_permissions` in
+      `manifest.config.ts` to the actual CDN host.
 
 ## In-progress investigations (NOT blockers, just to track)
 
