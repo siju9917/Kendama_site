@@ -46,7 +46,7 @@ function Popup(): React.ReactElement {
           letterSpacing: "0.05em",
         }}
       >
-        Recent diffs ({recent.length})
+        {recent.length > 5 ? `Recent diffs (5 of ${recent.length})` : `Recent diffs (${recent.length})`}
       </h2>
       <ul style={{ listStyle: "none", padding: 0, marginTop: 8 }}>
         {recent.slice(0, 5).map((s) => (
