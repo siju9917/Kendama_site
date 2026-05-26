@@ -52,18 +52,26 @@ export function DiffView({ result }: Props): React.ReactElement {
     return out;
   }, [result, filter, sectionFilter, textFilter]);
 
+  // Keep the latest filtered list + focused index in refs so the
+  // keydown listener can read them without being re-registered on every
+  // keystroke (which would happen if `filtered` was a dep).
+  const filteredRef = useRef(filtered);
+  filteredRef.current = filtered;
+  const focusedIndexRef = useRef(focusedIndex);
+  focusedIndexRef.current = focusedIndex;
   useEffect(() => {
     const handler = (e: KeyboardEvent): void => {
       const target = e.target as HTMLElement | null;
       if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") return;
+      const list = filteredRef.current;
       if (e.key === "j" || e.key === "ArrowDown") {
         e.preventDefault();
-        setFocusedIndex((i) => Math.min(filtered.length - 1, i + 1));
+        setFocusedIndex((i) => Math.min(list.length - 1, i + 1));
       } else if (e.key === "k" || e.key === "ArrowUp") {
         e.preventDefault();
         setFocusedIndex((i) => Math.max(0, i - 1));
       } else if (e.key === "r") {
-        const c = filtered[focusedIndex];
+        const c = list[focusedIndexRef.current];
         if (c) {
           setReviewed((s) => {
             const next = new Set(s);
@@ -79,7 +87,7 @@ export function DiffView({ result }: Props): React.ReactElement {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [filtered, focusedIndex]);
+  }, []);
 
   useEffect(() => {
     const c = filtered[focusedIndex];

@@ -54,11 +54,15 @@ export interface PdfPageLike {
 }
 
 export interface PdfTextContentItem {
-  str: string;
-  // PDF.js item transform: [a, b, c, d, e, f] — last two are x, y.
-  transform: number[];
-  width: number;
-  height: number;
+  /**
+   * Present on TextItem. Absent on TextMarkedContent (structural markers
+   * returned by getTextContent for marked content sections).
+   */
+  str?: string;
+  /** [a b c d e f] — last two are x, y. May be absent on marked content. */
+  transform?: number[];
+  width?: number;
+  height?: number;
   fontName?: string;
 }
 
@@ -78,15 +82,21 @@ export async function extractPdfTextItems(
     const content = await page.getTextContent();
     if (content.items.length > 0) nonEmptyPages++;
     for (const it of content.items) {
-      const x = it.transform[4] ?? 0;
-      const y = it.transform[5] ?? 0;
-      const fontSize = Math.abs(it.transform[0] ?? 0);
+      // PDF.js getTextContent can return TextMarkedContent items that
+      // have no .str (they're structural markers). Skip them.
+      if (typeof it.str !== "string") continue;
+      // The transform array is usually [a b c d e f]; default missing
+      // axes to 0 rather than throwing on malformed items.
+      const t = it.transform ?? [];
+      const x = t[4] ?? 0;
+      const y = t[5] ?? 0;
+      const fontSize = Math.abs(t[0] ?? 0);
       items.push({
         page: p - 1,
         x,
         y,
-        width: it.width,
-        height: it.height,
+        width: it.width ?? 0,
+        height: it.height ?? 0,
         text: it.str,
         fontName: it.fontName ?? null,
         fontSize: fontSize || null,
