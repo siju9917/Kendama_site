@@ -58,9 +58,6 @@ describe("No advisory language in BidDiff-authored prose", () => {
   it("the canonical disclaimer reports, does not advise", () => {
     const file = path.join(ROOT, "src", "shared", "disclaimer.ts");
     const txt = readSafe(file);
-    // The disclaimer can contain "Always confirm" — that's reporting that
-    // confirmation is the appropriate use of the tool, not advising
-    // a specific action. The forbidden phrases above don't catch it.
     for (const re of FORBIDDEN_PHRASES) {
       expect(re.test(txt)).toBe(false);
     }

@@ -17,7 +17,11 @@ export function LicenseChip({
     label = d === 0 ? "Trial · last day" : `Trial · ${d}d left`;
     upgrade = d <= 3;
   } else if (license.status === "active") {
-    label = `${license.tier} · active`;
+    // Tier values come from the type as lowercase ("solo", "team",
+    // "enterprise"); capitalize for display so the chip doesn't read
+    // as "solo · active".
+    const tier = license.tier.charAt(0).toUpperCase() + license.tier.slice(1);
+    label = `${tier} · active`;
   } else if (license.status === "grace") {
     label = "Trial expired · grace";
     upgrade = true;

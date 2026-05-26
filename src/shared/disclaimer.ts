@@ -4,4 +4,4 @@
  */
 export const DISCLAIMER_TEXT =
   "BidDiff identifies textual differences between solicitation documents to assist professional review. " +
-  "It does not provide legal, contracting, or capture advice. Always confirm any change with the original source documents.";
+  "It does not provide legal, contracting, or capture advice. The original source documents remain the authoritative reference.";
