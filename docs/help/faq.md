@@ -53,3 +53,40 @@ billing period.
 No. BidDiff reports what changed. Your contracts, capture, and legal
 teams remain responsible for the final review. The disclaimer is on
 every diff view, every export, and is a deliberate product principle.
+
+## How do I track which changes I've already looked at?
+
+Each change card has a **Mark reviewed** button. A running counter
+("3/12 reviewed") shows your progress through the diff. Marking a
+change reviewed grays out the card but keeps it in the list. You can
+unmark it the same way.
+
+## What keyboard shortcuts does BidDiff have?
+
+- `J` / down arrow — next change
+- `K` / up arrow — previous change
+- `R` — toggle reviewed on the focused change
+- `/` — focus the text filter
+
+The tip footer shows these the first time you open a diff and can be
+dismissed.
+
+## Can I get a side-by-side view of a modified paragraph?
+
+Yes — on any MODIFY change card, click **Side by side** to switch from
+the default word-level inline diff to a two-column before/after view.
+
+## Where do I see saved diffs?
+
+Saved diffs appear in the **Recent diffs** list on the side panel's
+empty state. Click one to reopen the diff without re-running
+extraction. A small blue dot marks diffs you haven't yet opened. Click
+the ✕ on the right of an item to delete it (with confirmation).
+
+## I dismissed the welcome card. How do I bring it back?
+
+**Settings → Reset onboarding.**
+
+## I hid the disclaimer banner. How do I bring it back?
+
+**Settings → Show disclaimer again.**

@@ -34,20 +34,35 @@ In 10–30 seconds (depending on document size) you'll see:
 
 ## Exporting
 
-- Click **Export PDF report** for a branded report you can email to your
-  capture team.
-- Click **Copy summary** to put a structured text summary on your
-  clipboard — paste it into a Slack message, an email, or a doc.
+- **Export PDF** — branded PDF report with a contents page for longer
+  diffs. The filename is derived from the solicitation ID.
+- **Copy text** — plain-text summary for an email or doc.
+- **Copy Markdown** — rich-formatted summary that survives backticks
+  in the source text. Paste into Slack, GitHub, Notion, or Linear.
 
-Both exports carry the BidDiff disclaimer: BidDiff reports what changed.
-It does not advise. Always confirm with the original source documents.
+Every export carries the BidDiff disclaimer.
+
+## Working through a long amendment
+
+- **Mark reviewed** — each change card has a Mark-reviewed button; the
+  card grays out and the running counter ("3/12 reviewed") tracks your
+  progress.
+- **Side by side** — for MODIFY changes, the Side-by-side button shows
+  the prior and new text in two columns instead of the default
+  word-level inline diff.
+- **Filters** — Severity (All / Critical), UCF section, and free-text
+  search. The filter bar sticks to the top of the panel while you scroll.
+- **Keyboard navigation** — `J` and `K` (or arrow keys) move between
+  changes; `R` toggles reviewed on the change in focus; `/` jumps to
+  the text filter. Press `Got it` on the tip footer to hide it.
 
 ## On SAM.gov
 
 When you're logged into SAM.gov on an opportunity page, BidDiff drops a
-small **Compare with BidDiff** button into the corner. Click it to open
-the side panel. (You still pick the files manually — the next release
-adds in-page attachment selection.)
+**Compare with BidDiff** button into the bottom-right corner. Click it
+to open the side panel; any attachments BidDiff detected on the page
+appear in the side panel as one-click "Use as new" / "Use as prior"
+buttons.
 
 ## Privacy
 
