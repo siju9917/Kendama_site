@@ -250,11 +250,16 @@ export class DiffEngine implements IDiffEngine {
 
     // Clause info: look in the local dataset if the engine was constructed
     // with a clause client. The interface guarantees lookupSync exists; a
-    // client without a local cache returns null.
+    // client without a local cache returns null. Wrap defensively because
+    // a custom IClauseClient could throw and bring down the diff.
     let clauseInfo: ClauseInfo | null = null;
     if (this.clauseClient && anchorsInvolved.some((a) => a.type === "CLAUSE_REF")) {
       const num = anchorsInvolved.find((a) => a.type === "CLAUSE_REF")!.normalized;
-      clauseInfo = this.clauseClient.lookupSync(num);
+      try {
+        clauseInfo = this.clauseClient.lookupSync(num);
+      } catch {
+        clauseInfo = null;
+      }
     }
 
     const sectionHeading = p.section?.heading ?? "(Unattached)";
