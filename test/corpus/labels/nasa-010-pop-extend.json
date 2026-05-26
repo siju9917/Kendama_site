@@ -1,0 +1,20 @@
+{
+  "pairId": "nasa-010-pop-extend",
+  "description": "Period of performance extended to 24 months.",
+  "currentFile": "synthetic/nasa-010-pop-extend/current.json",
+  "priorFile": "synthetic/nasa-010-pop-extend/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "DATES_DEADLINES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section F — Period of Performance",
+      "summary": "Period of performance changed to 24 months",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "24 months"
+      ]
+    }
+  ]
+}

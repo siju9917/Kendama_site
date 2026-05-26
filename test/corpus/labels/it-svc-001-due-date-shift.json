@@ -1,0 +1,20 @@
+{
+  "pairId": "it-svc-001-due-date-shift",
+  "description": "Proposal due date pushed back 14 days.",
+  "currentFile": "synthetic/it-svc-001-due-date-shift/current.json",
+  "priorFile": "synthetic/it-svc-001-due-date-shift/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "DATES_DEADLINES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section L — Instructions to Offerors, proposal due date paragraph",
+      "summary": "Proposal due date changed from 2026-08-15 to 2026-08-29",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "2026-08-29"
+      ]
+    }
+  ]
+}

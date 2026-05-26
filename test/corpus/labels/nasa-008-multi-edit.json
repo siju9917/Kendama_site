@@ -1,0 +1,40 @@
+{
+  "pairId": "nasa-008-multi-edit",
+  "description": "Multi-edit: page limit + attachment + sow revision.",
+  "currentFile": "synthetic/nasa-008-multi-edit/current.json",
+  "priorFile": "synthetic/nasa-008-multi-edit/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "SUBMISSION_INSTRUCTIONS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section L — page limit",
+      "summary": "Page limit changed from 75 to 85 pages",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "85 pages"
+      ]
+    },
+    {
+      "changeType": "INSERT",
+      "category": "ATTACHMENTS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section J — List of Attachments",
+      "summary": "Attachment 4 (Acquisition Strategy Briefing) added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "4",
+        "Acquisition Strategy Briefing"
+      ]
+    },
+    {
+      "changeType": "MODIFY",
+      "category": "SCOPE_SOW",
+      "severity": "NORMAL",
+      "locationDescription": "Section C — paragraph 2",
+      "summary": "SOW paragraph revised. Was: \"Monthly status reports and quarterly technical reports are required deliverables…\"",
+      "mustDetect": true
+    }
+  ]
+}

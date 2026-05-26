@@ -1,0 +1,10 @@
+{
+  "pairId": "navy-003-dfars-cmmc-add",
+  "description": "DFARS 252.204-7021 (CMMC) added.",
+  "tags": [
+    "clauses",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

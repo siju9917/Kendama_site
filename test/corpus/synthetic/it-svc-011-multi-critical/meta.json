@@ -1,0 +1,9 @@
+{
+  "pairId": "it-svc-011-multi-critical",
+  "description": "Multi-edit amendment: due-date shift + new clause + page-limit change.",
+  "tags": [
+    "multi-edit",
+    "critical"
+  ],
+  "editCount": 3
+}

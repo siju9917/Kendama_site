@@ -1,0 +1,10 @@
+{
+  "pairId": "it-svc-004-clause-remove",
+  "description": "FAR 52.222-41 removed (re-categorized as supplies).",
+  "tags": [
+    "clauses",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

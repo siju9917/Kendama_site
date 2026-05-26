@@ -1,0 +1,17 @@
+{
+  "pairId": "navy-009-sow-modify",
+  "description": "Navy SOW paragraph on FAT timeline modified to 60 days.",
+  "currentFile": "synthetic/navy-009-sow-modify/current.json",
+  "priorFile": "synthetic/navy-009-sow-modify/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "SCOPE_SOW",
+      "severity": "NORMAL",
+      "locationDescription": "Section C — paragraph 3",
+      "summary": "SOW paragraph revised. Was: \"First Article Test units shall be delivered within 90 days of award; production …\"",
+      "mustDetect": true
+    }
+  ]
+}

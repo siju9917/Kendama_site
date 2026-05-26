@@ -1,0 +1,9 @@
+{
+  "pairId": "null-001-identical",
+  "description": "Identical documents (sanity check: must produce zero changes).",
+  "tags": [
+    "null",
+    "sanity"
+  ],
+  "editCount": 0
+}

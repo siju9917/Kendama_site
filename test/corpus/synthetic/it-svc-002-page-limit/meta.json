@@ -1,0 +1,10 @@
+{
+  "pairId": "it-svc-002-page-limit",
+  "description": "Page limit reduced from 30 to 25.",
+  "tags": [
+    "instructions",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

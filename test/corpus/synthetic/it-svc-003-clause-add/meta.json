@@ -1,0 +1,10 @@
+{
+  "pairId": "it-svc-003-clause-add",
+  "description": "FAR 52.204-25 added to clause inventory.",
+  "tags": [
+    "clauses",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

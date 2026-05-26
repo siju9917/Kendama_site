@@ -1,0 +1,20 @@
+{
+  "pairId": "it-svc-004-clause-remove",
+  "description": "FAR 52.222-41 removed (re-categorized as supplies).",
+  "currentFile": "synthetic/it-svc-004-clause-remove/current.json",
+  "priorFile": "synthetic/it-svc-004-clause-remove/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "DELETE",
+      "category": "CLAUSES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section I — Contract Clauses",
+      "summary": "Clause 52.222-41 removed",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "52.222-41"
+      ]
+    }
+  ]
+}

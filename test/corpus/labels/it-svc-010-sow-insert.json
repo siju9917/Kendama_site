@@ -1,0 +1,17 @@
+{
+  "pairId": "it-svc-010-sow-insert",
+  "description": "New SOW paragraph inserted on cloud-migration responsibilities.",
+  "currentFile": "synthetic/it-svc-010-sow-insert/current.json",
+  "priorFile": "synthetic/it-svc-010-sow-insert/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "INSERT",
+      "category": "SCOPE_SOW",
+      "severity": "NORMAL",
+      "locationDescription": "Section C — new paragraph",
+      "summary": "SOW paragraph added: \"The Contractor shall support migration of legacy ticketing systems to the Govern…\"",
+      "mustDetect": true
+    }
+  ]
+}

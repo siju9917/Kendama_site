@@ -1,0 +1,20 @@
+{
+  "pairId": "nasa-003-eval-add-factor",
+  "description": "New evaluation Factor 4 (Cost) replaces older Management factor.",
+  "currentFile": "synthetic/nasa-003-eval-add-factor/current.json",
+  "priorFile": "synthetic/nasa-003-eval-add-factor/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "EVALUATION_CRITERIA",
+      "severity": "CRITICAL",
+      "locationDescription": "Section M — Factor 4",
+      "summary": "Evaluation factor changed: was \"Factor 4: Management\", now \"Factor 4: Cost / Price\"",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "Cost / Price"
+      ]
+    }
+  ]
+}

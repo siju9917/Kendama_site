@@ -1,0 +1,10 @@
+{
+  "pairId": "it-svc-001-due-date-shift",
+  "description": "Proposal due date pushed back 14 days.",
+  "tags": [
+    "dates",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

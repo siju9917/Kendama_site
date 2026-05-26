@@ -1,0 +1,21 @@
+{
+  "pairId": "it-svc-006-attachment-add",
+  "description": "Attachment 4 (Cybersecurity Self-Assessment) added.",
+  "currentFile": "synthetic/it-svc-006-attachment-add/current.json",
+  "priorFile": "synthetic/it-svc-006-attachment-add/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "INSERT",
+      "category": "ATTACHMENTS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section J — List of Attachments",
+      "summary": "Attachment 4 (Cybersecurity Self-Assessment) added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "4",
+        "Cybersecurity Self-Assessment"
+      ]
+    }
+  ]
+}

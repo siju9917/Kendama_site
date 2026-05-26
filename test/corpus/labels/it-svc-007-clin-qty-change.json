@@ -1,0 +1,20 @@
+{
+  "pairId": "it-svc-007-clin-qty-change",
+  "description": "CLIN 0002 quantity reduced from 12 to 6 months.",
+  "currentFile": "synthetic/it-svc-007-clin-qty-change/current.json",
+  "priorFile": "synthetic/it-svc-007-clin-qty-change/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "PRICING_CLINS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section B — CLIN 0002",
+      "summary": "CLIN 0002 quantity changed to 6",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "CLIN 0002"
+      ]
+    }
+  ]
+}

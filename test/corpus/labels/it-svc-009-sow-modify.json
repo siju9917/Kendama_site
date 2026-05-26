@@ -1,0 +1,17 @@
+{
+  "pairId": "it-svc-009-sow-modify",
+  "description": "SOW paragraph 1 user-count revised down to 4,000.",
+  "currentFile": "synthetic/it-svc-009-sow-modify/current.json",
+  "priorFile": "synthetic/it-svc-009-sow-modify/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "SCOPE_SOW",
+      "severity": "NORMAL",
+      "locationDescription": "Section C — paragraph 1",
+      "summary": "SOW paragraph revised. Was: \"The Contractor shall provide enterprise help-desk services supporting up to 5,00…\"",
+      "mustDetect": true
+    }
+  ]
+}

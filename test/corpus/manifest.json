@@ -1,0 +1,480 @@
+{
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "pairs": [
+    {
+      "pairId": "it-svc-001-due-date-shift",
+      "description": "Proposal due date pushed back 14 days.",
+      "tags": [
+        "dates",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/it-svc-001-due-date-shift/current.json",
+      "priorFile": "synthetic/it-svc-001-due-date-shift/prior.json",
+      "labelFile": "labels/it-svc-001-due-date-shift.json"
+    },
+    {
+      "pairId": "it-svc-002-page-limit",
+      "description": "Page limit reduced from 30 to 25.",
+      "tags": [
+        "instructions",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/it-svc-002-page-limit/current.json",
+      "priorFile": "synthetic/it-svc-002-page-limit/prior.json",
+      "labelFile": "labels/it-svc-002-page-limit.json"
+    },
+    {
+      "pairId": "it-svc-003-clause-add",
+      "description": "FAR 52.204-25 added to clause inventory.",
+      "tags": [
+        "clauses",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/it-svc-003-clause-add/current.json",
+      "priorFile": "synthetic/it-svc-003-clause-add/prior.json",
+      "labelFile": "labels/it-svc-003-clause-add.json"
+    },
+    {
+      "pairId": "it-svc-004-clause-remove",
+      "description": "FAR 52.222-41 removed (re-categorized as supplies).",
+      "tags": [
+        "clauses",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/it-svc-004-clause-remove/current.json",
+      "priorFile": "synthetic/it-svc-004-clause-remove/prior.json",
+      "labelFile": "labels/it-svc-004-clause-remove.json"
+    },
+    {
+      "pairId": "it-svc-005-eval-factor-replace",
+      "description": "Section M Factor 1 replaced with stronger technical language.",
+      "tags": [
+        "evaluation",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/it-svc-005-eval-factor-replace/current.json",
+      "priorFile": "synthetic/it-svc-005-eval-factor-replace/prior.json",
+      "labelFile": "labels/it-svc-005-eval-factor-replace.json"
+    },
+    {
+      "pairId": "it-svc-006-attachment-add",
+      "description": "Attachment 4 (Cybersecurity Self-Assessment) added.",
+      "tags": [
+        "attachments",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/it-svc-006-attachment-add/current.json",
+      "priorFile": "synthetic/it-svc-006-attachment-add/prior.json",
+      "labelFile": "labels/it-svc-006-attachment-add.json"
+    },
+    {
+      "pairId": "it-svc-007-clin-qty-change",
+      "description": "CLIN 0002 quantity reduced from 12 to 6 months.",
+      "tags": [
+        "pricing",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/it-svc-007-clin-qty-change/current.json",
+      "priorFile": "synthetic/it-svc-007-clin-qty-change/prior.json",
+      "labelFile": "labels/it-svc-007-clin-qty-change.json"
+    },
+    {
+      "pairId": "it-svc-008-clin-add",
+      "description": "New CLIN 0004 added for surge capacity.",
+      "tags": [
+        "pricing",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/it-svc-008-clin-add/current.json",
+      "priorFile": "synthetic/it-svc-008-clin-add/prior.json",
+      "labelFile": "labels/it-svc-008-clin-add.json"
+    },
+    {
+      "pairId": "it-svc-009-sow-modify",
+      "description": "SOW paragraph 1 user-count revised down to 4,000.",
+      "tags": [
+        "sow",
+        "single-edit",
+        "normal"
+      ],
+      "currentFile": "synthetic/it-svc-009-sow-modify/current.json",
+      "priorFile": "synthetic/it-svc-009-sow-modify/prior.json",
+      "labelFile": "labels/it-svc-009-sow-modify.json"
+    },
+    {
+      "pairId": "it-svc-010-sow-insert",
+      "description": "New SOW paragraph inserted on cloud-migration responsibilities.",
+      "tags": [
+        "sow",
+        "single-edit",
+        "normal"
+      ],
+      "currentFile": "synthetic/it-svc-010-sow-insert/current.json",
+      "priorFile": "synthetic/it-svc-010-sow-insert/prior.json",
+      "labelFile": "labels/it-svc-010-sow-insert.json"
+    },
+    {
+      "pairId": "it-svc-011-multi-critical",
+      "description": "Multi-edit amendment: due-date shift + new clause + page-limit change.",
+      "tags": [
+        "multi-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/it-svc-011-multi-critical/current.json",
+      "priorFile": "synthetic/it-svc-011-multi-critical/prior.json",
+      "labelFile": "labels/it-svc-011-multi-critical.json"
+    },
+    {
+      "pairId": "it-svc-012-pop-change",
+      "description": "Period of performance extended to 24 months.",
+      "tags": [
+        "dates",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/it-svc-012-pop-change/current.json",
+      "priorFile": "synthetic/it-svc-012-pop-change/prior.json",
+      "labelFile": "labels/it-svc-012-pop-change.json"
+    },
+    {
+      "pairId": "navy-001-due-date",
+      "description": "Navy proposal due date moved to October.",
+      "tags": [
+        "dates",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/navy-001-due-date/current.json",
+      "priorFile": "synthetic/navy-001-due-date/prior.json",
+      "labelFile": "labels/navy-001-due-date.json"
+    },
+    {
+      "pairId": "navy-002-dfars-add",
+      "description": "DFARS 252.204-7019 added to clauses.",
+      "tags": [
+        "clauses",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/navy-002-dfars-add/current.json",
+      "priorFile": "synthetic/navy-002-dfars-add/prior.json",
+      "labelFile": "labels/navy-002-dfars-add.json"
+    },
+    {
+      "pairId": "navy-003-dfars-cmmc-add",
+      "description": "DFARS 252.204-7021 (CMMC) added.",
+      "tags": [
+        "clauses",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/navy-003-dfars-cmmc-add/current.json",
+      "priorFile": "synthetic/navy-003-dfars-cmmc-add/prior.json",
+      "labelFile": "labels/navy-003-dfars-cmmc-add.json"
+    },
+    {
+      "pairId": "navy-004-clin-add",
+      "description": "New CLIN added for technical manuals.",
+      "tags": [
+        "pricing",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/navy-004-clin-add/current.json",
+      "priorFile": "synthetic/navy-004-clin-add/prior.json",
+      "labelFile": "labels/navy-004-clin-add.json"
+    },
+    {
+      "pairId": "navy-005-clin-qty",
+      "description": "CLIN 0001 quantity increased to 350.",
+      "tags": [
+        "pricing",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/navy-005-clin-qty/current.json",
+      "priorFile": "synthetic/navy-005-clin-qty/prior.json",
+      "labelFile": "labels/navy-005-clin-qty.json"
+    },
+    {
+      "pairId": "navy-006-page-limit",
+      "description": "Page limit raised to 60.",
+      "tags": [
+        "instructions",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/navy-006-page-limit/current.json",
+      "priorFile": "synthetic/navy-006-page-limit/prior.json",
+      "labelFile": "labels/navy-006-page-limit.json"
+    },
+    {
+      "pairId": "navy-007-eval-replace",
+      "description": "Evaluation Factor 2 (Past Performance) language tightened.",
+      "tags": [
+        "evaluation",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/navy-007-eval-replace/current.json",
+      "priorFile": "synthetic/navy-007-eval-replace/prior.json",
+      "labelFile": "labels/navy-007-eval-replace.json"
+    },
+    {
+      "pairId": "navy-008-attachment-remove",
+      "description": "Attachment B removed (QASP folded into PWS).",
+      "tags": [
+        "attachments",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/navy-008-attachment-remove/current.json",
+      "priorFile": "synthetic/navy-008-attachment-remove/prior.json",
+      "labelFile": "labels/navy-008-attachment-remove.json"
+    },
+    {
+      "pairId": "navy-009-sow-modify",
+      "description": "Navy SOW paragraph on FAT timeline modified to 60 days.",
+      "tags": [
+        "sow",
+        "single-edit",
+        "normal"
+      ],
+      "currentFile": "synthetic/navy-009-sow-modify/current.json",
+      "priorFile": "synthetic/navy-009-sow-modify/prior.json",
+      "labelFile": "labels/navy-009-sow-modify.json"
+    },
+    {
+      "pairId": "navy-010-multi-critical",
+      "description": "Multi-edit: due-date, CMMC clause add, attachment add.",
+      "tags": [
+        "multi-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/navy-010-multi-critical/current.json",
+      "priorFile": "synthetic/navy-010-multi-critical/prior.json",
+      "labelFile": "labels/navy-010-multi-critical.json"
+    },
+    {
+      "pairId": "navy-011-three-clause-changes",
+      "description": "Two clauses added, one removed in a single amendment.",
+      "tags": [
+        "clauses",
+        "multi-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/navy-011-three-clause-changes/current.json",
+      "priorFile": "synthetic/navy-011-three-clause-changes/prior.json",
+      "labelFile": "labels/navy-011-three-clause-changes.json"
+    },
+    {
+      "pairId": "navy-012-pop-extension",
+      "description": "Period of performance extended to 18 months.",
+      "tags": [
+        "dates",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/navy-012-pop-extension/current.json",
+      "priorFile": "synthetic/navy-012-pop-extension/prior.json",
+      "labelFile": "labels/navy-012-pop-extension.json"
+    },
+    {
+      "pairId": "nasa-001-due-date",
+      "description": "NASA proposal due date moved forward by one week.",
+      "tags": [
+        "dates",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/nasa-001-due-date/current.json",
+      "priorFile": "synthetic/nasa-001-due-date/prior.json",
+      "labelFile": "labels/nasa-001-due-date.json"
+    },
+    {
+      "pairId": "nasa-002-page-limit",
+      "description": "Page limit increased to 90.",
+      "tags": [
+        "instructions",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/nasa-002-page-limit/current.json",
+      "priorFile": "synthetic/nasa-002-page-limit/prior.json",
+      "labelFile": "labels/nasa-002-page-limit.json"
+    },
+    {
+      "pairId": "nasa-003-eval-add-factor",
+      "description": "New evaluation Factor 4 (Cost) replaces older Management factor.",
+      "tags": [
+        "evaluation",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/nasa-003-eval-add-factor/current.json",
+      "priorFile": "synthetic/nasa-003-eval-add-factor/prior.json",
+      "labelFile": "labels/nasa-003-eval-add-factor.json"
+    },
+    {
+      "pairId": "nasa-004-clause-add-wage",
+      "description": "FAR 52.222-55 added (minimum wage clause).",
+      "tags": [
+        "clauses",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/nasa-004-clause-add-wage/current.json",
+      "priorFile": "synthetic/nasa-004-clause-add-wage/prior.json",
+      "labelFile": "labels/nasa-004-clause-add-wage.json"
+    },
+    {
+      "pairId": "nasa-005-sow-major-revise",
+      "description": "Significant SOW revision: scope language tightened.",
+      "tags": [
+        "sow",
+        "single-edit",
+        "normal"
+      ],
+      "currentFile": "synthetic/nasa-005-sow-major-revise/current.json",
+      "priorFile": "synthetic/nasa-005-sow-major-revise/prior.json",
+      "labelFile": "labels/nasa-005-sow-major-revise.json"
+    },
+    {
+      "pairId": "nasa-006-attachment-add",
+      "description": "Attachment 3 (Data Rights Assertion Table) added.",
+      "tags": [
+        "attachments",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/nasa-006-attachment-add/current.json",
+      "priorFile": "synthetic/nasa-006-attachment-add/prior.json",
+      "labelFile": "labels/nasa-006-attachment-add.json"
+    },
+    {
+      "pairId": "nasa-007-clin-qty-change",
+      "description": "CLIN 0001 base-period duration changed to 18 months.",
+      "tags": [
+        "pricing",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/nasa-007-clin-qty-change/current.json",
+      "priorFile": "synthetic/nasa-007-clin-qty-change/prior.json",
+      "labelFile": "labels/nasa-007-clin-qty-change.json"
+    },
+    {
+      "pairId": "nasa-008-multi-edit",
+      "description": "Multi-edit: page limit + attachment + sow revision.",
+      "tags": [
+        "multi-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/nasa-008-multi-edit/current.json",
+      "priorFile": "synthetic/nasa-008-multi-edit/prior.json",
+      "labelFile": "labels/nasa-008-multi-edit.json"
+    },
+    {
+      "pairId": "nasa-009-q-and-a-amendment",
+      "description": "Q&A amendment: due date shift only.",
+      "tags": [
+        "dates",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/nasa-009-q-and-a-amendment/current.json",
+      "priorFile": "synthetic/nasa-009-q-and-a-amendment/prior.json",
+      "labelFile": "labels/nasa-009-q-and-a-amendment.json"
+    },
+    {
+      "pairId": "nasa-010-pop-extend",
+      "description": "Period of performance extended to 24 months.",
+      "tags": [
+        "dates",
+        "single-edit",
+        "critical"
+      ],
+      "currentFile": "synthetic/nasa-010-pop-extend/current.json",
+      "priorFile": "synthetic/nasa-010-pop-extend/prior.json",
+      "labelFile": "labels/nasa-010-pop-extend.json"
+    },
+    {
+      "pairId": "stress-001-multi-six-edits",
+      "description": "Six-edit amendment: due date, page limit, clause add, clause remove, eval, attachment.",
+      "tags": [
+        "multi-edit",
+        "stress",
+        "critical"
+      ],
+      "currentFile": "synthetic/stress-001-multi-six-edits/current.json",
+      "priorFile": "synthetic/stress-001-multi-six-edits/prior.json",
+      "labelFile": "labels/stress-001-multi-six-edits.json"
+    },
+    {
+      "pairId": "stress-002-dfars-overhaul",
+      "description": "DFARS cyber overhaul: 7019, 7020, 7021 all added.",
+      "tags": [
+        "clauses",
+        "stress",
+        "critical"
+      ],
+      "currentFile": "synthetic/stress-002-dfars-overhaul/current.json",
+      "priorFile": "synthetic/stress-002-dfars-overhaul/prior.json",
+      "labelFile": "labels/stress-002-dfars-overhaul.json"
+    },
+    {
+      "pairId": "stress-003-clin-rewrite",
+      "description": "CLIN structure rewrite: new CLINs added, existing quantities changed.",
+      "tags": [
+        "pricing",
+        "stress",
+        "critical"
+      ],
+      "currentFile": "synthetic/stress-003-clin-rewrite/current.json",
+      "priorFile": "synthetic/stress-003-clin-rewrite/prior.json",
+      "labelFile": "labels/stress-003-clin-rewrite.json"
+    },
+    {
+      "pairId": "stress-004-sow-and-l-and-m",
+      "description": "Combined SOW prose revision, instructions update, and evaluation factor swap.",
+      "tags": [
+        "multi-edit",
+        "stress",
+        "critical"
+      ],
+      "currentFile": "synthetic/stress-004-sow-and-l-and-m/current.json",
+      "priorFile": "synthetic/stress-004-sow-and-l-and-m/prior.json",
+      "labelFile": "labels/stress-004-sow-and-l-and-m.json"
+    },
+    {
+      "pairId": "null-001-identical",
+      "description": "Identical documents (sanity check: must produce zero changes).",
+      "tags": [
+        "null",
+        "sanity"
+      ],
+      "currentFile": "synthetic/null-001-identical/current.json",
+      "priorFile": "synthetic/null-001-identical/prior.json",
+      "labelFile": "labels/null-001-identical.json"
+    },
+    {
+      "pairId": "null-002-identical-navy",
+      "description": "Identical Navy documents.",
+      "tags": [
+        "null",
+        "sanity"
+      ],
+      "currentFile": "synthetic/null-002-identical-navy/current.json",
+      "priorFile": "synthetic/null-002-identical-navy/prior.json",
+      "labelFile": "labels/null-002-identical-navy.json"
+    }
+  ]
+}

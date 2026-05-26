@@ -1,0 +1,17 @@
+{
+  "pairId": "nasa-005-sow-major-revise",
+  "description": "Significant SOW revision: scope language tightened.",
+  "currentFile": "synthetic/nasa-005-sow-major-revise/current.json",
+  "priorFile": "synthetic/nasa-005-sow-major-revise/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "SCOPE_SOW",
+      "severity": "NORMAL",
+      "locationDescription": "Section C — paragraph 1",
+      "summary": "SOW paragraph revised. Was: \"The Contractor shall conduct applied research in autonomous flight control syste…\"",
+      "mustDetect": true
+    }
+  ]
+}

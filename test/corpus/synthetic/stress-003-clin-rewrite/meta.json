@@ -1,0 +1,10 @@
+{
+  "pairId": "stress-003-clin-rewrite",
+  "description": "CLIN structure rewrite: new CLINs added, existing quantities changed.",
+  "tags": [
+    "pricing",
+    "stress",
+    "critical"
+  ],
+  "editCount": 3
+}

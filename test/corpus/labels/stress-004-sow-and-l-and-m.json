@@ -1,0 +1,39 @@
+{
+  "pairId": "stress-004-sow-and-l-and-m",
+  "description": "Combined SOW prose revision, instructions update, and evaluation factor swap.",
+  "currentFile": "synthetic/stress-004-sow-and-l-and-m/current.json",
+  "priorFile": "synthetic/stress-004-sow-and-l-and-m/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "SCOPE_SOW",
+      "severity": "NORMAL",
+      "locationDescription": "Section C — paragraph 3",
+      "summary": "SOW paragraph revised. Was: \"All published research products shall acknowledge the Government's funding role.…\"",
+      "mustDetect": true
+    },
+    {
+      "changeType": "MODIFY",
+      "category": "SUBMISSION_INSTRUCTIONS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section L — page limit",
+      "summary": "Page limit changed from 75 to 65 pages",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "65 pages"
+      ]
+    },
+    {
+      "changeType": "MODIFY",
+      "category": "EVALUATION_CRITERIA",
+      "severity": "CRITICAL",
+      "locationDescription": "Section M — Factor 2",
+      "summary": "Evaluation factor changed: was \"Factor 2: Cost Realism\", now \"Factor 2: Cost Realism, with emphasis on labor-mix justification\"",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "Cost Realism, with emphasis on labor-mix justification"
+      ]
+    }
+  ]
+}

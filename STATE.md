@@ -4,10 +4,22 @@ Updated before and after every half-step.
 
 ## Current phase / half-step
 
-- Phase 0 closing — scaffold + data model done. Moving to Phase 1.
+- Phase 1 closed. Moving to Phase 2 (extraction pipeline).
 
 ## Mental model of what is built
 
+- Synthetic federal-solicitation corpus: 40 amendment pairs / 80 docs.
+  Generator (`test/corpus/generate.ts`) applies parameterized edit operations
+  to UCF-complete base templates; each edit emits its own ground-truth label.
+  Coverage: every CRITICAL category, every change type, multi-edit stress
+  pairs, null sanity pairs. Files at `test/corpus/synthetic/` and
+  `test/corpus/labels/`. Manifest at `test/corpus/manifest.json`.
+- Corpus harness (`test/corpus/harness.ts`) loads pairs, runs them against
+  any `IDiffEngine`, computes recall/precision and per-pair miss lists.
+  The `formatMetrics` output is what gates Phase 3.12.
+- FAR/DFARS clause dataset bundled in `src/core/clauses/data/clauses.ts`
+  with 22 curated clauses + neutral plain-language notes.
+  `LocalClauseClient` implements `IClauseClient` for offline lookup.
 - Canonical document model lives in `src/core/model/types.ts`.
 - Diff output model lives in `src/core/diff/types.ts`.
 - Interfaces (extractor, diff engine, clause client, SAM integration, storage, license)

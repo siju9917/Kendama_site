@@ -1,0 +1,21 @@
+{
+  "pairId": "nasa-006-attachment-add",
+  "description": "Attachment 3 (Data Rights Assertion Table) added.",
+  "currentFile": "synthetic/nasa-006-attachment-add/current.json",
+  "priorFile": "synthetic/nasa-006-attachment-add/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "INSERT",
+      "category": "ATTACHMENTS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section J — List of Attachments",
+      "summary": "Attachment 3 (Data Rights Assertion Table) added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "3",
+        "Data Rights Assertion Table"
+      ]
+    }
+  ]
+}

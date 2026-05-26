@@ -5,19 +5,19 @@ If this build is interrupted and restarted, read this first along with
 
 ## Current state
 
-- Phase 0 (scaffold + data model) is complete and committed. Tests green (24/24).
-- Phase 1 (test corpus) starts next.
+- Phases 0 and 1 complete and committed. Tests green (33/33).
+- Phase 2 (extraction pipeline) starts next.
 
 ## Last completed step
 
-- 0.6 — Canonical data model implemented and unit-tested.
-  - `src/core/model/types.ts`, `src/core/model/build.ts`
-  - `src/core/diff/types.ts`, `src/core/interfaces.ts`
-  - `src/shared/{hash,text,constants}.ts` + tests
+- 1.5 — Corpus harness (`test/corpus/harness.ts`) with metrics + tests.
 
 ## Next action
 
-- 1.1 Corpus acquisition. Attempt real SAM.gov solicitation download via the
-  public Opportunities API. If unavailable, generate a synthetic but
-  high-fidelity corpus that exercises every Phase 2/3 code path. Either way,
-  every amendment pair receives a `test/corpus/labels/<pair-id>.json` label.
+- 2.1 PDF text extraction with PDF.js. Implements `IExtractor`. Goal:
+  produce `StructuredDocument` from a PDF ArrayBuffer matching the same
+  structure the synthetic generator produces. Then 2.2 DOCX, 2.3 layout
+  reconstruction, etc.
+- A side task: extend the corpus generator to also render its synthetic
+  documents into PDF and DOCX files so the extraction pipeline can be
+  tested end-to-end (extract real bytes → diff → compare to known labels).

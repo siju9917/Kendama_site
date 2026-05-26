@@ -1,0 +1,10 @@
+{
+  "pairId": "it-svc-008-clin-add",
+  "description": "New CLIN 0004 added for surge capacity.",
+  "tags": [
+    "pricing",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

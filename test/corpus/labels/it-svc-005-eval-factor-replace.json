@@ -1,0 +1,20 @@
+{
+  "pairId": "it-svc-005-eval-factor-replace",
+  "description": "Section M Factor 1 replaced with stronger technical language.",
+  "currentFile": "synthetic/it-svc-005-eval-factor-replace/current.json",
+  "priorFile": "synthetic/it-svc-005-eval-factor-replace/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "EVALUATION_CRITERIA",
+      "severity": "CRITICAL",
+      "locationDescription": "Section M — Factor 1",
+      "summary": "Evaluation factor changed: was \"Factor 1: Technical Approach\", now \"Factor 1: Technical Approach including security architecture maturity\"",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "Technical Approach including security architecture maturity"
+      ]
+    }
+  ]
+}

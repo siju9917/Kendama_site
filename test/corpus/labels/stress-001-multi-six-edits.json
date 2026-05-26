@@ -1,0 +1,76 @@
+{
+  "pairId": "stress-001-multi-six-edits",
+  "description": "Six-edit amendment: due date, page limit, clause add, clause remove, eval, attachment.",
+  "currentFile": "synthetic/stress-001-multi-six-edits/current.json",
+  "priorFile": "synthetic/stress-001-multi-six-edits/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "DATES_DEADLINES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section L — Instructions to Offerors, proposal due date paragraph",
+      "summary": "Proposal due date changed from 2026-08-15 to 2026-09-12",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "2026-09-12"
+      ]
+    },
+    {
+      "changeType": "MODIFY",
+      "category": "SUBMISSION_INSTRUCTIONS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section L — page limit",
+      "summary": "Page limit changed from 30 to 28 pages",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "28 pages"
+      ]
+    },
+    {
+      "changeType": "INSERT",
+      "category": "CLAUSES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section I — Contract Clauses",
+      "summary": "Clause 52.204-27 added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "52.204-27"
+      ]
+    },
+    {
+      "changeType": "DELETE",
+      "category": "CLAUSES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section I — Contract Clauses",
+      "summary": "Clause 52.247-34 removed",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "52.247-34"
+      ]
+    },
+    {
+      "changeType": "MODIFY",
+      "category": "EVALUATION_CRITERIA",
+      "severity": "CRITICAL",
+      "locationDescription": "Section M — Factor 1",
+      "summary": "Evaluation factor changed: was \"Factor 1: Technical Approach\", now \"Factor 1: Technical Approach with cloud-native architecture\"",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "Technical Approach with cloud-native architecture"
+      ]
+    },
+    {
+      "changeType": "INSERT",
+      "category": "ATTACHMENTS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section J — List of Attachments",
+      "summary": "Attachment 5 (Cloud Architecture Diagram) added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "5",
+        "Cloud Architecture Diagram"
+      ]
+    }
+  ]
+}

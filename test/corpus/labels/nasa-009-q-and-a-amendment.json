@@ -1,0 +1,20 @@
+{
+  "pairId": "nasa-009-q-and-a-amendment",
+  "description": "Q&A amendment: due date shift only.",
+  "currentFile": "synthetic/nasa-009-q-and-a-amendment/current.json",
+  "priorFile": "synthetic/nasa-009-q-and-a-amendment/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "DATES_DEADLINES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section L — Instructions to Offerors, proposal due date paragraph",
+      "summary": "Proposal due date changed from 2026-10-20 to 2026-11-05",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "2026-11-05"
+      ]
+    }
+  ]
+}

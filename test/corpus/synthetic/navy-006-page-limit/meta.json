@@ -1,0 +1,10 @@
+{
+  "pairId": "navy-006-page-limit",
+  "description": "Page limit raised to 60.",
+  "tags": [
+    "instructions",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

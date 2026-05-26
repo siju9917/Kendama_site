@@ -1,0 +1,10 @@
+{
+  "pairId": "navy-008-attachment-remove",
+  "description": "Attachment B removed (QASP folded into PWS).",
+  "tags": [
+    "attachments",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

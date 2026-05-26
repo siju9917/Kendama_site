@@ -1,0 +1,21 @@
+{
+  "pairId": "it-svc-008-clin-add",
+  "description": "New CLIN 0004 added for surge capacity.",
+  "currentFile": "synthetic/it-svc-008-clin-add/current.json",
+  "priorFile": "synthetic/it-svc-008-clin-add/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "INSERT",
+      "category": "PRICING_CLINS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section B — CLIN structure",
+      "summary": "CLIN 0004 added (Surge Capacity Hours)",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "CLIN 0004",
+        "Surge Capacity Hours"
+      ]
+    }
+  ]
+}

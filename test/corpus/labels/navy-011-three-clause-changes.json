@@ -1,0 +1,42 @@
+{
+  "pairId": "navy-011-three-clause-changes",
+  "description": "Two clauses added, one removed in a single amendment.",
+  "currentFile": "synthetic/navy-011-three-clause-changes/current.json",
+  "priorFile": "synthetic/navy-011-three-clause-changes/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "INSERT",
+      "category": "CLAUSES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section I — Contract Clauses",
+      "summary": "Clause 252.204-7020 added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "252.204-7020"
+      ]
+    },
+    {
+      "changeType": "INSERT",
+      "category": "CLAUSES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section I — Contract Clauses",
+      "summary": "Clause 252.204-7021 added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "252.204-7021"
+      ]
+    },
+    {
+      "changeType": "DELETE",
+      "category": "CLAUSES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section I — Contract Clauses",
+      "summary": "Clause 252.225-7048 removed",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "252.225-7048"
+      ]
+    }
+  ]
+}

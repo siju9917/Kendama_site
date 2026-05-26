@@ -1,0 +1,20 @@
+{
+  "pairId": "navy-001-due-date",
+  "description": "Navy proposal due date moved to October.",
+  "currentFile": "synthetic/navy-001-due-date/current.json",
+  "priorFile": "synthetic/navy-001-due-date/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "DATES_DEADLINES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section L — Instructions to Offerors, proposal due date paragraph",
+      "summary": "Proposal due date changed from 2026-09-30 to 2026-10-15",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "2026-10-15"
+      ]
+    }
+  ]
+}

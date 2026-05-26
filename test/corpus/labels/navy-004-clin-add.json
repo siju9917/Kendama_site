@@ -1,0 +1,21 @@
+{
+  "pairId": "navy-004-clin-add",
+  "description": "New CLIN added for technical manuals.",
+  "currentFile": "synthetic/navy-004-clin-add/current.json",
+  "priorFile": "synthetic/navy-004-clin-add/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "INSERT",
+      "category": "PRICING_CLINS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section B — CLIN structure",
+      "summary": "CLIN 0003 added (Technical Manuals)",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "CLIN 0003",
+        "Technical Manuals"
+      ]
+    }
+  ]
+}

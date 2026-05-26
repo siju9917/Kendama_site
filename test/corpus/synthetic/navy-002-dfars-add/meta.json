@@ -1,0 +1,10 @@
+{
+  "pairId": "navy-002-dfars-add",
+  "description": "DFARS 252.204-7019 added to clauses.",
+  "tags": [
+    "clauses",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

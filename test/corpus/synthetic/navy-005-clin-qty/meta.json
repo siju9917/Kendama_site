@@ -1,0 +1,10 @@
+{
+  "pairId": "navy-005-clin-qty",
+  "description": "CLIN 0001 quantity increased to 350.",
+  "tags": [
+    "pricing",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

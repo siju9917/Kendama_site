@@ -1,0 +1,10 @@
+{
+  "pairId": "stress-002-dfars-overhaul",
+  "description": "DFARS cyber overhaul: 7019, 7020, 7021 all added.",
+  "tags": [
+    "clauses",
+    "stress",
+    "critical"
+  ],
+  "editCount": 3
+}

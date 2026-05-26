@@ -1,0 +1,8 @@
+{
+  "pairId": "null-001-identical",
+  "description": "Identical documents (sanity check: must produce zero changes).",
+  "currentFile": "synthetic/null-001-identical/current.json",
+  "priorFile": "synthetic/null-001-identical/prior.json",
+  "origin": "generated",
+  "expectedChanges": []
+}

@@ -1,0 +1,44 @@
+{
+  "pairId": "stress-003-clin-rewrite",
+  "description": "CLIN structure rewrite: new CLINs added, existing quantities changed.",
+  "currentFile": "synthetic/stress-003-clin-rewrite/current.json",
+  "priorFile": "synthetic/stress-003-clin-rewrite/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "INSERT",
+      "category": "PRICING_CLINS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section B — CLIN structure",
+      "summary": "CLIN 0004 added (Year 2 Help Desk)",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "CLIN 0004",
+        "Year 2 Help Desk"
+      ]
+    },
+    {
+      "changeType": "INSERT",
+      "category": "PRICING_CLINS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section B — CLIN structure",
+      "summary": "CLIN 0005 added (Year 2 Optional Tier 3 Support)",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "CLIN 0005",
+        "Year 2 Optional Tier 3 Support"
+      ]
+    },
+    {
+      "changeType": "MODIFY",
+      "category": "PRICING_CLINS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section B — CLIN 0001",
+      "summary": "CLIN 0001 quantity changed to 18",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "CLIN 0001"
+      ]
+    }
+  ]
+}

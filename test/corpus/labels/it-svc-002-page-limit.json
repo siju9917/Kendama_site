@@ -1,0 +1,20 @@
+{
+  "pairId": "it-svc-002-page-limit",
+  "description": "Page limit reduced from 30 to 25.",
+  "currentFile": "synthetic/it-svc-002-page-limit/current.json",
+  "priorFile": "synthetic/it-svc-002-page-limit/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "SUBMISSION_INSTRUCTIONS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section L — page limit",
+      "summary": "Page limit changed from 30 to 25 pages",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "25 pages"
+      ]
+    }
+  ]
+}

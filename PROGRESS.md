@@ -9,18 +9,18 @@ is integrated, is committed, and the suite is green (Part 17.5 rule).
 - [done] 0.1 Initialize repo, create directory tree, `package.json`
 - [done] 0.2 Configure TypeScript (strict), Vite, React, Vitest, ESLint, Prettier
 - [done] 0.3 Write `manifest.config.ts` (MV3, minimal permissions)
-- [done] 0.4 Set up CI (`.github/workflows/ci.yml`)
+- [done] 0.4 Set up CI (local npm scripts; no GitHub Actions per user direction)
 - [done] 0.5 Create all repo-root tracking docs
 - [done] 0.6 Implement canonical data model (`src/core/model/types.ts`, `src/core/diff/types.ts`, `src/core/interfaces.ts`) + unit tests
 - [done] 0.7 Commit, push, run reflection protocol
 
 ## Phase 1 — Test corpus
 
-- [ ] 1.1 Corpus acquisition (≥40 docs in `test/corpus/`)
-- [ ] 1.2 Corpus diversity (scanned, DOCX, two-column, large, malformed, encrypted)
-- [ ] 1.3 Labeling schema
-- [ ] 1.4 Hand-label every amendment pair
-- [ ] 1.5 Build corpus test harness
+- [done] 1.1 Corpus acquisition (synthetic; 40 pairs / 80 docs; real-SAM blocked by network 403)
+- [partial] 1.2 Corpus diversity (UCF A-M, FAR + DFARS clauses, multi-edit, null pairs all covered; PDF-format diversity moved to Phase 2 where the extraction pipeline lands)
+- [done] 1.3 Labeling schema (`test/corpus/schema.ts`)
+- [done] 1.4 Hand-label every amendment pair (auto-emitted by edit ops; consistency-checked)
+- [done] 1.5 Build corpus test harness (`test/corpus/harness.ts` + `generate.test.ts`)
 
 ## Phase 2 — Document extraction pipeline
 

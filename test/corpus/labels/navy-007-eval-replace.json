@@ -1,0 +1,20 @@
+{
+  "pairId": "navy-007-eval-replace",
+  "description": "Evaluation Factor 2 (Past Performance) language tightened.",
+  "currentFile": "synthetic/navy-007-eval-replace/current.json",
+  "priorFile": "synthetic/navy-007-eval-replace/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "EVALUATION_CRITERIA",
+      "severity": "CRITICAL",
+      "locationDescription": "Section M — Factor 2",
+      "summary": "Evaluation factor changed: was \"Factor 2: Past Performance\", now \"Factor 2: Past Performance with same or similar Navy supply contracts in the last 5 years\"",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "Past Performance with same or similar Navy supply contracts in the last 5 years"
+      ]
+    }
+  ]
+}

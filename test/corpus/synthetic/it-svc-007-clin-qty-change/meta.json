@@ -1,0 +1,10 @@
+{
+  "pairId": "it-svc-007-clin-qty-change",
+  "description": "CLIN 0002 quantity reduced from 12 to 6 months.",
+  "tags": [
+    "pricing",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

@@ -1,0 +1,20 @@
+{
+  "pairId": "navy-002-dfars-add",
+  "description": "DFARS 252.204-7019 added to clauses.",
+  "currentFile": "synthetic/navy-002-dfars-add/current.json",
+  "priorFile": "synthetic/navy-002-dfars-add/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "INSERT",
+      "category": "CLAUSES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section I — Contract Clauses",
+      "summary": "Clause 252.204-7019 added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "252.204-7019"
+      ]
+    }
+  ]
+}

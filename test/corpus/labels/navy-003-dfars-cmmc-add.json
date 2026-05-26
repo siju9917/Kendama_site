@@ -1,0 +1,20 @@
+{
+  "pairId": "navy-003-dfars-cmmc-add",
+  "description": "DFARS 252.204-7021 (CMMC) added.",
+  "currentFile": "synthetic/navy-003-dfars-cmmc-add/current.json",
+  "priorFile": "synthetic/navy-003-dfars-cmmc-add/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "INSERT",
+      "category": "CLAUSES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section I — Contract Clauses",
+      "summary": "Clause 252.204-7021 added",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "252.204-7021"
+      ]
+    }
+  ]
+}

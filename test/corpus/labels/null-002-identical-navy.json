@@ -1,0 +1,8 @@
+{
+  "pairId": "null-002-identical-navy",
+  "description": "Identical Navy documents.",
+  "currentFile": "synthetic/null-002-identical-navy/current.json",
+  "priorFile": "synthetic/null-002-identical-navy/prior.json",
+  "origin": "generated",
+  "expectedChanges": []
+}

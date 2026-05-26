@@ -1,0 +1,10 @@
+{
+  "pairId": "nasa-003-eval-add-factor",
+  "description": "New evaluation Factor 4 (Cost) replaces older Management factor.",
+  "tags": [
+    "evaluation",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

@@ -1,0 +1,20 @@
+{
+  "pairId": "navy-006-page-limit",
+  "description": "Page limit raised to 60.",
+  "currentFile": "synthetic/navy-006-page-limit/current.json",
+  "priorFile": "synthetic/navy-006-page-limit/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "SUBMISSION_INSTRUCTIONS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section L — page limit",
+      "summary": "Page limit changed from 50 to 60 pages",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "60 pages"
+      ]
+    }
+  ]
+}

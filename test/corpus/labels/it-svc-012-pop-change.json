@@ -1,0 +1,20 @@
+{
+  "pairId": "it-svc-012-pop-change",
+  "description": "Period of performance extended to 24 months.",
+  "currentFile": "synthetic/it-svc-012-pop-change/current.json",
+  "priorFile": "synthetic/it-svc-012-pop-change/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "DATES_DEADLINES",
+      "severity": "CRITICAL",
+      "locationDescription": "Section F — Period of Performance",
+      "summary": "Period of performance changed to 24 months",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "24 months"
+      ]
+    }
+  ]
+}

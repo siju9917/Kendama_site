@@ -1,0 +1,10 @@
+{
+  "pairId": "nasa-007-clin-qty-change",
+  "description": "CLIN 0001 base-period duration changed to 18 months.",
+  "tags": [
+    "pricing",
+    "single-edit",
+    "critical"
+  ],
+  "editCount": 1
+}

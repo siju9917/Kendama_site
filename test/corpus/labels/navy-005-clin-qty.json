@@ -1,0 +1,20 @@
+{
+  "pairId": "navy-005-clin-qty",
+  "description": "CLIN 0001 quantity increased to 350.",
+  "currentFile": "synthetic/navy-005-clin-qty/current.json",
+  "priorFile": "synthetic/navy-005-clin-qty/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "MODIFY",
+      "category": "PRICING_CLINS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section B — CLIN 0001",
+      "summary": "CLIN 0001 quantity changed to 350",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "CLIN 0001"
+      ]
+    }
+  ]
+}

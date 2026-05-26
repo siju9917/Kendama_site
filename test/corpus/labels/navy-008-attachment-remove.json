@@ -1,0 +1,20 @@
+{
+  "pairId": "navy-008-attachment-remove",
+  "description": "Attachment B removed (QASP folded into PWS).",
+  "currentFile": "synthetic/navy-008-attachment-remove/current.json",
+  "priorFile": "synthetic/navy-008-attachment-remove/prior.json",
+  "origin": "generated",
+  "expectedChanges": [
+    {
+      "changeType": "DELETE",
+      "category": "ATTACHMENTS",
+      "severity": "CRITICAL",
+      "locationDescription": "Section J — List of Attachments",
+      "summary": "Attachment B removed (was: Attachment B: Quality Assurance Surveillance Plan)",
+      "mustDetect": true,
+      "expectedTextFragments": [
+        "B"
+      ]
+    }
+  ]
+}

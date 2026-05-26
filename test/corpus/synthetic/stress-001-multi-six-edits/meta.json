@@ -1,0 +1,10 @@
+{
+  "pairId": "stress-001-multi-six-edits",
+  "description": "Six-edit amendment: due date, page limit, clause add, clause remove, eval, attachment.",
+  "tags": [
+    "multi-edit",
+    "stress",
+    "critical"
+  ],
+  "editCount": 6
+}
