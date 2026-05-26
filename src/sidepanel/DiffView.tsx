@@ -9,6 +9,20 @@ const kv = makeKv(); // module-singleton; safe because makeKv handles both Chrom
 
 const TIP_SEEN_KEY = "biddiff.tip.kbd.seen";
 
+/** Returns the index of the change card currently at (or just below) the
+ *  top of the viewport — useful when keyboard nav engages after the user
+ *  has already mouse-scrolled. -1 if no card is visible. */
+function firstVisibleChangeIndex(list: ReadonlyArray<Change>): number {
+  if (typeof document === "undefined") return -1;
+  for (let i = 0; i < list.length; i++) {
+    const el = document.querySelector<HTMLElement>(`[data-change-id="${list[i].id}"]`);
+    if (!el) continue;
+    const r = el.getBoundingClientRect();
+    if (r.bottom > 0) return i; // first card that hasn't fully scrolled past
+  }
+  return -1;
+}
+
 interface Props {
   result: DiffResult;
 }
@@ -69,6 +83,8 @@ export function DiffView({ result }: Props): React.ReactElement {
   filteredRef.current = filtered;
   const focusedIndexRef = useRef(focusedIndex);
   focusedIndexRef.current = focusedIndex;
+  const keyboardNavUsedRef = useRef(keyboardNavUsed);
+  keyboardNavUsedRef.current = keyboardNavUsed;
   useEffect(() => {
     const handler = (e: KeyboardEvent): void => {
       const target = e.target as HTMLElement | null;
@@ -80,14 +96,27 @@ export function DiffView({ result }: Props): React.ReactElement {
       // non-Latin script don't navigate.
       if (e.isComposing) return;
       const list = filteredRef.current;
-      if (e.key === "j" || e.key === "ArrowDown") {
+      const navDown = e.key === "j" || e.key === "ArrowDown";
+      const navUp = e.key === "k" || e.key === "ArrowUp";
+      if (navDown || navUp) {
         e.preventDefault();
+        // First j/k press while the user has scrolled past the first card:
+        // anchor focus to the card currently nearest the top of the
+        // viewport rather than jumping back to card 0.
+        const wasUsed = keyboardNavUsedRef.current;
         setKeyboardNavUsed(true);
-        setFocusedIndex((i) => Math.min(list.length - 1, i + 1));
-      } else if (e.key === "k" || e.key === "ArrowUp") {
-        e.preventDefault();
-        setKeyboardNavUsed(true);
-        setFocusedIndex((i) => Math.max(0, i - 1));
+        if (!wasUsed) {
+          const firstVisible = firstVisibleChangeIndex(list);
+          if (firstVisible !== -1) {
+            setFocusedIndex(firstVisible);
+            return;
+          }
+        }
+        if (navDown) {
+          setFocusedIndex((i) => Math.min(list.length - 1, i + 1));
+        } else {
+          setFocusedIndex((i) => Math.max(0, i - 1));
+        }
       } else if (e.key === "r") {
         const c = list[focusedIndexRef.current];
         if (c) {
