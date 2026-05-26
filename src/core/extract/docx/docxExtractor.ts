@@ -34,6 +34,17 @@ async function unzipDocxToParagraphs(file: ArrayBuffer): Promise<DocxParagraph[]
       e instanceof Error ? e.message : String(e),
     );
   }
+  // Encrypted .docx (password-protected) is delivered as a Compound File
+  // Binary containing an `EncryptedPackage` stream. If JSZip parses that
+  // (rare — usually it fails), the entry signature will be there
+  // instead of `word/document.xml`. Surface it as ENCRYPTED rather than
+  // CORRUPT so the user gets the right next step.
+  if (zip.file(/EncryptedPackage/i).length > 0) {
+    throw new ExtractionError(
+      "ENCRYPTED",
+      "This Word document is password-protected. Save an unprotected copy and try again.",
+    );
+  }
   const docXml = zip.file("word/document.xml");
   if (!docXml) {
     throw new ExtractionError(
