@@ -95,6 +95,10 @@ function Options(): React.ReactElement {
     }
     // Belt-and-suspenders: drop the index key too.
     await kv.remove("biddiff.diffs.index").catch(() => {});
+    // Any stale popup→panel "open this diff" pointer would now resolve
+    // to a missing payload and surface as a spurious "no longer
+    // available" error in the side panel on next mount.
+    await kv.remove("biddiff.pendingOpenDiffId").catch(() => {});
     setClearing(false);
     if (failed === 0) {
       setStatus(`Cleared ${deleted} ${deleted === 1 ? "diff" : "diffs"}.`);
