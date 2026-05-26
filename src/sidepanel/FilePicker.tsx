@@ -136,6 +136,23 @@ export function FilePicker({ onRun }: Props): React.ReactElement {
         setActive={(a) => setActiveSlot(a ? "prior" : null)}
       />
 
+      {current && prior && current.name === prior.name && current.size === prior.size && (
+        <div
+          role="status"
+          style={{
+            background: "var(--bg-subtle)",
+            border: "1px solid var(--border)",
+            padding: "var(--space-2) var(--space-3)",
+            borderRadius: "var(--radius-sm)",
+            color: "var(--fg-muted)",
+            fontSize: 12,
+            marginTop: 12,
+          }}
+        >
+          Heads up: both versions look like the same file ({current.name}). Diffing
+          will show no changes.
+        </div>
+      )}
       {rejectMsg && (
         <div className="error" role="alert">
           {rejectMsg}
