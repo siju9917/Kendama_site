@@ -61,6 +61,9 @@ export async function idbGet(key: string): Promise<string | null> {
     const req = tx.objectStore(STORE).get(key);
     req.onsuccess = () => resolve((req.result as string) ?? null);
     req.onerror = () => reject(req.error);
+    // Without an onabort the promise would hang if the transaction
+    // was aborted (e.g. by browser quota / private-mode constraint).
+    tx.onabort = () => reject(tx.error ?? new Error("transaction aborted"));
   });
   db.close();
   return result;
@@ -73,6 +76,7 @@ export async function idbDelete(key: string): Promise<void> {
     tx.objectStore(STORE).delete(key);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error ?? new Error("transaction aborted"));
   });
   db.close();
 }
