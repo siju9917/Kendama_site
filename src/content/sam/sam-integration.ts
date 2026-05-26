@@ -17,7 +17,11 @@ const SELECTORS = {
   // The "Attachments / Links" section heading.
   attachmentsContainer:
     "[data-sam-section='attachments'], section[aria-label*='Attachments'], .attachments",
-  attachmentLink: "a[href$='.pdf'], a[href$='.docx'], a[href*='/download/']",
+  // `href$='.pdf'` doesn't match `foo.pdf?token=…`, which is how many
+  // real download links are served. Match `.pdf` / `.docx` anywhere in
+  // the href via `*=`, plus the `/download/` route as a backstop.
+  attachmentLink:
+    "a[href*='.pdf'], a[href*='.docx'], a[href*='/download/']",
   amendmentRow: "[data-sam-amendment-row], .amendment-row, tr.amendment",
   amendmentNumber: "[data-amendment-number], .amendment-number",
   amendmentPostedAt: "[data-amendment-posted], time[datetime]",
