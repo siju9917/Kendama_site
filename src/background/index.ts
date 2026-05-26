@@ -7,14 +7,21 @@
  *   - Forward messages between content script and side panel.
  */
 
+import type { OpportunityAttachment } from "../core/interfaces.js";
+
 interface OpenSidePanelMessage {
   type: "OPEN_SIDE_PANEL";
+  attachments?: OpportunityAttachment[];
 }
 
 type Msg = OpenSidePanelMessage;
 
+/** In-memory cache of the most recently discovered attachments. */
+let lastAttachments: OpportunityAttachment[] = [];
+
 chrome.runtime.onMessage.addListener((msg: Msg, sender, sendResponse) => {
   if (msg.type === "OPEN_SIDE_PANEL") {
+    if (msg.attachments) lastAttachments = msg.attachments;
     const windowId = sender.tab?.windowId;
     if (windowId !== undefined && chrome.sidePanel?.open) {
       chrome.sidePanel.open({ windowId }, () => {
@@ -23,6 +30,12 @@ chrome.runtime.onMessage.addListener((msg: Msg, sender, sendResponse) => {
       return true; // async response
     }
     sendResponse({ ok: false, error: "sidePanel API unavailable" });
+    return false;
+  }
+  // The side panel asks the background for the most recently discovered
+  // attachments (populated by the content script just before opening).
+  if ((msg as unknown as { type?: string })?.type === "GET_LAST_ATTACHMENTS") {
+    sendResponse({ ok: true, attachments: lastAttachments });
     return false;
   }
   return false;

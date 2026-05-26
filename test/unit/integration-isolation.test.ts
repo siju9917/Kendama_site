@@ -27,10 +27,15 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
+// The rule: SAM.gov DOM selectors, URL patterns, and data-attribute names
+// belong only in src/content/sam/. User-facing labels that mention
+// "SAM.gov" by name are NOT selectors and are allowed elsewhere — the
+// goal is "one file to change when SAM redesigns the DOM," not banning
+// the brand name from the product UI.
 const SAM_FORBIDDEN_PATTERNS = [
-  /sam\.gov/i,
-  /\bopp\/[a-f0-9]+\//i,
-  /\bdata-sam-/i,
+  /\bopp\/[a-f0-9]+\//i, // opportunity URL pattern
+  /\bdata-sam-/i, // data-sam-* selectors
+  /\.sam-[a-z-]+\b/i, // .sam-foo CSS classes
 ];
 
 const FORBIDDEN_IMPORTS_FOR_LICENSING = [

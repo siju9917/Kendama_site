@@ -34,12 +34,31 @@ function inject(): void {
     cursor: "pointer",
     boxShadow: "0 4px 12px rgba(20,24,31,0.18)",
   } satisfies Partial<CSSStyleDeclaration>);
-  btn.addEventListener("click", () => {
-    // Ask the background to open the side panel for this window.
-    chrome.runtime.sendMessage({ type: "OPEN_SIDE_PANEL" });
+  btn.addEventListener("click", async () => {
+    // Read attachments from the page BEFORE opening the panel so the
+    // panel sees them immediately when it mounts.
+    let attachments: Awaited<ReturnType<typeof integration.findAttachments>> = [];
+    try {
+      attachments = await integration.findAttachments();
+    } catch {
+      attachments = [];
+    }
+    chrome.runtime.sendMessage({ type: "OPEN_SIDE_PANEL", attachments });
   });
   document.body.appendChild(btn);
 }
+
+// Respond to the background asking for the current page's attachments.
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg && msg.type === "GET_SAM_ATTACHMENTS") {
+    integration
+      .findAttachments()
+      .then((attachments) => sendResponse({ ok: true, attachments }))
+      .catch(() => sendResponse({ ok: false, attachments: [] }));
+    return true; // async response
+  }
+  return false;
+});
 
 // Initial inject + retry on DOM mutations (SAM.gov is a single-page app).
 const observer = new MutationObserver(() => inject());

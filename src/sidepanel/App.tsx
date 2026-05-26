@@ -15,10 +15,20 @@ import { ChangeCard } from "./ChangeCard.js";
 import { Summary } from "./Summary.js";
 import { FilePicker } from "./FilePicker.js";
 import { History } from "./History.js";
+import { SamAttachments } from "./SamAttachments.js";
 import { DISCLAIMER_TEXT } from "../shared/disclaimer.js";
 import { DiffStorage } from "../core/storage/index.js";
 import { LocalLicenseClient } from "../core/licensing/client.js";
-import type { LicenseState } from "../core/interfaces.js";
+import type { LicenseState, OpportunityAttachment } from "../core/interfaces.js";
+
+async function downloadAttachmentAsFile(a: OpportunityAttachment): Promise<File> {
+  const resp = await fetch(a.url);
+  if (!resp.ok) throw new Error(`download failed (${resp.status})`);
+  const blob = await resp.blob();
+  return new File([blob], a.fileName, {
+    type: blob.type || a.mimeType || "application/octet-stream",
+  });
+}
 
 type Phase = "EMPTY" | "RUNNING" | "DONE" | "ERROR";
 
@@ -35,6 +45,38 @@ const INITIAL_STATE: UiState = {
   error: null,
   loadingNote: "",
 };
+
+function FilePickerWithSam({ onRun }: { onRun: (a: File, b: File) => void }): React.ReactElement {
+  const [pending, setPending] = useState<{ current?: File; prior?: File }>({});
+  const [error, setError] = useState<string | null>(null);
+
+  const onChoose = async (slot: "current" | "prior", a: OpportunityAttachment): Promise<void> => {
+    setError(null);
+    try {
+      const file = await downloadAttachmentAsFile(a);
+      const next = { ...pending, [slot]: file };
+      setPending(next);
+      if (next.current && next.prior) onRun(next.current, next.prior);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  return (
+    <>
+      <FilePicker onRun={onRun} />
+      {error && (
+        <div className="error" role="alert">
+          Couldn't download: {error}
+        </div>
+      )}
+      <SamAttachments
+        onChooseCurrent={(a) => onChoose("current", a)}
+        onChoosePrior={(a) => onChoose("prior", a)}
+      />
+    </>
+  );
+}
 
 function LicenseChip({ license }: { license: LicenseState | null }): React.ReactElement | null {
   if (!license) return null;
@@ -148,7 +190,7 @@ export function App(): React.ReactElement {
 
         {state.phase === "EMPTY" && (
           <>
-            <FilePicker onRun={onRun} />
+            <FilePickerWithSam onRun={onRun} />
             <History storage={storage} onOpen={onOpenSaved} />
           </>
         )}
