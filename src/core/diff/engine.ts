@@ -126,13 +126,25 @@ export class DiffEngine implements IDiffEngine {
     // ---- Phase 4: build Change records ----
     const changes: Change[] = pending.map((p) => this.buildChange(p));
 
-    // Deterministic stable order: by section ordinal, then current ordinal, then change type.
-    changes.sort((a, b) => {
-      const aLoc = locationSortKey(a);
-      const bLoc = locationSortKey(b);
-      if (aLoc !== bLoc) return aLoc < bLoc ? -1 : 1;
-      return a.changeType.localeCompare(b.changeType);
+    // Deterministic stable order. We pair each change with its pending
+    // record so we can sort by (section letter, section heading, block
+    // ordinal) — preserving document reading order within a section
+    // rather than clustering by change type. Falls back to change type
+    // for the rare case where ordinals tie (INSERT and DELETE at the
+    // same position on opposite sides).
+    const paired = changes.map((c, i) => {
+      const p = pending[i];
+      const ord = p.after?.ordinal ?? p.before?.ordinal ?? 0;
+      return { c, ord };
     });
+    paired.sort((a, b) => {
+      const aLoc = locationSortKey(a.c);
+      const bLoc = locationSortKey(b.c);
+      if (aLoc !== bLoc) return aLoc < bLoc ? -1 : 1;
+      if (a.ord !== b.ord) return a.ord - b.ord;
+      return a.c.changeType.localeCompare(b.c.changeType);
+    });
+    const sortedChanges = paired.map((x) => x.c);
 
     // ---- Phase 5: clause-info enrichment (synchronous fallback to local) ----
     // Clause client lookup is async; the engine itself is synchronous. We
@@ -140,9 +152,9 @@ export class DiffEngine implements IDiffEngine {
     // The async path (server augmentation) is layered by the caller.
 
     // ---- Phase 6: assemble totals ----
-    const criticalCount = changes.filter((c) => c.severity === "CRITICAL").length;
+    const criticalCount = sortedChanges.filter((c) => c.severity === "CRITICAL").length;
     const changeCountByCategory = emptyCategoryCounts();
-    for (const c of changes) changeCountByCategory[c.category]++;
+    for (const c of sortedChanges) changeCountByCategory[c.category]++;
 
     // Confidence: the lower of the two doc confidences, reduced if section
     // alignment had low-scored pairs.
@@ -180,7 +192,7 @@ export class DiffEngine implements IDiffEngine {
     }
 
     const id = contentHash(
-      `diff:${current.metadata.sourceFileHash}:${prior.metadata.sourceFileHash}:${changes.length}`,
+      `diff:${current.metadata.sourceFileHash}:${prior.metadata.sourceFileHash}:${sortedChanges.length}`,
     );
 
     return {
@@ -188,7 +200,7 @@ export class DiffEngine implements IDiffEngine {
       generatedAt: "", // caller sets
       currentDoc: current.metadata,
       priorDoc: prior.metadata,
-      changes,
+      changes: sortedChanges,
       criticalCount,
       changeCountByCategory,
       diffConfidence,
@@ -275,7 +287,9 @@ export class DiffEngine implements IDiffEngine {
 }
 
 function locationSortKey(c: Change): string {
-  // Stable sort key: UCF letter (or zzz fallback) + heading + change type.
+  // Stable sort key: UCF letter (or zzz fallback) + heading. Change type
+  // is intentionally NOT in this key — within a section we want changes
+  // ordered by block position, not clustered by type.
   const letter = c.ucfLetter ?? "zzz";
-  return `${letter}|${c.sectionHeading}|${c.changeType}`;
+  return `${letter}|${c.sectionHeading}`;
 }

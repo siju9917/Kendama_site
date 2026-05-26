@@ -127,7 +127,11 @@ async function runLocalFallback(
   const { DiffEngine } = await import("../core/diff/engine.js");
   const { LocalClauseClient } = await import("../core/clauses/client.js");
 
-  async function makeExtractorFor(file: File) {
+  // Returns the extractor AND the buffer it read for kind detection,
+  // so the caller doesn't pay arrayBuffer() twice on the same File.
+  async function makeExtractorFor(
+    file: File,
+  ): Promise<{ ext: import("../core/interfaces.js").IExtractor; buf: ArrayBuffer }> {
     const buf = await file.arrayBuffer();
     const kind = validateInput(buf, file.name);
     if (kind === "PDF") {
@@ -140,22 +144,20 @@ async function runLocalFallback(
       }
       const { PdfExtractor } = await import("../core/extract/pdf/pdfExtractor.js");
       const pdfjs = mod as unknown as import("../core/extract/pdf/extract.js").PdfJsLike;
-      return new PdfExtractor(pdfjs);
+      return { ext: new PdfExtractor(pdfjs), buf };
     }
     const { DocxExtractor } = await import("../core/extract/docx/docxExtractor.js");
-    return new DocxExtractor();
+    return { ext: new DocxExtractor(), buf };
   }
 
   onProgress("Reading the new version…", 10);
-  const currentExt = await makeExtractorFor(currentFile);
-  const currentBuf = await currentFile.arrayBuffer();
-  const currentDoc = await currentExt.extract(currentBuf, currentFile.name);
+  const cur = await makeExtractorFor(currentFile);
+  const currentDoc = await cur.ext.extract(cur.buf, currentFile.name);
   if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
 
   onProgress("Reading the prior version…", 45);
-  const priorExt = await makeExtractorFor(priorFile);
-  const priorBuf = await priorFile.arrayBuffer();
-  const priorDoc = await priorExt.extract(priorBuf, priorFile.name);
+  const pri = await makeExtractorFor(priorFile);
+  const priorDoc = await pri.ext.extract(pri.buf, priorFile.name);
   if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
 
   onProgress("Diffing…", 75);

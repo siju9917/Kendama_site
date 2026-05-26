@@ -34,17 +34,24 @@ export class SamIntegration implements IOpportunitySite {
     const container = document.querySelector(SELECTORS.attachmentsContainer);
     const root = container ?? document;
     const links = Array.from(root.querySelectorAll<HTMLAnchorElement>(SELECTORS.attachmentLink));
-    return links.map((a, i) => ({
-      // Prefix with index so duplicate data-attachment-id values on a
-      // page can't collide in React keys downstream.
-      id: `${i}-${a.getAttribute("data-attachment-id") ?? a.href ?? ""}`,
-      fileName: a.getAttribute("download") ?? a.textContent?.trim() ?? `attachment-${i}`,
-      url: a.href,
-      mimeType: this.guessMime(a.href),
-      postedAt: null,
-      amendmentNumber: null,
-      sizeBytes: null,
-    }));
+    return links.map((a, i) => {
+      // `download=""` and whitespace-only text both yield empty strings,
+      // which `??` doesn't fall through. Use `||` so the index fallback
+      // wins for any empty value.
+      const dl = a.getAttribute("download")?.trim() ?? "";
+      const txt = a.textContent?.trim() ?? "";
+      return {
+        // Prefix with index so duplicate data-attachment-id values on a
+        // page can't collide in React keys downstream.
+        id: `${i}-${a.getAttribute("data-attachment-id") ?? a.href ?? ""}`,
+        fileName: dl || txt || `attachment-${i}`,
+        url: a.href,
+        mimeType: this.guessMime(a.href),
+        postedAt: null,
+        amendmentNumber: null,
+        sizeBytes: null,
+      };
+    });
   }
 
   async readAmendmentMetadata(): Promise<OpportunityAmendmentMeta[]> {

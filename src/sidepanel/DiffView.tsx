@@ -180,7 +180,11 @@ export function DiffView({ result }: Props): React.ReactElement {
       </div>
       {filtered.length === 0 ? (
         <div className="empty">
-          <p style={{ marginTop: 0 }}>No changes match the current filter.</p>
+          <p style={{ marginTop: 0 }}>
+            {result.changes.length === 0
+              ? "No changes detected. These two versions appear to be identical."
+              : "No changes match the current filter."}
+          </p>
           {hasActiveFilter && (
             <button onClick={clearFilters}>Clear filters</button>
           )}
