@@ -128,14 +128,36 @@ function formatChangeMd(c: Change): string {
   const lines: string[] = [];
   lines.push(`- **${section}${cat} — ${c.changeType}**`);
   for (const r of c.criticalReasons) lines.push(`  - _${r}_`);
-  if (c.beforeText) lines.push(`  - was: \`${truncate(c.beforeText, 100)}\``);
-  if (c.afterText) lines.push(`  - now: \`${truncate(c.afterText, 100)}\``);
+  if (c.beforeText) lines.push(`  - was: ${mdInlineCode(truncate(c.beforeText, 100))}`);
+  if (c.afterText) lines.push(`  - now: ${mdInlineCode(truncate(c.afterText, 100))}`);
   if (c.clauseInfo) {
     lines.push(
       `  - ${c.clauseInfo.regulation} ${c.clauseInfo.clauseNumber} — ${c.clauseInfo.title}`,
     );
   }
   return lines.join("\n");
+}
+
+/**
+ * Inline code span that survives embedded backticks (CommonMark: use N+1
+ * backticks to wrap content containing N consecutive backticks; pad with
+ * a space when content begins or ends with a backtick).
+ */
+function mdInlineCode(s: string): string {
+  if (!s.includes("`")) return `\`${s}\``;
+  let longest = 0;
+  let cur = 0;
+  for (const ch of s) {
+    if (ch === "`") {
+      cur++;
+      if (cur > longest) longest = cur;
+    } else {
+      cur = 0;
+    }
+  }
+  const fence = "`".repeat(longest + 1);
+  const pad = s.startsWith("`") || s.endsWith("`") ? " " : "";
+  return `${fence}${pad}${s}${pad}${fence}`;
 }
 
 export async function copyMarkdownToClipboard(result: DiffResult): Promise<void> {
@@ -389,6 +411,29 @@ export async function exportPdfReport(result: DiffResult, fileName?: string): Pr
   // Footer disclaimer on the last page.
   space(16);
   drawWrapped(DISCLAIMER_TEXT, { size: 10, color: [0.36, 0.4, 0.45] });
+
+  // Page numbers in the footer of every page ("Page i of N").
+  const pages = doc.getPages();
+  const total = pages.length;
+  for (let i = 0; i < total; i++) {
+    const p = pages[i];
+    const text = `Page ${i + 1} of ${total}`;
+    const w = font.widthOfTextAtSize(text, 9);
+    p.drawText(text, {
+      x: pageWidth - margin - w,
+      y: 28,
+      size: 9,
+      font,
+      color: rgb(0.55, 0.6, 0.66),
+    });
+    p.drawText("BidDiff", {
+      x: margin,
+      y: 28,
+      size: 9,
+      font,
+      color: rgb(0.55, 0.6, 0.66),
+    });
+  }
 
   // ignore unused fileName param; reserved for future "suggested name" plumbing
   void fileName;

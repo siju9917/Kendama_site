@@ -42,6 +42,24 @@ describe("buildSummaryMarkdown", () => {
     expect(md).toContain("## Critical changes");
     expect(md).toMatch(/\*[^*]+\*$/m); // italicized line (the disclaimer)
   });
+
+  it("inline-code spans survive embedded backticks (CommonMark)", async () => {
+    const { buildSummaryMarkdown } = await import("./index.js");
+    const r = makeResult("it-svc-001-due-date-shift");
+    if (r.changes.length > 0) {
+      r.changes[0].beforeText = "uses a `template` literal";
+      r.changes[0].afterText = "uses a ``double-back`` literal";
+    }
+    const md = buildSummaryMarkdown(r);
+    // The two pieces of content must appear intact.
+    expect(md).toContain("uses a `template` literal");
+    expect(md).toContain("uses a ``double-back`` literal");
+    // And the wrap fence must use strictly more backticks than the longest
+    // run inside the content — i.e. content with 1 backtick is wrapped by
+    // ``…``; content with 2 backticks is wrapped by ```…```.
+    expect(md).toMatch(/``\s?uses a `template` literal\s?``/);
+    expect(md).toMatch(/```\s?uses a ``double-back`` literal\s?```/);
+  });
 });
 
 describe("exportPdfReport", () => {

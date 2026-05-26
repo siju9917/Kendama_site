@@ -159,3 +159,29 @@ export async function runDiffPipeline(
   }
   return runLocalFallback(currentFile, priorFile, onProgress, signal);
 }
+
+/**
+ * Optionally pre-warm the heavy code paths. Call this when the side
+ * panel opens (or after first render) so the first user-initiated diff
+ * doesn't pay the lazy-import latency for PDF.js / DOCX / engine.
+ *
+ * Safe to call multiple times; subsequent calls are cheap.
+ */
+let prewarmed = false;
+export function prewarmPipeline(): void {
+  if (prewarmed) return;
+  prewarmed = true;
+  // Fire-and-forget; we don't await these.
+  void (async () => {
+    try {
+      await Promise.all([
+        import("../core/diff/engine.js"),
+        import("../core/clauses/client.js"),
+        import("pdfjs-dist/legacy/build/pdf.mjs"),
+        import("../core/extract/pdf/pdfExtractor.js"),
+      ]);
+    } catch {
+      /* prewarm is best-effort */
+    }
+  })();
+}

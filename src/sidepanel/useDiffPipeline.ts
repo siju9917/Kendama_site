@@ -5,7 +5,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DiffResult } from "../core/diff/types.js";
-import { runDiffPipeline } from "./pipeline.js";
+import { prewarmPipeline, runDiffPipeline } from "./pipeline.js";
 import { DiffStorage } from "../core/storage/index.js";
 import { noteDiffSucceeded } from "./ReviewPrompt.js";
 
@@ -41,7 +41,13 @@ export function useDiffPipeline(): {
   const storage = storageRef.current;
 
   useEffect(() => {
-    return () => abortRef.current?.abort();
+    // Prewarm the heavy import graph (PDF.js, diff engine, extractors)
+    // shortly after mount — first-diff latency drops noticeably.
+    const t = setTimeout(prewarmPipeline, 50);
+    return () => {
+      clearTimeout(t);
+      abortRef.current?.abort();
+    };
   }, []);
 
   const run = useCallback(

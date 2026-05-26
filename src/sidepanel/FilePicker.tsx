@@ -11,6 +11,12 @@ function isAccepted(file: File): boolean {
   return ACCEPTED.some((ext) => lower.endsWith(ext));
 }
 
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
+
 function Dropzone({
   slot,
   file,
@@ -59,7 +65,10 @@ function Dropzone({
       <div className="dropzone__icon" aria-hidden="true" />
       <div className="dropzone__label">{label}</div>
       {file ? (
-        <div className="dropzone__filename">{file.name}</div>
+        <>
+          <div className="dropzone__filename">{file.name}</div>
+          <div className="dropzone__hint">{formatBytes(file.size)}</div>
+        </>
       ) : (
         <div className="dropzone__hint">{hint}</div>
       )}
@@ -130,8 +139,9 @@ export function FilePicker({ onRun }: Props): React.ReactElement {
           className="primary"
           disabled={!canRun}
           onClick={() => canRun && onRun(current!, prior!)}
+          title={canRun ? "Press Enter to compare" : "Pick both versions first"}
         >
-          Compare versions  {canRun ? "↵" : ""}
+          Compare versions
         </button>
       </div>
     </div>
