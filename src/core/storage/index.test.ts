@@ -1,6 +1,10 @@
-import { describe, it, expect } from "vitest";
-import { DiffStorage } from "./index.js";
+import { describe, it, expect, beforeEach } from "vitest";
+import { DiffStorage, __resetMemoryKvForTests } from "./index.js";
 import type { DiffResult } from "../diff/types.js";
+
+beforeEach(() => {
+  __resetMemoryKvForTests();
+});
 
 function fakeResult(id: string, sizeNote = ""): DiffResult {
   return {

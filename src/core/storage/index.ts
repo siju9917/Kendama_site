@@ -39,16 +39,28 @@ interface KVStore {
   remove(key: string): Promise<void>;
 }
 
+/**
+ * In-memory KV used in test environments and any context without
+ * chrome.storage. The backing map is module-level (shared across
+ * MemoryKv instances) so it mirrors chrome.storage.local's "single
+ * shared store per extension" semantics.
+ */
+const MEMORY_STORE = new Map<string, unknown>();
+
+/** Reset the in-memory KV. For tests only. No-op in chrome.storage envs. */
+export function __resetMemoryKvForTests(): void {
+  MEMORY_STORE.clear();
+}
+
 class MemoryKv implements KVStore {
-  private readonly m = new Map<string, unknown>();
   async get<T>(key: string): Promise<T | null> {
-    return (this.m.get(key) as T) ?? null;
+    return (MEMORY_STORE.get(key) as T) ?? null;
   }
   async set<T>(key: string, value: T): Promise<void> {
-    this.m.set(key, value);
+    MEMORY_STORE.set(key, value);
   }
   async remove(key: string): Promise<void> {
-    this.m.delete(key);
+    MEMORY_STORE.delete(key);
   }
 }
 

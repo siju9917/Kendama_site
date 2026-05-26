@@ -1,13 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { LocalLicenseClient } from "./client.js";
-import { makeKv } from "../storage/index.js";
+import { __resetMemoryKvForTests } from "../storage/index.js";
 
 describe("LocalLicenseClient", () => {
-  beforeEach(async () => {
-    // The in-memory KV resets per test invocation already via fresh client,
-    // but the actual makeKv() may share state. Force clear:
-    const kv = makeKv();
-    await kv.remove("biddiff.license.state");
+  beforeEach(() => {
+    __resetMemoryKvForTests();
   });
 
   it("starts a 14-day trial on first use", async () => {
