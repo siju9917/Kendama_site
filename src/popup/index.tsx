@@ -5,20 +5,26 @@ import type { DiffSummary } from "../core/interfaces.js";
 
 function Popup(): React.ReactElement {
   const [recent, setRecent] = useState<DiffSummary[]>([]);
+  const [openError, setOpenError] = useState<string | null>(null);
   useEffect(() => {
     new DiffStorage().listDiffs().then(setRecent).catch(() => setRecent([]));
   }, []);
 
   const openSidePanel = async (): Promise<void> => {
-    if (typeof chrome === "undefined") return;
-    if (!chrome.sidePanel?.open) return;
+    if (typeof chrome === "undefined" || !chrome.sidePanel?.open) {
+      setOpenError("Side panel API not available — update Chrome to 114+.");
+      return;
+    }
     try {
       const w = await chrome.windows.getCurrent();
-      if (typeof w?.id !== "number") return;
+      if (typeof w?.id !== "number") {
+        setOpenError("Couldn't find the current window.");
+        return;
+      }
       await chrome.sidePanel.open({ windowId: w.id });
       window.close();
     } catch {
-      /* user can still open via the side-panel toolbar button */
+      setOpenError("Couldn't open the side panel. Click the BidDiff icon in the toolbar instead.");
     }
   };
 
@@ -35,6 +41,11 @@ function Popup(): React.ReactElement {
       >
         Open side panel
       </button>
+      {openError && (
+        <div className="error" role="alert" style={{ marginTop: 12 }}>
+          {openError}
+        </div>
+      )}
       {recent.length > 0 && (
         <>
           <h2
