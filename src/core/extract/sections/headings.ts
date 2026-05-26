@@ -80,7 +80,7 @@ export function classifyHeading(line: RawLine, modalBodyFontSize?: number): Head
   }
 
   // 5. Font heuristic — needs hints
-  if (line.fontSize !== undefined && modalBodyFontSize !== undefined) {
+  if (line.fontSize !== undefined && modalBodyFontSize !== undefined && modalBodyFontSize > 0) {
     const big = line.fontSize >= modalBodyFontSize * 1.15;
     const bold = line.bold === true;
     if ((big || bold) && raw.length <= 120) {
