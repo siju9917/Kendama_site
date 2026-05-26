@@ -95,6 +95,15 @@ export function DiffView({ result }: Props): React.ReactElement {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  // When a new filter narrows the list past the current focused index,
+  // clamp the focus back into range so the next j/k starts from a
+  // visible row rather than nothing.
+  useEffect(() => {
+    if (focusedIndex >= filtered.length && filtered.length > 0) {
+      setFocusedIndex(filtered.length - 1);
+    }
+  }, [filtered.length, focusedIndex]);
+
   useEffect(() => {
     const c = filtered[focusedIndex];
     if (!c) return;
