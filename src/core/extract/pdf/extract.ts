@@ -8,8 +8,6 @@
  * We extract positioned text items (x, y, width, height, fontName, fontSize)
  * and pass them to the line/block reconstruction step (Phase 2.3).
  */
-import type { Anchor } from "../../model/types.js";
-
 export interface PageTextItem {
   page: number; // 0-based
   x: number;
@@ -44,13 +42,11 @@ export interface PdfJsLike {
 export interface PdfDocLike {
   numPages: number;
   getPage(n: number): Promise<PdfPageLike>;
-  cleanup?: () => unknown;
   destroy?: () => Promise<void> | void;
 }
 
 export interface PdfPageLike {
   getTextContent(): Promise<{ items: PdfTextContentItem[] }>;
-  getViewport(opts: { scale: number }): { width: number; height: number };
 }
 
 export interface PdfTextContentItem {
@@ -119,13 +115,3 @@ export async function extractPdfTextItems(
   return { pageCount: doc.numPages, items, appearsScanned, warnings };
 }
 
-// -------- Anchors-over-items utility --------
-// Detect anchors at the text-item level. Used when reconstructing lines so
-// anchor positions can be propagated to the block layer.
-export function attachItemAnchors(
-  _items: ReadonlyArray<PageTextItem>,
-  _detect: (text: string) => Anchor[],
-): void {
-  // Reserved for Phase 2.3 (line reconstruction). Currently unused; anchors
-  // are computed in normalize.ts after blocks are assembled.
-}

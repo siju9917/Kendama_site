@@ -5,9 +5,6 @@
 /** Bytes. 50 MB upper bound on a single document we attempt to extract. */
 export const MAX_DOCUMENT_BYTES = 50 * 1024 * 1024;
 
-/** Pages. Documents larger than this run with progress streaming. */
-export const LARGE_DOCUMENT_PAGE_THRESHOLD = 200;
-
 /**
  * Diff thresholds. Tuned during Phase 3 against the labeled corpus and
  * frozen once the miss-rate audit passes.

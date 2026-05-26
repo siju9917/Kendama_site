@@ -20,6 +20,7 @@ import type {
 import { emptyCategoryCounts } from "./types.js";
 import type { IClauseClient, IDiffEngine } from "../interfaces.js";
 import { contentHash } from "../../shared/hash.js";
+import { EXTRACTION_LOW_CONFIDENCE_THRESHOLD } from "../../shared/constants.js";
 import { alignSections, type SectionPair } from "./align/sections.js";
 import { alignBlocks, type BlockAlignmentItem } from "./align/blocks.js";
 import {
@@ -156,7 +157,7 @@ export class DiffEngine implements IDiffEngine {
     const diffConfidence = Math.max(0, baseConf - confPenalty);
 
     const warnings: string[] = [];
-    if (diffConfidence < 0.7) {
+    if (diffConfidence < EXTRACTION_LOW_CONFIDENCE_THRESHOLD) {
       // Note: deliberately not advisory. The disclaimer (rendered once at
       // the panel root and in every export) is the single canonical
       // place that says the human must review.

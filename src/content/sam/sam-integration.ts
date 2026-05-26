@@ -35,7 +35,9 @@ export class SamIntegration implements IOpportunitySite {
     const root = container ?? document;
     const links = Array.from(root.querySelectorAll<HTMLAnchorElement>(SELECTORS.attachmentLink));
     return links.map((a, i) => ({
-      id: a.getAttribute("data-attachment-id") ?? String(i),
+      // Prefix with index so duplicate data-attachment-id values on a
+      // page can't collide in React keys downstream.
+      id: `${i}-${a.getAttribute("data-attachment-id") ?? a.href ?? ""}`,
       fileName: a.getAttribute("download") ?? a.textContent?.trim() ?? `attachment-${i}`,
       url: a.href,
       mimeType: this.guessMime(a.href),
