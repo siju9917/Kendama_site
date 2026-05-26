@@ -61,6 +61,17 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   return false;
 });
 
-const observer = new MutationObserver(() => inject());
+// Debounce: SAM.gov is a SPA with frequent DOM mutations. Without
+// coalescing, the observer fires inject() many times per second even
+// though the early-return makes each call cheap. Coalescing collapses a
+// burst of mutations into a single check on the next animation frame.
+let pendingFrame: number | null = null;
+const observer = new MutationObserver(() => {
+  if (pendingFrame !== null) return;
+  pendingFrame = requestAnimationFrame(() => {
+    pendingFrame = null;
+    inject();
+  });
+});
 observer.observe(document.body, { childList: true, subtree: true });
 inject();
