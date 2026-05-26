@@ -167,7 +167,11 @@ export class DiffEngine implements IDiffEngine {
     ).length;
     const confPenalty = Math.min(0.3, lowScoredPairs * 0.05);
     // Clamp to [0, 1] — defensive against malformed overallExtractionConfidence.
-    const diffConfidence = Math.max(0, Math.min(1, baseConf - confPenalty));
+    // NaN propagates through Math.min/max, so use a guarded fallback.
+    const rawConf = baseConf - confPenalty;
+    const diffConfidence = Number.isFinite(rawConf)
+      ? Math.max(0, Math.min(1, rawConf))
+      : 1;
 
     // Surface per-document extractor warnings (e.g. "this PDF appears
     // to be a scanned image") through the diff result so the UI's
