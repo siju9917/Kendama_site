@@ -74,6 +74,24 @@ function Popup(): React.ReactElement {
           </ul>
         </>
       )}
+      <button
+        onClick={() => {
+          if (typeof chrome !== "undefined") chrome.runtime?.openOptionsPage?.();
+        }}
+        style={{
+          marginTop: 16,
+          background: "transparent",
+          border: "0",
+          padding: 0,
+          color: "var(--accent)",
+          font: "inherit",
+          cursor: "pointer",
+          textDecoration: "underline",
+          fontSize: 12,
+        }}
+      >
+        Settings
+      </button>
     </div>
   );
 }
