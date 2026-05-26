@@ -69,7 +69,9 @@ Three self-serve tiers. Annual prepay discount. 14-day full-feature trial. No "c
 
 ## Category
 
-Developer Tools → Productivity → Business
+Productivity. (Secondary category: Workflow & Planning.) The audience is
+proposal and capture managers, not developers — this is intentionally not
+listed under Developer Tools.
 
 ## Languages
 

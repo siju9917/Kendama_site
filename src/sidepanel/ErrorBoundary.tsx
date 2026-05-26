@@ -49,8 +49,21 @@ export class ErrorBoundary extends React.Component<Props, State> {
               </div>
               <details style={{ marginTop: 12, color: "var(--fg-muted)" }}>
                 <summary style={{ cursor: "pointer", fontSize: 12 }}>Technical detail</summary>
-                <pre style={{ fontSize: 11, whiteSpace: "pre-wrap" }}>
-                  {String(this.state.error.message)}
+                <pre
+                  style={{
+                    fontSize: 11,
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                    maxHeight: 160,
+                    overflow: "auto",
+                  }}
+                >
+                  {/* Limit to a single line + truncated; raw stacks can reveal
+                      internal paths. The full Error is logged to the console
+                      via componentDidCatch for developer diagnosis. */}
+                  {(this.state.error.name || "Error") +
+                    ": " +
+                    String(this.state.error.message || "").slice(0, 240)}
                 </pre>
               </details>
             </div>

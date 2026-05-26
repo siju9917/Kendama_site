@@ -142,10 +142,15 @@ button.ghost {
   border: 0;
   color: var(--fg-muted);
   padding: 4px 8px;
+  border-radius: var(--radius-sm);
 }
 button.ghost:hover {
   color: var(--fg);
   background: var(--bg-overlay);
+}
+button.ghost:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 input[type="search"],
@@ -178,8 +183,9 @@ input[type="text"]:focus-visible {
   align-items: center;
   gap: var(--space-3);
   background: var(--bg-elev);
-  position: sticky;
-  top: 0;
+  /* No sticky — the header is a sibling of .app__body, not inside it.
+     The filter-bar inside .app__body has its own sticky behavior. */
+  position: relative;
   z-index: 10;
 }
 
@@ -241,7 +247,7 @@ input[type="text"]:focus-visible {
   position: relative;
   border: 2px dashed var(--border-strong);
   border-radius: var(--radius-lg);
-  padding: var(--space-5) var(--space-4);
+  padding: var(--space-4) var(--space-3);
   text-align: center;
   background: var(--bg-subtle);
   margin-bottom: var(--space-3);
@@ -250,16 +256,22 @@ input[type="text"]:focus-visible {
   cursor: pointer;
 }
 .dropzone:hover {
-  border-color: var(--accent);
+  border-color: var(--border-strong);
+  background: var(--bg-elev);
 }
 .dropzone:has(input[type="file"]:focus-visible) {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+  border-color: var(--accent);
 }
 .dropzone--active {
   border-color: var(--accent);
   background: var(--accent-soft);
   transform: scale(1.01);
+}
+.dropzone--active:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 .dropzone__label {
   font-weight: 600;
@@ -332,7 +344,7 @@ input[type="text"]:focus-visible {
 }
 .summary__stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
   gap: var(--space-3);
 }
 .summary__stat {
@@ -555,6 +567,17 @@ input[type="text"]:focus-visible {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 .progressbar {
   width: 100%;
   height: 4px;
@@ -648,6 +671,29 @@ input[type="text"]:focus-visible {
 }
 .history-item__delete {
   flex: none;
+}
+
+.onboarding {
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+}
+.onboarding__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.onboarding h2 {
+  margin: 0;
+  font-size: 14px;
+}
+.onboarding ol {
+  padding-left: 18px;
+  margin: var(--space-2) 0 0;
+  color: var(--fg-muted);
+  font-size: 12px;
 }
 
 .section-heading {
