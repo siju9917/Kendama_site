@@ -32,9 +32,29 @@ export function SamAttachments({
   useEffect(() => {
     // .catch so an unreachable background SW doesn't surface as an
     // unhandled promise rejection. Treat any failure as "no attachments".
-    fetchLastAttachments()
-      .then((a) => setItems(a))
-      .catch(() => setItems([]));
+    const refresh = (): void => {
+      fetchLastAttachments()
+        .then((a) => setItems(a))
+        .catch(() => setItems([]));
+    };
+    refresh();
+
+    // The BG service worker writes biddiff.lastAttachments whenever the
+    // user clicks "Compare with BidDiff" on a SAM page. Refresh the
+    // list when that happens so users who open a second SAM tab don't
+    // see stale attachments from the first.
+    if (typeof chrome === "undefined" || !chrome.storage?.onChanged?.addListener) {
+      return;
+    }
+    const listener = (
+      changes: { [key: string]: unknown },
+      area: string,
+    ): void => {
+      if (area !== "session" && area !== "local") return;
+      if ("biddiff.lastAttachments" in changes) refresh();
+    };
+    chrome.storage.onChanged.addListener(listener);
+    return () => chrome.storage.onChanged.removeListener(listener);
   }, []);
 
   if (items === null) return null;

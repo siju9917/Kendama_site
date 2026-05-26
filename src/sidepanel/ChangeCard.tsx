@@ -9,17 +9,22 @@ interface Props {
 }
 
 function renderTokenSpans(spans: TokenSpan[]): React.ReactNode {
+  // Append a separating space after every span EXCEPT the last —
+  // otherwise the rendered text has a stray trailing space (visible
+  // on text selection / copy, and a tiny gap before the right border
+  // of the container).
   return spans.map((s, i) => {
-    if (s.op === "equal") return <span key={i}>{s.text + " "}</span>;
+    const text = i === spans.length - 1 ? s.text : s.text + " ";
+    if (s.op === "equal") return <span key={i}>{text}</span>;
     if (s.op === "insert")
       return (
         <span className="ins" key={i}>
-          {s.text + " "}
+          {text}
         </span>
       );
     return (
       <span className="del" key={i}>
-        {s.text + " "}
+        {text}
       </span>
     );
   });

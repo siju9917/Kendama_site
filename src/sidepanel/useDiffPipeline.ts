@@ -179,6 +179,9 @@ export function useDiffPipeline(): {
 
   const openSaved = useCallback(
     async (id: string): Promise<void> => {
+      // Abort any in-flight diff so its later setState DONE doesn't
+      // overwrite the saved diff we're about to load.
+      abortRef.current?.abort();
       try {
         const r = await storage.getDiff(id);
         if (r) {

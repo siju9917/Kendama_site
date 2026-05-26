@@ -71,6 +71,11 @@ export function DiffView({ result, sessionNotices }: Props): React.ReactElement 
           c.beforeText ?? "",
           c.afterText ?? "",
           c.criticalReasons.join(" "),
+          // Also include clause info so a search for "FAR 52.204-21"
+          // or the clause's title catches the change even when the
+          // surrounding paragraph doesn't.
+          c.clauseInfo?.clauseNumber ?? "",
+          c.clauseInfo?.title ?? "",
         ]
           .join(" ")
           .toLowerCase();

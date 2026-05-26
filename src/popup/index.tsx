@@ -28,20 +28,23 @@ function Popup(): React.ReactElement {
     // write WITHOUT awaiting it and rely on chrome.storage's internal
     // serialization (the panel's mount-time read happens after the
     // write completes).
+    const kv = makeKv();
     if (pendingDiffId) {
-      makeKv()
-        .set(PENDING_OPEN_DIFF_ID_KEY, pendingDiffId)
-        .catch(() => {});
+      kv.set(PENDING_OPEN_DIFF_ID_KEY, pendingDiffId).catch(() => {});
     }
     try {
       const w = await chrome.windows.getCurrent();
       if (typeof w?.id !== "number") {
+        // Clear the pending id — otherwise it'd fire on the NEXT
+        // panel open, which the user didn't request.
+        if (pendingDiffId) kv.remove(PENDING_OPEN_DIFF_ID_KEY).catch(() => {});
         setOpenError("Couldn't find the current window.");
         return;
       }
       await chrome.sidePanel.open({ windowId: w.id });
       window.close();
     } catch {
+      if (pendingDiffId) kv.remove(PENDING_OPEN_DIFF_ID_KEY).catch(() => {});
       setOpenError("Couldn't open the side panel. Click the BidDiff icon in the toolbar instead.");
     }
   };

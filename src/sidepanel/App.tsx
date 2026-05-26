@@ -25,7 +25,10 @@ const DISCLAIMER_DISMISSED_KEY = "biddiff.disclaimer.dismissed";
 export function App(): React.ReactElement {
   const { state, storage, run, openSaved, reset } = useDiffPipeline();
   const [license, setLicense] = useState<LicenseState | null>(null);
-  const [disclaimerShown, setDisclaimerShown] = useState<boolean>(true);
+  // null = haven't read storage yet, don't render to avoid a flicker
+  // where the disclaimer flashes on every panel open for users who
+  // previously dismissed it.
+  const [disclaimerShown, setDisclaimerShown] = useState<boolean | null>(null);
   const kv = useMemo(() => makeKv(), []);
 
   useEffect(() => {
@@ -33,6 +36,22 @@ export function App(): React.ReactElement {
     kv.get<boolean>(DISCLAIMER_DISMISSED_KEY)
       .then((v) => setDisclaimerShown(!v))
       .catch(() => setDisclaimerShown(true));
+    // Cross-window sync: if another side panel dismisses the
+    // disclaimer (or the user clicks "Show disclaimer again" in
+    // Options), reflect the change here without needing a reload.
+    if (typeof chrome === "undefined" || !chrome.storage?.onChanged?.addListener) {
+      return;
+    }
+    const listener = (
+      changes: { [key: string]: { newValue?: unknown } },
+      area: string,
+    ): void => {
+      if (area !== "local") return;
+      const c = changes[DISCLAIMER_DISMISSED_KEY];
+      if (c) setDisclaimerShown(!c.newValue);
+    };
+    chrome.storage.onChanged.addListener(listener);
+    return () => chrome.storage.onChanged.removeListener(listener);
   }, [kv]);
 
   const dismissDisclaimer = (): void => {
@@ -59,7 +78,7 @@ export function App(): React.ReactElement {
       </header>
 
       <main className="app__body">
-        {disclaimerShown && (
+        {disclaimerShown === true && (
           <p className="disclaimer">
             {DISCLAIMER_TEXT}{" "}
             <button

@@ -18,6 +18,7 @@ function Options(): React.ReactElement {
   const kv = useMemo(() => makeKv(), []);
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
   const [status, setStatus] = useState("");
+  const [clearing, setClearing] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     kv.get<Settings>(SETTINGS_KEY)
@@ -66,6 +67,7 @@ function Options(): React.ReactElement {
   };
 
   const clearHistory = async (): Promise<void> => {
+    if (clearing) return;
     const { DiffStorage } = await import("../core/storage/index.js");
     const s = new DiffStorage();
     const list = await s.listDiffs();
@@ -79,6 +81,8 @@ function Options(): React.ReactElement {
       `Permanently delete ${list.length} saved ${list.length === 1 ? "diff" : "diffs"}? This cannot be undone.`,
     );
     if (!ok) return;
+    setClearing(true);
+    setStatus(`Clearing ${list.length}…`);
     let deleted = 0;
     let failed = 0;
     for (const e of list) {
@@ -91,6 +95,7 @@ function Options(): React.ReactElement {
     }
     // Belt-and-suspenders: drop the index key too.
     await kv.remove("biddiff.diffs.index").catch(() => {});
+    setClearing(false);
     if (failed === 0) {
       setStatus(`Cleared ${deleted} ${deleted === 1 ? "diff" : "diffs"}.`);
     } else {
@@ -144,8 +149,9 @@ function Options(): React.ReactElement {
               setTimeout(() => setStatus(""), 2500);
             });
           }}
+          disabled={clearing}
         >
-          Clear history
+          {clearing ? "Clearing…" : "Clear history"}
         </button>
       </div>
 
