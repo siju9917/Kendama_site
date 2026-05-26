@@ -291,7 +291,7 @@ export async function exportPdfReport(result: DiffResult, fileName?: string): Pr
   if (result.currentDoc.solicitationId) {
     drawWrapped(`Solicitation: ${result.currentDoc.solicitationId}`, { size: 11, bold: true });
   }
-  drawWrapped(`Compared: ${result.currentDoc.sourceFileName}  vs.  ${result.priorDoc.sourceFileName}`);
+  drawWrapped(`Compared: ${result.currentDoc.sourceFileName} vs. ${result.priorDoc.sourceFileName}`);
   if (result.generatedAt) drawWrapped(`Generated: ${result.generatedAt}`, { color: [0.36, 0.4, 0.45] });
   space(12);
 
