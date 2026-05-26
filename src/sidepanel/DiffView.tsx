@@ -19,6 +19,10 @@ export function DiffView({ result }: Props): React.ReactElement {
   const [textFilter, setTextFilter] = useState<string>("");
   const [reviewed, setReviewed] = useState<Set<string>>(new Set());
   const [focusedIndex, setFocusedIndex] = useState<number>(0);
+  // Track whether the user actually used keyboard nav. Otherwise the
+  // focus ring would always show on the first card on mount, which is
+  // distracting for mouse-only users.
+  const [keyboardNavUsed, setKeyboardNavUsed] = useState<boolean>(false);
   const filterInputRef = useRef<HTMLInputElement | null>(null);
 
   const availableSections = useMemo(() => {
@@ -72,9 +76,11 @@ export function DiffView({ result }: Props): React.ReactElement {
       const list = filteredRef.current;
       if (e.key === "j" || e.key === "ArrowDown") {
         e.preventDefault();
+        setKeyboardNavUsed(true);
         setFocusedIndex((i) => Math.min(list.length - 1, i + 1));
       } else if (e.key === "k" || e.key === "ArrowUp") {
         e.preventDefault();
+        setKeyboardNavUsed(true);
         setFocusedIndex((i) => Math.max(0, i - 1));
       } else if (e.key === "r") {
         const c = list[focusedIndexRef.current];
@@ -211,7 +217,11 @@ export function DiffView({ result }: Props): React.ReactElement {
           <div
             key={c.id}
             data-change-id={c.id}
-            className={i === focusedIndex ? "change-row change-row--focused" : "change-row"}
+            className={
+              keyboardNavUsed && i === focusedIndex
+                ? "change-row change-row--focused"
+                : "change-row"
+            }
           >
             <ChangeCard
               change={c}
