@@ -75,7 +75,6 @@ Runtime production dependencies:
 
 - `react` / `react-dom` — well-maintained, audited.
 - `pdfjs-dist` (Mozilla) — well-maintained.
-- `mammoth` — DOCX→text fallback.
 - `jszip` — DOCX zip handling.
 - `pdf-lib` — used only in export, sandboxed in side-panel.
 

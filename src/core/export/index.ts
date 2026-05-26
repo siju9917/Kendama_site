@@ -213,6 +213,21 @@ export async function copyMarkdownToClipboard(result: DiffResult): Promise<void>
 export async function exportPdfReport(result: DiffResult, fileName?: string): Promise<Blob> {
   const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
   const doc = await PDFDocument.create();
+  // Pin the metadata dates to the DiffResult's generatedAt so the PDF
+  // bytes are deterministic for a given DiffResult. Without this,
+  // pdf-lib stamps the current wall-clock time into /CreationDate and
+  // /ModDate, making two exports of the same diff produce different
+  // bytes — bad for reproducibility, hashes, and committed samples.
+  const metaDate = result.generatedAt ? new Date(result.generatedAt) : new Date(0);
+  doc.setCreationDate(metaDate);
+  doc.setModificationDate(metaDate);
+  doc.setProducer("BidDiff");
+  doc.setCreator("BidDiff");
+  doc.setTitle(
+    result.currentDoc.solicitationId
+      ? `BidDiff — ${result.currentDoc.solicitationId}`
+      : "BidDiff — Solicitation Amendment Comparison",
+  );
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
   const pageWidth = 612;

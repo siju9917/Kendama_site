@@ -79,6 +79,20 @@ describe("exportPdfReport", () => {
     expect(blob.size).toBeGreaterThan(500);
   }, 30_000);
 
+  it("is byte-deterministic for a given DiffResult (pinned metadata)", async () => {
+    const r = makeResult("it-svc-001-due-date-shift");
+    const a = await (await exportPdfReport(r)).arrayBuffer();
+    const b = await (await exportPdfReport(r)).arrayBuffer();
+    expect(a.byteLength).toBe(b.byteLength);
+    const av = new Uint8Array(a);
+    const bv = new Uint8Array(b);
+    for (let i = 0; i < av.length; i++) {
+      if (av[i] !== bv[i]) {
+        throw new Error(`PDF bytes differ at offset ${i}: ${av[i]} vs ${bv[i]}`);
+      }
+    }
+  }, 30_000);
+
   it("does not throw on non-WinAnsi characters in the source text", async () => {
     // Real solicitations occasionally contain chars outside pdf-lib's
     // Helvetica/WinAnsi encoding (math symbols, mu, Chinese, emoji).

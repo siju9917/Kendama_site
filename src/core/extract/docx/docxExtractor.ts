@@ -1,9 +1,10 @@
 /**
  * DocxExtractor — IExtractor for .docx files.
  *
- * We use mammoth.js for plain-text + style hints; for structural elements
- * (paragraph style names, lists, tables) we also peek into the unzipped
- * `word/document.xml` for richer detection.
+ * Unzips the .docx (JSZip) and walks `word/document.xml` directly with a
+ * tag-aware regex. The structural detail we need — paragraph styles
+ * (Heading1, Heading2…), list markers, and table rows — survives this
+ * lightweight pass, and we avoid bundling a heavier DOCX library.
  */
 import JSZip from "jszip";
 import { ExtractionError, type IExtractor } from "../../interfaces.js";
