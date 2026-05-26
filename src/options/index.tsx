@@ -20,7 +20,9 @@ function Options(): React.ReactElement {
   const [status, setStatus] = useState("");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    kv.get<Settings>(SETTINGS_KEY).then((s) => setSettings(s ?? DEFAULTS));
+    kv.get<Settings>(SETTINGS_KEY)
+      .then((s) => setSettings(s ?? DEFAULTS))
+      .catch(() => setSettings(DEFAULTS));
   }, [kv]);
   // Flush any pending save on unmount so a fast close doesn't lose input.
   // We can't await in a cleanup, but kv.set returns a Promise that the

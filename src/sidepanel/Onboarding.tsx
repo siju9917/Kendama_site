@@ -11,7 +11,9 @@ export function Onboarding(): React.ReactElement | null {
   const kv = useMemo(() => makeKv(), []);
 
   useEffect(() => {
-    kv.get<boolean>(SEEN_KEY).then((v) => setShow(!v));
+    kv.get<boolean>(SEEN_KEY)
+      .then((v) => setShow(!v))
+      .catch(() => setShow(false));
   }, [kv]);
 
   const dismiss = (): void => {

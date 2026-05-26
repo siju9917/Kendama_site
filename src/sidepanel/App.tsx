@@ -29,7 +29,9 @@ export function App(): React.ReactElement {
 
   useEffect(() => {
     new LocalLicenseClient().validate().then(setLicense).catch(() => setLicense(null));
-    kv.get<boolean>(DISCLAIMER_DISMISSED_KEY).then((v) => setDisclaimerShown(!v));
+    kv.get<boolean>(DISCLAIMER_DISMISSED_KEY)
+      .then((v) => setDisclaimerShown(!v))
+      .catch(() => setDisclaimerShown(true));
   }, [kv]);
 
   const dismissDisclaimer = (): void => {

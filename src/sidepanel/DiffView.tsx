@@ -105,7 +105,9 @@ export function DiffView({ result }: Props): React.ReactElement {
   const reviewedCount = filtered.filter((c) => reviewed.has(c.id)).length;
   const [tipSeen, setTipSeen] = useState<boolean | null>(null);
   useEffect(() => {
-    kv.get<boolean>(TIP_SEEN_KEY).then((v) => setTipSeen(!!v));
+    kv.get<boolean>(TIP_SEEN_KEY)
+      .then((v) => setTipSeen(!!v))
+      .catch(() => setTipSeen(true)); // on read error, suppress the tip
   }, []);
   const dismissTip = (): void => {
     void kv.set(TIP_SEEN_KEY, true);

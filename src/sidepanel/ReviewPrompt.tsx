@@ -33,14 +33,20 @@ export function ReviewPrompt(): React.ReactElement | null {
   const kv = useMemo(() => makeKv(), []);
 
   useEffect(() => {
+    // Wrap in try/catch so an unexpected kv error doesn't bubble out
+    // of the async IIFE as an unhandled rejection.
     void (async () => {
-      const dismissed = await kv.get<boolean>(DISMISSED_KEY);
-      if (dismissed) {
+      try {
+        const dismissed = await kv.get<boolean>(DISMISSED_KEY);
+        if (dismissed) {
+          setShow(false);
+          return;
+        }
+        const count = (await kv.get<number>(COUNT_KEY)) ?? 0;
+        setShow(count >= PROMPT_AT);
+      } catch {
         setShow(false);
-        return;
       }
-      const count = (await kv.get<number>(COUNT_KEY)) ?? 0;
-      setShow(count >= PROMPT_AT);
     })();
   }, []);
 
