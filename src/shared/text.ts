@@ -71,6 +71,28 @@ export function jaccardSimilarity(a: ReadonlyArray<string>, b: ReadonlyArray<str
   return union === 0 ? 1 : intersect / union;
 }
 
+/**
+ * Containment similarity: |A∩B| / min(|A|,|B|).
+ * High when one token-set is largely a subset of the other — the typical
+ * "list item expanded" amendment pattern that pure jaccard underrates.
+ */
+export function containmentSimilarity(a: ReadonlyArray<string>, b: ReadonlyArray<string>): number {
+  if (a.length === 0 || b.length === 0) return 0;
+  const setA = new Set(a);
+  const setB = new Set(b);
+  let intersect = 0;
+  for (const t of setA) if (setB.has(t)) intersect++;
+  return intersect / Math.min(setA.size, setB.size);
+}
+
+/**
+ * "Modify similarity": max(jaccard, containment). Used by the diff engine
+ * to decide whether a DELETE/INSERT pair represents a single MODIFY.
+ */
+export function modifySimilarity(a: ReadonlyArray<string>, b: ReadonlyArray<string>): number {
+  return Math.max(jaccardSimilarity(a, b), containmentSimilarity(a, b));
+}
+
 /** Levenshtein ratio in [0,1], 1 = identical. O(n*m) — short inputs only. */
 export function levenshteinRatio(a: string, b: string): number {
   if (a === b) return 1;

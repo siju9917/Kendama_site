@@ -10,19 +10,26 @@ export class LocalClauseClient implements IClauseClient {
   async lookup(clauseNumbers: ReadonlyArray<string>): Promise<Map<string, ClauseInfo>> {
     const out = new Map<string, ClauseInfo>();
     for (const num of clauseNumbers) {
-      const info = CLAUSE_INDEX.get(num);
-      if (info) {
-        out.set(num, info);
-      } else {
-        // Unknown clause: still surface what we have so the UI shows the number.
-        out.set(num, {
-          clauseNumber: num,
-          title: "(Clause title not in local dataset)",
-          plainLanguageNote: "",
-          regulation: num.startsWith("252.") ? "DFARS" : num.startsWith("52.") ? "FAR" : "OTHER",
-        });
-      }
+      out.set(num, this.lookupSync(num) ?? this.unknownStub(num));
     }
     return out;
+  }
+
+  /**
+   * Synchronous lookup against the bundled dataset. Returns null when the
+   * clause number is not present locally — callers may augment via the
+   * server endpoint after.
+   */
+  lookupSync(num: string): ClauseInfo | null {
+    return CLAUSE_INDEX.get(num) ?? null;
+  }
+
+  private unknownStub(num: string): ClauseInfo {
+    return {
+      clauseNumber: num,
+      title: "(Clause title not in local dataset)",
+      plainLanguageNote: "",
+      regulation: num.startsWith("252.") ? "DFARS" : num.startsWith("52.") ? "FAR" : "OTHER",
+    };
   }
 }

@@ -113,3 +113,61 @@ reflection converges (a full pass produces zero new findings).
   accept them alongside synthetic pairs once provided.
 
 **Phase 1 converged after 1 round of fixes.**
+
+---
+
+## Phase 2 — Extraction pipeline
+
+### Round 1 — Correctness
+
+Findings + fixes:
+
+1. **Clause regex** rejected `52.xxx-xx` (only 2 leading digits). FAR clauses
+   start with "52" — only 2 digits. **Fix:** `\d{2,4}\.\d{3}-\d{1,4}`.
+2. **Page-limit regex** with `"Page limit: 75 pages"` failed because the
+   colon broke the whitespace-required-then-optional-prefix sequence. **Fix:**
+   restructured with `[:\s]+` consuming the colon-or-space mix.
+3. **PDF.js GlobalWorkerOptions** assignment failed in Node test env because
+   the ESM module record is frozen. **Fix:** assign to the nested property
+   (which is a getter+setter on a non-frozen object) rather than rebinding.
+4. **PDF.js fake worker** still required a workerSrc. **Fix:** resolve the
+   worker .mjs file path via `createRequire` and pass as a `file://` URL.
+5. **pdf-lib's `doc.save()`** returns a Uint8Array whose backing buffer may
+   be a SharedArrayBuffer in some runtimes. **Fix:** copy into a fresh
+   ArrayBuffer in tests so TypeScript types narrow cleanly.
+
+### Round 2 — Adversarial
+
+- Empty input → typed EMPTY error.
+- Junk bytes → typed UNSUPPORTED_FORMAT.
+- Legacy .doc → typed UNSUPPORTED_FORMAT with helpful conversion message.
+- Encrypted PDF (heuristic /Encrypt match) → typed ENCRYPTED.
+- Corrupt PDF → typed CORRUPT (caught from PDF.js exception).
+- Tested empty DOCX → typed EMPTY.
+
+### Round 3 — Professional elevation
+
+- Added `appearsScanned` heuristic that drops confidence to 0.4 and emits a
+  user-facing warning when the PDF has no text on most pages — surfaces
+  the OCR-fallback recommendation cleanly.
+- `enrichStructuredDocument` enforces CLIN-only-in-PRICING-sections rule.
+- All errors carry separate `message` (technical, for logs) and
+  `userMessage` (friendly, for UI).
+
+### Round 4 — Convergence
+
+- 100/100 tests pass; TSC clean; ESLint clean.
+- Synthetic corpus enriches end-to-end via `enrichStructuredDocument`.
+- Real PDF (pdf-lib generated) round-trips through `PdfExtractor` and emerges
+  as a `StructuredDocument` with correct UCF sections.
+- Real DOCX (JSZip generated) round-trips through `DocxExtractor` the same way.
+
+### Notes / deferred
+
+- **2.10 OCR fallback**: Tesseract.js install + WASM bundle is heavy.
+  Building the `IExtractor` interface for OCR is straightforward; the
+  WASM wiring belongs alongside the offscreen-document setup in Phase 4.
+- **2.13 Performance pass**: Needs synthetic PDF rendering at >200 pages.
+  Will happen alongside the cross-environment Phase 6.3 tests.
+
+**Phase 2 converged after 1 round of fixes (the regex + PDF.js worker setup).**
