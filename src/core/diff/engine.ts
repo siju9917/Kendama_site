@@ -280,12 +280,23 @@ export class DiffEngine implements IDiffEngine {
     // client without a local cache returns null. Wrap defensively because
     // a custom IClauseClient could throw and bring down the diff.
     let clauseInfo: ClauseInfo | null = null;
-    if (this.clauseClient && anchorsInvolved.some((a) => a.type === "CLAUSE_REF")) {
-      const num = anchorsInvolved.find((a) => a.type === "CLAUSE_REF")!.normalized;
-      try {
-        clauseInfo = this.clauseClient.lookupSync(num);
-      } catch {
-        clauseInfo = null;
+    if (this.clauseClient) {
+      // Walk every CLAUSE_REF anchor and use the FIRST hit in the local
+      // dataset. Previously we used only the first anchor regardless of
+      // whether it was known, which meant a block referencing both an
+      // unknown DFARS clause and a well-known FAR one surfaced the
+      // unknown one with no descriptive info.
+      const clauseAnchors = anchorsInvolved.filter((a) => a.type === "CLAUSE_REF");
+      for (const a of clauseAnchors) {
+        try {
+          const found = this.clauseClient.lookupSync(a.normalized);
+          if (found) {
+            clauseInfo = found;
+            break;
+          }
+        } catch {
+          /* skip */
+        }
       }
     }
 
