@@ -165,8 +165,12 @@ function formatChangeMd(c: Change): string {
   const lines: string[] = [];
   lines.push(`- **${section}${cat} — ${c.changeType}**`);
   for (const r of c.criticalReasons) lines.push(`  - _${r}_`);
-  if (c.beforeText) lines.push(`  - was: ${mdInlineCode(truncate(c.beforeText, 100))}`);
-  if (c.afterText) lines.push(`  - now: ${mdInlineCode(truncate(c.afterText, 100))}`);
+  if (c.changeType === "MOVE" && c.beforeText === c.afterText) {
+    if (c.afterText) lines.push(`  - text: ${mdInlineCode(truncate(c.afterText, 100))}`);
+  } else {
+    if (c.beforeText) lines.push(`  - was: ${mdInlineCode(truncate(c.beforeText, 100))}`);
+    if (c.afterText) lines.push(`  - now: ${mdInlineCode(truncate(c.afterText, 100))}`);
+  }
   if (c.clauseInfo) {
     lines.push(
       `  - ${c.clauseInfo.regulation} ${c.clauseInfo.clauseNumber} — ${c.clauseInfo.title}`,
@@ -416,8 +420,12 @@ export async function exportPdfReport(result: DiffResult, fileName?: string): Pr
         size: 12,
       });
       for (const r of c.criticalReasons) drawWrapped(`   ${r}`, { color: [0.69, 0, 0.12] });
-      if (c.beforeText) drawWrapped(`   was: ${c.beforeText}`, { color: [0.36, 0.4, 0.45] });
-      if (c.afterText) drawWrapped(`   now: ${c.afterText}`);
+      if (c.changeType === "MOVE" && c.beforeText === c.afterText) {
+        if (c.afterText) drawWrapped(`   text: ${c.afterText}`);
+      } else {
+        if (c.beforeText) drawWrapped(`   was: ${c.beforeText}`, { color: [0.36, 0.4, 0.45] });
+        if (c.afterText) drawWrapped(`   now: ${c.afterText}`);
+      }
       if (c.clauseInfo) {
         drawWrapped(
           `   ${c.clauseInfo.regulation} ${c.clauseInfo.clauseNumber} — ${c.clauseInfo.title}`,
@@ -457,8 +465,12 @@ export async function exportPdfReport(result: DiffResult, fileName?: string): Pr
         bold: true,
         size: 12,
       });
-      if (c.beforeText) drawWrapped(`   was: ${c.beforeText}`, { color: [0.36, 0.4, 0.45] });
-      if (c.afterText) drawWrapped(`   now: ${c.afterText}`);
+      if (c.changeType === "MOVE" && c.beforeText === c.afterText) {
+        if (c.afterText) drawWrapped(`   text: ${c.afterText}`);
+      } else {
+        if (c.beforeText) drawWrapped(`   was: ${c.beforeText}`, { color: [0.36, 0.4, 0.45] });
+        if (c.afterText) drawWrapped(`   now: ${c.afterText}`);
+      }
       space(4);
     }
   }
