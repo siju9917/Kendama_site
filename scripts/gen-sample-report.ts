@@ -20,6 +20,10 @@ result.generatedAt = "2026-05-26T18:00:00.000Z";
 
 const blob = await exportPdfReport(result);
 const buf = Buffer.from(await blob.arrayBuffer());
-const outPath = "biddiff-sample-report.pdf";
+// Write directly to the docs/store-assets directory so the artifact
+// never lands at repo root (and can't be accidentally committed there).
+const outDir = "docs/store-assets";
+fs.mkdirSync(outDir, { recursive: true });
+const outPath = `${outDir}/sample-report.pdf`;
 fs.writeFileSync(outPath, buf);
 console.log(`wrote ${outPath} (${buf.length} bytes; ${result.changes.length} changes, ${result.criticalCount} critical)`);
