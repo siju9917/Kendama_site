@@ -9,13 +9,16 @@ interface Props {
 /** Sanitize a string for use as a downloaded filename. Strips characters
  * that are invalid on Windows / macOS / Linux file systems and trims. */
 function safeFilename(s: string): string {
-  return (
-    s
-      .replace(/[\\/:*?"<>|]+/g, "-")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 80) || "biddiff-report"
-  );
+  const cleaned = s
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, " ")
+    // Collapse runs of dashes from the replace above so a title of
+    // pure-invalid chars doesn't end up as "------".
+    .replace(/-{2,}/g, "-")
+    .replace(/^[-\s]+|[-\s.]+$/g, "")
+    .trim()
+    .slice(0, 80);
+  return cleaned || "biddiff-report";
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
