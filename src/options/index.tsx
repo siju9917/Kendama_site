@@ -79,12 +79,23 @@ function Options(): React.ReactElement {
       `Permanently delete ${list.length} saved ${list.length === 1 ? "diff" : "diffs"}? This cannot be undone.`,
     );
     if (!ok) return;
+    let deleted = 0;
+    let failed = 0;
     for (const e of list) {
-      await s.deleteDiff(e.id);
+      try {
+        await s.deleteDiff(e.id);
+        deleted++;
+      } catch {
+        failed++;
+      }
     }
     // Belt-and-suspenders: drop the index key too.
-    await kv.remove("biddiff.diffs.index");
-    setStatus(`Cleared ${list.length} ${list.length === 1 ? "diff" : "diffs"}.`);
+    await kv.remove("biddiff.diffs.index").catch(() => {});
+    if (failed === 0) {
+      setStatus(`Cleared ${deleted} ${deleted === 1 ? "diff" : "diffs"}.`);
+    } else {
+      setStatus(`Cleared ${deleted} of ${list.length}; ${failed} failed.`);
+    }
     setTimeout(() => setStatus(""), 2500);
   };
 
