@@ -4,7 +4,7 @@ import type { Change, TokenSpan } from "../core/diff/types.js";
 interface Props {
   change: Change;
   reviewed: boolean;
-  onToggleReviewed: () => void;
+  onToggleReviewed: (id: string) => void;
   defaultCollapsed?: boolean;
 }
 
@@ -39,7 +39,7 @@ function changePreview(c: Change): string {
   return `${verb}: ${truncated}`;
 }
 
-export function ChangeCard({
+export const ChangeCard = React.memo(function ChangeCard({
   change,
   reviewed,
   onToggleReviewed,
@@ -154,7 +154,7 @@ export function ChangeCard({
         )}
         <button
           className="ghost"
-          onClick={onToggleReviewed}
+          onClick={() => onToggleReviewed(change.id)}
           aria-pressed={reviewed}
           title={reviewed ? "Mark as not reviewed" : "Mark as reviewed"}
         >
@@ -163,4 +163,4 @@ export function ChangeCard({
       </div>
     </article>
   );
-}
+});

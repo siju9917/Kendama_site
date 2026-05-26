@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Change, DiffResult } from "../core/diff/types.js";
 import { makeKv } from "../core/storage/index.js";
 import { ChangeCard } from "./ChangeCard.js";
@@ -146,6 +146,17 @@ export function DiffView({ result }: Props): React.ReactElement {
     setTextFilter("");
   };
 
+  // Stable identity so React.memo(ChangeCard) actually skips re-renders
+  // when only an unrelated card's reviewed state changes.
+  const toggleReviewed = useCallback((id: string): void => {
+    setReviewed((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
   return (
     <>
       <ReviewPrompt />
@@ -253,14 +264,7 @@ export function DiffView({ result }: Props): React.ReactElement {
             <ChangeCard
               change={c}
               reviewed={reviewed.has(c.id)}
-              onToggleReviewed={() =>
-                setReviewed((s) => {
-                  const next = new Set(s);
-                  if (next.has(c.id)) next.delete(c.id);
-                  else next.add(c.id);
-                  return next;
-                })
-              }
+              onToggleReviewed={toggleReviewed}
             />
           </div>
         ))
