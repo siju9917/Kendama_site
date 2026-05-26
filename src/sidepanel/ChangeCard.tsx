@@ -56,7 +56,6 @@ export function ChangeCard({
         (change.severity === "CRITICAL" ? " change--critical" : "") +
         (reviewed ? " change--reviewed" : "")
       }
-      aria-expanded={expanded}
     >
       <header className="change__header">
         <div style={{ minWidth: 0 }}>
@@ -130,7 +129,12 @@ export function ChangeCard({
       )}
 
       <div className="change__footer">
-        <button className="ghost" onClick={() => setExpanded((v) => !v)}>
+        <button
+          className="ghost"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          title={expanded ? "Collapse this change" : "Expand this change"}
+        >
           {expanded ? "Collapse" : "Expand"}
         </button>
         {expanded && canSideBySide && (
