@@ -34,6 +34,11 @@ export function normalizeText(input: string): string {
     s = s.replace(re, rep);
   }
   s = s.replace(NBSP, " ").replace(SOFT_HYPHEN, "").replace(ZERO_WIDTH, "");
+  // Strip C0 / C1 control characters (except \t \n \r which the
+  // whitespace collapse below handles). NUL slipping through a PDF
+  // extract would otherwise survive normalization and end up as a
+  // visible glyph or break copy-paste.
+  s = s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, "");
   // Fix lines broken by a hyphen at EOL: "exam-\nple" -> "example"
   s = s.replace(/([A-Za-z])-\n([a-z])/g, "$1$2");
   // Collapse runs of whitespace to single spaces; trim ends.

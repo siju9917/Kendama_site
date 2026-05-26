@@ -91,19 +91,9 @@ function Popup(): React.ReactElement {
             {recent.slice(0, 5).map((s) => (
               <li key={s.id} style={{ borderBottom: "1px solid var(--border)" }}>
                 <button
+                  className="popup-recent"
                   onClick={() => void openSidePanel(s.id)}
                   title={`Open: ${s.solicitationId ?? s.currentFileName}`}
-                  style={{
-                    width: "100%",
-                    textAlign: "left",
-                    background: "transparent",
-                    border: "0",
-                    padding: "8px 6px",
-                    font: "inherit",
-                    cursor: "pointer",
-                    color: "inherit",
-                    borderRadius: "var(--radius-sm)",
-                  }}
                 >
                   <div
                     style={{
