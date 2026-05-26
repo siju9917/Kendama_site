@@ -300,13 +300,20 @@ export class DiffStorage implements IStorage {
     if (total <= maxBytes) return;
     // Oldest-access first
     const sorted = [...idx.entries].sort((a, b) => a.lastAccess - b.lastAccess);
-    for (const e of sorted) {
-      if (total <= maxBytes) break;
-      if (e.storage === "idb") await idbDelete(e.id);
-      else await this.kv.remove(PAYLOAD_PREFIX + e.id);
-      total -= e.sizeBytes;
-      idx.entries = idx.entries.filter((x) => x.id !== e.id);
+    // try/finally so a payload delete failure mid-loop doesn't strand
+    // the index with entries pointing at payloads we already removed.
+    // The History click for an entry whose payload is gone is much
+    // worse than a small accounting drift.
+    try {
+      for (const e of sorted) {
+        if (total <= maxBytes) break;
+        if (e.storage === "idb") await idbDelete(e.id);
+        else await this.kv.remove(PAYLOAD_PREFIX + e.id);
+        total -= e.sizeBytes;
+        idx.entries = idx.entries.filter((x) => x.id !== e.id);
+      }
+    } finally {
+      await this.writeIndex(idx);
     }
-    await this.writeIndex(idx);
   }
 }

@@ -6,10 +6,13 @@
  *   1. It changes a date or deadline (DATE anchor / DATES_DEADLINES category).
  *   2. It changes a page-limit or mandatory format requirement
  *      (PAGE_LIMIT anchor / SUBMISSION_INSTRUCTIONS category).
- *   3. It adds or removes a FAR/DFARS clause (CLAUSES + INSERT/DELETE).
+ *   3. It adds, removes, or modifies a FAR/DFARS clause
+ *      (CLAUSES + INSERT/DELETE/MODIFY). Modifications count because a
+ *      word-change inside a regulatory clause shifts contract terms.
  *   4. It changes evaluation criteria (EVALUATION_CRITERIA category).
- *   5. It changes CLIN structure
- *      (PRICING_CLINS with CLIN anchor, or any INSERT/DELETE in PRICING).
+ *   5. It changes CLIN structure or values
+ *      (PRICING_CLINS + INSERT/DELETE/MODIFY) — a price or quantity edit
+ *      is as material to bidders as a CLIN added or removed.
  *   6. It adds or removes an attachment (ATTACHMENTS + INSERT/DELETE).
  */
 import type { Anchor } from "../model/types.js";
