@@ -127,11 +127,19 @@ function extractRunText(body: string): string {
 
 function decodeXmlEntities(s: string): string {
   return s
-    .replace(/&amp;/g, "&")
+    // Numeric entities — produced by some non-Word DOCX writers
+    // (Pandoc, etc.). Decode before the named-entity pass so a
+    // payload like "&amp;#39;" doesn't double-decode.
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
+      String.fromCodePoint(parseInt(hex, 16) || 0x20),
+    )
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10) || 0x20))
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'");
+    .replace(/&apos;/g, "'")
+    // &amp; last so we don't double-decode the entities above.
+    .replace(/&amp;/g, "&");
 }
 
 function paragraphsToRawLines(paragraphs: ReadonlyArray<DocxParagraph>): RawLine[] {
