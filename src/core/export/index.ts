@@ -155,52 +155,141 @@ export async function exportPdfReport(result: DiffResult, fileName?: string): Pr
     y -= n;
   };
 
-  // Header
-  drawWrapped("BidDiff — Solicitation Amendment Comparison", { bold: true, size: 16 });
-  space(4);
-  if (result.currentDoc.solicitationId) {
-    drawWrapped(`Solicitation: ${result.currentDoc.solicitationId}`, { size: 11 });
-  }
-  drawWrapped(`Compared: ${result.currentDoc.sourceFileName} vs. ${result.priorDoc.sourceFileName}`);
-  if (result.generatedAt) drawWrapped(`Generated: ${result.generatedAt}`);
-  space(10);
+  // Helper: draw a horizontal rule.
+  const rule = (color: [number, number, number] = [0.85, 0.87, 0.9]): void => {
+    if (y < margin + 4) {
+      page = doc.addPage([pageWidth, pageHeight]);
+      y = pageHeight - margin;
+    }
+    page.drawRectangle({
+      x: margin,
+      y,
+      width: usableWidth,
+      height: 0.6,
+      color: rgb(color[0], color[1], color[2]),
+    });
+    y -= 8;
+  };
 
-  drawWrapped("Summary", { bold: true, size: 13 });
-  drawWrapped(`Total changes: ${result.changes.length}`);
+  // Helper: draw an accent bar (left-side color stripe) for a block.
+  const drawAccentBar = (height: number, color: [number, number, number]): void => {
+    page.drawRectangle({
+      x: margin - 6,
+      y: y - height,
+      width: 3,
+      height,
+      color: rgb(color[0], color[1], color[2]),
+    });
+  };
+
+  // ---- Branded header ----
+  // Title row with an accent square.
+  page.drawRectangle({
+    x: margin,
+    y: y - 2,
+    width: 14,
+    height: 14,
+    color: rgb(0.12, 0.36, 0.84),
+  });
+  page.drawText("BidDiff", {
+    x: margin + 22,
+    y: y - 1,
+    size: 18,
+    font: fontBold,
+    color: rgb(0.08, 0.1, 0.12),
+  });
+  y -= 24;
+  drawWrapped("Solicitation Amendment Comparison Report", { size: 12, color: [0.36, 0.4, 0.45] });
+  space(4);
+  rule();
+  if (result.currentDoc.solicitationId) {
+    drawWrapped(`Solicitation: ${result.currentDoc.solicitationId}`, { size: 11, bold: true });
+  }
+  drawWrapped(`Compared: ${result.currentDoc.sourceFileName}  vs.  ${result.priorDoc.sourceFileName}`);
+  if (result.generatedAt) drawWrapped(`Generated: ${result.generatedAt}`, { color: [0.36, 0.4, 0.45] });
+  space(12);
+
+  // ---- Summary band ----
+  drawWrapped("SUMMARY", { bold: true, size: 11, color: [0.36, 0.4, 0.45] });
+  space(2);
+  drawWrapped(`Total changes: ${result.changes.length}`, { size: 12 });
   drawWrapped(
     `Critical: ${result.criticalCount}`,
-    result.criticalCount > 0 ? { color: [0.69, 0, 0.12], bold: true } : {},
+    result.criticalCount > 0 ? { color: [0.69, 0, 0.12], bold: true, size: 12 } : { size: 12 },
   );
-  drawWrapped(`Confidence: ${(result.diffConfidence * 100).toFixed(0)}%`);
-  if (result.warnings.length) {
-    space(4);
-    drawWrapped("Warnings:", { bold: true });
-    for (const w of result.warnings) drawWrapped(`- ${w}`);
-  }
-  space(10);
+  drawWrapped(`Confidence: ${(result.diffConfidence * 100).toFixed(0)}%`, { size: 12 });
 
-  // Critical changes
-  const critical = result.changes.filter((c) => c.severity === "CRITICAL");
-  if (critical.length) {
-    drawWrapped("Critical changes", { bold: true, size: 13, color: [0.69, 0, 0.12] });
+  // Per-category counts
+  const catCounts = Object.entries(result.changeCountByCategory).filter(([, n]) => n > 0);
+  if (catCounts.length) {
     space(4);
-    for (const c of critical) {
-      drawWrapped(`• [${c.ucfLetter ?? "?"}] ${CATEGORY_LABELS[c.category] ?? c.category}`, { bold: true });
-      for (const r of c.criticalReasons) drawWrapped(`   ${r}`);
-      if (c.beforeText) drawWrapped(`   was: ${c.beforeText}`);
-      if (c.afterText) drawWrapped(`   now: ${c.afterText}`);
-      space(4);
+    drawWrapped("By category:", { bold: true, size: 11, color: [0.36, 0.4, 0.45] });
+    for (const [k, n] of catCounts) {
+      drawWrapped(`  ${CATEGORY_LABELS[k] ?? k}: ${n}`, { size: 11 });
     }
   }
 
-  // Other changes
+  if (result.warnings.length) {
+    space(6);
+    drawWrapped("Warnings", { bold: true, size: 11, color: [0.69, 0, 0.12] });
+    for (const w of result.warnings) drawWrapped(`  • ${w}`, { color: [0.36, 0.4, 0.45] });
+  }
+  space(14);
+  rule();
+  space(6);
+
+  // ---- Critical changes ----
+  const critical = result.changes.filter((c) => c.severity === "CRITICAL");
+  if (critical.length) {
+    drawWrapped("CRITICAL CHANGES", { bold: true, size: 13, color: [0.69, 0, 0.12] });
+    drawWrapped(`${critical.length} change${critical.length === 1 ? "" : "s"} flagged as critical.`, {
+      color: [0.36, 0.4, 0.45],
+    });
+    space(8);
+    for (const c of critical) {
+      const startY = y;
+      drawWrapped(`[Section ${c.ucfLetter ?? "?"}] ${CATEGORY_LABELS[c.category] ?? c.category} — ${c.changeType}`, {
+        bold: true,
+        size: 12,
+      });
+      for (const r of c.criticalReasons) drawWrapped(`   ${r}`, { color: [0.69, 0, 0.12] });
+      if (c.beforeText) drawWrapped(`   was: ${c.beforeText}`, { color: [0.36, 0.4, 0.45] });
+      if (c.afterText) drawWrapped(`   now: ${c.afterText}`);
+      if (c.clauseInfo) {
+        drawWrapped(
+          `   ${c.clauseInfo.regulation} ${c.clauseInfo.clauseNumber} — ${c.clauseInfo.title}`,
+          { color: [0.36, 0.4, 0.45], size: 10 },
+        );
+        if (c.clauseInfo.plainLanguageNote) {
+          drawWrapped(`   ${c.clauseInfo.plainLanguageNote}`, { color: [0.36, 0.4, 0.45], size: 10 });
+        }
+      }
+      // Accent bar
+      const heightOfBlock = startY - y;
+      const savedY = y;
+      y = startY;
+      drawAccentBar(heightOfBlock, [0.69, 0, 0.12]);
+      y = savedY;
+      space(8);
+    }
+  }
+
+  // ---- Other changes ----
   const other = result.changes.filter((c) => c.severity !== "CRITICAL");
   if (other.length) {
-    drawWrapped("Other changes", { bold: true, size: 13 });
-    space(4);
+    rule();
+    space(6);
+    drawWrapped("OTHER CHANGES", { bold: true, size: 13, color: [0.36, 0.4, 0.45] });
+    drawWrapped(`${other.length} non-critical change${other.length === 1 ? "" : "s"}.`, {
+      color: [0.36, 0.4, 0.45],
+    });
+    space(8);
     for (const c of other) {
-      drawWrapped(`• [${c.ucfLetter ?? "?"}] ${CATEGORY_LABELS[c.category] ?? c.category} (${c.changeType})`, { bold: true });
-      if (c.beforeText) drawWrapped(`   was: ${c.beforeText}`);
+      drawWrapped(`[Section ${c.ucfLetter ?? "?"}] ${CATEGORY_LABELS[c.category] ?? c.category} — ${c.changeType}`, {
+        bold: true,
+        size: 12,
+      });
+      if (c.beforeText) drawWrapped(`   was: ${c.beforeText}`, { color: [0.36, 0.4, 0.45] });
       if (c.afterText) drawWrapped(`   now: ${c.afterText}`);
       space(4);
     }
