@@ -10,8 +10,11 @@ export function LicenseChip({
   let label = "";
   let upgrade = false;
   if (license.tier === "trial" && license.status === "active") {
-    label = `Trial · ${license.trialDaysLeft ?? 0}d left`;
-    upgrade = (license.trialDaysLeft ?? 0) <= 3;
+    const d = license.trialDaysLeft ?? 0;
+    // 0 days left is the LAST day, not expired — surface it that way so
+    // "0d left" doesn't read as the trial already being over.
+    label = d === 0 ? "Trial · last day" : `Trial · ${d}d left`;
+    upgrade = d <= 3;
   } else if (license.status === "active") {
     label = `${license.tier} · active`;
   } else if (license.status === "grace") {
