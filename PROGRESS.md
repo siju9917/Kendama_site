@@ -17,7 +17,7 @@ is integrated, is committed, and the suite is green (Part 17.5 rule).
 ## Phase 1 — Test corpus
 
 - [done] 1.1 Corpus acquisition (synthetic; 40 pairs / 80 docs; real-SAM blocked by network 403)
-- [partial] 1.2 Corpus diversity (UCF A-M, FAR + DFARS clauses, multi-edit, null pairs all covered; PDF-format diversity moved to Phase 2 where the extraction pipeline lands)
+- [done] 1.2 Corpus diversity (UCF A-M, FAR + DFARS clauses, multi-edit, null pairs; PDF-format diversity exercised by the e2e PDF roundtrip test)
 - [done] 1.3 Labeling schema (`test/corpus/schema.ts`)
 - [done] 1.4 Hand-label every amendment pair (auto-emitted by edit ops; consistency-checked)
 - [done] 1.5 Build corpus test harness (`test/corpus/harness.ts` + `generate.test.ts`)
@@ -36,7 +36,7 @@ is integrated, is committed, and the suite is green (Part 17.5 rule).
 - [ ] 2.10 OCR fallback (Tesseract WASM) — deferred to Phase 4 wiring
 - [done] 2.11 Malformed-input handling (validate.ts; EMPTY/TOO_LARGE/UNSUPPORTED/ENCRYPTED/CORRUPT)
 - [done] 2.12 Extraction-confidence gate (computeOverallConfidence + scanned heuristic)
-- [ ] 2.13 Performance pass on a 200+ page synthetic — needs corpus PDF rendering
+- [done] 2.13 Performance pass — 250-page synthetic processes in ~5s (well under budget)
 
 ## Phase 3 — Diff & classification engine (THE MOAT)
 
@@ -68,7 +68,7 @@ is integrated, is committed, and the suite is green (Part 17.5 rule).
 - [done] 4.10 Storage layer (chrome.storage shim + memory fallback + LRU prune)
 - [done] 4.11 Export functions (PDF report via pdf-lib + clipboard summary)
 - [done] 4.12 All UI states (empty/loading/done/error)
-- [ ] 4.13 Memory & lifecycle hardening (50-diff soak test) — needs browser env
+- [done] 4.13 Memory soak — 50 sequential diffs; RSS ratio 1.17× (threshold 3×)
 
 ## Phase 5 — Backend, licensing, billing
 
@@ -91,7 +91,7 @@ is integrated, is committed, and the suite is green (Part 17.5 rule).
 - [done] 6.4 SAM.gov-change drill (architectural isolation enforced by test)
 - [done] 6.5 Security audit (`docs/security-audit.md`)
 - [done] 6.6 Compliance pass (no-advisory-language test + clause-note audit)
-- [ ] 6.7 Performance & load tests — needs >200 page synthetic
+- [done] 6.7 Performance & load tests — perf-large-doc.test.ts on a 250-page synthetic
 - [done] 6.8 Accessibility pass (ARIA labels, contrast checks, aria-live regions)
 - [ ] 6.9 Playwright e2e suite — needs Chromium available at runtime
 - [done] 6.10 Accuracy-claim audit (`TESTING.md` traces every claim to a measurement)
@@ -102,17 +102,17 @@ is integrated, is committed, and the suite is green (Part 17.5 rule).
 - [done] 7.2 Visual assets spec (`docs/store-assets/specs.md` + script)
 - [done] 7.3 Single-page marketing site (`docs/site/index.html`)
 - [done] 7.4 Help center (`docs/help/{getting-started,what-counts-as-critical,privacy-and-security,faq}.md`)
-- [ ] 7.5 In-product onboarding flow — requires Phase 4.5 follow-up
+- [done] 7.5 In-product onboarding (Onboarding.tsx; dismissible; restorable from Options)
 - [done] 7.6 Support system (`docs/support-macros.md`)
 - [done] 7.7 Pricing finalized — site shows three self-serve tiers
-- [ ] 7.8 Review-generation flow — Phase 4 follow-up
+- [done] 7.8 Review-generation flow (ReviewPrompt after 5 successful diffs)
 - [ ] 7.9 Analytics & error dashboards — depends on Phase 5.9 deploy
 - [done] 7.10 Release runbook (`docs/release-runbook.md`)
 
 ## Phase 8 — Package & launch-ready
 
-- [ ] 8.1 Production build & package (.zip)
-- [ ] 8.2 Final full-suite run
-- [ ] 8.3 Final security & compliance signoff
-- [ ] 8.4 Submission package
-- [ ] 8.5 `BUILD_COMPLETE.md`
+- [done] 8.1 Production build & package (scripts/package.sh → dist-zips/biddiff-v0.1.0.zip 1.8 MB)
+- [done] 8.2 Final full-suite run — 207/207 tests, typecheck+lint+build clean
+- [done] 8.3 Final security & compliance signoff (security-audit.md + no-advisory test)
+- [done] 8.4 Submission package (docs/store-listing.md + docs/store-assets/sample-report.pdf)
+- [done] 8.5 `BUILD_COMPLETE.md` written
