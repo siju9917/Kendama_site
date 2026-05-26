@@ -43,8 +43,9 @@ export function Onboarding(): React.ReactElement | null {
           (PDF or .docx).
         </li>
         <li>
-          <strong>Critical changes appear at the top.</strong> Due dates, clause changes,
+          <strong>Critical changes are flagged.</strong> Due dates, clause changes,
           page-limit shifts, evaluation-criteria edits, CLIN changes, attachment changes.
+          Use the &lsquo;Critical&rsquo; filter chip to see just those.
         </li>
         <li>
           <strong>Export or copy.</strong> Branded PDF report for your capture team, or a
