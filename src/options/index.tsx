@@ -54,8 +54,12 @@ function Options(): React.ReactElement {
       saveTimer.current = null;
       pendingSettingsRef.current = null;
       void (async () => {
-        await kv.set(SETTINGS_KEY, next);
-        setStatus("Saved.");
+        try {
+          await kv.set(SETTINGS_KEY, next);
+          setStatus("Saved.");
+        } catch {
+          setStatus("Save failed — check extension storage permission.");
+        }
         setTimeout(() => setStatus(""), 2500);
       })();
     }, debounceMs);
@@ -122,7 +126,16 @@ function Options(): React.ReactElement {
 
       <div className="option">
         <h2>Clear stored diff history</h2>
-        <button onClick={clearHistory}>Clear history</button>
+        <button
+          onClick={() => {
+            clearHistory().catch(() => {
+              setStatus("Clear failed — check extension storage permission.");
+              setTimeout(() => setStatus(""), 2500);
+            });
+          }}
+        >
+          Clear history
+        </button>
       </div>
 
       <div className="option">
@@ -131,10 +144,13 @@ function Options(): React.ReactElement {
           The disclaimer banner can be hidden from the side panel. Restore it here.
         </p>
         <button
-          onClick={async () => {
-            await kv.remove("biddiff.disclaimer.dismissed");
-            setStatus("Disclaimer will appear again next time the side panel opens.");
-            setTimeout(() => setStatus(""), 2500);
+          onClick={() => {
+            kv.remove("biddiff.disclaimer.dismissed")
+              .then(() => setStatus("Disclaimer will appear again next time the side panel opens."))
+              .catch(() => setStatus("Couldn't restore disclaimer — check storage permission."))
+              .finally(() => {
+                setTimeout(() => setStatus(""), 2500);
+              });
           }}
         >
           Show disclaimer again
@@ -144,11 +160,16 @@ function Options(): React.ReactElement {
       <div className="option">
         <h2>Reset onboarding</h2>
         <button
-          onClick={async () => {
-            await kv.remove("biddiff.onboarding.seen");
-            await kv.remove("biddiff.tip.kbd.seen");
-            setStatus("Onboarding will appear again next time the side panel opens.");
-            setTimeout(() => setStatus(""), 2500);
+          onClick={() => {
+            Promise.all([
+              kv.remove("biddiff.onboarding.seen"),
+              kv.remove("biddiff.tip.kbd.seen"),
+            ])
+              .then(() => setStatus("Onboarding will appear again next time the side panel opens."))
+              .catch(() => setStatus("Couldn't reset onboarding — check storage permission."))
+              .finally(() => {
+                setTimeout(() => setStatus(""), 2500);
+              });
           }}
         >
           Reset onboarding
