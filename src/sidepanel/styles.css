@@ -420,6 +420,21 @@ input[type="text"]:focus-visible {
   border-color: var(--accent);
 }
 
+/* Keyboard-navigation focus indicator for the row that j/k currently
+ * sits on. The card itself doesn't get :focus because focus belongs
+ * to whatever the user actually tabbed to (buttons, etc.). */
+.change-row--focused {
+  position: relative;
+}
+.change-row--focused::before {
+  content: "";
+  position: absolute;
+  inset: -2px -4px;
+  border-radius: var(--radius);
+  border: 2px solid var(--accent);
+  pointer-events: none;
+}
+
 /* Change card */
 .change {
   background: var(--bg-elev);

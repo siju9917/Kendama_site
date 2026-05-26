@@ -207,8 +207,12 @@ export function DiffView({ result }: Props): React.ReactElement {
           )}
         </div>
       ) : (
-        filtered.map((c) => (
-          <div key={c.id} data-change-id={c.id}>
+        filtered.map((c, i) => (
+          <div
+            key={c.id}
+            data-change-id={c.id}
+            className={i === focusedIndex ? "change-row change-row--focused" : "change-row"}
+          >
             <ChangeCard
               change={c}
               reviewed={reviewed.has(c.id)}
