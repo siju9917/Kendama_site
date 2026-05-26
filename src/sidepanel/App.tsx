@@ -102,7 +102,16 @@ export function App(): React.ReactElement {
       </main>
 
       <footer className="footer">
-        Processed on your device. BidDiff assists — it does not advise.
+        <span>Processed on your device. BidDiff assists — it does not advise.</span>
+        <button
+          className="footer__link"
+          onClick={() => {
+            if (typeof chrome !== "undefined") chrome.runtime?.openOptionsPage?.();
+          }}
+          title="Open BidDiff settings (license, telemetry, clear history)"
+        >
+          Settings
+        </button>
       </footer>
     </div>
   );
