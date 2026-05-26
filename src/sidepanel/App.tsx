@@ -6,7 +6,7 @@
  * DiffView; the empty state pulls in Onboarding + FilePickerWithSam +
  * History. App orchestrates phase transitions.
  */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { DISCLAIMER_TEXT } from "../shared/disclaimer.js";
 import { LocalLicenseClient } from "../core/licensing/client.js";
 import type { LicenseState } from "../core/interfaces.js";
@@ -25,12 +25,12 @@ export function App(): React.ReactElement {
   const { state, storage, run, openSaved, reset } = useDiffPipeline();
   const [license, setLicense] = useState<LicenseState | null>(null);
   const [disclaimerShown, setDisclaimerShown] = useState<boolean>(true);
-  const kv = makeKv();
+  const kv = useMemo(() => makeKv(), []);
 
   useEffect(() => {
     new LocalLicenseClient().validate().then(setLicense).catch(() => setLicense(null));
     kv.get<boolean>(DISCLAIMER_DISMISSED_KEY).then((v) => setDisclaimerShown(!v));
-  }, []);
+  }, [kv]);
 
   const dismissDisclaimer = async (): Promise<void> => {
     await kv.set(DISCLAIMER_DISMISSED_KEY, true);

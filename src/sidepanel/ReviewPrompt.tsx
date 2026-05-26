@@ -9,7 +9,7 @@
  *
  * The prompt is non-blocking and offers a clear opt-out.
  */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { makeKv } from "../core/storage/index.js";
 
 const COUNT_KEY = "biddiff.review.count";
@@ -30,7 +30,7 @@ export async function noteDiffSucceeded(): Promise<number> {
 
 export function ReviewPrompt(): React.ReactElement | null {
   const [show, setShow] = useState<boolean | null>(null);
-  const kv = makeKv();
+  const kv = useMemo(() => makeKv(), []);
 
   useEffect(() => {
     void (async () => {

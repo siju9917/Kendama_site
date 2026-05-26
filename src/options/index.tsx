@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { makeKv } from "../core/storage/index.js";
 
@@ -15,12 +15,12 @@ const DEFAULTS: Settings = {
 };
 
 function Options(): React.ReactElement {
-  const kv = makeKv();
+  const kv = useMemo(() => makeKv(), []);
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
   const [status, setStatus] = useState("");
   useEffect(() => {
     kv.get<Settings>(SETTINGS_KEY).then((s) => setSettings(s ?? DEFAULTS));
-  }, []);
+  }, [kv]);
 
   const save = async (next: Settings): Promise<void> => {
     setSettings(next);

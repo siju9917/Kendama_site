@@ -1,18 +1,18 @@
 /**
  * First-run onboarding (Phase 7.5).
  */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { makeKv } from "../core/storage/index.js";
 
 const SEEN_KEY = "biddiff.onboarding.seen";
 
 export function Onboarding(): React.ReactElement | null {
   const [show, setShow] = useState<boolean | null>(null);
-  const kv = makeKv();
+  const kv = useMemo(() => makeKv(), []);
 
   useEffect(() => {
     kv.get<boolean>(SEEN_KEY).then((v) => setShow(!v));
-  }, []);
+  }, [kv]);
 
   const dismiss = async (): Promise<void> => {
     await kv.set(SEEN_KEY, true);

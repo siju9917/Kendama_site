@@ -41,7 +41,7 @@ export function Summary({ result }: Props): React.ReactElement {
       flash("PDF downloaded");
     } catch (e) {
       console.error("Export failed:", e);
-      flash("Export failed");
+      flash("Export failed — see console");
     }
   };
   const onCopyText = async (): Promise<void> => {
@@ -50,6 +50,7 @@ export function Summary({ result }: Props): React.ReactElement {
       flash("Summary copied");
     } catch (e) {
       console.error("Copy failed:", e);
+      flash("Copy failed — check clipboard permission");
     }
   };
   const onCopyMarkdown = async (): Promise<void> => {
@@ -58,6 +59,7 @@ export function Summary({ result }: Props): React.ReactElement {
       flash("Markdown copied");
     } catch (e) {
       console.error("Copy failed:", e);
+      flash("Copy failed — check clipboard permission");
     }
   };
 
