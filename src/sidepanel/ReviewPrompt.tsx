@@ -68,11 +68,15 @@ export function ReviewPrompt(): React.ReactElement | null {
         <button
           className="primary review-prompt__cta"
           onClick={() => {
-            window.open(
-              "https://chromewebstore.google.com/category/extensions",
-              "_blank",
-              "noopener,noreferrer",
-            );
+            // chrome.runtime.id resolves to the published extension's ID
+            // for users on the Web Store build; in dev / unpacked it's an
+            // ephemeral ID and the page will 404. The 5-diff gate means
+            // the prompt only ever reaches real installs in practice.
+            const id = typeof chrome !== "undefined" ? chrome.runtime?.id : undefined;
+            const url = id
+              ? `https://chromewebstore.google.com/detail/${id}/reviews`
+              : "https://chromewebstore.google.com/";
+            window.open(url, "_blank", "noopener,noreferrer");
             onDone();
           }}
         >

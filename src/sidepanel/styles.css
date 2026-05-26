@@ -401,9 +401,6 @@ input[type="text"]:focus-visible {
   gap: var(--space-2);
   margin-bottom: var(--space-3);
 }
-.filters[role="group"] .filter-chip {
-  background: var(--bg);
-}
 .filter-chip {
   padding: 4px 10px;
   border-radius: 999px;
@@ -412,12 +409,21 @@ input[type="text"]:focus-visible {
   font-size: 12px;
   cursor: pointer;
   user-select: none;
-  transition: background var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease);
+  transition: background var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease),
+    border-color var(--duration-fast) var(--ease);
+}
+.filter-chip:hover:not([disabled]):not(.filter-chip--active) {
+  background: var(--bg-elev);
+  border-color: var(--border-strong);
 }
 .filter-chip--active {
   background: var(--accent);
   color: var(--accent-fg);
   border-color: var(--accent);
+}
+.filter-chip--active:hover:not([disabled]) {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
 }
 
 /* Keyboard-navigation focus indicator for the row that j/k currently
