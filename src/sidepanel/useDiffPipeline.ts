@@ -84,8 +84,15 @@ export function useDiffPipeline(): {
     // Either way, clear the key after reading so a stale value can't
     // fire on subsequent mounts.
     const kv = makeKv();
+    // Dedup flag: the mount-time get and the onChanged listener can
+    // both fire for the same write (popup writes after the get is in
+    // flight; storage returns the new value, then the listener also
+    // delivers the change). Without this flag, openSaved fires twice.
+    let consumed = false;
     const consume = (id: unknown): void => {
+      if (consumed) return;
       if (typeof id !== "string" || id.length === 0) return;
+      consumed = true;
       kv.remove(PENDING_OPEN_DIFF_ID_KEY).catch(() => {});
       void openSavedRef.current?.(id);
     };

@@ -107,6 +107,11 @@ export function DiffView({ result, sessionNotices }: Props): React.ReactElement 
       const list = filteredRef.current;
       const navDown = e.key === "j" || e.key === "ArrowDown";
       const navUp = e.key === "k" || e.key === "ArrowUp";
+      // Nothing to navigate / mark — let / still focus the filter input.
+      // Without this guard, j on an empty filtered list would set
+      // focusedIndex to -1 (Math.min(-1, 0+1) = -1) and burn the
+      // "first visible card" affordance for the next real navigation.
+      if ((navDown || navUp || e.key === "r") && list.length === 0) return;
       if (navDown || navUp) {
         e.preventDefault();
         // First j/k press while the user has scrolled past the first card:
