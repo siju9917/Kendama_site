@@ -45,6 +45,14 @@ describe("normalizeText", () => {
     expect(normalizeText(once)).toBe(once);
   });
 
+  it("strips C0/C1 control characters that PDFs sometimes leak", () => {
+    // NUL, SOH, STX, BS, DEL — would otherwise survive whitespace
+    // normalization and end up as invisible glyphs in the diff.
+    expect(normalizeText("a\x00b")).toBe("ab");
+    expect(normalizeText("hello\x01\x02world")).toBe("helloworld");
+    expect(normalizeText("\x7Ftrim")).toBe("trim");
+  });
+
   it("strips zero-width characters PDFs slip into text", () => {
     // ZWSP, ZWNJ, ZWJ, word joiner, BOM. JavaScript's \s does not match
     // these, so without explicit stripping they survive normalization
