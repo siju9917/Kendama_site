@@ -117,6 +117,18 @@ export function useDiffPipeline(): {
             loadingNote: "",
             loadingPercent: 100,
           });
+        } else {
+          // Entry was in the index but the payload is gone — either
+          // deleted from another tab or the IDB store was cleared.
+          // Without this branch the user clicks the row and nothing
+          // happens, which feels broken.
+          setState({
+            phase: "ERROR",
+            result: null,
+            error: "That saved diff is no longer available. Try removing it from history.",
+            loadingNote: "",
+            loadingPercent: 0,
+          });
         }
       } catch (e) {
         // Corrupt stored payload (JSON parse error, schema mismatch,

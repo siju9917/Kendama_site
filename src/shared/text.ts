@@ -7,6 +7,12 @@
 
 const NBSP = / /g;
 const SOFT_HYPHEN = /­/g;
+// Zero-width characters that JavaScript's \s does NOT match: ZWSP (U+200B),
+// ZWNJ (U+200C), ZWJ (U+200D), word joiner (U+2060), BOM/ZWNBSP (U+FEFF).
+// PDF and DOCX extracts occasionally carry these as silent separators
+// inside tokens ("section​1") which would otherwise produce false
+// diffs against the same text without them.
+const ZERO_WIDTH = /[​‌‍⁠﻿]/g;
 // Common ligatures Adobe PDFs produce that wreck token matching.
 const LIGATURES: ReadonlyArray<[RegExp, string]> = [
   [/ﬀ/g, "ff"],
@@ -27,7 +33,7 @@ export function normalizeText(input: string): string {
   for (const [re, rep] of LIGATURES) {
     s = s.replace(re, rep);
   }
-  s = s.replace(NBSP, " ").replace(SOFT_HYPHEN, "");
+  s = s.replace(NBSP, " ").replace(SOFT_HYPHEN, "").replace(ZERO_WIDTH, "");
   // Fix lines broken by a hyphen at EOL: "exam-\nple" -> "example"
   s = s.replace(/([A-Za-z])-\n([a-z])/g, "$1$2");
   // Collapse runs of whitespace to single spaces; trim ends.

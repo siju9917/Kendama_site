@@ -20,6 +20,8 @@ import { postRuntime } from "../shared/chrome-rt.js";
 
 // Cache the promise (not the resolved value) so concurrent first
 // invocations share a single load, avoiding redundant worker setup.
+// If the load fails, drop the cached rejected promise so future calls
+// can retry instead of inheriting a permanent failure.
 let pdfjsPromise: Promise<PdfJsLike> | null = null;
 function loadPdfJs(): Promise<PdfJsLike> {
   if (!pdfjsPromise) {
@@ -32,7 +34,10 @@ function loadPdfJs(): Promise<PdfJsLike> {
         /* ignore */
       }
       return mod as unknown as PdfJsLike;
-    })();
+    })().catch((e) => {
+      pdfjsPromise = null;
+      throw e;
+    });
   }
   return pdfjsPromise;
 }

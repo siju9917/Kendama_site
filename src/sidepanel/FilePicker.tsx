@@ -35,7 +35,14 @@ function Dropzone({
   const hint = file ? null : "Drop a PDF or .docx, or click to choose";
   const onChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const f = e.target.files?.[0] ?? null;
-    if (f && !isAccepted(f)) {
+    // Reset the input value so picking the same file twice (without
+    // an intervening pick) still fires a change event. Browsers
+    // suppress duplicate-selection change events unless value is cleared.
+    e.target.value = "";
+    // No file = user cancelled the dialog. Don't show a rejection
+    // message — they didn't pick a bad file, they picked nothing.
+    if (!f) return;
+    if (!isAccepted(f)) {
       onPick(null);
       return;
     }

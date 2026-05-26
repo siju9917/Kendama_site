@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { DiffResult } from "../core/diff/types.js";
 import { exportPdfReport, copySummaryToClipboard, copyMarkdownToClipboard } from "../core/export/index.js";
 
@@ -32,12 +32,22 @@ const CATEGORY_LABELS: Record<string, string> = {
 export function Summary({ result }: Props): React.ReactElement {
   const totalChanges = result.changes.length;
   const [feedback, setFeedback] = useState<string>("");
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (flashTimer.current) clearTimeout(flashTimer.current);
+    };
+  }, []);
 
   const flash = (text: string): void => {
     setFeedback(text);
     // Long enough that an error message can be read; short enough that
-    // the success state doesn't linger.
-    setTimeout(() => setFeedback(""), 2500);
+    // the success state doesn't linger. Tracked so unmount clears it.
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+    flashTimer.current = setTimeout(() => {
+      flashTimer.current = null;
+      setFeedback("");
+    }, 2500);
   };
 
   const onExportPdf = async (): Promise<void> => {
@@ -148,13 +158,8 @@ export function Summary({ result }: Props): React.ReactElement {
           ))}
       </div>
 
-      {result.warnings.length > 0 && (
-        <ul style={{ margin: "12px 0 0", paddingLeft: 18, color: "var(--fg-muted)" }}>
-          {result.warnings.map((w, i) => (
-            <li key={i}>{w}</li>
-          ))}
-        </ul>
-      )}
+      {/* Warnings are rendered once at the top of DiffView in the
+          warning-banner — listing them again here was a duplicate. */}
 
       {feedback && (
         <div className="feedback-line" aria-live="polite">

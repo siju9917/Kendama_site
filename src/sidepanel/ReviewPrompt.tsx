@@ -58,14 +58,19 @@ export function ReviewPrompt(): React.ReactElement | null {
         Reviews on the Chrome Web Store help other proposal and capture teams find us.
       </div>
       <div className="review-prompt__actions">
-        <a
-          href="https://chromewebstore.google.com/category/extensions"
-          target="_blank"
-          rel="noreferrer noopener"
-          onClick={() => void onDone()}
+        <button
+          className="primary review-prompt__cta"
+          onClick={() => {
+            window.open(
+              "https://chromewebstore.google.com/category/extensions",
+              "_blank",
+              "noopener,noreferrer",
+            );
+            void onDone();
+          }}
         >
-          <button className="primary review-prompt__cta">Leave a review</button>
-        </a>
+          Leave a review
+        </button>
         <button onClick={() => void onDone()} className="review-prompt__cta">
           No thanks
         </button>

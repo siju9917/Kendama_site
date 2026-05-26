@@ -44,6 +44,14 @@ describe("normalizeText", () => {
     const once = normalizeText("ﬁle  with\n“quotes”");
     expect(normalizeText(once)).toBe(once);
   });
+
+  it("strips zero-width characters PDFs slip into text", () => {
+    // ZWSP, ZWNJ, ZWJ, word joiner, BOM. JavaScript's \s does not match
+    // these, so without explicit stripping they survive normalization
+    // and create false diffs.
+    expect(normalizeText("sec​tion‌ 1﻿")).toBe("section 1");
+    expect(normalizeText("a‍b⁠c")).toBe("abc");
+  });
 });
 
 describe("tokenize", () => {

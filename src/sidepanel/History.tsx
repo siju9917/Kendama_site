@@ -64,6 +64,10 @@ export function History({ storage, onOpen }: Props): React.ReactElement | null {
                 // to Delete/Backspace because it's destructive and there
                 // would be no undo — the explicit ✕ button is the only
                 // delete affordance.
+                // Skip when the focus is inside a child interactive
+                // element (the ✕ button) — otherwise pressing Enter on
+                // the button would both delete AND open this row.
+                if (e.target !== e.currentTarget) return;
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   onOpen(s.id);
