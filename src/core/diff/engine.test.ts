@@ -109,3 +109,37 @@ describe("DiffEngine — single-edit pairs detect their change", () => {
     expect(match.length).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe("DiffEngine — within-section change order follows document position", () => {
+  it("does not cluster changes by changeType within a single section", () => {
+    // Regression: an earlier sort key included changeType as a tiebreaker,
+    // so DELETE/INSERT/MODIFY/MOVE clustered alphabetically — an INSERT at
+    // block 5 would appear before a MODIFY at block 2.
+    const engine = new DiffEngine(new LocalClauseClient());
+    const pair = loadAllPairs().find((b) => b.pairId === "stress-001-multi-six-edits")!;
+    const ec = enrichStructuredDocument(pair.current);
+    const ep = enrichStructuredDocument(pair.prior);
+    const result = engine.diff(ec, ep);
+    // Group changes by section and ensure ordinals are monotonic within
+    // each group when more than one change shares a section.
+    const bySection = new Map<string, number[]>();
+    for (const c of result.changes) {
+      // We can't recover the underlying block ordinal from a Change, but
+      // the locationHint encodes "<heading> — block N+1". Parse it.
+      const m = c.locationHint.match(/block\s+(\d+)/);
+      if (!m) continue;
+      const key = `${c.ucfLetter ?? "?"}|${c.sectionHeading}`;
+      const arr = bySection.get(key) ?? [];
+      arr.push(parseInt(m[1], 10));
+      bySection.set(key, arr);
+    }
+    for (const [key, ords] of bySection) {
+      for (let i = 1; i < ords.length; i++) {
+        expect(
+          ords[i] >= ords[i - 1],
+          `${key}: ord ${ords[i - 1]} then ${ords[i]} is out of document order`,
+        ).toBe(true);
+      }
+    }
+  });
+});
