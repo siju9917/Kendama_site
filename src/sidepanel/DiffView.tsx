@@ -31,7 +31,13 @@ export function DiffView({ result }: Props): React.ReactElement {
       const k = c.ucfLetter ?? "?";
       counts.set(k, (counts.get(k) ?? 0) + 1);
     }
-    return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    // Sort A..M first, then the "?" (Other) bucket last instead of
+    // first (which is where ASCII would put it).
+    return [...counts.entries()].sort(([a], [b]) => {
+      if (a === "?" && b !== "?") return 1;
+      if (b === "?" && a !== "?") return -1;
+      return a === b ? 0 : a < b ? -1 : 1;
+    });
   }, [result]);
 
   const filtered: Change[] = useMemo(() => {
@@ -183,7 +189,7 @@ export function DiffView({ result }: Props): React.ReactElement {
               className={`filter-chip ${sectionFilter === s ? "filter-chip--active" : ""}`}
               onClick={() => setSectionFilter(s)}
             >
-              Section {s} ({n})
+              {s === "?" ? "Other" : `Section ${s}`} ({n})
             </button>
           ))}
         </div>
