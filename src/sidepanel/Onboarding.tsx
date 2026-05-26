@@ -25,7 +25,7 @@ export function Onboarding(): React.ReactElement | null {
   if (show !== true) return null;
 
   return (
-    <section className="onboarding" aria-label="Getting started">
+    <section className="onboarding" aria-label="Welcome to BidDiff — getting started">
       <div className="onboarding__head">
         <h2>Welcome to BidDiff</h2>
         <button
