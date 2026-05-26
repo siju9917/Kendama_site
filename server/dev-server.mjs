@@ -11,11 +11,16 @@ const SECRET = process.env.BIDDIFF_SECRET ?? "dev-secret";
 
 async function readBody(req) {
   return new Promise((resolve, reject) => {
-    let buf = "";
-    req.on("data", (c) => (buf += c));
+    const chunks = [];
+    // Collect Buffers and decode once at the end. `buf += chunk`
+    // would do an implicit toString per chunk and corrupt any
+    // multi-byte UTF-8 sequence that happened to straddle a chunk
+    // boundary.
+    req.on("data", (c) => chunks.push(c));
     req.on("end", () => {
       try {
-        resolve(buf ? JSON.parse(buf) : {});
+        const body = Buffer.concat(chunks).toString("utf8");
+        resolve(body ? JSON.parse(body) : {});
       } catch (e) {
         reject(e);
       }

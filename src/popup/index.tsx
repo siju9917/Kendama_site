@@ -35,30 +35,34 @@ function Popup(): React.ReactElement {
       >
         Open side panel
       </button>
-      <h2
-        style={{
-          marginTop: 16,
-          marginBottom: 0,
-          fontSize: 12,
-          fontWeight: 600,
-          color: "var(--fg-muted)",
-          textTransform: "uppercase",
-          letterSpacing: "0.05em",
-        }}
-      >
-        {recent.length > 5 ? `Recent diffs (5 of ${recent.length})` : `Recent diffs (${recent.length})`}
-      </h2>
-      <ul style={{ listStyle: "none", padding: 0, marginTop: 8 }}>
-        {recent.slice(0, 5).map((s) => (
-          <li key={s.id} style={{ padding: "4px 0", borderBottom: "1px solid var(--border)" }}>
-            <div style={{ fontWeight: 600 }}>{s.solicitationId ?? s.currentFileName}</div>
-            <div style={{ color: "var(--fg-muted)", fontSize: 11 }}>
-              {s.totalChanges} changes
-              {s.criticalCount > 0 ? ` · ${s.criticalCount} critical` : ""}
-            </div>
-          </li>
-        ))}
-      </ul>
+      {recent.length > 0 && (
+        <>
+          <h2
+            style={{
+              marginTop: 16,
+              marginBottom: 0,
+              fontSize: 12,
+              fontWeight: 600,
+              color: "var(--fg-muted)",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+            }}
+          >
+            {recent.length > 5 ? `Recent diffs (5 of ${recent.length})` : `Recent diffs (${recent.length})`}
+          </h2>
+          <ul style={{ listStyle: "none", padding: 0, marginTop: 8 }}>
+            {recent.slice(0, 5).map((s) => (
+              <li key={s.id} style={{ padding: "4px 0", borderBottom: "1px solid var(--border)" }}>
+                <div style={{ fontWeight: 600 }}>{s.solicitationId ?? s.currentFileName}</div>
+                <div style={{ color: "var(--fg-muted)", fontSize: 11 }}>
+                  {s.totalChanges} changes
+                  {s.criticalCount > 0 ? ` · ${s.criticalCount} critical` : ""}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   );
 }
