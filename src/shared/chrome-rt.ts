@@ -7,20 +7,21 @@
  */
 import type { BidDiffMessage } from "./messages.js";
 
+function hasRuntime(): boolean {
+  return typeof chrome !== "undefined" && !!chrome.runtime?.sendMessage;
+}
+
 /** Safe send: never throws, never logs an "unchecked runtime.lastError". */
 export function sendRuntime<T = unknown>(msg: BidDiffMessage): Promise<T | null> {
   return new Promise((resolve) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const api = (globalThis as any).chrome;
-    if (!api?.runtime?.sendMessage) {
+    if (!hasRuntime()) {
       resolve(null);
       return;
     }
     try {
-      api.runtime.sendMessage(msg, (resp: unknown) => {
+      chrome.runtime.sendMessage(msg, (resp: unknown) => {
         // Reading lastError marks it as "checked" so Chrome stops warning.
-        const _ = api.runtime?.lastError;
-        void _;
+        void chrome.runtime?.lastError;
         resolve((resp as T) ?? null);
       });
     } catch {
@@ -31,13 +32,10 @@ export function sendRuntime<T = unknown>(msg: BidDiffMessage): Promise<T | null>
 
 /** Fire-and-forget; checks lastError so no console warnings. */
 export function postRuntime(msg: BidDiffMessage): void {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const api = (globalThis as any).chrome;
-  if (!api?.runtime?.sendMessage) return;
+  if (!hasRuntime()) return;
   try {
-    api.runtime.sendMessage(msg, () => {
-      const _ = api.runtime?.lastError;
-      void _;
+    chrome.runtime.sendMessage(msg, () => {
+      void chrome.runtime?.lastError;
     });
   } catch {
     /* swallow */
