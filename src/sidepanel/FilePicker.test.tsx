@@ -21,6 +21,15 @@ describe("FilePicker", () => {
     expect(screen.getByText(/Only PDF \(\.pdf\) and Word/i)).toBeTruthy();
   });
 
+  it("does not show a rejection message when the dialog is cancelled (no files)", () => {
+    render(<FilePicker onRun={() => {}} />);
+    const input = screen
+      .getAllByLabelText(/Choose New version/i)[0] as HTMLInputElement;
+    // Empty file list = user cancelled the dialog.
+    fireEvent.change(input, { target: { files: [] } });
+    expect(screen.queryByText(/Only PDF \(\.pdf\) and Word/i)).toBeNull();
+  });
+
   it("enables Compare once both files are picked", () => {
     const onRun = vi.fn();
     render(<FilePicker onRun={onRun} />);
