@@ -74,7 +74,7 @@ async function renderDoc(doc: StructuredDocument): Promise<ArrayBuffer> {
 let pdfjs: PdfJsLike;
 
 beforeAll(async () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const mod: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const path = await import("node:path");
   const { createRequire } = await import("node:module");
