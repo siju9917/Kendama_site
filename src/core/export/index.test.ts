@@ -78,4 +78,23 @@ describe("exportPdfReport", () => {
     const blob = await exportPdfReport(cloned);
     expect(blob.size).toBeGreaterThan(500);
   }, 30_000);
+
+  it("does not throw on non-WinAnsi characters in the source text", async () => {
+    // Real solicitations occasionally contain chars outside pdf-lib's
+    // Helvetica/WinAnsi encoding (math symbols, mu, Chinese, emoji).
+    // The export must survive — sanitizer replaces them with '?'.
+    const r = makeResult("it-svc-001-due-date-shift");
+    const exotic = "Ω µ ∑ ✓ 你好 😀 ¹⁰⁰ ℃";
+    const cloned = {
+      ...r,
+      changes: r.changes.map((c) => ({
+        ...c,
+        beforeText: `prior: ${exotic}`,
+        afterText: `current: ${exotic}`,
+      })),
+    };
+    const blob = await exportPdfReport(cloned);
+    expect(blob.type).toBe("application/pdf");
+    expect(blob.size).toBeGreaterThan(500);
+  }, 30_000);
 });

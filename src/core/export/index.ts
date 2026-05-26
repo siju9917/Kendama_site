@@ -73,6 +73,43 @@ function truncate(s: string, max: number): string {
   return s.slice(0, max - 1) + "…";
 }
 
+/**
+ * Replace characters that pdf-lib's StandardFonts.Helvetica (WinAnsi
+ * encoding) cannot render. If the source solicitation contains a math
+ * symbol or non-Latin character that survived normalization, the PDF
+ * export would otherwise throw mid-render. Anything outside WinAnsi
+ * gets replaced with "?" so the export always succeeds.
+ */
+const WINANSI_ALLOWED = new Set<number>([
+  // ASCII printable
+  ...range(0x20, 0x7e),
+  // Latin-1 (most of it)
+  ...range(0xa0, 0xff),
+  // The handful of special chars WinAnsi places at 0x80-0x9f via mapping:
+  // em-dash (—) U+2014, en-dash (–) U+2013, curly quotes, bullet (•) U+2022,
+  // ellipsis (…) U+2026, trademark (™) U+2122, single low-9 quote, etc.
+  0x2014, 0x2013, 0x2018, 0x2019, 0x201a, 0x201c, 0x201d, 0x201e, 0x2020, 0x2021,
+  0x2022, 0x2026, 0x2030, 0x2039, 0x203a, 0x20ac, 0x2122, 0x0152, 0x0153,
+  0x0160, 0x0161, 0x0178, 0x017d, 0x017e, 0x0192, 0x02c6, 0x02dc,
+  // Tab and newline are stripped by our text normalizer but include for safety.
+  0x09, 0x0a,
+]);
+
+function range(lo: number, hi: number): number[] {
+  const out: number[] = [];
+  for (let c = lo; c <= hi; c++) out.push(c);
+  return out;
+}
+
+function toWinAnsiSafe(s: string): string {
+  let out = "";
+  for (const ch of s) {
+    const code = ch.codePointAt(0) ?? 0x3f;
+    out += WINANSI_ALLOWED.has(code) ? ch : "?";
+  }
+  return out;
+}
+
 export async function copySummaryToClipboard(result: DiffResult): Promise<void> {
   const text = buildSummaryText(result);
   if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -187,10 +224,12 @@ export async function exportPdfReport(result: DiffResult, fileName?: string): Pr
   let page = doc.addPage([pageWidth, pageHeight]);
   let y = pageHeight - margin;
 
-  const drawWrapped = (text: string, opts: { bold?: boolean; size?: number; color?: [number, number, number] } = {}): void => {
+  const drawWrapped = (rawText: string, opts: { bold?: boolean; size?: number; color?: [number, number, number] } = {}): void => {
     const size = opts.size ?? 11;
     const f = opts.bold ? fontBold : font;
     const color = opts.color ?? [0.08, 0.10, 0.12];
+    // Sanitize before measuring so width math and drawn glyphs agree.
+    const text = toWinAnsiSafe(rawText);
     const words = text.split(/\s+/);
     let line = "";
     const flushLine = (): void => {
