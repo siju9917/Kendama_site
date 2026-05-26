@@ -9,14 +9,16 @@ function Popup(): React.ReactElement {
     new DiffStorage().listDiffs().then(setRecent).catch(() => setRecent([]));
   }, []);
 
-  const openSidePanel = (): void => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const api = (globalThis as any).chrome;
-    if (api?.sidePanel?.open) {
-      api.windows.getCurrent((w: { id: number }) => {
-        api.sidePanel.open({ windowId: w.id });
-        window.close();
-      });
+  const openSidePanel = async (): Promise<void> => {
+    if (typeof chrome === "undefined") return;
+    if (!chrome.sidePanel?.open) return;
+    try {
+      const w = await chrome.windows.getCurrent();
+      if (typeof w?.id !== "number") return;
+      await chrome.sidePanel.open({ windowId: w.id });
+      window.close();
+    } catch {
+      /* user can still open via the side-panel toolbar button */
     }
   };
 
@@ -26,7 +28,11 @@ function Popup(): React.ReactElement {
       <p style={{ color: "var(--fg-muted)", marginTop: 0 }}>
         Federal solicitation amendment diff.
       </p>
-      <button className="primary" style={{ width: "100%" }} onClick={openSidePanel}>
+      <button
+        className="primary"
+        style={{ width: "100%" }}
+        onClick={() => void openSidePanel()}
+      >
         Open side panel
       </button>
       <h2
