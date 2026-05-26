@@ -27,7 +27,11 @@ export function SamAttachments({
   const [items, setItems] = useState<OpportunityAttachment[] | null>(null);
 
   useEffect(() => {
-    fetchLastAttachments().then((a) => setItems(a));
+    // .catch so an unreachable background SW doesn't surface as an
+    // unhandled promise rejection. Treat any failure as "no attachments".
+    fetchLastAttachments()
+      .then((a) => setItems(a))
+      .catch(() => setItems([]));
   }, []);
 
   if (items === null) return null;
