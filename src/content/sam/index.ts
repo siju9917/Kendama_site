@@ -33,6 +33,14 @@ function inject(): void {
     cursor: "pointer",
     boxShadow: "0 4px 12px rgba(20,24,31,0.18)",
   } satisfies Partial<CSSStyleDeclaration>);
+  // Lightweight hover state — no stylesheet is available in the page
+  // context, so toggle inline.
+  btn.addEventListener("mouseenter", () => {
+    btn.style.background = "#1746a8";
+  });
+  btn.addEventListener("mouseleave", () => {
+    btn.style.background = "#1f5cd6";
+  });
   btn.addEventListener("click", async () => {
     let attachments: Awaited<ReturnType<typeof integration.findAttachments>> = [];
     try {
