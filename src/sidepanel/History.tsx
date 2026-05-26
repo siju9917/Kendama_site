@@ -40,7 +40,12 @@ export function History({ storage, onOpen }: Props): React.ReactElement | null {
         ? window.confirm(`Delete the diff for "${label}"? This cannot be undone.`)
         : true;
     if (!ok) return;
-    await storage.deleteDiff(id);
+    try {
+      await storage.deleteDiff(id);
+    } catch {
+      // Delete failures are rare; on failure just refresh the list
+      // so the user sees the actual state.
+    }
     refresh();
   };
 
