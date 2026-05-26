@@ -120,7 +120,12 @@ export function DiffView({ result }: Props): React.ReactElement {
     const c = filtered[focusedIndex];
     if (!c) return;
     const el = document.querySelector<HTMLElement>(`[data-change-id="${c.id}"]`);
-    el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    // Respect prefers-reduced-motion explicitly — browsers usually do
+    // this for scrollIntoView already, but not all versions.
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    el?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "nearest" });
   }, [focusedIndex, filtered]);
 
   const reviewedCount = filtered.filter((c) => reviewed.has(c.id)).length;
