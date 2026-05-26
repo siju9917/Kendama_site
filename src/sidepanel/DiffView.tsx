@@ -166,6 +166,12 @@ export function DiffView({ result }: Props): React.ReactElement {
         <button
           className={`filter-chip ${filter === "CRITICAL" ? "filter-chip--active" : ""}`}
           onClick={() => setFilter("CRITICAL")}
+          disabled={result.criticalCount === 0}
+          title={
+            result.criticalCount === 0
+              ? "No critical changes in this diff"
+              : `Show only the ${result.criticalCount} critical change${result.criticalCount === 1 ? "" : "s"}`
+          }
         >
           Critical ({result.criticalCount})
         </button>

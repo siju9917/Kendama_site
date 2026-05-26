@@ -32,6 +32,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 export function Summary({ result }: Props): React.ReactElement {
   const totalChanges = result.changes.length;
   const [feedback, setFeedback] = useState<string>("");
+  const [busy, setBusy] = useState<"" | "pdf" | "text" | "md">("");
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     return () => {
@@ -51,6 +52,8 @@ export function Summary({ result }: Props): React.ReactElement {
   };
 
   const onExportPdf = async (): Promise<void> => {
+    if (busy) return;
+    setBusy("pdf");
     try {
       const blob = await exportPdfReport(result);
       const url = URL.createObjectURL(blob);
@@ -61,29 +64,42 @@ export function Summary({ result }: Props): React.ReactElement {
       document.body.appendChild(a);
       a.click();
       a.remove();
-      URL.revokeObjectURL(url);
+      // Defer revoke so the browser has a moment to actually fetch
+      // the blob URL — revoking synchronously can cancel the download
+      // in some browser/version combinations.
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
       flash("PDF downloaded");
     } catch (e) {
       console.error("Export failed:", e);
       flash("Export failed — see console");
+    } finally {
+      setBusy("");
     }
   };
   const onCopyText = async (): Promise<void> => {
+    if (busy) return;
+    setBusy("text");
     try {
       await copySummaryToClipboard(result);
       flash("Summary copied");
     } catch (e) {
       console.error("Copy failed:", e);
       flash("Copy failed — check clipboard permission");
+    } finally {
+      setBusy("");
     }
   };
   const onCopyMarkdown = async (): Promise<void> => {
+    if (busy) return;
+    setBusy("md");
     try {
       await copyMarkdownToClipboard(result);
       flash("Markdown copied");
     } catch (e) {
       console.error("Copy failed:", e);
       flash("Copy failed — check clipboard permission");
+    } finally {
+      setBusy("");
     }
   };
 
@@ -92,14 +108,27 @@ export function Summary({ result }: Props): React.ReactElement {
       <div className="summary__head">
         <h2 className="summary__title">Summary</h2>
         <div className="summary__actions">
-          <button className="primary" onClick={onExportPdf}>
-            Export PDF
+          <button
+            className="primary"
+            onClick={onExportPdf}
+            disabled={busy !== ""}
+            title="Export the full diff report as a PDF"
+          >
+            {busy === "pdf" ? "Exporting…" : "Export PDF"}
           </button>
-          <button onClick={onCopyText} title="Copy a plain-text summary to the clipboard">
-            Copy text
+          <button
+            onClick={onCopyText}
+            disabled={busy !== ""}
+            title="Copy a plain-text summary to the clipboard"
+          >
+            {busy === "text" ? "Copying…" : "Copy text"}
           </button>
-          <button onClick={onCopyMarkdown} title="Copy as Markdown for Slack / GitHub / Notion">
-            Copy Markdown
+          <button
+            onClick={onCopyMarkdown}
+            disabled={busy !== ""}
+            title="Copy as Markdown for Slack / GitHub / Notion"
+          >
+            {busy === "md" ? "Copying…" : "Copy Markdown"}
           </button>
         </div>
       </div>
