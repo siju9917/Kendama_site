@@ -62,9 +62,20 @@ export interface PdfTextContentItem {
   fontName?: string;
 }
 
+export interface ExtractOptions {
+  /**
+   * Called after each page completes with (pagesDone, totalPages).
+   * For a 200-page PDF without this, the progress bar sits at one
+   * percent for a long time; with it, the caller can show per-page
+   * movement.
+   */
+  onPageProgress?: (pagesDone: number, totalPages: number) => void;
+}
+
 export async function extractPdfTextItems(
   pdfjs: PdfJsLike,
   buffer: ArrayBuffer,
+  opts: ExtractOptions = {},
 ): Promise<PdfTextExtractResult> {
   const data = new Uint8Array(buffer);
   const loadingTask = pdfjs.getDocument({ data, disableFontFace: true, isEvalSupported: false });
@@ -98,6 +109,7 @@ export async function extractPdfTextItems(
         fontSize: fontSize || null,
       });
     }
+    opts.onPageProgress?.(p, doc.numPages);
   }
 
   await doc.destroy?.();

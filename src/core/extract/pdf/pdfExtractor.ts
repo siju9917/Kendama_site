@@ -9,14 +9,17 @@ import type { StructuredDocument } from "../../model/types.js";
 import { buildDocument, emptyMetadata } from "../../model/build.js";
 import { shortHash } from "../../../shared/hash.js";
 import { isPdfEncrypted, validateInput } from "../validate.js";
-import { extractPdfTextItems, type PdfJsLike } from "./extract.js";
+import { extractPdfTextItems, type ExtractOptions, type PdfJsLike } from "./extract.js";
 import { itemsToRawLines } from "./reconstruct.js";
 import { sectionsFromRawLines } from "../sections/assemble.js";
 import { enrichStructuredDocument, computeOverallConfidence } from "../normalize.js";
 import { computeModalFontSize } from "../sections/headings.js";
 
 export class PdfExtractor implements IExtractor {
-  constructor(private readonly pdfjs: PdfJsLike) {}
+  constructor(
+    private readonly pdfjs: PdfJsLike,
+    private readonly opts: ExtractOptions = {},
+  ) {}
 
   async canHandle(file: ArrayBuffer): Promise<boolean> {
     try {
@@ -39,7 +42,7 @@ export class PdfExtractor implements IExtractor {
 
     let result;
     try {
-      result = await extractPdfTextItems(this.pdfjs, file);
+      result = await extractPdfTextItems(this.pdfjs, file, this.opts);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       // Common PDF.js failures: corrupt, missing xref, invalid trailer.

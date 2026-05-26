@@ -42,12 +42,16 @@ function loadPdfJs(): Promise<PdfJsLike> {
   return pdfjsPromise;
 }
 
-async function makeExtractor(bytes: ArrayBuffer, fileName: string): Promise<IExtractor> {
+async function makeExtractor(
+  bytes: ArrayBuffer,
+  fileName: string,
+  onPageProgress?: (pagesDone: number, total: number) => void,
+): Promise<IExtractor> {
   const kind = validateInput(bytes, fileName);
   if (kind === "PDF") {
     const pdfjs = await loadPdfJs();
     const { PdfExtractor } = await import("../core/extract/pdf/pdfExtractor.js");
-    return new PdfExtractor(pdfjs);
+    return new PdfExtractor(pdfjs, { onPageProgress });
   }
   const { DocxExtractor } = await import("../core/extract/docx/docxExtractor.js");
   return new DocxExtractor();
@@ -63,11 +67,19 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   const job = msg;
   void (async () => {
     try {
+      // Split the 10→45 and 45→75 progress windows across PDF pages so
+      // the bar moves smoothly during long extractions.
       progress(job.jobId, "Reading the new version…", 10);
-      const currentExt = await makeExtractor(job.currentBytes, job.currentName);
+      const currentExt = await makeExtractor(job.currentBytes, job.currentName, (done, total) => {
+        const pct = 10 + Math.round((done / total) * 35);
+        progress(job.jobId, `Reading the new version… (page ${done}/${total})`, pct);
+      });
       const currentDoc = await currentExt.extract(job.currentBytes, job.currentName);
       progress(job.jobId, "Reading the prior version…", 45);
-      const priorExt = await makeExtractor(job.priorBytes, job.priorName);
+      const priorExt = await makeExtractor(job.priorBytes, job.priorName, (done, total) => {
+        const pct = 45 + Math.round((done / total) * 30);
+        progress(job.jobId, `Reading the prior version… (page ${done}/${total})`, pct);
+      });
       const priorDoc = await priorExt.extract(job.priorBytes, job.priorName);
       progress(job.jobId, "Diffing…", 75);
       const engine = new DiffEngine(new LocalClauseClient());

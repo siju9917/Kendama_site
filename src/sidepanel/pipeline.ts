@@ -131,6 +131,7 @@ async function runLocalFallback(
   // so the caller doesn't pay arrayBuffer() twice on the same File.
   async function makeExtractorFor(
     file: File,
+    onPageProgress?: (done: number, total: number) => void,
   ): Promise<{ ext: import("../core/interfaces.js").IExtractor; buf: ArrayBuffer }> {
     const buf = await file.arrayBuffer();
     const kind = validateInput(buf, file.name);
@@ -144,19 +145,23 @@ async function runLocalFallback(
       }
       const { PdfExtractor } = await import("../core/extract/pdf/pdfExtractor.js");
       const pdfjs = mod as unknown as import("../core/extract/pdf/extract.js").PdfJsLike;
-      return { ext: new PdfExtractor(pdfjs), buf };
+      return { ext: new PdfExtractor(pdfjs, { onPageProgress }), buf };
     }
     const { DocxExtractor } = await import("../core/extract/docx/docxExtractor.js");
     return { ext: new DocxExtractor(), buf };
   }
 
   onProgress("Reading the new version…", 10);
-  const cur = await makeExtractorFor(currentFile);
+  const cur = await makeExtractorFor(currentFile, (done, total) => {
+    onProgress(`Reading the new version… (page ${done}/${total})`, 10 + Math.round((done / total) * 35));
+  });
   const currentDoc = await cur.ext.extract(cur.buf, currentFile.name);
   if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
 
   onProgress("Reading the prior version…", 45);
-  const pri = await makeExtractorFor(priorFile);
+  const pri = await makeExtractorFor(priorFile, (done, total) => {
+    onProgress(`Reading the prior version… (page ${done}/${total})`, 45 + Math.round((done / total) * 30));
+  });
   const priorDoc = await pri.ext.extract(pri.buf, priorFile.name);
   if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
 
