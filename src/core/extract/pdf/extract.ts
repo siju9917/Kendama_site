@@ -109,7 +109,13 @@ export async function extractPdfTextItems(
         fontSize: fontSize || null,
       });
     }
-    opts.onPageProgress?.(p, doc.numPages);
+    // Progress callback errors must not abort extraction or surface as
+    // a CORRUPT error to the user.
+    try {
+      opts.onPageProgress?.(p, doc.numPages);
+    } catch {
+      /* best-effort progress */
+    }
   }
 
   await doc.destroy?.();
