@@ -94,6 +94,9 @@ function Options(): React.ReactElement {
         <h2>License key</h2>
         <input
           type="text"
+          autoComplete="off"
+          spellCheck={false}
+          aria-label="License key"
           value={settings.licenseKey}
           onChange={(e) => save({ ...settings, licenseKey: e.target.value })}
           placeholder="Paste license key (or leave blank for trial)"

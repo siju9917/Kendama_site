@@ -171,6 +171,8 @@ export function DiffView({ result }: Props): React.ReactElement {
           type="search"
           placeholder="Filter by text…  (press / to focus)"
           aria-label="Filter changes by text"
+          autoComplete="off"
+          spellCheck={false}
           value={textFilter}
           onChange={(e) => setTextFilter(e.target.value)}
         />
