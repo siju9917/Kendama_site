@@ -217,6 +217,9 @@ export function prewarmPipeline(): void {
         import("../core/clauses/client.js"),
         import("pdfjs-dist/legacy/build/pdf.mjs"),
         import("../core/extract/pdf/pdfExtractor.js"),
+        // DOCX extractor — small bundle, but preloading it means a
+        // user picking a .docx first doesn't pay the import latency.
+        import("../core/extract/docx/docxExtractor.js"),
       ]);
     } catch {
       /* prewarm is best-effort */
