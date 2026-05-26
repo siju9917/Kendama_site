@@ -180,8 +180,9 @@ input[type="text"]:focus-visible {
   border-bottom: 1px solid var(--border);
   padding: var(--space-3) var(--space-4);
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
   background: var(--bg-elev);
   /* No sticky — the header is a sibling of .app__body, not inside it.
      The filter-bar inside .app__body has its own sticky behavior. */
@@ -327,6 +328,7 @@ input[type="text"]:focus-visible {
 }
 .summary__head {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--space-2);
@@ -339,6 +341,7 @@ input[type="text"]:focus-visible {
 }
 .summary__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-2);
 }
 .summary__stats {
@@ -527,6 +530,7 @@ input[type="text"]:focus-visible {
 }
 .change__footer {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 4px;
   margin-top: var(--space-2);
