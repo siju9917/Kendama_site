@@ -17,6 +17,11 @@ const CATEGORY_LABELS: Record<string, string> = {
   OTHER: "Other",
 };
 
+function prettyGeneratedAt(iso: string): string {
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? iso : `${d.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+}
+
 export function buildSummaryText(result: DiffResult): string {
   const lines: string[] = [];
   lines.push("BidDiff — Solicitation Amendment Comparison");
@@ -24,7 +29,7 @@ export function buildSummaryText(result: DiffResult): string {
     lines.push(`Solicitation: ${result.currentDoc.solicitationId}`);
   }
   lines.push(`Compared: ${result.currentDoc.sourceFileName} vs. ${result.priorDoc.sourceFileName}`);
-  if (result.generatedAt) lines.push(`Generated: ${result.generatedAt}`);
+  if (result.generatedAt) lines.push(`Generated: ${prettyGeneratedAt(result.generatedAt)}`);
   lines.push("");
   lines.push(`Total changes: ${result.changes.length}`);
   lines.push(`Critical:      ${result.criticalCount}`);
@@ -130,7 +135,7 @@ export function buildSummaryMarkdown(result: DiffResult): string {
     lines.push(`**Solicitation:** \`${result.currentDoc.solicitationId}\``);
   }
   lines.push(`**Compared:** \`${result.currentDoc.sourceFileName}\` vs. \`${result.priorDoc.sourceFileName}\``);
-  if (result.generatedAt) lines.push(`**Generated:** ${result.generatedAt}`);
+  if (result.generatedAt) lines.push(`**Generated:** ${prettyGeneratedAt(result.generatedAt)}`);
   lines.push("");
   lines.push(`- **Total changes:** ${result.changes.length}`);
   lines.push(`- **Critical:** ${result.criticalCount}`);
@@ -351,15 +356,9 @@ export async function exportPdfReport(result: DiffResult, fileName?: string): Pr
   }
   drawWrapped(`Compared: ${result.currentDoc.sourceFileName} vs. ${result.priorDoc.sourceFileName}`);
   if (result.generatedAt) {
-    // Render in a friendlier-but-still-host-independent form. The raw
-    // ISO ("2026-05-26T18:00:00.000Z") is cluttered for a report
-    // header; toLocaleString would be friendliest but depends on the
-    // viewer's locale, which would break cross-host byte equality.
-    const d = new Date(result.generatedAt);
-    const pretty = isNaN(d.getTime())
-      ? result.generatedAt
-      : `${d.toISOString().slice(0, 16).replace("T", " ")} UTC`;
-    drawWrapped(`Generated: ${pretty}`, { color: [0.36, 0.4, 0.45] });
+    drawWrapped(`Generated: ${prettyGeneratedAt(result.generatedAt)}`, {
+      color: [0.36, 0.4, 0.45],
+    });
   }
   space(12);
 
