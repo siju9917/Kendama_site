@@ -23,7 +23,28 @@ interface DocxParagraph {
   isList: boolean;
 }
 
+// Compound File Binary header — used by legacy .doc and by encrypted
+// .docx envelopes. If we see this, the file isn't a regular zip-based
+// .docx and JSZip will fail to open it.
+const CFB_MAGIC = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1];
+
+function startsWithCfbMagic(bytes: Uint8Array): boolean {
+  if (bytes.length < CFB_MAGIC.length) return false;
+  for (let i = 0; i < CFB_MAGIC.length; i++) {
+    if (bytes[i] !== CFB_MAGIC[i]) return false;
+  }
+  return true;
+}
+
 async function unzipDocxToParagraphs(file: ArrayBuffer): Promise<DocxParagraph[]> {
+  // Detect encrypted .docx (delivered as a CFB envelope) before letting
+  // JSZip throw a generic 'could not be opened' error.
+  if (startsWithCfbMagic(new Uint8Array(file))) {
+    throw new ExtractionError(
+      "ENCRYPTED",
+      "This Word document is password-protected. Save an unprotected copy and try again.",
+    );
+  }
   let zip: JSZip;
   try {
     zip = await JSZip.loadAsync(file);
