@@ -15,6 +15,8 @@ import { ChangeCard } from "./ChangeCard.js";
 import { Summary } from "./Summary.js";
 import { FilePicker } from "./FilePicker.js";
 import { History } from "./History.js";
+import { Onboarding } from "./Onboarding.js";
+import { ReviewPrompt, noteDiffSucceeded } from "./ReviewPrompt.js";
 import { SamAttachments } from "./SamAttachments.js";
 import { DISCLAIMER_TEXT } from "../shared/disclaimer.js";
 import { DiffStorage } from "../core/storage/index.js";
@@ -142,6 +144,8 @@ export function App(): React.ReactElement {
           setState((s) => ({ ...s, loadingNote: note }));
         });
         await persistDiff(result);
+        // Track for the review prompt (Phase 7.8).
+        void noteDiffSucceeded();
         setState({ phase: "DONE", result, error: null, loadingNote: "" });
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
@@ -190,6 +194,7 @@ export function App(): React.ReactElement {
 
         {state.phase === "EMPTY" && (
           <>
+            <Onboarding />
             <FilePickerWithSam onRun={onRun} />
             <History storage={storage} onOpen={onOpenSaved} />
           </>
@@ -210,6 +215,7 @@ export function App(): React.ReactElement {
 
         {state.phase === "DONE" && state.result && (
           <>
+            <ReviewPrompt />
             <Summary result={state.result} />
             <div className="filters">
               <button
