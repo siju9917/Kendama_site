@@ -18,18 +18,23 @@ import {
 } from "../shared/messages.js";
 import { postRuntime } from "../shared/chrome-rt.js";
 
-let pdfjsCache: PdfJsLike | null = null;
-async function loadPdfJs(): Promise<PdfJsLike> {
-  if (pdfjsCache) return pdfjsCache;
-  const mod = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  try {
-    const workerUrl = new URL("pdfjs-dist/legacy/build/pdf.worker.mjs", import.meta.url);
-    mod.GlobalWorkerOptions.workerSrc = workerUrl.href;
-  } catch {
-    /* ignore */
+// Cache the promise (not the resolved value) so concurrent first
+// invocations share a single load, avoiding redundant worker setup.
+let pdfjsPromise: Promise<PdfJsLike> | null = null;
+function loadPdfJs(): Promise<PdfJsLike> {
+  if (!pdfjsPromise) {
+    pdfjsPromise = (async () => {
+      const mod = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      try {
+        const workerUrl = new URL("pdfjs-dist/legacy/build/pdf.worker.mjs", import.meta.url);
+        mod.GlobalWorkerOptions.workerSrc = workerUrl.href;
+      } catch {
+        /* ignore */
+      }
+      return mod as unknown as PdfJsLike;
+    })();
   }
-  pdfjsCache = mod as unknown as PdfJsLike;
-  return pdfjsCache;
+  return pdfjsPromise;
 }
 
 async function makeExtractor(bytes: ArrayBuffer, fileName: string): Promise<IExtractor> {

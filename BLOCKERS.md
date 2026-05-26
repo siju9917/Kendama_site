@@ -12,6 +12,13 @@ by code. Each is stubbed behind an interface so the build proceeds.
 - [ ] **Cloud deployment credentials.** Serverless host + managed DB. Stub: `server/` contains the implementation and deployment config but is not deployed.
 - [ ] **Domain registration & DNS.** For the marketing site and licensing API endpoint.
 - [ ] **Privacy policy / ToS legal review.** Drafts are written but should be reviewed by counsel before publication.
+- [ ] **Add the production API endpoint to manifest `host_permissions`.**
+      The license-validation, telemetry, and opt-in OCR fetches need a
+      reachable origin. Once the API URL is decided (e.g.
+      `https://api.biddiff.com/*`), add it to `manifest.config.ts`
+      and replace the `biddiff.example` placeholder in
+      `TelemetryClient` and the license client so the extension can
+      call the deployed backend.
 - [ ] **Chrome Web Store submission.** Submission itself requires a human at the developer dashboard.
 
 ## In-progress investigations (NOT blockers, just to track)

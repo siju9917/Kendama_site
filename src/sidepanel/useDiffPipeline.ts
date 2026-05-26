@@ -106,15 +106,29 @@ export function useDiffPipeline(): {
 
   const openSaved = useCallback(
     async (id: string): Promise<void> => {
-      const r = await storage.getDiff(id);
-      if (r) {
-        await storage.markViewed(id);
+      try {
+        const r = await storage.getDiff(id);
+        if (r) {
+          await storage.markViewed(id);
+          setState({
+            phase: "DONE",
+            result: r,
+            error: null,
+            loadingNote: "",
+            loadingPercent: 100,
+          });
+        }
+      } catch (e) {
+        // Corrupt stored payload (JSON parse error, schema mismatch,
+        // missing fields). Surface as an error rather than crashing the
+        // side panel — and offer to remove the bad entry.
+        const msg = e instanceof Error ? e.message : String(e);
         setState({
-          phase: "DONE",
-          result: r,
-          error: null,
+          phase: "ERROR",
+          result: null,
+          error: `Couldn't open that saved diff (${msg}). Try deleting it from history.`,
           loadingNote: "",
-          loadingPercent: 100,
+          loadingPercent: 0,
         });
       }
     },

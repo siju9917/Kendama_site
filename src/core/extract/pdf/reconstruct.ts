@@ -219,9 +219,12 @@ export function mergeCrossPageContinuations(lines: ReadonlyArray<RawLine>): RawL
     ) {
       out[out.length - 1] = {
         text: prev.text.replace(/-$/, "") + (prev.text.endsWith("-") ? "" : " ") + line.text,
+        // Track the LATEST page of the merged run so a paragraph that
+        // continues across 3+ pages chains correctly (next-line check
+        // is `line.page === prev.page + 1`).
+        page: line.page,
         fontSize: prev.fontSize,
         bold: prev.bold,
-        page: prev.page,
       };
     } else {
       out.push(line);

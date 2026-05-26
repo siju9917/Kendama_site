@@ -8,7 +8,7 @@ export default defineManifest({
   description:
     "Diff amended U.S. federal solicitations against prior versions. Categorized changes, critical-flagged, on-device.",
   permissions: ["storage", "sidePanel", "offscreen"],
-  host_permissions: ["*://sam.gov/*", "*://*.sam.gov/*"],
+  host_permissions: ["https://sam.gov/*", "https://*.sam.gov/*"],
   // Explicit Content Security Policy. MV3 defaults already prohibit
   // remote script and inline execution; we restate it here so a future
   // manifest edit can't accidentally loosen it.
@@ -37,7 +37,7 @@ export default defineManifest({
   ],
   content_scripts: [
     {
-      matches: ["*://sam.gov/*", "*://*.sam.gov/*"],
+      matches: ["https://sam.gov/*", "https://*.sam.gov/*"],
       js: ["src/content/sam/index.ts"],
       run_at: "document_idle",
     },
