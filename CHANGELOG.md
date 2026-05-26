@@ -85,7 +85,9 @@
 
 ### Build integrity at code-completion
 
-- 206 tests passing across 37 files.
+- 217 tests passing across 37 files (incl. dark-mode contrast,
+  concurrent-saves serialization, no-advisory UI scan, History delete
+  confirm/cancel).
 - TypeScript strict; ESLint `max-warnings=0`; Prettier enforced.
 - Production extension build clean.
 - All architectural rules enforced by tests (SAM-selector isolation,

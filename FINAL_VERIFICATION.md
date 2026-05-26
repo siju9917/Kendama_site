@@ -8,7 +8,7 @@ Last run: 2026-05-26.
 | -------------------------------------------------------- | --------- |
 | `npm run typecheck`                                      | clean     |
 | `npm run lint`                                           | clean     |
-| `npm test` — unit + integration + components             | 211/211   |
+| `npm test` — unit + integration + components             | 217/217   |
 | `npm run build`                                          | clean     |
 | `scripts/package.sh` — production zip                    | 1.7 MB    |
 

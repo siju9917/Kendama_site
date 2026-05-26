@@ -7,7 +7,7 @@ the final list at the bottom of this document.
 
 | Metric | Result |
 | --- | --- |
-| Tests | 211 / 211 passing across 37 files |
+| Tests | 217 / 217 passing across 37 files |
 | Typecheck | clean (strict mode) |
 | Lint | clean (`max-warnings=0`) |
 | Extension build | clean — 1.8 MB `dist-zips/biddiff-v0.1.0.zip` |
