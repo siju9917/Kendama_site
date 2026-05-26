@@ -79,6 +79,13 @@ export function useDiffPipeline(): {
           await storage.saveDiff(result);
         } catch (e) {
           console.warn("save failed:", e);
+          // Surface to the user so they know this diff won't appear
+          // in History. The result is still shown; only persistence
+          // failed (typically a chrome.storage quota error).
+          result.warnings = [
+            ...result.warnings,
+            "Couldn't save this diff to history (local storage may be full).",
+          ];
         }
         // .catch swallows so a transient storage error in the review
         // counter doesn't surface as an unhandled rejection.
