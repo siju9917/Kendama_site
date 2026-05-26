@@ -54,7 +54,11 @@ export function App(): React.ReactElement {
         {disclaimerShown && (
           <p className="disclaimer">
             {DISCLAIMER_TEXT}{" "}
-            <button className="disclaimer__toggle" onClick={() => void dismissDisclaimer()}>
+            <button
+              className="disclaimer__toggle"
+              onClick={() => void dismissDisclaimer()}
+              aria-label="Hide the disclaimer (can be restored from Settings)"
+            >
               Hide
             </button>
           </p>

@@ -5,6 +5,8 @@ import { ChangeCard } from "./ChangeCard.js";
 import { ReviewPrompt } from "./ReviewPrompt.js";
 import { Summary } from "./Summary.js";
 
+const kv = makeKv(); // module-singleton; safe because makeKv handles both Chrome and Memory backends.
+
 const TIP_SEEN_KEY = "biddiff.tip.kbd.seen";
 
 interface Props {
@@ -89,12 +91,10 @@ export function DiffView({ result }: Props): React.ReactElement {
   const reviewedCount = filtered.filter((c) => reviewed.has(c.id)).length;
   const [tipSeen, setTipSeen] = useState<boolean | null>(null);
   useEffect(() => {
-    makeKv()
-      .get<boolean>(TIP_SEEN_KEY)
-      .then((v) => setTipSeen(!!v));
+    kv.get<boolean>(TIP_SEEN_KEY).then((v) => setTipSeen(!!v));
   }, []);
   const dismissTip = (): void => {
-    void makeKv().set(TIP_SEEN_KEY, true);
+    void kv.set(TIP_SEEN_KEY, true);
     setTipSeen(true);
   };
   const hasActiveFilter = filter !== "ALL" || sectionFilter !== "ALL" || textFilter.trim().length > 0;
@@ -107,6 +107,16 @@ export function DiffView({ result }: Props): React.ReactElement {
   return (
     <>
       <ReviewPrompt />
+      {result.warnings.length > 0 && (
+        <div className="warning-banner" role="status" aria-live="polite">
+          <div className="warning-banner__title">Extraction notes</div>
+          <ul className="reset-list" style={{ paddingLeft: 18, margin: 0 }}>
+            {result.warnings.map((w, i) => (
+              <li key={i}>{w}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <Summary result={result} />
       <div className="filter-bar">
       <div className="filters">

@@ -54,6 +54,15 @@ async function unzipDocxToParagraphs(file: ArrayBuffer): Promise<DocxParagraph[]
  *     the cell texts joined by " | " (matches the canonical TABLE_ROW
  *     format the synthetic corpus uses). The paragraph's styleName is
  *     "TableRow" so downstream code can route it to BlockType=TABLE_ROW.
+ *
+ * Known limitation: nested tables (a `<w:tbl>` inside a `<w:tc>` cell)
+ * parse approximately — the outer-row regex grabs through the FIRST
+ * closing `</w:tbl>` and may miss outer-table content past the nested
+ * table. Real federal solicitations virtually never use nested tables;
+ * the rare case where they do, the inner content still surfaces (as
+ * paragraphs) so anchors and changes are still detected — but the
+ * outer/inner row association may be lost. If real-world cases require
+ * tighter handling, swap to a stack-based parser or DOMParser.
  */
 export function parseDocumentXml(xml: string): DocxParagraph[] {
   const paragraphs: DocxParagraph[] = [];

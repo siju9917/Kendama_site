@@ -71,20 +71,44 @@ describe("History", () => {
     });
   });
 
-  it("opens a diff on click and removes it on delete", async () => {
+  it("opens a diff on click and removes it on delete (with confirm)", async () => {
     const storage = new DiffStorage();
     await storage.saveDiff(fakeResult("d1"));
     const onOpen = vi.fn();
-    render(<History storage={storage} onOpen={onOpen} />);
-    await waitFor(() => screen.getByText("d1-current.pdf"));
+    // Stub the confirm so the test runs deterministically.
+    const realConfirm = window.confirm;
+    window.confirm = () => true;
+    try {
+      render(<History storage={storage} onOpen={onOpen} />);
+      await waitFor(() => screen.getByText("d1-current.pdf"));
 
-    fireEvent.click(screen.getByText("d1-current.pdf"));
-    expect(onOpen).toHaveBeenCalledWith("d1");
+      fireEvent.click(screen.getByText("d1-current.pdf"));
+      expect(onOpen).toHaveBeenCalledWith("d1");
 
-    fireEvent.click(screen.getByLabelText(/Delete this diff/i));
-    await waitFor(async () => {
-      expect(await storage.getDiff("d1")).toBeNull();
-    });
+      fireEvent.click(screen.getByLabelText(/Delete this diff/i));
+      await waitFor(async () => {
+        expect(await storage.getDiff("d1")).toBeNull();
+      });
+    } finally {
+      window.confirm = realConfirm;
+    }
+  });
+
+  it("does not delete when the user cancels the confirm", async () => {
+    const storage = new DiffStorage();
+    await storage.saveDiff(fakeResult("d2"));
+    const realConfirm = window.confirm;
+    window.confirm = () => false;
+    try {
+      render(<History storage={storage} onOpen={() => {}} />);
+      await waitFor(() => screen.getByText("d2-current.pdf"));
+      fireEvent.click(screen.getByLabelText(/Delete this diff/i));
+      // Give the rejection a tick to settle.
+      await new Promise((r) => setTimeout(r, 0));
+      expect(await storage.getDiff("d2")).not.toBeNull();
+    } finally {
+      window.confirm = realConfirm;
+    }
   });
 
   it("marks unseen diffs with a visible dot", async () => {

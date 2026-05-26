@@ -5,10 +5,7 @@
  */
 import React, { useEffect, useState } from "react";
 import type { OpportunityAttachment } from "../core/interfaces.js";
-import type {
-  GetLastAttachmentsMsg,
-  LastAttachmentsResponse,
-} from "../shared/messages.js";
+import type { LastAttachmentsResponse } from "../shared/messages.js";
 
 interface Props {
   onChooseCurrent: (attachment: OpportunityAttachment) => void;
@@ -16,22 +13,11 @@ interface Props {
 }
 
 async function fetchLastAttachments(): Promise<OpportunityAttachment[]> {
-  return new Promise((resolve) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const api = (globalThis as any).chrome;
-    if (!api?.runtime?.sendMessage) {
-      resolve([]);
-      return;
-    }
-    try {
-      const msg: GetLastAttachmentsMsg = { kind: "biddiff/get-last-attachments" };
-      api.runtime.sendMessage(msg, (resp: LastAttachmentsResponse | undefined) => {
-        resolve(resp?.attachments ?? []);
-      });
-    } catch {
-      resolve([]);
-    }
+  const { sendRuntime } = await import("../shared/chrome-rt.js");
+  const resp = await sendRuntime<LastAttachmentsResponse>({
+    kind: "biddiff/get-last-attachments",
   });
+  return resp?.attachments ?? [];
 }
 
 export function SamAttachments({ onChooseCurrent, onChoosePrior }: Props): React.ReactElement | null {

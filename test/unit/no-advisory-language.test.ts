@@ -72,4 +72,46 @@ describe("No advisory language in BidDiff-authored prose", () => {
       expect(re.test(txt)).toBe(false);
     }
   });
+
+  it("dynamic engine warnings do not advise", () => {
+    // The diff engine pushes warning strings into DiffResult.warnings.
+    // Those strings appear in the side-panel UI and in exports. They
+    // must report, not advise.
+    const txt = readSafe(path.join(ROOT, "src", "core", "diff", "engine.ts"));
+    for (const re of FORBIDDEN_PHRASES) {
+      expect(re.test(txt)).toBe(false);
+    }
+  });
+
+  it("UI JSX strings and tooltips do not advise", () => {
+    // Walk the entire side-panel + popup + options tree and grep each
+    // file for advisory phrasing. This catches a stale tooltip
+    // ('please ensure...') that would slip past the disclaimer test.
+    const uiDirs = ["sidepanel", "popup", "options"];
+    const files: string[] = [];
+    for (const d of uiDirs) {
+      const dir = path.join(ROOT, "src", d);
+      if (!fs.existsSync(dir)) continue;
+      walkSrcDir(dir, files);
+    }
+    for (const f of files) {
+      if (f.endsWith(".test.tsx") || f.endsWith(".test.ts")) continue;
+      const txt = readSafe(f);
+      for (const re of FORBIDDEN_PHRASES) {
+        expect(
+          re.test(txt),
+          `${path.relative(ROOT, f)} contains advisory phrasing matching ${re}`,
+        ).toBe(false);
+      }
+    }
+  });
 });
+
+function walkSrcDir(dir: string, out: string[]): void {
+  for (const name of fs.readdirSync(dir)) {
+    const p = path.join(dir, name);
+    const st = fs.statSync(p);
+    if (st.isDirectory()) walkSrcDir(p, out);
+    else if (/\.(ts|tsx)$/.test(p)) out.push(p);
+  }
+}

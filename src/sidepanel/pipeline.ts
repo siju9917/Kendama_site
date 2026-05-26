@@ -43,6 +43,9 @@ class OffscreenJobError extends Error {
   }
 }
 
+/** Hard upper bound on a single diff. 5 minutes is generous even for 1000-page docs. */
+const OFFSCREEN_TIMEOUT_MS = 5 * 60 * 1000;
+
 async function runViaOffscreen(
   current: File,
   prior: File,
@@ -59,10 +62,23 @@ async function runViaOffscreen(
     const settle = (fn: () => void): void => {
       if (settled) return;
       settled = true;
+      clearTimeout(timeoutHandle);
       chrome.runtime.onMessage.removeListener(handler);
       if (signal) signal.removeEventListener("abort", abortHandler);
       fn();
     };
+    // Safety net: if the offscreen document errors silently and never
+    // posts a result, the user must not be stuck on a spinner forever.
+    const timeoutHandle = setTimeout(() => {
+      settle(() =>
+        reject(
+          new OffscreenJobError(
+            "TIMEOUT",
+            "Processing took longer than expected. Try smaller files or reopen the side panel.",
+          ),
+        ),
+      );
+    }, OFFSCREEN_TIMEOUT_MS);
     const handler = (m: unknown): void => {
       if (!isBidDiffMessage(m)) return;
       if (!("jobId" in m) || m.jobId !== jobId) return;

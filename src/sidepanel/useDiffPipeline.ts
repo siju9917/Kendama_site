@@ -3,7 +3,7 @@
  * machine. Pulled out of App.tsx so the App component is small enough to
  * read at a glance.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DiffResult } from "../core/diff/types.js";
 import { prewarmPipeline, runDiffPipeline } from "./pipeline.js";
 import { DiffStorage } from "../core/storage/index.js";
@@ -36,9 +36,8 @@ export function useDiffPipeline(): {
 } {
   const [state, setState] = useState<UiState>(INITIAL_STATE);
   const abortRef = useRef<AbortController | null>(null);
-  const storageRef = useRef<DiffStorage | null>(null);
-  if (!storageRef.current) storageRef.current = new DiffStorage();
-  const storage = storageRef.current;
+  // useMemo gives us a stable instance without the if-block init pattern.
+  const storage = useMemo(() => new DiffStorage(), []);
 
   useEffect(() => {
     // Prewarm the heavy import graph (PDF.js, diff engine, extractors)

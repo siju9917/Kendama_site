@@ -33,7 +33,13 @@ export function History({ storage, onOpen }: Props): React.ReactElement | null {
 
   useEffect(refresh, [refresh]);
 
-  const onDelete = async (id: string): Promise<void> => {
+  const onDelete = async (id: string, label: string): Promise<void> => {
+    // No undo, so confirm before deleting.
+    const ok =
+      typeof window !== "undefined"
+        ? window.confirm(`Delete the diff for "${label}"? This cannot be undone.`)
+        : true;
+    if (!ok) return;
     await storage.deleteDiff(id);
     refresh();
   };
@@ -54,11 +60,13 @@ export function History({ storage, onOpen }: Props): React.ReactElement | null {
               role="button"
               onClick={() => onOpen(s.id)}
               onKeyDown={(e) => {
+                // Enter / Space opens. Deletion is intentionally NOT bound
+                // to Delete/Backspace because it's destructive and there
+                // would be no undo — the explicit ✕ button is the only
+                // delete affordance.
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   onOpen(s.id);
-                } else if (e.key === "Delete" || e.key === "Backspace") {
-                  void onDelete(s.id);
                 }
               }}
               aria-label={`Open diff: ${s.solicitationId ?? s.currentFileName}`}
@@ -87,7 +95,7 @@ export function History({ storage, onOpen }: Props): React.ReactElement | null {
                 title="Delete"
                 onClick={(e) => {
                   e.stopPropagation();
-                  void onDelete(s.id);
+                  void onDelete(s.id, s.solicitationId ?? s.currentFileName);
                 }}
               >
                 ✕

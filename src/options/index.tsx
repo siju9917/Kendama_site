@@ -30,19 +30,26 @@ function Options(): React.ReactElement {
   };
 
   const clearHistory = async (): Promise<void> => {
-    // Walk every index entry and delete its payload (chrome.storage OR
-    // IndexedDB) before nuking the index. Avoids orphan payloads that
-    // would otherwise live forever and count against storage quota.
     const { DiffStorage } = await import("../core/storage/index.js");
     const s = new DiffStorage();
     const list = await s.listDiffs();
+    if (list.length === 0) {
+      setStatus("Nothing to clear.");
+      setTimeout(() => setStatus(""), 1500);
+      return;
+    }
+    // Explicit confirmation. There is no undo.
+    const ok = window.confirm(
+      `Permanently delete ${list.length} saved ${list.length === 1 ? "diff" : "diffs"}? This cannot be undone.`,
+    );
+    if (!ok) return;
     for (const e of list) {
       await s.deleteDiff(e.id);
     }
     // Belt-and-suspenders: drop the index key too.
     await kv.remove("biddiff.diffs.index");
-    setStatus("History cleared.");
-    setTimeout(() => setStatus(""), 1500);
+    setStatus(`Cleared ${list.length} ${list.length === 1 ? "diff" : "diffs"}.`);
+    setTimeout(() => setStatus(""), 2500);
   };
 
   return (

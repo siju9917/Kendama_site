@@ -157,7 +157,12 @@ export class DiffEngine implements IDiffEngine {
 
     const warnings: string[] = [];
     if (diffConfidence < 0.7) {
-      warnings.push("Extraction confidence is lower than ideal — please review the diff carefully.");
+      // Note: deliberately not advisory. The disclaimer (rendered once at
+      // the panel root and in every export) is the single canonical
+      // place that says the human must review.
+      warnings.push(
+        `Extraction confidence is ${(diffConfidence * 100).toFixed(0)}% — lower than typical for clean text PDFs.`,
+      );
     }
 
     const id = contentHash(

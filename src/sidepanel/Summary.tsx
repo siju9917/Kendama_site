@@ -6,6 +6,18 @@ interface Props {
   result: DiffResult;
 }
 
+/** Sanitize a string for use as a downloaded filename. Strips characters
+ * that are invalid on Windows / macOS / Linux file systems and trims. */
+function safeFilename(s: string): string {
+  return (
+    s
+      .replace(/[\\/:*?"<>|]+/g, "-")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 80) || "biddiff-report"
+  );
+}
+
 const CATEGORY_LABELS: Record<string, string> = {
   SCOPE_SOW: "Scope (SOW)",
   EVALUATION_CRITERIA: "Evaluation",
@@ -33,7 +45,7 @@ export function Summary({ result }: Props): React.ReactElement {
       const a = document.createElement("a");
       a.href = url;
       const sol = result.currentDoc.solicitationId ?? "biddiff-report";
-      a.download = `${sol}-amendment-diff.pdf`;
+      a.download = `${safeFilename(sol)}-amendment-diff.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -98,7 +110,7 @@ export function Summary({ result }: Props): React.ReactElement {
         </div>
         <div
           className="summary__stat"
-          title="Confidence the underlying extraction was clean. Lower values mean the source PDFs were complex (scanned, two-column, etc.) — review the diff more carefully."
+          title="How clean the underlying text extraction looked. Lower values mean the source PDFs were complex (scanned, two-column, etc.) and the diff may not catch every change."
         >
           <span className="summary__stat-label">
             Confidence
