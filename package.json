@@ -18,6 +18,10 @@
     "corpus:generate": "tsx test/corpus/generate.ts"
   },
   "dependencies": {
+    "jszip": "^3.10.1",
+    "mammoth": "^1.8.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.6.82",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

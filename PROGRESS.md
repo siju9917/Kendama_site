@@ -24,19 +24,19 @@ is integrated, is committed, and the suite is green (Part 17.5 rule).
 
 ## Phase 2 — Document extraction pipeline
 
-- [ ] 2.1 PDF text extraction (PDF.js)
-- [ ] 2.2 DOCX extraction
-- [ ] 2.3 Line/block reconstruction + two-column handling
-- [ ] 2.4 Heading detection
-- [ ] 2.5 Section assembly & UCF mapping
-- [ ] 2.6 Section-type classification
-- [ ] 2.7 Tokenizer (done in shared/text.ts; re-verify against corpus)
-- [ ] 2.8 Anchor detection (CLAUSE_REF, DATE, MONEY, PAGE_LIMIT, CLIN, SECTION_REF)
-- [ ] 2.9 Normalization pipeline (compose 2.1–2.8)
-- [ ] 2.10 OCR fallback (Tesseract WASM)
-- [ ] 2.11 Malformed-input handling
-- [ ] 2.12 Extraction-confidence gate
-- [ ] 2.13 Performance pass
+- [done] 2.1 PDF text extraction (PDF.js; positioned text items via legacy build)
+- [done] 2.2 DOCX extraction (JSZip + custom XML walker)
+- [done] 2.3 Line/block reconstruction + two-column handling (PDF)
+- [done] 2.4 Heading detection (UCF, letter-dot, numbered, Section L/M, font heuristic)
+- [done] 2.5 Section assembly & UCF mapping
+- [done] 2.6 Section-type classification (UCF letter + keyword fallback)
+- [done] 2.7 Tokenizer (shared/text.ts)
+- [done] 2.8 Anchor detection (CLAUSE_REF, DATE, MONEY, PAGE_LIMIT, CLIN, SECTION_REF)
+- [done] 2.9 Normalization pipeline (enrichStructuredDocument)
+- [ ] 2.10 OCR fallback (Tesseract WASM) — deferred to Phase 4 wiring
+- [done] 2.11 Malformed-input handling (validate.ts; EMPTY/TOO_LARGE/UNSUPPORTED/ENCRYPTED/CORRUPT)
+- [done] 2.12 Extraction-confidence gate (computeOverallConfidence + scanned heuristic)
+- [ ] 2.13 Performance pass on a 200+ page synthetic — needs corpus PDF rendering
 
 ## Phase 3 — Diff & classification engine (THE MOAT)
 
