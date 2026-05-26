@@ -350,7 +350,17 @@ export async function exportPdfReport(result: DiffResult, fileName?: string): Pr
     drawWrapped(`Solicitation: ${result.currentDoc.solicitationId}`, { size: 11, bold: true });
   }
   drawWrapped(`Compared: ${result.currentDoc.sourceFileName} vs. ${result.priorDoc.sourceFileName}`);
-  if (result.generatedAt) drawWrapped(`Generated: ${result.generatedAt}`, { color: [0.36, 0.4, 0.45] });
+  if (result.generatedAt) {
+    // Render in a friendlier-but-still-host-independent form. The raw
+    // ISO ("2026-05-26T18:00:00.000Z") is cluttered for a report
+    // header; toLocaleString would be friendliest but depends on the
+    // viewer's locale, which would break cross-host byte equality.
+    const d = new Date(result.generatedAt);
+    const pretty = isNaN(d.getTime())
+      ? result.generatedAt
+      : `${d.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+    drawWrapped(`Generated: ${pretty}`, { color: [0.36, 0.4, 0.45] });
+  }
   space(12);
 
   // ---- Summary band ----
