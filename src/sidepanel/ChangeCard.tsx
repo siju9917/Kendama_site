@@ -86,7 +86,13 @@ export function ChangeCard({
           {change.changeType === "MODIFY" && change.tokenSpans && !sideBySide ? (
             <div className="change__tokens">{renderTokenSpans(change.tokenSpans)}</div>
           ) : sideBySide && change.beforeText && change.afterText ? (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                gap: 8,
+              }}
+            >
               <div className="change__before" style={{ marginBottom: 0 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "var(--delete)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                   Prior

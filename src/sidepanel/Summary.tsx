@@ -35,7 +35,9 @@ export function Summary({ result }: Props): React.ReactElement {
 
   const flash = (text: string): void => {
     setFeedback(text);
-    setTimeout(() => setFeedback(""), 1500);
+    // Long enough that an error message can be read; short enough that
+    // the success state doesn't linger.
+    setTimeout(() => setFeedback(""), 2500);
   };
 
   const onExportPdf = async (): Promise<void> => {
