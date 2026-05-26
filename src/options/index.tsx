@@ -35,7 +35,7 @@ function Options(): React.ReactElement {
         clearTimeout(saveTimer.current);
         saveTimer.current = null;
         if (pendingSettingsRef.current) {
-          void kv.set(SETTINGS_KEY, pendingSettingsRef.current);
+          kv.set(SETTINGS_KEY, pendingSettingsRef.current).catch(() => {});
         }
       }
     };

@@ -17,10 +17,9 @@ export function Onboarding(): React.ReactElement | null {
   }, [kv]);
 
   const dismiss = (): void => {
-    // Hide first so the click is instant; persist after. A persist
-    // failure would only resurface the card on next reload.
+    // Hide first so the click is instant; persist after.
     setShow(false);
-    void kv.set(SEEN_KEY, true);
+    kv.set(SEEN_KEY, true).catch(() => {});
   };
 
   if (show !== true) return null;

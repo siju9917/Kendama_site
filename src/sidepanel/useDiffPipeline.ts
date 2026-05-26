@@ -80,7 +80,9 @@ export function useDiffPipeline(): {
         } catch (e) {
           console.warn("save failed:", e);
         }
-        void noteDiffSucceeded();
+        // .catch swallows so a transient storage error in the review
+        // counter doesn't surface as an unhandled rejection.
+        noteDiffSucceeded().catch(() => {});
         setState({
           phase: "DONE",
           result,

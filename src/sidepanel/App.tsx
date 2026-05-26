@@ -38,9 +38,10 @@ export function App(): React.ReactElement {
     // Hide locally first so the click feels instant; persist after.
     // A persist failure would only mean the disclaimer reappears on
     // next reload — better than the user clicking Hide and seeing
-    // nothing happen.
+    // nothing happen. .catch keeps a rejected ChromeKv.set from
+    // surfacing as an unhandled rejection.
     setDisclaimerShown(false);
-    void kv.set(DISCLAIMER_DISMISSED_KEY, true);
+    kv.set(DISCLAIMER_DISMISSED_KEY, true).catch(() => {});
   };
 
   return (

@@ -119,7 +119,7 @@ export function DiffView({ result }: Props): React.ReactElement {
       .catch(() => setTipSeen(true)); // on read error, suppress the tip
   }, []);
   const dismissTip = (): void => {
-    void kv.set(TIP_SEEN_KEY, true);
+    kv.set(TIP_SEEN_KEY, true).catch(() => {});
     setTipSeen(true);
   };
   const hasActiveFilter = filter !== "ALL" || sectionFilter !== "ALL" || textFilter.trim().length > 0;

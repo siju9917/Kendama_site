@@ -53,7 +53,7 @@ export function ReviewPrompt(): React.ReactElement | null {
   const onDone = (): void => {
     // Hide first so the click is instant; persist after.
     setShow(false);
-    void kv.set(DISMISSED_KEY, true);
+    kv.set(DISMISSED_KEY, true).catch(() => {});
   };
 
   if (show !== true) return null;
