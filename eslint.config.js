@@ -18,7 +18,7 @@ export default [
     ],
   },
   {
-    files: ["src/**/*.{ts,tsx}", "test/**/*.{ts,tsx}"],
+    files: ["src/**/*.{ts,tsx}", "test/**/*.{ts,tsx}", "server/**/*.ts"],
     languageOptions: {
       parser: tsParser,
       parserOptions: {

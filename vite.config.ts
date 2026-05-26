@@ -22,7 +22,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["test/**/*.test.ts", "src/**/*.test.ts"],
+    include: ["test/**/*.test.ts", "src/**/*.test.ts", "server/**/*.test.ts"],
     coverage: {
       reporter: ["text", "html"],
       include: ["src/core/**/*.ts"],

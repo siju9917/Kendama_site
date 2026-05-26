@@ -72,16 +72,16 @@ is integrated, is committed, and the suite is green (Part 17.5 rule).
 
 ## Phase 5 — Backend, licensing, billing
 
-- [ ] 5.1 Serverless backend skeleton
-- [ ] 5.2 Clause-intelligence dataset & API
-- [ ] 5.3 Licensing service
-- [ ] 5.4 Merchant-of-record billing integration
-- [ ] 5.5 Trial logic (14-day, self-serve tiers)
-- [ ] 5.6 Dunning / card-failure handling
-- [ ] 5.7 Customer billing portal link
-- [ ] 5.8 License-validation hardening
-- [ ] 5.9 Anonymous telemetry (content-free)
-- [ ] 5.10 Opt-in server OCR
+- [done] 5.1 Serverless backend skeleton (`server/handlers.ts` + `dev-server.mjs`)
+- [done] 5.2 Clause-intelligence dataset (22 curated) + lookup endpoint
+- [done] 5.3 Licensing endpoint (HMAC-SHA256 signed response; replaceable verifier)
+- [ ] 5.4 Merchant-of-record billing integration — needs human keys (BLOCKERS.md)
+- [done] 5.5 Trial logic (LocalLicenseClient: 14-day trial + 7-day grace)
+- [ ] 5.6 Dunning — server-side hook; needs MoR webhook integration
+- [ ] 5.7 Customer billing portal link — needs MoR portal URL
+- [done] 5.8 License-validation hardening (signed responses; tamper-evident)
+- [done] 5.9 Anonymous telemetry endpoint with strict event schema (content-free)
+- [done] 5.10 Opt-in server OCR endpoint (stub; production wires real provider)
 
 ## Phase 6 — Hardening & full QA
 
@@ -98,16 +98,16 @@ is integrated, is committed, and the suite is green (Part 17.5 rule).
 
 ## Phase 7 — Launch assets
 
-- [ ] 7.1 Web Store listing copy
-- [ ] 7.2 Visual assets spec
-- [ ] 7.3 Single-page marketing site
-- [ ] 7.4 Help center
-- [ ] 7.5 In-product onboarding
-- [ ] 7.6 Support system
-- [ ] 7.7 Pricing finalized
-- [ ] 7.8 Review-generation flow
-- [ ] 7.9 Analytics & error dashboards
-- [ ] 7.10 Release runbook
+- [done] 7.1 Web Store listing copy (`docs/store-listing.md`)
+- [done] 7.2 Visual assets spec (`docs/store-assets/specs.md` + script)
+- [done] 7.3 Single-page marketing site (`docs/site/index.html`)
+- [done] 7.4 Help center (`docs/help/{getting-started,what-counts-as-critical,privacy-and-security,faq}.md`)
+- [ ] 7.5 In-product onboarding flow — requires Phase 4.5 follow-up
+- [done] 7.6 Support system (`docs/support-macros.md`)
+- [done] 7.7 Pricing finalized — site shows three self-serve tiers
+- [ ] 7.8 Review-generation flow — Phase 4 follow-up
+- [ ] 7.9 Analytics & error dashboards — depends on Phase 5.9 deploy
+- [done] 7.10 Release runbook (`docs/release-runbook.md`)
 
 ## Phase 8 — Package & launch-ready
 
