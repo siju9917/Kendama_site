@@ -230,7 +230,7 @@ export function DiffView({ result }: Props): React.ReactElement {
         <input
           ref={filterInputRef}
           type="search"
-          placeholder="Filter by text…  (press / to focus)"
+          placeholder="Filter by text… (press / to focus)"
           aria-label="Filter changes by text"
           autoComplete="off"
           spellCheck={false}
