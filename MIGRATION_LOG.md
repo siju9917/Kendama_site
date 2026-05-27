@@ -136,6 +136,33 @@ complete.
 
 ---
 
+## Migration complete — 2026-05-27
+
+The Kendama structure is in place, BidDiff is relocated with full
+file history preserved by `git mv`, the working tree at root holds
+only Kendama files plus `products/biddiff/`, the safety branch
+`pre-kendama-backup` is pushed and reachable, and tests / lint /
+typecheck pass from the new BidDiff location (226/226).
+
+**Final structure summary:**
+
+```
+CLAUDE.md  MIGRATION_LOG.md  README.md  .gitignore
+brain/   governance/   human/   ops/   play/   products/biddiff/
+```
+
+**Recovery remains available indefinitely** via
+`git checkout pre-kendama-backup` (the safety branch) or, in any
+environment where tag-push is permitted, via the local tag
+`pre-kendama-migration-20260527` (which can be re-pushed when
+that environment becomes available).
+
+The factory now resumes as Kendama. The next session's P0 task is
+the first formal Kendama critique panel pass on BidDiff (see
+`products/biddiff/PROGRESS.md` and `brain/STATE.md`).
+
+---
+
 ## Recovery
 
 If anything goes wrong at any point:
