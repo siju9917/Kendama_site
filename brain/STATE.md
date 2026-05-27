@@ -9,10 +9,15 @@
 ## Session
 
 - **Last session date (UTC):** 2026-05-27
-- **Last session ended at:** Migration + bootstrap + first formal
-  critique cycle on `main`.
+- **Last session ended at:** Migration + bootstrap + first
+  Kendama operating cycle + cycle-continuation pass landed on
+  `main`.
 - **Session type:** One-time migration + bootstrap + first
-  Kendama operating cycle.
+  cycle (build + critique + META audit + ideation).
+- **Session-end reason:** schedule-window-closed (this session
+  was the migration + first cycle; the next session is the
+  regular Saturday Routine cadence per
+  `ops/SCHEDULE_SETUP.md`).
 
 ## Active product
 
@@ -43,26 +48,35 @@ pulling the queue.
 
 ## Queue snapshot (top of stack first)
 
-1. **P1** Address the three P1 findings from this session's
-   BidDiff K1 panel pass (`products/biddiff/CRITIQUE_LOG.md`).
-   Two require human-routed work, one requires a positioning
-   call. Until they're addressed, K1 does not converge and
-   BidDiff cannot ship.
-2. **P1** Complete the rank-1 deep evaluation begun in
-   `brain/RESEARCH/2026-05-27-jetbrains-apex-plugin.md` and
-   post the proposal to `human/APPROVALS.md`. (Requires the
-   spend cap to be set — if still unset, do this on read-only
-   tools and brain consolidation.)
-3. **P2** Reconstruct the full prior idea ranking into
-   `brain/IDEA_BACKLOG.md` (currently only top two seeded;
-   the founding spec referenced more).
-4. **P2** META-loop research per `brain/SELF_IMPROVEMENT.md`:
-   read current best practices for autonomous-agent operation;
-   second self-audit (this session ran the first); refine the
-   critique roster.
-5. **P2** RESEARCH loop: refresh `brain/MARKET_SIGNALS.md`,
-   produce the BidDiff market-research file the Research
-   Quality Critic demanded.
+1. **P1** Complete the BidDiff market-research file
+   (scaffold landed at
+   `brain/RESEARCH/2026-05-27-biddiff-market-research.md`) —
+   the next session fills in cited competitor teardown,
+   addressable-market sizing, and comparable-revenue
+   benchmarks using live web research.
+2. **P1** Complete the rank-1 deep evaluation (scaffold at
+   `brain/RESEARCH/2026-05-27-jetbrains-apex-plugin.md`) and
+   post the formal proposal to `human/APPROVALS.md`.
+3. **P1** Once `human/APPROVALS.md` proposal #1 is answered
+   (or auto-proceeds at 2026-06-03), action the chosen
+   BidDiff positioning option.
+4. **P1** Once the human returns domain-expert questionnaire
+   responses (`products/biddiff/docs/domain-validation/`),
+   ingest them and update `src/core/diff/critical.ts` plus
+   the Domain-Expert Critic's checklist in
+   `governance/CRITIQUE_AGENTS.md`.
+5. **P2** Implement `brain/SELF_IMPROVEMENT.md` items #6
+   (rule/cadence consistency check) and #7 (Kendama-level
+   automated check infrastructure under `ops/checks/`).
+6. **P2** Deep-evaluate ranks 3-5 in `brain/IDEA_BACKLOG.md`
+   (the three wishlist-sourced candidates added this cycle).
+7. **P2** Begin reconstructing further candidate ideas from
+   the standing categories listed in `IDEA_BACKLOG.md`.
+8. **P2** Refresh `brain/MARKET_SIGNALS.md` with the standing
+   monitoring targets.
+9. **P2** META-loop research per
+   `brain/SELF_IMPROVEMENT.md` items #2-#3 (autonomous-agent
+   best practices).
 
 ## Open blockers
 
@@ -90,37 +104,37 @@ work.
 
 ## Last five actions
 
-1. Migration backup created and pushed; safety branch
-   `pre-kendama-backup` is the recovery point.
-2. Kendama structure erected; all governance, brain, human,
-   ops files written. Two critics added during bootstrap
-   self-audit (#13 Ambition, #14 Research Quality).
-3. BidDiff relocated via `git mv` into `products/biddiff/`;
-   tests 226/226 from new location.
-4. First Kendama critique cycle ran: panel on BidDiff (3 P1 +
-   3 P2 findings); META self-audit on Kendama infrastructure
-   (1 P0 + 5 P1 + 4 P2 findings).
-5. All META P0/P1 findings fixed in same session: audit-of-
-   audit rule (5.7.8), Sunday check-in trigger
-   disambiguation, spend-cap-unset behavior, run-kendama.sh
-   branch handling, loop interleaving within-priority order,
-   roster-growth surfacing in digest, overdue-critique
-   surfacing in this STATE.md.
+1. Migration completed and finalized on `main` (Steps 1-7 of
+   PART 12). Safety branch `pre-kendama-backup` pushed.
+2. Kendama structure erected with bootstrap self-audit
+   additions (Ambition Critic #13, Research Quality Critic
+   #14, continuous-self-audit + curiosity standing
+   instructions, 24h+ session intent, queue-feels-empty rule,
+   guardrail #16 against premature "done").
+3. BidDiff relocated to `products/biddiff/` via `git mv`;
+   tests 226/226, lint + typecheck clean.
+4. First Kendama operating cycle ran end-to-end: K1 panel pass
+   on BidDiff (3 P1 + 3 P2 findings, did NOT converge) +
+   parallel META self-audit (1 P0 + 5 P1 + 4 P2; all P0/P1
+   fixed); 5.7.8 audit-the-auditor pass found one further
+   gap (rule/cadence consistency); domain-expert
+   questionnaire drafted; market-research scaffold written;
+   three WISHLIST entries logged; three new candidates
+   added to IDEA_BACKLOG.
 
 ## Next five actions
 
-1. Triage the three BidDiff K1 P1 findings: route domain-expert
-   sourcing to `NEED_FROM_HUMAN.md`, post positioning question
-   to `APPROVALS.md`, scope the market-research file in
-   `brain/RESEARCH/`.
-2. Complete the rank-1 idea deep evaluation (web-research-
-   dependent) and post the formal approval proposal.
-3. Reconstruct the full prior idea ranking into the backlog.
-4. Run a second META self-audit (5.7.8) on this cycle's
-   maximization-audit pass.
-5. Add the second WISHLIST entry sourced from the BidDiff
-   work — there are friction points in the prior session's
-   debugging worth capturing.
+1. Fill in the BidDiff market-research scaffold with cited
+   live-web research (competitor teardown, addressable-market
+   sizing, comparable-revenue benchmarks).
+2. Fill in the rank-1 deep evaluation similarly and post the
+   formal proposal to `human/APPROVALS.md`.
+3. Implement `SELF_IMPROVEMENT.md` items #6 (rule/cadence
+   consistency check) and #7 (`ops/checks/` infrastructure).
+4. Deep-evaluate ranks 3-5 in `IDEA_BACKLOG.md`.
+5. Action whatever `human/APPROVALS.md` proposal #1 resolves
+   to (or apply the REPOSITION default if it auto-proceeds
+   on 2026-06-03).
 
 ## Reconciliation status
 

@@ -133,19 +133,24 @@ That's it. The factory does not need anything else this week.
 
 ### What's next (the upcoming Saturday session plan)
 
-1. **P0** Run the full Kendama critique panel on BidDiff as the
-   first formal pass. Iterate to convergence, escalate per
-   5.7.2.
-2. **P1** Deep-evaluate the rank-1 candidate idea
-   (JetBrains/Salesforce Apex plugin) and post the proposal to
-   `human/APPROVALS.md`.
-3. **P2** Begin META-loop research per
-   `brain/SELF_IMPROVEMENT.md`: audit the bootstrap brain,
-   research current best practices for autonomous-agent
-   operation.
-4. **P2** RESEARCH loop: refresh `MARKET_SIGNALS.md`,
-   reconstruct the full prior idea ranking into
-   `IDEA_BACKLOG.md`.
+1. **P1** Fill in the BidDiff market-research scaffold
+   (`brain/RESEARCH/2026-05-27-biddiff-market-research.md`)
+   with cited live-web research — the Research Quality Critic
+   demands this before BidDiff can ship.
+2. **P1** Complete the rank-1 deep evaluation (JetBrains
+   Apex plugin) and post the approval proposal.
+3. **P1** Action whatever you decide on `APPROVALS.md` #1
+   (BidDiff positioning). If you don't respond, auto-proceeds
+   to REPOSITION on 2026-06-03.
+4. **P1** Ingest your domain-expert questionnaire responses
+   when you have them, and update BidDiff's critical-rules
+   ruleset accordingly.
+5. **P2** Implement `SELF_IMPROVEMENT.md` items #6 + #7
+   (rule/cadence consistency check + `ops/checks/`
+   infrastructure).
+6. **P2** Deep-evaluate ranks 3-5 in `IDEA_BACKLOG.md` (the
+   three wishlist-sourced candidates added this cycle).
 
-If the human clears the two open items in `NEED_FROM_HUMAN.md`,
-the next session is fully unblocked.
+If you clear the four open items in `NEED_FROM_HUMAN.md`, the
+session is fully unblocked on every front. If not, the factory
+continues on non-blocked work — the loop never idles.
