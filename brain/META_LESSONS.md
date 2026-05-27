@@ -56,3 +56,70 @@ here if any of the following has lapsed):
   to overhead spend.
 
 Lapses become P0 tasks per PART 4.6 #3.
+
+---
+
+## 2026-05-27 — First META self-audit; new critics validated on first invocation
+
+**Operational event:** Two new critics (Ambition #13, Research
+Quality #14) were added during the bootstrap self-audit. Their
+first formal invocation on BidDiff each produced a substantive
+P1 finding (audience-vs-scope mismatch; no market evidence).
+The parallel META self-audit on Kendama infrastructure produced
+1 P0 + 5 P1 + 4 P2 findings; all P0/P1s fixed in the same
+session.
+
+**Why it happened:** "Audit yourself as you build" was the
+right call — adding critics for the conservative-middle and
+shallow-research failure modes *before* the first cycle meant
+the first cycle exercised them and validated the design.
+
+**Structural fix:** None beyond what was added. The roster
+grew (5.7.3); the audit table in `human/WEEKLY_DIGEST.md`
+records the change.
+
+**Where applied:** `governance/CRITIQUE_AGENTS.md`,
+`human/WEEKLY_DIGEST.md`.
+
+**Recurrence test:** The META loop verifies on every cycle
+that at least one critic strengthened or a new critic was
+added (5.7.3) and that the new critics #13/#14 actually run.
+
+---
+
+## 2026-05-27 — 5.7.8 (audit-the-auditor) applied to this cycle's META audit
+
+**Operational event:** Applied the just-established 5.7.8 rule
+to the META audit performed in this same session. Adopting the
+Ambition Critic and Research Quality Critic mandates, I
+re-read the META findings and asked:
+
+1. **Was the audit shallow?** Coverage against the prompt:
+   recursion/audit-of-the-audit ✓, spend-cap unset ✓, branch
+   state ✓, Sunday vs Routine ✓, loop interleaving ✓, roster
+   lapse ✓, GitHub-Actions scope ✓, cadence enforcement ✓,
+   SELF_IMPROVEMENT ranking ✓, session-end ✓. Ten distinct
+   surfaces audited; not shallow.
+2. **Was any obvious lapse missed?** Yes — **one new
+   finding raised by this 5.7.8 pass:** there is no automated
+   check that `CLAUDE.md`'s 5.7 maximization rules and
+   `governance/CRITIQUE_AGENTS.md`'s cadence table stay in
+   sync. A future session could edit one without the other and
+   create a silent drift. **Queued to
+   `brain/SELF_IMPROVEMENT.md`:** write a parser that asserts
+   every 5.7.N rule has a matching cadence row, and every
+   cadence row maps to a rule. Severity P2, but real.
+3. **Was the conclusion defended with evidence?** Yes —
+   every finding had a concrete area and a specific fix.
+
+**Result of 5.7.8 pass:** the original META audit was
+adequately rigorous; one additional finding surfaced from this
+adversarial re-read. The new finding is logged per the rule.
+
+**Where applied:** `brain/SELF_IMPROVEMENT.md` (new
+"rule-cadence consistency check" item to be added).
+
+**Recurrence test:** Every cycle's META audit gets a 5.7.8
+pass of the same shape; any cycle where 5.7.8 raises zero new
+findings is itself examined for whether 5.7.8 was run
+seriously.

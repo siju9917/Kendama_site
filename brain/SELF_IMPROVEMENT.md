@@ -127,6 +127,57 @@ factory; its playbook is the first one to write.
 
 ---
 
+## 6. Add a rule/cadence consistency check between CLAUDE.md and CRITIQUE_AGENTS.md
+
+**Type:** tooling
+
+**Expected impact:** rigor — prevents silent drift between the
+5.7.N maximization rules in `CLAUDE.md` and the cadence table
+in `governance/CRITIQUE_AGENTS.md`. If a future session edits
+one without the other, today nothing flags the divergence.
+
+**Cost to implement:** small. A test that parses both files
+and asserts every `5.7.N` rule has a matching cadence row, and
+every cadence row maps to a rule. Lives at
+`ops/checks/rule-cadence-consistency.test.ts` or similar (the
+ops/ directory needs a checks subdir for Kendama-level
+automated audits — adding the structure is part of this item).
+
+**Strengthens or weakens?** stronger.
+
+**Status:** proposed.
+
+**Reasoning trace:** Surfaced by the 5.7.8 pass on this
+session's META audit (logged in `brain/META_LESSONS.md`). The
+META audit found 10 gaps but did not detect this kind of
+drift-between-files risk; the adversarial re-read did. This is
+exactly the kind of finding 5.7.8 was added to produce.
+
+## 7. Build the first Kendama-level CI check infrastructure
+
+**Type:** tooling
+
+**Expected impact:** rigor — currently every consistency check
+(rule/cadence sync, brain integrity, no-Github-Actions, etc.)
+is policed only by human attention or by the META loop reading
+files. A small set of automated checks runs on every commit
+without invoking the prohibited CI surface — the Kendama
+session itself runs them as part of `ops/loop.md`'s
+session-start brain-reconciliation step.
+
+**Cost to implement:** medium. Lives under `ops/checks/`.
+Triggered by `ops/loop.md` at session start, not by any CI.
+Must NOT use GitHub Actions or any prohibited surface (per
+`governance/GUARDRAILS.md` #1-2).
+
+**Strengthens or weakens?** stronger.
+
+**Status:** proposed.
+
+**Reasoning trace:** Item #6 above motivates the first check;
+others (brain integrity, branch policy, guardrails compliance)
+follow naturally. This is the right scaffolding to grow.
+
 ## Notes for the META loop
 
 - The META loop pulls the top item from this list each cycle,
