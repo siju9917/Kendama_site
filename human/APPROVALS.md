@@ -36,8 +36,72 @@ To respond, edit the proposal's "**Status:**" line:
 
 ## Open proposals
 
-_(none — the first proposal will be posted after the factory's
-first deep evaluation, on the session after bootstrap)_
+### Proposal #1 — BidDiff positioning decision
+
+- **Posted:** 2026-05-27
+- **Auto-proceed window:** 7 days from posting (defaults to
+  **REPOSITION** if no response by 2026-06-03)
+- **Status:** _awaiting human response_
+- **Source finding:** Ambition Critic (#13) finding in
+  `products/biddiff/CRITIQUE_LOG.md` (Phase K1, pass 1)
+- **Why a proposal and not an autonomous decision:** the
+  choice changes what the product *is*, not just what's in
+  it. The factory does not have the authority to make a
+  positioning call this material without confirmation.
+
+**The question:**
+
+BidDiff currently positions itself as a tool for "proposal /
+capture teams." Its actual feature set is an **individual**
+read-only diff tool. There is no multi-amendment timeline, no
+team collaboration (assign / resolve / discuss findings), no
+capture-tool integrations, no FAR-clause interaction surfacing.
+A real capture team would feel the gap within the first few
+sessions of use.
+
+You have three options:
+
+**A. Reposition** (recommended default; the auto-proceed
+lands here)
+
+- Change the Web Store listing, in-app subtitle, and
+  marketing positioning to "Individual proposal-manager
+  amendment triage."
+- Pros: cheap (~1 cycle of polish work); honest; sharpens the
+  buyer audience to one BidDiff actually serves well.
+- Cons: surrenders the (larger but unserved) team-tool market
+  to potential future competitors.
+
+**B. Extend the scope to genuinely serve teams**
+
+- Add: multi-amendment timeline view; team collaboration
+  (assign, mark resolved, comment); at least one capture-tool
+  integration stub (Salesforce or Anaplan).
+- Estimated effort: 4-6 BUILD cycles (cycle = one Saturday).
+- Pros: matches the larger market; aligns positioning with
+  product.
+- Cons: significant delay to ship; demand for these features
+  has not been validated (the Research Quality finding is
+  open separately); risk of building unwanted features.
+
+**C. Ship as-is with documented intent**
+
+- Ship the individual-tool feature set under the current
+  positioning, with explicit roadmap text in the listing
+  stating that team features are planned.
+- Pros: fastest ship.
+- Cons: highest review-risk option. The factory's quality
+  bar treats negative review momentum as a real risk; this
+  is the least-defensible of the three.
+
+**Your response format:**
+
+Edit the `Status:` line above with one of:
+
+- `Status: APPROVED on YYYY-MM-DD by human — option A (reposition)`
+- `Status: APPROVED on YYYY-MM-DD by human — option B (extend scope; willing to wait 4-6 cycles)`
+- `Status: APPROVED on YYYY-MM-DD by human — option C (ship as-is with roadmap)`
+- `Status: REDIRECT on YYYY-MM-DD by human — <other option in your own words>`
 
 ---
 

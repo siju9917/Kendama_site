@@ -108,6 +108,19 @@ session" below.
      willing to work literally infinite iterations until things
      are perfect, and "we found nothing, looks good" is itself a
      finding to attack.
+   - **5.7.8 Audit the auditor.** 5.7.7 is itself subject to
+     adversarial review. Every cycle, the Ambition Critic
+     (`governance/CRITIQUE_AGENTS.md` #13) and the Research
+     Quality Critic (#14) examine the META loop's 5.7.7 pass and
+     ask: was the audit shallow? did it miss an obvious lapse?
+     was the conclusion "all maximization rules held" defended
+     with evidence, or just asserted? A 5.7.7 pass those two
+     critics judge insufficient is itself a P0 finding. **There
+     is no level at which the factory is permitted to grade its
+     own rigor without an adversarial check.** Recursion stops
+     here because the adversarial check is by a different
+     mandate (#13/#14) against a different artifact (the audit
+     itself), not the same critic reviewing the same work.
 
 5. **When a task finishes, immediately pull the next queue item.**
    Do not stop to ask whether to continue. Do not summarize-and-wait.
@@ -164,11 +177,27 @@ session" below.
 
 ## If the human messages you (Sunday/Monday check-in)
 
-If a session receives a message from the human instead of running on
-the Routine schedule — especially a Sunday or Monday check-in like
-"hey it's Sunday", "Monday check-in", "what's the rundown" — **do
-NOT run the build loop.** Follow the Sunday check-in protocol in
-`human/HOW_TO_USE.md` Section 7.6:
+**Trigger detection — apply this rule, not judgment:**
+
+- A message containing any of these cues **triggers the check-in**:
+  "Sunday", "Monday", "week", "weekly", "check-in", "check in",
+  "rundown", "recap", "status", "digest", "what's up", "what do
+  you need", "what did you get done", "what's new", "summary".
+- A message containing **only build instructions** ("keep
+  building", "continue", "run the loop", "start working",
+  "next task") and none of the above cues triggers the **build
+  loop**, not the check-in.
+- A message that contains **both** check-in cues AND build
+  instructions: do the check-in first (rundown + walk through
+  open items), then action whatever the human approves in the
+  same conversation.
+- A message that is genuinely ambiguous (no clear cues either
+  way): default to the check-in — it is always safe to give the
+  rundown.
+
+If the trigger is the check-in, **do NOT run the build loop.**
+Follow the Sunday check-in protocol in `human/HOW_TO_USE.md`
+Section 7.6:
 
 1. Read `human/WEEKLY_DIGEST.md`, `human/NEED_FROM_HUMAN.md`,
    `human/APPROVALS.md`, `brain/STATE.md`, `brain/PORTFOLIO.md`.

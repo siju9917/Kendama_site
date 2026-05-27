@@ -136,3 +136,65 @@ logged here when retuned.
 
 **Where applied:** `governance/SCORING_MODEL.md`;
 `brain/IDEA_BACKLOG.md` scoring.
+
+## 2026-05-27 — First Kendama operating cycle + META self-audit fixes
+
+**Decision:** Immediately after the bootstrap, ran (a) the
+first formal Kendama critique panel on BidDiff and (b) a
+parallel META self-audit on the Kendama infrastructure itself.
+Fixed all P0/P1 META findings in the same session.
+
+**Alternatives considered:**
+
+- **Defer all critique to the next Saturday session.** Rejected.
+  `ops/loop.md` says fill the window with productive work; the
+  first formal pass was already the P0 queue item.
+- **Only audit the brain, not BidDiff.** Rejected. Both passes
+  are non-overlapping (different agents, different scopes) and
+  both are real queue items.
+
+**Reasoning:** The user's "continuous self-audit while building"
+directive made the META audit happen in the same session the
+META structures were built. The result validated the new
+Ambition Critic and Research Quality Critic — both caught real,
+substantive findings on their first invocation.
+
+**Reversibility:** All META fixes are textual; prior language
+is recoverable from git history.
+
+**Where applied:** `CLAUDE.md` (5.7.8 added, check-in trigger
+disambiguation), `governance/SPEND_CAP.md` (unset-cap behavior),
+`governance/GUARDRAILS.md` (#1 narrowed for read-only),
+`ops/loop.md` (within-priority order, conditional session-end
+reason, META priority promotion), `ops/run-kendama.sh` (no
+silent branch switch), `brain/PORTFOLIO.md`, `brain/STATE.md`
+(overdue-critique section), `human/WEEKLY_DIGEST.md` (roster-
+growth + maximization-audit sections), `human/NEED_FROM_HUMAN.md`
+(positioning proposal entry + domain-expert sourcing entry),
+`human/APPROVALS.md` (positioning proposal posted),
+`products/biddiff/CRITIQUE_LOG.md` (K1 pass 1).
+
+## 2026-05-27 — Default auto-proceed disposition on BidDiff positioning proposal
+
+**Decision:** If `human/APPROVALS.md` proposal #1 is not
+responded to within 7 days, auto-proceed to
+**option A (reposition)**.
+
+**Alternatives considered:**
+
+- **Auto-proceed to B (extend scope).** Rejected — 4-6 cycle
+  commitment based on an agent's self-grade; spend cap unset;
+  demand unvalidated.
+- **Auto-proceed to C (ship as-is).** Rejected — the Ambition
+  Critic specifically flagged this as the least-defensible.
+- **Block indefinitely.** Rejected — PART 7.2 design is fast
+  veto, not fast decision.
+
+**Reasoning:** A is the most conservative defensible default
+— sharpens positioning without committing to multi-week build
+or shipping with a known mismatch risk. The human can override
+in either direction; silence is acceptable.
+
+**Reversibility:** Human can REDIRECT/REJECT before deadline.
+
+**Where applied:** `human/APPROVALS.md` proposal #1.

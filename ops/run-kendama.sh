@@ -35,14 +35,27 @@ if ! git diff-index --quiet HEAD --; then
   git stash push -u -m "$STASH_NAME" || true
 fi
 
-# Pull latest main so the session starts from the current canonical
-# state. Retry on transient network failure with exponential backoff
-# (matches the Section 8.4 / loop.md push discipline).
+# Pull latest from origin on the CURRENT branch — do NOT silently
+# switch to main. If a prior session left commits on a working
+# branch the cron path must not abandon them. The Routine path
+# (claude.ai/code/routines) is configured to read main directly;
+# the cron fallback respects whichever branch the host has
+# checked out. Retry on transient network failure with exponential
+# backoff (matches the Section 8.4 / loop.md push discipline).
+CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+if [ "$CURRENT_BRANCH" = "HEAD" ]; then
+  # Detached HEAD — fall back to main so we at least have a known
+  # branch to operate on; log the situation for the factory to
+  # investigate inside the session.
+  echo "run-kendama: detached HEAD detected; checking out main" >&2
+  CURRENT_BRANCH="main"
+  git checkout main || true
+fi
 ATTEMPTS=0
-until git fetch origin && git checkout main && git pull origin main; do
+until git fetch origin && git pull origin "$CURRENT_BRANCH"; do
   ATTEMPTS=$((ATTEMPTS + 1))
   if [ "$ATTEMPTS" -ge 4 ]; then
-    echo "run-kendama: git fetch/pull failed after 4 attempts; continuing on local state" >&2
+    echo "run-kendama: git fetch/pull failed after 4 attempts on $CURRENT_BRANCH; continuing on local state" >&2
     break
   fi
   sleep $((2 ** ATTEMPTS))

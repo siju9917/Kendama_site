@@ -80,21 +80,61 @@ eliminate; prefer Routines.
 
 ---
 
-## 3. **[OPEN]** Review the first approval proposal (when posted)
+## 3. **[OPEN]** Review the BidDiff positioning proposal in `APPROVALS.md`
 
-**Why:** Per PART 7.2, the human retains a fast veto on what gets
-built. The factory has not yet posted a proposal — it will after
-the first deep evaluation lands in `brain/RESEARCH/`. When the
-proposal exists, this row in this file updates with a link.
+**Why:** The first formal Kendama critique panel pass on BidDiff
+surfaced an Ambition Critic finding: the product's positioning
+("capture teams") doesn't match its individual-tool feature set.
+The factory has posted a proposal to `human/APPROVALS.md`
+asking you to choose between **reposition / extend scope /
+ship-as-is with documented intent**. Without your call, BidDiff
+cannot reach the ship gate.
 
-**Time needed:** ~5 minutes per proposal.
+**Time needed:** ~5-10 minutes.
 
 **Steps:**
 
-When the row updates, open `human/APPROVALS.md` and respond
-**yes / no / redirect** on the proposal. If you do not respond,
-the configured auto-proceed window applies and the factory
-proceeds on its own (default 7 days).
+1. Open `human/APPROVALS.md`.
+2. Read the BidDiff positioning proposal at the top.
+3. Edit the proposal's `Status:` line per the format in that
+   file — `APPROVED` / `REJECTED` / `REDIRECT` with a reason.
+
+Auto-proceed window: 7 days. Without a response, the factory
+defaults to the *reposition* option (the safest of the three —
+no multi-week scope commitment based on an agent's self-grade)
+and continues toward ship.
+
+---
+
+## 4. **[OPEN]** Source 2-3 federal proposal/capture managers for domain validation
+
+**Why:** The Domain-Expert Critic finding on BidDiff says the
+critical-changes ruleset misses several materially critical
+categories real practitioners would flag (source-selection-
+timeline beyond pure dates; responsibility/key-personnel
+updates; compliance certifications like ITAR/EAR/cyber; non-CLIN
+contract-value changes). The factory cannot validate these
+against pattern alone — it needs practitioner input.
+
+**Time needed:** ~30-45 minutes of outreach over a week or
+two; the conversations themselves are short (10 minutes each).
+
+**Steps:**
+
+1. Identify 2-3 people in your network: federal proposal
+   manager, federal capture manager, federal contracts
+   officer, or a consultant who routinely reads federal
+   solicitations.
+2. The factory drafts a short validation questionnaire on the
+   next session (under 10 questions). Forward it to your
+   contacts.
+3. Paste the (anonymized if needed) responses into
+   `products/biddiff/docs/domain-validation/` as
+   `respondent-1.md` etc. The next session ingests them and
+   updates `src/core/diff/critical.ts` accordingly.
+
+**Effect once done:** Unblocks the BidDiff K1 Domain-Expert P1
+finding. The ship gate becomes reachable.
 
 ---
 

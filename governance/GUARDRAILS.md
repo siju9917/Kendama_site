@@ -15,11 +15,18 @@ a human approval entry** in `human/APPROVALS.md`.
 ### Scheduling and CI
 
 1. **No GitHub Actions.** No `.github/workflows/` directory. No
-   workflow file. No use of the GitHub Actions API. The factory's
-   only legitimate scheduling mechanism is a Claude Code Routine
-   using the **scheduled** trigger type (see
-   `ops/SCHEDULE_SETUP.md`). The Routine GitHub-event trigger type
-   is also prohibited.
+   creation, modification, or triggering of GitHub Actions
+   workflows. The factory's only legitimate scheduling
+   mechanism is a Claude Code Routine using the **scheduled**
+   trigger type (see `ops/SCHEDULE_SETUP.md`). The Routine
+   GitHub-event trigger type is also prohibited.
+
+   **Narrow read-only carve-out:** *reading* GitHub Actions
+   status, output, or logs (e.g., to analyze why a third-party
+   PR's CI failed) is permitted as long as no workflow is
+   created, triggered, or modified. Read-only inspection is
+   not "use of GitHub Actions" in the sense this guardrail
+   prohibits.
 2. **No CI-based scheduler of any kind** — no CircleCI, no
    Travis, no Jenkins, no GitLab CI, no Buildkite, no third-party
    cron-as-a-service. The only permitted fallback if Claude Code

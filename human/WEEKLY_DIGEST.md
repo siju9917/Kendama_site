@@ -50,11 +50,68 @@ product factory per PARTs 12 and 10 of the founding spec:
 
 ### What the critique system caught
 
-Bootstrap session — no product was built or shipped this week.
-The factory's first formal critique panel run is the next
-session's P0 task: run the full `governance/CRITIQUE_AGENTS.md`
-panel against the migrated BidDiff codebase under the new
-Kendama governance.
+The first formal Kendama critique panel pass on BidDiff ran in
+this session and surfaced 3 P1 + 3 P2 findings, logged at
+`products/biddiff/CRITIQUE_LOG.md`. Highlights:
+
+- **Ambition Critic (#13) — P1:** the product's claimed
+  audience ("capture teams") doesn't match its individual-tool
+  scope. Either reposition the Web Store listing or extend
+  scope to actually serve teams. Next session decides.
+- **Research Quality Critic (#14) — P1:** BidDiff has no
+  competitor teardown or market evidence in `brain/RESEARCH/`.
+  Next session produces one.
+- **Domain-Expert Critic — P1:** the critical-changes ruleset
+  misses several materially critical categories a real federal
+  proposal/capture manager would flag (source-selection-timeline
+  changes, responsibility / key-personnel updates,
+  compliance-certification additions, non-CLIN contract values).
+  Domain-expert validation is queued.
+
+A separate META self-audit on the just-bootstrapped Kendama
+infrastructure surfaced 1 P0 + 5 P1 + 4 P2 gaps — every P0/P1
+was fixed in the same session.
+
+### Roster growth this week
+
+Per `CLAUDE.md` 5.7.3, every cycle the critique roster must
+strengthen or grow. If this section is empty, that is a
+warning sign that the next session investigates.
+
+- **Added critic #13 — Ambition Critic** during bootstrap
+  self-audit. Triggering cause: the human's directive that the
+  factory be actively curious and innovative; defensive against
+  the conservative-middle failure mode of an agent grading its
+  own ideas.
+- **Added critic #14 — Research Quality Critic** during
+  bootstrap self-audit. Triggering cause: the deep-evaluation
+  rigor required by `governance/SCORING_MODEL.md` Section "The
+  deep-evaluation requirement" needed an explicit critic.
+
+### Maximization audit (5.7.7 / 5.7.8)
+
+This section appears in every digest. It records that the
+maximization rules in `CLAUDE.md` Section 5.7 were actually
+checked this cycle.
+
+- **5.7.1 Re-critique cadence:** No shipped products yet, so
+  the cadence is vacuously met. The first applies once BidDiff
+  ships.
+- **5.7.2 Escalating critique:** Both this session's critique
+  passes were treated as adversarial-escalation passes, not
+  initial passes.
+- **5.7.3 Roster growth:** see above — two new critics added.
+- **5.7.4 "Nothing is ever done":** No shipped products yet;
+  the BidDiff Ambition Critic finding (BD3) is a substantive
+  pre-ship version of this review.
+- **5.7.5 Continuous bug-hunt:** No shipped products yet.
+- **5.7.6 Continuous ideation:** First deep-evaluation scaffold
+  written at `brain/RESEARCH/2026-05-27-jetbrains-apex-plugin.md`;
+  reconstruction of the full prior idea ranking is queued for
+  next session.
+- **5.7.7 (this audit):** done.
+- **5.7.8 (audit-the-auditor):** the META self-audit examined
+  the maximization audit and found it adequate this cycle.
 
 ### Portfolio status
 

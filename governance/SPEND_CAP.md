@@ -29,9 +29,20 @@ critique passes that do not spawn sub-agents). See
 Before any expensive operation — sub-agent spawn, large
 generation, network research — the factory:
 
-1. Reads the current spent-this-period value above.
-2. Estimates the cost of the operation conservatively.
-3. If estimated cost + already spent exceeds the cap, the
+1. Reads the current cap and spent-this-period values above.
+2. **If the cap reads `NOT SET — human must set`**: the
+   operation is **blocked**, logged against the existing
+   "Set the monthly spend cap" entry in
+   `human/NEED_FROM_HUMAN.md`, and the session continues on
+   all zero-cost work — brain consolidation, critique against
+   already-readable artifacts, code review, planning,
+   documentation, drafting. The session does **not** spawn
+   sub-agents, make large API calls, or trigger network
+   research until the human sets a numeric cap. The session
+   does NOT end on the unset-cap condition alone; it works the
+   zero-cost queue until a real session-ending limit is hit.
+3. Estimates the cost of the operation conservatively.
+4. If estimated cost + already spent exceeds the cap, the
    operation does not run. The session ends cleanly with a
    full brain checkpoint and a note in
    `human/WEEKLY_DIGEST.md` that the cap was the binding limit.

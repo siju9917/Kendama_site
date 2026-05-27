@@ -66,6 +66,24 @@ When the top item is large (e.g., a full build phase), the cycle
 works it through to completion of that unit, runs the panel, then
 returns to the queue.
 
+**Within a priority level**, items are serviced in **discovery
+order** — the order they were first logged to the brain.
+`brain/STATE.md`'s queue snapshot is the canonical ordered list;
+the factory does not reorder within a level once `STATE.md` is
+written. If two items at the same priority arise in the same
+cycle, the one with the earlier source-of-finding timestamp wins
+(e.g., a critique log entry timestamp, a `NEED_FROM_HUMAN.md`
+entry timestamp). Ties — same priority, same timestamp — are
+broken by alphabetical order of the item's product/topic slug,
+so the order is fully deterministic and resumable across
+sessions.
+
+**The standing META-audit (5.7.8 in `CLAUDE.md`):** the Ambition
+Critic and Research Quality Critic examine the META loop's
+5.7.7 pass each cycle. Their findings are themselves queue
+items at priority 3 (lapsed-maximization restoration) if they
+judge the audit insufficient.
+
 ---
 
 ## Cadences (the heartbeat)
@@ -174,14 +192,40 @@ without a clean brain and a pushed (or committed-and-logged) repo.
 When a real limit is reached:
 
 1. Commit and push the current unit of work.
-2. Consolidate the brain (`STATE.md` reflects exact next action;
-   `PORTFOLIO.md` current; `DECISIONS.md` has every decision from
-   this session).
-3. If Saturday, write `human/WEEKLY_DIGEST.md`.
+2. Consolidate the brain. `STATE.md` must record the exact next
+   action AND a `Session-end reason` line of one of:
+   - **spend-cap-reached** — note the remaining budget,
+     the operation that would have exceeded it, and the
+     exact resumption point.
+   - **platform-duration-limit** — note that the platform
+     ended the run and what was in flight when it did
+     (so the next session can detect mid-task interruption).
+   - **schedule-window-closed** — the routine's scheduled
+     window ended; normal end. Mark session complete.
+   `PORTFOLIO.md` current; `DECISIONS.md` has every decision
+   from this session.
+3. If Saturday, write `human/WEEKLY_DIGEST.md` (including the
+   roster-growth and maximization-audit sections — see the
+   template at `human/WEEKLY_DIGEST.md`).
 4. Append a one-line entry to `ops/session-logs/YYYY-MM-DD.md`
-   summarizing the session: duration, budget burn, units of
-   work completed, queue handoff state.
-5. Final commit + push.
+   summarizing: duration, budget burn, units of work completed,
+   queue handoff state, session-end reason.
+5. Final commit + push to the canonical branch (`main`).
 6. Exit cleanly.
 
 The next session starts from a clean handoff.
+
+## SELF_IMPROVEMENT priority (META loop)
+
+The META loop sits at priority 8 in the queue above, which can
+defer it if earlier priorities consume the cycle. To prevent
+META work from accumulating indefinitely:
+
+- An item in `brain/SELF_IMPROVEMENT.md` whose status remains
+  `proposed` for **more than one full cycle** is promoted to
+  priority 5 (the active-build slot, but as META work) on the
+  third cycle. Standing PART 11 instructions in
+  `SELF_IMPROVEMENT.md` are always queue items, never deferred
+  indefinitely.
+- The META-loop self-audit (5.7.7 + 5.7.8) is **never**
+  deferred. It runs every cycle, regardless of queue pressure.
