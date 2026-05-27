@@ -1,3 +1,4 @@
+# Generated / OS / IDE
 node_modules
 dist
 coverage
@@ -8,9 +9,29 @@ coverage
 .vite
 .vscode
 .idea
-test/corpus/raw/*
-!test/corpus/raw/.gitkeep
-playwright-report
+
+# Test artifacts
 test-results
+playwright-report
+
+# BidDiff product
+products/biddiff/test/corpus/raw/*
+!products/biddiff/test/corpus/raw/.gitkeep
+products/biddiff/biddiff-v*.zip
+products/biddiff/dist-zips/
+products/biddiff/node_modules/
+products/biddiff/dist/
+products/biddiff/coverage/
+
+# Top-level patterns (cover both root-level and per-product) for
+# patterns that any product might generate. New products inherit
+# these.
+**/node_modules/
+**/dist/
+**/dist-zips/
+**/coverage/
+
+# Older root-level generated paths from before the Kendama
+# migration — keep ignored.
 biddiff-v*.zip
 dist-zips/

@@ -1,56 +1,109 @@
-# BidDiff
+# Kendama
 
-> Diff amended U.S. federal solicitations against prior versions. Categorized, critical-flagged, on-device.
+An autonomous software product factory.
 
-BidDiff is a Chrome extension (Manifest V3) for proposal and capture managers
-bidding on federal contracts. When SAM.gov posts an amendment to a solicitation,
-BidDiff produces a categorized, critical-flagged diff against the prior version —
-clause changes, due-date shifts, evaluation-criteria edits, page-limit moves —
-so capture teams know exactly what changed without manual page-flipping.
+This repository is **Kendama** — a self-operating system in which
+Claude Code leads a continuous build / research / rank / critique /
+ship operation, generating and improving a portfolio of software
+products with minimal human involvement.
 
-## Status
+The repository's GitHub URL is historical: it was previously the
+`Kendama_site` repository (holding in-progress work on a Chrome
+extension called BidDiff, built over earlier retired code). The
+URL is preserved on purpose. The system inside has been
+restructured into Kendama on 2026-05-27 per
+`MIGRATION_LOG.md`.
 
-**Code-complete.** See `BUILD_COMPLETE.md` for the measured quality metrics,
-and the final list of human-action-only items at the bottom of that file.
+---
 
-## Stack
+## What this repository does
 
-- TypeScript (strict)
-- Vite + CRXJS (Manifest V3 build)
-- React 18 (side panel, popup, options) with dark mode via `prefers-color-scheme`
-- Vitest (unit / integration) + @testing-library/react (components)
-- Playwright recommended for e2e (not currently a dependency; reinstall when a Chromium binary is available)
-- PDF.js + custom DOCX XML walker; Tesseract.js for OCR (stubbed for offline)
-- pdf-lib for the PDF export
-- Offscreen document hosts extraction + diff so the side panel stays responsive
+- Researches markets and generates product ideas continuously.
+- Ranks them by a transparent scoring model (see
+  [`governance/SCORING_MODEL.md`](governance/SCORING_MODEL.md)).
+- Posts the top-ranked idea to a fast human approval gate
+  ([`human/APPROVALS.md`](human/APPROVALS.md)).
+- Builds approved products to the absolute professional standard
+  in [`governance/QUALITY_BAR.md`](governance/QUALITY_BAR.md),
+  enforced by a 14-critic adversarial panel in
+  [`governance/CRITIQUE_AGENTS.md`](governance/CRITIQUE_AGENTS.md).
+- Ships, then keeps polishing — "done" is permanently provisional.
+- Improves itself: brain, loops, critique roster, playbooks.
+- Runs on a weekly Claude Code Routine (no GitHub Actions, no CI
+  scheduler, no machine left on) — see
+  [`ops/SCHEDULE_SETUP.md`](ops/SCHEDULE_SETUP.md).
 
-## Quick commands
+## Where to read next
 
-```bash
-npm install
-npm run typecheck      # strict TS
-npm run lint           # ESLint flat config (max-warnings=0)
-npm test               # Vitest — 206 tests across 37 files
-npm run build          # Vite + CRXJS production build
-npm run ci             # all gates locally
-bash scripts/package.sh    # produces biddiff-v0.1.0.zip
+If you are the human:
+
+- **Start here:** [`human/HOW_TO_USE.md`](human/HOW_TO_USE.md).
+- **Sunday/Monday check-in:** send a short message in a Claude
+  Code session — see Section 7.6 in `HOW_TO_USE.md`.
+- **What needs your action right now:**
+  [`human/NEED_FROM_HUMAN.md`](human/NEED_FROM_HUMAN.md).
+- **This week's digest:**
+  [`human/WEEKLY_DIGEST.md`](human/WEEKLY_DIGEST.md).
+
+If you are a Claude Code session starting in this repository:
+
+- **Read [`CLAUDE.md`](CLAUDE.md) first.** Every session.
+- Follow the operating loop in [`ops/loop.md`](ops/loop.md).
+- Quality is non-negotiable; the bar is in
+  [`governance/QUALITY_BAR.md`](governance/QUALITY_BAR.md) and
+  the critique roster in
+  [`governance/CRITIQUE_AGENTS.md`](governance/CRITIQUE_AGENTS.md).
+- The factory's standing instruction is to work the entire
+  scheduled window, fill the queue with productive work, never
+  declare "done" before a real limit hits.
+
+## Repository layout
+
+```
+.
+├── CLAUDE.md                  master operating instruction
+├── MIGRATION_LOG.md           audit trail of the one-time migration
+├── README.md                  (this file)
+│
+├── brain/                     persistent knowledge of the factory
+├── governance/                rules the factory operates under
+├── human/                     the (narrow) human interface
+├── products/                  one directory per product
+│   └── biddiff/               first product — Chrome extension
+├── play/experiments/          side-projects for surfacing wishlist items
+└── ops/                       loop definition, schedule setup, launch script
 ```
 
-## Architecture rules (enforced by tests)
+The full spec for each directory is PART 1 of the founding
+document, preserved in `MIGRATION_LOG.md` and codified across the
+files above.
 
-- Document content stays on-device. One explicit per-document OCR opt-in.
-- The diff engine is a pure deterministic function of its two inputs.
-- SAM.gov-specific selectors are confined to `src/content/sam/`.
-- `src/core/licensing/` and `src/core/telemetry/` cannot import document types.
-- The product **reports**; it never **advises**.
+## Current portfolio
 
-## Quality
+| Product | Status | Path |
+|---|---|---|
+| BidDiff — Chrome extension that diffs amended U.S. federal solicitations | `build` | [`products/biddiff/`](products/biddiff/) |
 
-- 75-pair labeled corpus: **100% recall, 100% precision, deterministic**.
-- End-to-end PDF round-trip on representative pairs: pass.
-- 250-page PDF processes in ~4s (extract) + ~0.07s (diff) — well under budget.
-- 50-diff memory soak: 1.17× RSS ratio (threshold 3×).
-- WCAG AA contrast on every design-system color pair (light AND dark).
-- Explicit Manifest V3 CSP.
+## Prohibitions (binding on every session)
 
-See `TESTING.md` for the full breakdown.
+- **No GitHub Actions, ever.** No `.github/workflows/`. The
+  factory's scheduling is a Claude Code Routine with the
+  *scheduled* trigger type only.
+- **No CI-based schedulers.** Local OS cron is the sole permitted
+  fallback.
+- **No spending past the spend cap** in
+  [`governance/SPEND_CAP.md`](governance/SPEND_CAP.md).
+- **No weakening of guardrails / quality bar / critique rigor
+  without a human approval entry.**
+- See [`governance/GUARDRAILS.md`](governance/GUARDRAILS.md) for
+  the full list.
+
+## The philosophical core
+
+Kendama exists to defeat critique fatigue. The factory **will
+never** decide it has done enough and stop. It works until a real
+limit (the spend cap, the platform duration limit, the schedule
+window) is reached — and it expects to fill 24+ hour windows of
+continuous deep work as the normal case. The Section 5.7
+maximization rules in `CLAUDE.md` make this structural, not
+aspirational.
