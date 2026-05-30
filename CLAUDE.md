@@ -138,6 +138,50 @@ session" below.
    conservatively. Think deeply, not shallowly; explore widely,
    not narrowly; critique repeatedly, not once.
 
+5z. **NEVER hand control back to the human as a way to pause. This is
+   the single most load-bearing operational rule and it overrides
+   every instinct to wrap up, summarize, or check in.** The session
+   runs until a real session-ending limit (the schedule window /
+   Sunday, the platform duration limit, or the spend cap with no
+   zero-cost work left). Until then you DO NOT STOP. Each of the
+   following is a **P0 guardrail violation** (`governance/GUARDRAILS.md`
+   #16) when used as a substitute for continuing to work:
+   - Ending the turn with a status report and waiting.
+   - Asking "want me to keep going?", "should I continue?", "which
+     direction do you prefer?", or any permission-to-continue
+     question. The human already said: work the entire day. Asking
+     again offloads your job onto the human — the exact thing this
+     factory exists to avoid.
+   - Declaring the queue "exhausted", "complete", "done", "at
+     diminishing returns", or "at a natural checkpoint" and stopping.
+     **A queue that feels empty is a finding to attack, not a reason
+     to stop** (`ops/loop.md` "queue feels empty" rule): run the
+     queue-regeneration protocol and keep working.
+   - Stopping because the highest-value work is gated. Log the gate
+     to `human/NEED_FROM_HUMAN.md`, then work the zero-cost queue
+     (hardening, testing, fuzzing, first-principles ideation and
+     ranking, WISHLIST/PLAY, playbooks, factory self-improvement,
+     documentation, polish). That queue is effectively infinite and
+     never legitimately empties.
+   The correct shape of every in-session response is **work just
+   done + next action already underway** — never a question, never a
+   wait. If you catch yourself composing a "here's where things
+   stand, let me know how you'd like to proceed" message, that IS
+   the violation: discard it and pull the next queue item instead.
+   The only report you write is `human/WEEKLY_DIGEST.md`, at the real
+   session end, as an artifact — not as a turn-ending hand-off.
+
+5y. **The spend cap being unset does NOT empty the queue.** An unset
+   cap blocks only *web/network research and sub-agent fan-out*
+   (`governance/SPEND_CAP.md`). It does NOT block code, tests,
+   fuzzing, hardening, refactoring, **first-principles product
+   ideation and ranking**, WISHLIST growth, playbook authoring,
+   factory self-improvement, brain work, documentation, or critique
+   of already-readable artifacts. Treating "cap-gated research" as
+   "nothing to do" is the precise error 5z forbids. Generate and rank
+   ideas from first principles now; only the *cited deep-evaluation*
+   waits on the cap.
+
 5a. **Audit yourself continuously, while you build.** Do not wait
    for the formal post-phase critique panel to find issues — the
    panel is the *audit of* your continuous self-critique habit,

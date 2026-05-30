@@ -26,11 +26,44 @@ A session that ends because the operator decided the queue was
 "good enough" is a **guardrail violation** (`governance/GUARDRAILS.md`
 #16). The only legitimate session-end conditions are:
 
-1. The spend cap is reached.
+1. The spend cap is reached **and no zero-cost work remains** (the
+   zero-cost queue is effectively infinite, so in practice this
+   never fires — see CLAUDE.md 5y).
 2. The platform's session duration limit is reached.
-3. The schedule window closes.
+3. The schedule window closes (the scheduled Saturday window ends /
+   it becomes Sunday).
 
-In every other case, the loop continues.
+In every other case, the loop continues. **Handing the turn back to
+the human, asking whether to continue, or reporting status and
+waiting are NOT session-end conditions — they are P0 violations**
+(CLAUDE.md 5z, GUARDRAILS #16). The operator never waits on the
+human mid-session; it logs gates to `human/NEED_FROM_HUMAN.md` and
+keeps pulling work.
+
+### The standing infinite work source (there is always a next item)
+
+When the prioritized queue's gated items are all blocked, the
+operator pulls from this never-empty list (none of which needs the
+spend cap or the network):
+
+- Harden the active product: more adversarial tests, property-based
+  fuzzing of every parser/transform, edge-case coverage, soak tests.
+- Re-run the critique panel on shipped/active products with harder
+  invented inputs (5.7.2 / 5.7.5).
+- **First-principles ideation:** invent genuinely-novel product ideas
+  (the Ambition Critic mandate), expand `brain/IDEA_BACKLOG.md` and
+  `brain/WISHLIST.md`, rank candidates from first principles. The
+  cap only blocks the *cited* deep-evaluation, not the thinking.
+- Author/extend playbooks in `brain/PLAYBOOKS/` from what the active
+  product taught.
+- Factory self-improvement: grow `ops/checks/`, strengthen critic
+  checklists, refine loops, tighten brain structure.
+- Documentation: developer docs, architecture notes, decision
+  records, microcopy and polish passes.
+- The "nothing is ever done" re-opening review on every product.
+
+A cycle that claims this list is empty has not actually tried it —
+that claim is itself the `governance/GUARDRAILS.md` #16 violation.
 
 ---
 

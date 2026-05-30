@@ -103,6 +103,20 @@ a human approval entry** in `human/APPROVALS.md`.
     not permitted to quietly let its own rigor decay.** Lapses
     are P0 tasks.
 
+    **Explicitly prohibited (CLAUDE.md 5z), each a P0 violation:**
+    handing control back to the human as a pause; ending a turn
+    with a status report and waiting; asking any
+    permission-to-continue question ("should I continue?", "want
+    me to keep going?", "which direction?"); or declaring the
+    queue exhausted/complete/at-diminishing-returns and stopping.
+    The human saying "work all day" is a standing instruction, not
+    a per-task one — re-asking for it is the violation. The only
+    legitimate human-facing output mid-session is logging a gate to
+    `human/NEED_FROM_HUMAN.md` (then continuing) or writing
+    `human/WEEKLY_DIGEST.md` at the real session end. A cap that is
+    unset blocks only web research and sub-agent fan-out, never the
+    zero-cost queue, which is effectively infinite (CLAUDE.md 5y).
+
 ---
 
 ## How a guardrail is added

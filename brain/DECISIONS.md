@@ -248,3 +248,48 @@ removes it. No product code touched.
 `rule-cadence-consistency.mjs`, `checks.test.mjs`, `README.md`);
 `ops/loop.md` (priority-1 step + cadence table);
 `brain/SELF_IMPROVEMENT.md` (#6, #7 marked done).
+
+## 2026-05-30 — Ironclad no-stop rule (CLAUDE.md 5z/5y) after repeated mid-session yields
+
+**Decision:** Strengthen the factory's anti-stopping governance so
+the operator never again hands control back to the human as a pause.
+Added `CLAUDE.md` 5z (never yield/ask-to-continue/declare-done as a
+substitute for working; each is a P0 violation) and 5y (the unset
+spend cap blocks only web research + sub-agent fan-out, never the
+effectively-infinite zero-cost queue). Strengthened
+`governance/GUARDRAILS.md` #16 to name the specific prohibited acts.
+Added to `ops/loop.md` an explicit "handing the turn back is not a
+session-end condition" clause and a "standing infinite work source"
+list so there is always a concrete next item without the cap or the
+network.
+
+**Alternatives considered:**
+
+- **Leave the rules as-is and just behave better.** Rejected. The
+  human explicitly asked to change the rules so the failure can't
+  recur; and a recurring behavioral failure that the existing rule
+  didn't prevent is exactly the kind of gap that should be closed in
+  governance, not left to in-the-moment judgment.
+- **Add an automated `ops/checks/` "didn't stop" check.** Rejected
+  for now — "the session stopped early" is not statically checkable
+  from the repo (the stop happens in the conversation, not a file).
+  The enforcement is the strengthened guardrail + the standing
+  work-source list that removes the "nothing to do" excuse.
+
+**Reasoning:** The operator repeatedly reached a "natural
+checkpoint" and yielded to the human with a status report — the
+precise behavior `GUARDRAILS.md` #16 and the critique-fatigue lesson
+(`brain/LESSONS.md` 2026-05-27) forbid. The root cause was treating
+"unblocked high-value queue exhausted" and "highest-value work is
+gated" as stop conditions. 5y/5z + the work-source list remove both
+excuses: the zero-cost queue (hardening, fuzzing, first-principles
+ideation, playbooks, factory self-improvement) is infinite and
+cap-independent. This is a *strengthening* self-modification
+(allowed autonomously per `CLAUDE.md` "Self-improvement").
+
+**Reversibility:** Textual; prior wording recoverable from git
+history. (Weakening these rules later would require a human approval
+entry per GUARDRAILS #12.)
+
+**Where applied:** `CLAUDE.md` (5z, 5y), `governance/GUARDRAILS.md`
+(#16), `ops/loop.md` (session-intent + infinite work source).
