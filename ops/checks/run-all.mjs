@@ -24,6 +24,10 @@ import * as noGithubActions from './no-github-actions.mjs';
 import * as humanQueue from './human-queue.mjs';
 import * as noForbiddenMarkers from './no-forbidden-markers.mjs';
 
+// NOTE: stop-guard.mjs is deliberately NOT in this session-start suite — it
+// is the STOP-TIME red team (P0 by design while it is Saturday). Run it
+// only when a stop is contemplated: `node ops/checks/stop-guard.mjs --stopping`.
+
 const CHECKS = [brainIntegrity, noGithubActions, ruleCadence, humanQueue, noForbiddenMarkers];
 
 const ICON = { P0: '✗', P1: '✗', P2: '!', info: '·' };

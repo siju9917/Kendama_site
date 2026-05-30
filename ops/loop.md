@@ -40,6 +40,18 @@ waiting are NOT session-end conditions — they are P0 violations**
 human mid-session; it logs gates to `human/NEED_FROM_HUMAN.md` and
 keeps pulling work.
 
+**The red-team stop gate (CLAUDE.md 5x).** Conditions 2 and 3 both
+reduce to one verifiable fact: *it is no longer Saturday.* Before the
+operator stops for ANY reason, it states "stopping because it is no
+longer Saturday" and runs `node ops/checks/stop-guard.mjs --stopping`,
+which red-teams that claim against the real clock. Exit 1 (still
+Saturday) ⇒ the stop is REFUSED, a P0; the operator discards it and
+pulls the next item. Only exit 0 (genuinely not Saturday) authorizes
+the session-end sequence below. The operator may not stop on its own
+judgment; only the verified date authorizes it (and a hard
+platform-duration cutoff, which is the platform stopping, not the
+operator choosing to).
+
 ### The standing infinite work source (there is always a next item)
 
 When the prioritized queue's gated items are all blocked, the

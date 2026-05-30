@@ -109,6 +109,18 @@ a human approval entry** in `human/APPROVALS.md`.
     permission-to-continue question ("should I continue?", "want
     me to keep going?", "which direction?"); or declaring the
     queue exhausted/complete/at-diminishing-returns and stopping.
+
+    **The single permitted stop reason + red team (CLAUDE.md 5x).**
+    The ONLY acceptable operator-stop reason is "it is no longer
+    Saturday" (the schedule window closed). Before ANY stop the
+    operator states that reason and runs the red team —
+    `node ops/checks/stop-guard.mjs --stopping` — which verifies the
+    claim against the real system clock and does not take the
+    operator's word. If the red team refuses (still Saturday), the
+    stop claim was false → P0: discard the stop and keep working.
+    Every non-"no longer Saturday" stop reason is rejected outright.
+    This makes "no stopping on Saturday" a *verifiable* gate, not a
+    matter of operator discretion.
     The human saying "work all day" is a standing instruction, not
     a per-task one — re-asking for it is the violation. The only
     legitimate human-facing output mid-session is logging a gate to

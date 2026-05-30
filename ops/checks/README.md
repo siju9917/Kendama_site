@@ -49,6 +49,22 @@ The `no-github-actions` check enforces this for the whole repo.
 | `human-queue` | `human/NEED_FROM_HUMAN.md` items are uniquely numbered and contiguous from 1 (the check-in walks the list by number). Added after a real duplicate-`## 4.` defect. | P1/P2 |
 | `no-forbidden-markers` | No `TODO`/`FIXME`/`XXX`/`HACK` in any product's shipped `src/` (GUARDRAILS #10) — unless recorded as a documented human-gated blocker. Excludes tests; avoids `XX.XXX`-style false positives. | P1 |
 
+### The stop-guard red team (separate — run at STOP time, not session start)
+
+`stop-guard.mjs` is **not** in `run-all` (it is P0-by-design while it is
+Saturday, which is the whole point — it must not block the session-start
+gate). It is the red team on every stop attempt (CLAUDE.md 5x): the only
+permitted operator-stop reason is "it is no longer Saturday," and this
+guard verifies that claim against the **real system clock**, not the
+operator's word.
+
+```bash
+node ops/checks/stop-guard.mjs --stopping   # exit 1 (REFUSED) while it is Saturday
+```
+
+Before contemplating any stop, the operator runs it; exit 1 ⇒ discard the
+stop and pull the next queue item.
+
 ## Adding a check
 
 1. Create `ops/checks/<name>.mjs` that exports `name` (string) and

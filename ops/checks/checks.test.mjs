@@ -20,6 +20,7 @@ import * as humanQueue from './human-queue.mjs';
 import { analyze as analyzeQueue } from './human-queue.mjs';
 import * as noForbiddenMarkers from './no-forbidden-markers.mjs';
 import { scan as scanMarkers } from './no-forbidden-markers.mjs';
+import { redTeamStop } from './stop-guard.mjs';
 import { BLOCKING_LEVELS } from './lib.mjs';
 
 const blocking = (findings) => findings.filter((f) => BLOCKING_LEVELS.has(f.level));
@@ -98,6 +99,25 @@ test('no-forbidden-markers: ignores test files', () => {
   const read = () => 'it("TODO later", () => {});';
   const f = scanMarkers(['products/foo/src/a.test.ts'], read);
   assert.equal(blocking(f).length, 0);
+});
+
+test('stop-guard: REFUSES a stop on Saturday (the work window)', () => {
+  const sat = new Date('2026-05-30T12:00:00Z'); // a Saturday
+  const f = redTeamStop(sat, 'queue exhausted');
+  assert.ok(f.some((x) => x.level === 'P0' && /STOP REFUSED/.test(x.message)));
+});
+
+test('stop-guard: rejects a non-"no longer Saturday" reason on Saturday', () => {
+  const sat = new Date('2026-05-30T12:00:00Z');
+  const f = redTeamStop(sat, 'diminishing returns');
+  assert.ok(f.some((x) => x.message.includes('Rejected stop reason')));
+});
+
+test('stop-guard: PERMITS a stop once it is no longer Saturday', () => {
+  const sun = new Date('2026-05-31T00:30:00Z'); // Sunday
+  const f = redTeamStop(sun);
+  assert.equal(blocking(f).length, 0);
+  assert.ok(f.some((x) => x.level === 'info' && /Stop permitted/.test(x.message)));
 });
 
 // --- Regression: real repo is currently known-good. ---
