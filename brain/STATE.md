@@ -49,9 +49,20 @@
   a stronger privacy claim). All four P1s are human/cap-gated.
   (Positive: the FAR/DFARS clause dataset's well-known titles were
   spot-checked accurate + current.)
-- **Build green:** 282/282 tests (was 226 at session start — 56 new
-  tests added this session), lint + typecheck clean. Production
-  `npm run build` also verified clean (for the manifest change).
+- **Build green:** 285/285 tests (was 226 at session start — 59 new
+  tests added this session), lint + typecheck clean; full CI gate
+  (typecheck+lint+test+build+bundle-budget) verified green end-to-end.
+- **Late Compliance/claims thread (most productive late vein — proves
+  the queue is never empty):** chasing a false README "Tesseract.js"
+  dependency claim surfaced (a) the Compliance P1 above (all 3 server
+  data flows unwired in v1), (b) a Product-Sense P3 ("critical changes
+  at the top" claim vs. document-ordered list → POLISH N9: critical-
+  first surfacing), (c) **four** "Always confirm" advisory-phrasing
+  instances across store-listing/help/terms/site — all fixed to the
+  canonical reporting phrasing, with the no-advisory test extended to
+  scan 9 user-facing docs + the "always …" pattern. Verified clean:
+  FAR/DFARS clause titles, microcopy, store permissions (matched to
+  manifest), no hardcoded secrets (+ a new secret-scan regression test).
 - **Next action on the product:** BOTH 5.7.2 hard passes on the
   code-correctness dimension are now DONE this cycle — pass 1 (manual
   adversarial reading of every source file; 5 bugs + 2 security + more
