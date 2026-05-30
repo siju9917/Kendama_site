@@ -19,6 +19,37 @@
 
 ---
 
+## 2026-05-30 — Stop enforcement upgraded from rule to technical interlock (Claude Code Stop hook)
+
+**Before:** The "never stop on Saturday" rule (CLAUDE.md 5z/5x) was
+enforced by the stop-guard red team only when the operator *chose* to run
+`stop-guard.mjs --stopping`. Nothing forced that check — the operator could
+simply end a turn (summarize-and-wait) and the red team never fired.
+
+**After:** Wired the red team into a Claude Code `Stop` hook
+(`.claude/settings.json` → `node ops/checks/stop-guard.mjs --hook`). The
+hook fires automatically on every turn-end attempt. `hookDecision(now)`
+returns `{"decision":"block","reason":…}` while it is genuinely Saturday
+(real UTC clock), which Claude Code honours by refusing the stop and feeding
+the reason back to the operator — forcing it to pull the next queue item.
+Once it is no longer Saturday it returns `{}` and the stop proceeds.
+
+**Reasoning:** The human's directive (2026-05-30) was to *enforce* that
+progress does not stop, not merely to document it. A rule the operator must
+remember to run is not enforcement; a hook the platform runs unconditionally
+is. The clock check is adversarial and independent of operator assertion
+(cf. 5.7.8): the only stop reason that passes is "it is no longer Saturday,"
+verified against the real clock. The platform's hard duration limit and the
+spend cap remain the genuine backstops. Removing the hook is a *weakening*
+change requiring a `human/APPROVALS.md` entry (GUARDRAILS #12).
+
+**Also fixed (same cycle):** a false-positive class in the new
+`governance-integrity` check — it flagged its own README and a
+`META_LESSONS` post-mortem that legitimately *quote* the forbidden
+narration phrases. Added `isMention()`: a phrase wrapped in a quote/backtick
+(within a 2-char window, so `directly."` still counts) is a documented
+mention, not leaked prose. All 25 factory-check tests pass; `run-all` green.
+
 ## 2026-05-27 — Migration from `Kendama_site` (BidDiff in-progress) to Kendama factory
 
 **Decision:** Execute PART 12 of the founding spec on the
