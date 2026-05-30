@@ -295,6 +295,17 @@ export function DiffView({ result, sessionNotices }: Props): React.ReactElement 
           onChange={(e) => setTextFilter(e.target.value)}
         />
       </div>
+      {/* Always-available, keyboard-accessible shortcut reference (a native
+          <details> — no modal / focus-trap needed). Complements the
+          one-time tip below, which is dismissed forever after first view. */}
+      <details className="shortcuts">
+        <summary>Keyboard shortcuts</summary>
+        <ul className="reset-list shortcuts__list">
+          <li><kbd>J</kbd> / <kbd>K</kbd> — next / previous change</li>
+          <li><kbd>R</kbd> — mark the focused change reviewed</li>
+          <li><kbd>/</kbd> — jump to the text filter</li>
+        </ul>
+      </details>
       </div>
       {filtered.length === 0 ? (
         <div className="empty">
