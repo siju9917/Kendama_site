@@ -85,6 +85,41 @@ genuinely non-obvious and not listicle picks.
 strategic fit + clearest distribution), then D3–D5. Until then they
 stay first-principles-ranked candidates, not approved builds.
 
+#### Portfolio-sequencing insight (2026-05-30, first-principles)
+
+The D-family is not five independent products — it is **one shared
+engine (D1 `regdiff`) plus N rule-packs** (D2–D5, rank-2, and BidDiff
+itself). That reframes the optimal build sequence and is a genuine
+strategic, not just listing, decision:
+
+- **The compounding play:** extract the critical-change diff engine
+  from BidDiff into `regdiff` *as reusable infrastructure first*, then
+  each subsequent product (clauseguard, the MCP server, the protobuf
+  plugin, the Shopify app) is "engine + a rule-pack + a distribution
+  shell." Marginal build cost per new vertical drops sharply; the
+  critique playbook (`brain/PLAYBOOKS/...`) already exists to compound
+  the *process* the same way.
+- **But — the hard filters still gate the order.** Build-sequencing
+  must not override `governance/SCORING_MODEL.md`'s
+  distribution-without-marketing + Proven-evidence rules. A shared
+  library (D1) scores *weakly* on distribution/revenue on its own
+  (npm libraries monetize poorly). So the likely correct sequence is
+  **not** "build D1 first as a product," but: **ship a
+  revenue-bearing rule-pack product first (the one whose cited
+  deep-eval wins), extracting the reusable `regdiff` core as a
+  *byproduct* of building it** — then the second product reuses that
+  core nearly free. D1-as-a-standalone-product is a later, optional
+  open-core monetization play, not the foundation build.
+- **Implication for the cap-unblocked session:** when deep-evaluating
+  D2–D5 / rank-2, score each *as if the shared engine already exists*
+  (because BidDiff's does) — that lifts every derivative's build-
+  feasibility and strategic-fit sub-scores. Record the shared-core
+  extraction as an explicit step in whichever derivative is approved
+  first.
+
+This is the kind of derivative/portfolio reasoning PART 3.1 asks for:
+the second product should be cheaper than the first, by design.
+
 ### Standing candidate categories to populate via research
 
 The seeded backlog above is a starting point. On every RESEARCH
