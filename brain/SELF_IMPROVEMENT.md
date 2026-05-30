@@ -57,7 +57,12 @@ that none has already drifted from the spec.
 
 **Strengthens or weakens?** stronger.
 
-**Status:** proposed.
+**Status:** **done.** The bootstrap session ran the first META
+self-audit (1 P0 + 5 P1 + 4 P2, all P0/P1 fixed; `brain/META_LESSONS.md`
+2026-05-27), and the 5.7.7/5.7.8 audit now runs every cycle
+(2026-05-30 entry). Brain integrity is also automated
+(`ops/checks/brain-integrity.mjs`). Was never marked done — corrected
+2026-05-30.
 
 **Reasoning trace:** Standard hygiene after any structural
 change. The migration was a structural change.
