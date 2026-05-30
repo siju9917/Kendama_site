@@ -256,3 +256,34 @@ batch-consolidation of the digest. #2/#4/#5 → standing awareness;
 **Recurrence test:** next session checks (a) no mid-session
 hand-back-to-human occurred, and (b) whether the cap was set (the real
 unblock for high-value work that removes the busywork tension).
+
+## 2026-05-30 — A governance file (ops/loop.md) was corrupted and committed undetected
+
+**Operational event:** While building the stop-guard, an edit to
+`ops/loop.md` overwrote the "Session-end sequence" with duplicated
+headings and ~20 lines of stray operator narration ("There appears to
+be an issue with the file. Let me read it directly."). It was
+committed; no check caught it; it was only noticed on the next session
+when re-reading the section.
+
+**Why it happened:** (1) a botched edit (likely operator scratchpad/
+narration leaking into file content during a turbulent terminal state —
+heredoc fragments were also echoing); (2) the `ops/checks/` suite
+validated *existence* and *cross-file consistency* but nothing
+validated a factory doc's *content integrity* — there was no signature
+for "this file got mangled."
+
+**Structural fix:** Added `ops/checks/governance-integrity.mjs` (run at
+session start via `run-all`): it flags leaked-narration phrases and the
+same substantial line repeated 3+× across `CLAUDE.md`, `governance/`,
+`ops/`, `brain/` markdown. The corrupted loop.md was restored from the
+last clean commit (4e63284) and the stop-guard content re-applied
+cleanly. This is 5.7.3 applied to the factory's own checks: a defect
+left behind a check that would have caught it.
+
+**Where applied:** `ops/checks/governance-integrity.mjs` (+ tests),
+`ops/checks/run-all.mjs`, `ops/checks/README.md`, `ops/loop.md` (repair).
+
+**Recurrence test:** `governance-integrity` runs every session start;
+a future mangle of a factory doc fails the gate as a P1 before any
+other queue work proceeds.

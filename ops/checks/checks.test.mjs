@@ -21,6 +21,8 @@ import { analyze as analyzeQueue } from './human-queue.mjs';
 import * as noForbiddenMarkers from './no-forbidden-markers.mjs';
 import { scan as scanMarkers } from './no-forbidden-markers.mjs';
 import { redTeamStop } from './stop-guard.mjs';
+import * as governanceIntegrity from './governance-integrity.mjs';
+import { scanText as scanGov } from './governance-integrity.mjs';
 import { BLOCKING_LEVELS } from './lib.mjs';
 
 const blocking = (findings) => findings.filter((f) => BLOCKING_LEVELS.has(f.level));
@@ -120,9 +122,25 @@ test('stop-guard: PERMITS a stop once it is no longer Saturday', () => {
   assert.ok(f.some((x) => x.level === 'info' && /Stop permitted/.test(x.message)));
 });
 
+test('governance-integrity: flags leaked operator narration', () => {
+  const f = scanGov('ops/loop.md', '## Section\n\nThere appears to be an issue with the file.\n');
+  assert.ok(f.some((x) => x.level === 'P1' && /leaked operator narration/.test(x.message)));
+});
+
+test('governance-integrity: flags a substantial line repeated 3+ times', () => {
+  const dup = 'When a real limit is reached and we must consider stopping carefully.';
+  const f = scanGov('ops/loop.md', [dup, dup, dup, dup].join('\n'));
+  assert.ok(f.some((x) => /repeats 4×|repeats 4x/.test(x.message) || /repeats \d+× consecutively/.test(x.message)));
+});
+
+test('governance-integrity: clean text passes', () => {
+  const f = scanGov('CLAUDE.md', '## Heading\n\nNormal prose that does not repeat.\n\n## Another\n');
+  assert.equal(blocking(f).length, 0);
+});
+
 // --- Regression: real repo is currently known-good. ---
 
-for (const check of [brainIntegrity, noGithubActions, ruleCadence, humanQueue, noForbiddenMarkers]) {
+for (const check of [brainIntegrity, noGithubActions, ruleCadence, humanQueue, noForbiddenMarkers, governanceIntegrity]) {
   test(`real repo passes: ${check.name}`, () => {
     const { findings } = check.run();
     const bad = blocking(findings);
