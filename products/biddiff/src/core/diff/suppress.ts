@@ -10,10 +10,19 @@ import { normalizeText } from "../../shared/text.js";
 
 /**
  * True if two blocks are equivalent after aggressive normalization
- * (case-insensitive, all whitespace collapsed, punctuation differences ignored).
+ * (case-insensitive, whitespace collapsed, non-numeric punctuation ignored).
  *
  * Used to suppress "modify" pairs that only differ in whitespace or punctuation
  * left over from upstream extraction quirks.
+ *
+ * CRITICAL INVARIANT: this must never collapse two *different numeric values*
+ * to the same string. Stripping every punctuation mark (the previous
+ * behavior) turned "$1.5M" → "$15M", "3.50" → "350", and "2.5 days" →
+ * "25 days" into "reformatting" and silently hid them — a false negative,
+ * which for a critical-change tool is the worst possible failure. We instead
+ * preserve any punctuation that sits *between two digits* (decimal points,
+ * etc.) because removing it can change a number's value. The deliberate bias
+ * is toward surfacing a change rather than hiding one.
  */
 export function isReformattingOnly(prior: Block, current: Block): boolean {
   const p = aggressiveNormalize(prior.text);
@@ -21,8 +30,32 @@ export function isReformattingOnly(prior: Block, current: Block): boolean {
   return p === c;
 }
 
-function aggressiveNormalize(s: string): string {
-  return normalizeText(s)
+export function aggressiveNormalize(s: string): string {
+  // Drop en-US thousands-separator commas first (digit, comma, exactly three
+  // digits, then a non-digit/end). These are pure grouping and
+  // value-preserving, so "1,500" and "1500" should still be treated as
+  // reformatting. U.S. federal solicitations use the en-US numeric
+  // convention (comma = thousands, period = decimal); this is domain-correct.
+  const base = normalizeText(s)
     .toLowerCase()
-    .replace(/[\s\p{P}]+/gu, "");
+    .replace(/(?<=\d),(?=\d{3}(?:\D|$))/g, "");
+
+  // Remove whitespace and punctuation, but KEEP a punctuation character that
+  // is flanked by digits on both sides — that mark is value-bearing and must
+  // not be collapsed (e.g. the "." in "1.5" must survive so it never equals
+  // "15"). Whitespace is always dropped.
+  let out = "";
+  for (let i = 0; i < base.length; i++) {
+    const ch = base[i];
+    if (/\s/u.test(ch)) continue;
+    if (/\p{P}/u.test(ch)) {
+      const prev = base[i - 1];
+      const next = base[i + 1];
+      const flankedByDigits =
+        prev !== undefined && next !== undefined && /\d/.test(prev) && /\d/.test(next);
+      if (!flankedByDigits) continue;
+    }
+    out += ch;
+  }
+  return out;
 }

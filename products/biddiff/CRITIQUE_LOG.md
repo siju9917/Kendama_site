@@ -186,3 +186,63 @@ returns zero P0/P1.
 to `human/NEED_FROM_HUMAN.md`; P1 #3 routes to
 `human/APPROVALS.md` as a positioning proposal. The factory
 continues with non-blocked work while these wait.
+
+---
+
+## 2026-05-30 — Phase K1 — bug-hunt pass (continuous, 5.7.5 + escalating 5.7.2)
+
+**Pass type:** Continuous bug-hunt with newly invented inputs
+(5.7.5) + escalating second pass (5.7.2). The K1 pass-1 note said
+the Correctness / Adversarial / Security critics "returned no new
+findings" against the migrated codebase; per 5.7.2 that clean
+result is a hypothesis to attack, not a result to trust. This pass
+re-attacked the core diff engine adversarially.
+
+**Critics run (hard pass):** Correctness (#1), Adversarial
+Tester (#2), with the explicit assumption that the previously
+"clean" suppression path hid a defect.
+
+**Findings:**
+
+### P1 — Correctness Critic (#1) — reformatting-suppression hid numeric value changes
+
+- **Area:** `src/core/diff/suppress.ts` (`isReformattingOnly` /
+  `aggressiveNormalize`).
+- **Symptom:** False-positive suppression normalized blocks by
+  stripping **all** punctuation (`/[\s\p{P}]+/gu`) before
+  comparison. Removing digit-internal punctuation collapsed
+  *distinct numeric values* to the same string, so a MODIFY whose
+  only textual difference was a decimal point or digit grouping was
+  classified as "reformatting-only" and **silently dropped — never
+  surfaced as a change.** Confirmed reproductions:
+  - `"Total estimated value: $1.5M"` → `"$15M"` (10× contract
+    value) — suppressed.
+  - `"Unit price 3.50"` → `"350"` (100×) — suppressed.
+  - `"Complete in 2.5 days"` → `"25 days"` — suppressed.
+- **Severity:** P1. For a tool whose entire value proposition is
+  "never miss a critical change," a hidden material change is the
+  worst failure class (false negative). It defeats the headline
+  feature and the change never reaches criticality evaluation
+  (the suppression `continue`s before a Change is built, so even a
+  MONEY/CLIN anchor cannot save it).
+- **Fix:** `aggressiveNormalize` now preserves any punctuation
+  flanked by digits on both sides (value-bearing marks like the
+  decimal point), while still removing en-US thousands-separator
+  commas as value-preserving grouping and dropping all non-numeric
+  punctuation and whitespace. Bias is explicitly toward surfacing a
+  change rather than hiding one. Verified: full suite 239/239
+  (13 new tests in `src/core/diff/suppress.test.ts` pinning both
+  directions), lint + typecheck clean. The reformatting-noise and
+  corpus integration tests still pass, confirming no new
+  false positives on genuine reformatting.
+- **Roster growth (5.7.3):** the Correctness Critic checklist in
+  `governance/CRITIQUE_AGENTS.md` gains an explicit item:
+  "Normalization / suppression / dedup that collapses *distinct*
+  inputs (especially numeric values) to one — a silent
+  false-negative." Logged in the roster growth table.
+
+**Convergence:** This bug-hunt pass found and fixed one P1. The
+three K1 pass-1 P1 findings (Research Quality, Domain-Expert,
+Ambition) remain open and human/research/cap-gated. Phase K1 still
+does NOT converge. The next escalating pass continues against the
+remaining surface once the gated P1s clear.

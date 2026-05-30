@@ -47,6 +47,12 @@ Checklist:
 - Stale state (a `useEffect` with missing deps; a cached value
   never invalidated).
 - Determinism violations where determinism is required.
+- **Normalization / suppression / dedup that collapses *distinct*
+  inputs to one** — especially distinct numeric values (a decimal
+  point or grouping mark stripped so "1.5" == "15"). A
+  comparison that over-normalizes produces a silent false
+  negative: a real change is dropped and never surfaced. Added
+  2026-05-30 (BidDiff suppress.ts hid `$1.5M`→`$15M`).
 
 ### 2. Adversarial Tester
 
@@ -316,6 +322,7 @@ critic is recorded here with the triggering cause.
 | 2026-05-27 | (founding roster) | Initial 12 critics established | Migration / bootstrap |
 | 2026-05-27 | New: Ambition Critic (#13) | Added during bootstrap self-audit | Human directive that the factory be actively curious and innovative; defensive against the conservative-middle failure mode of an agent grading its own ideas |
 | 2026-05-27 | New: Research Quality Critic (#14) | Added during bootstrap self-audit | Decision-engine rigor depends on research depth; without an explicit critic, depth tends to drift toward the easy surface |
+| 2026-05-30 | Correctness Critic (#1) checklist | Added "over-normalization collapses distinct inputs (esp. numeric values) → silent false negative" | BidDiff bug-hunt pass found `isReformattingOnly` stripping decimal points, hiding `$1.5M`→`$15M`-class changes (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30) |
 
 The META loop (PART 11) audits this table every cycle. A month
 with no growth is a warning sign flagged in the weekly digest.
