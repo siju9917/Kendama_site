@@ -73,6 +73,16 @@ gated by the unset spend cap. None is approved.
 | **D4. Shopify app: theme/liquid change-risk diff before publish** | Shopify App Store (strong intent + a Proven $20k+/mo revenue category) | Shopify merchants / agencies editing themes who fear breaking checkout, cart, tracking pixels, structured data | Plausible | Medium (8) — reuses diff + critical-classification, new "risky-edit" rule pack | Self-serve via Shopify Billing API. Highest revenue ceiling of the family. Weakness: hosting + Shopify API-version churn (maintenance fit ↓); furthest from BidDiff's domain. |
 | **D5. OpenAPI / API-spec breaking-change diff — VS Code extension + CI-free check** | VS Code Marketplace (largest dev marketplace) | API teams reviewing `openapi.yaml`/`swagger` changes for breaking edits | Proven-leaning (oasdiff / openapi-diff exist as CLIs — proves demand; an IDE-native, classified experience is the wedge) | Medium (7) — same breaking-change classification core | Monetization DIY via external license server (VS Code has no built-in billing) — self-serve but more build. Distribution excellent. |
 
+**Deep-eval scaffolds (2026-05-30):** D2
+(`brain/RESEARCH/2026-05-30-clauseguard-github-app.md`), D4
+(`...-shopify-theme-risk-app.md`), and D3+D5
+(`...-ide-breaking-change-diff.md`) now have first-principles
+scaffolds. D1 (the `regdiff` library) is covered by the extraction
+map in `brain/PLAYBOOKS/...` and is treated as byproduct-infrastructure,
+not a lead product. The full candidate set (5 seeded + the D-family) is
+now first-principles deep-eval-ready; only the cited competitor/revenue
+research remains, gated on the spend cap.
+
 **Why this family is strong strategically:** it converts BidDiff from
 "one product" into a **reusable engine + a portfolio of rule-pack
 products**, each compounding the same code and the same critique
