@@ -91,6 +91,10 @@ only as pre-migration history.)
 - **226+ tests passing** at the migration checkpoint; the count
   only grows.
 - **Lint, format, typecheck clean with zero warnings.**
+- **Bundle-size budget (documented + asserted).** Non-worker
+  JS: largest chunk ≤ 230 kB gz, total ≤ 460 kB gz (the pdf.js
+  worker is a fixed external cost, lazily loaded, excluded).
+  Enforced by `scripts/check-bundle-size.mjs` in `scripts/ci.sh`.
 
 ## Distribution
 

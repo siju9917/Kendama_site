@@ -84,10 +84,11 @@ validation lands.
   pinned a patched `tar` (`overrides`), 11→7 vulns; documented the
   shipped bundle as vuln-free (`docs/security-audit.md`).
 - **[DONE 2026-05-30]** Current top-level `CHANGELOG.md`.
-- **[OPEN, unblocked, POLISH]** Assert an explicit bundle-size budget
-  (currently observed in build output — main chunk ~434 kB / 180 kB
-  gz — but not asserted). Add a budget check to `scripts/ci.sh` or a
-  test.
+- **[DONE 2026-05-30]** Assert an explicit bundle-size budget.
+  `scripts/check-bundle-size.mjs` (gzipped, pdf.js worker excluded:
+  largest chunk ≤ 230 kB gz, total ≤ 460 kB gz) wired into
+  `scripts/ci.sh`; budget documented in `SPEC.md`. Observed: total
+  396.7 kB gz, largest 175.8 kB gz — within budget.
 - **[OPEN, maintenance]** Bump the Vite 5→6/7 + Vitest 2→3 toolchain
   to clear the 7 dev-only `npm audit` advisories. Breaking; needs full
   re-verification (config + plugin compat + suite). Not a shipped-risk
