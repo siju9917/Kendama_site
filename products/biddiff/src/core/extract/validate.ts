@@ -63,6 +63,18 @@ export function validateInput(file: ArrayBuffer, fileName?: string): FileKind {
       "Legacy .doc files are not supported. Save the document as .docx and try again.",
     );
   }
+  if (kind === "TXT") {
+    // detectKind recognizes .txt for diagnostics, but there is no text
+    // extractor and the pipeline routes any non-PDF kind to the DOCX
+    // extractor — which would fail trying to parse plain text as a zip
+    // and surface a confusing error. Reject cleanly at the trust
+    // boundary instead (the FilePicker's accept= is only a soft filter;
+    // drag-drop and the offscreen path bypass it).
+    throw new ExtractionError(
+      "UNSUPPORTED_FORMAT",
+      "Plain-text (.txt) files are not supported. BidDiff compares PDF (.pdf) and Word (.docx) solicitations.",
+    );
+  }
   return kind;
 }
 

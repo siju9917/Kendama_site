@@ -57,6 +57,16 @@ describe("validateInput", () => {
       expect((e as ExtractionError).code).toBe("UNSUPPORTED_FORMAT");
     }
   });
+  it("rejects .txt cleanly instead of routing it to the DOCX extractor", () => {
+    try {
+      validateInput(bytes("just some plain text, not a zip or pdf"), "notes.txt");
+      throw new Error("should have thrown");
+    } catch (e) {
+      expect(e).toBeInstanceOf(ExtractionError);
+      expect((e as ExtractionError).code).toBe("UNSUPPORTED_FORMAT");
+      expect((e as ExtractionError).message).toMatch(/\.txt|plain-text/i);
+    }
+  });
   it("accepts PDF magic bytes", () => {
     expect(validateInput(pdfHeader(), "x.pdf")).toBe("PDF");
   });

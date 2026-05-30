@@ -329,3 +329,44 @@ resource bounds after pass 1 found a real defect nearby.
 
 **Remaining open on K1:** unchanged (three P1s + two P2s). Phase K1
 does NOT converge.
+
+---
+
+## 2026-05-30 — Phase K1 — bug-hunt pass 3 (Reliability + Adversarial, 5.7.5)
+
+**Pass type:** Continuous bug-hunt (5.7.5), tracing input-validation
+through the pipeline dispatch.
+
+**Finding:**
+
+### P2 — Reliability / Adversarial Tester (#7 / #2) — recognized-but-unsupported `.txt` routed to the wrong extractor
+
+- **Area:** `src/core/extract/validate.ts` (`validateInput`) +
+  `src/sidepanel/pipeline.ts` dispatch.
+- **Symptom:** `validateInput` rejects empty / too-large / unknown /
+  legacy-`.doc` inputs with a clear typed `ExtractionError`, but
+  returned `"TXT"` for `.txt` files **without throwing**. The pipeline
+  dispatch routes *any non-PDF kind to the DOCX extractor*, so a
+  `.txt` file was fed to the zip-based DocxExtractor and failed deep
+  inside zip parsing — surfacing a confusing error instead of the
+  clean "BidDiff supports PDF and Word files" message. There is no
+  text extractor anywhere; `.txt` is not a supported format. The
+  FilePicker's `accept=".pdf,.docx"` is only a soft filter (drag-drop
+  and the offscreen message path bypass it), so the trust boundary
+  must reject it.
+- **Severity:** P2. Violates the QUALITY_BAR "no silent/confusing
+  failures — errors surface with a message that says what happened"
+  rule; not a ship blocker but a real first-contact reliability/polish
+  defect.
+- **Fix:** `validateInput` now rejects `"TXT"` with a clear
+  `UNSUPPORTED_FORMAT` message, mirroring the existing `.doc`
+  handling. New regression test in
+  `src/core/extract/validate.test.ts`. Suite 251/251, lint +
+  typecheck clean.
+- **Roster growth (5.7.3):** Reliability Critic (#7) checklist gains:
+  "a recognized-but-unsupported input kind must be rejected at the
+  trust boundary with a clear message — never silently routed to the
+  wrong handler."
+
+**Remaining open on K1:** unchanged (three P1s + two P2s). Phase K1
+does NOT converge.
