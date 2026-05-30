@@ -18,7 +18,7 @@ tests green. But it's still **blocked on you for two ~2-minute
 things**: setting the spend cap and merging this session's branch.
 Details at the bottom.
 
-### What got done (6 commits, all green)
+### What got done (8 commits, all green; 226 → 247 tests)
 
 1. **`ops/checks/` — the factory's first self-integrity checks**
    (closes `SELF_IMPROVEMENT.md` #6 + #7). Dependency-free Node
@@ -40,8 +40,10 @@ Details at the bottom.
 4. **Fixed a P2 reliability bug.** A pathological document could make
    the diff engine allocate ~400 MB at once (measured) and freeze the
    panel; now bounded to ~16 MB. + 2 tests.
-5. **Extraction fix.** "$1.5M" / "$2.3 million" ceilings are now read
-   at their true value (they were being read as $1). + 3 tests.
+5. **Two extraction fixes.** "$1.5M" / "$2.3 million" ceilings are now
+   read at their true value (they were being read as $1); and
+   calendrically-impossible dates (e.g. Feb 30) no longer produce a
+   bogus normalized date. + 4 tests.
 6. **Ran the mandatory self-audit** (5.7.7/5.7.8) and logged concrete
    evidence for the open domain-expert finding.
 
@@ -82,7 +84,7 @@ found the two bugs above. Both are now regression-tested.
 ### Portfolio status
 
 - **BidDiff** — `build`, Phase K1 still open (3 P1s blocked on you +
-  the cap). Now 246/246 tests (started the week at 226). Code quality
+  the cap). Now 247/247 tests (started the week at 226). Code quality
   improved materially; the three structural P1s are unchanged because
   they need your input + the cap.
 

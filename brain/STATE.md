@@ -37,7 +37,7 @@
   details in `products/biddiff/CRITIQUE_LOG.md`. The phase has NOT
   converged — the three original K1 P1 findings remain open and are
   all human/research/cap-gated.
-- **Build green:** 246/246 tests (was 226 at session start — 20 new
+- **Build green:** 247/247 tests (was 226 at session start — 21 new
   tests added this session), lint + typecheck clean.
 - **Next action on the product:** continue the escalating bug-hunt on
   the un-reviewed core surfaces (storage, licensing, telemetry,
@@ -76,10 +76,11 @@ marked; the factory works the unblocked items.
    vet it).
 6. **P2 [unblocked]** Continue the escalating diff-core bug-hunt on
    the surfaces not yet adversarially re-read this session.
-7. **P2 [partly unblocked]** Remaining extraction-coverage items in
-   `PROGRESS.md`: spelled-out page limits (note: the page-limit
-   trigger is part of the gated critical ruleset — validate via BD2)
-   and US date validity guard (non-gated extraction; can do now).
+7. **P2 [gated]** Remaining extraction-coverage item in `PROGRESS.md`:
+   spelled-out page limits ("ten (10) pages"). The page-limit trigger
+   is part of the gated critical ruleset — validate via BD2. (The
+   money-suffix and date-validity observations were fixed this
+   session.)
 8. **P2 [cap-gated]** Deep-evaluate ranks 3-5 in `IDEA_BACKLOG.md`.
 9. **P2 [cap-gated]** Refresh `brain/MARKET_SIGNALS.md`; META research
    items #2-#3 (autonomous-agent best practices).
@@ -117,9 +118,12 @@ None of these stop the factory from continuing useful zero-cost work.
    on the Summary's Critical stat. +2 tests.
 4. Fixed a P2 reliability bug: token-LCS bounded per-dimension (10k)
    allowed a ~400 MB dp; now bounded by product (4M cells). +2 tests.
-5. Parsed money magnitude suffixes ($1.5M/$2.3 million) — extraction
-   correctness. +3 tests. Ran the META audit (5.7.7/5.7.8); logged
-   coverage evidence for BD2.
+5. Parsed money magnitude suffixes ($1.5M/$2.3 million) and rejected
+   calendrically-impossible dates (Feb 30, Apr 31) — extraction
+   correctness, both non-gated. +4 tests. Ran the META audit
+   (5.7.7/5.7.8); logged coverage evidence for BD2 (3 observations,
+   2 of them now fixed; the page-limit one stays gated under the
+   critical ruleset).
 
 ## Next five actions
 
@@ -129,9 +133,12 @@ None of these stop the factory from continuing useful zero-cost work.
    the REPOSITION default and proceed toward ship per that option.
 3. If the cap has been set: do the BidDiff market research and the
    rank-1 deep evaluation (the two top P1s), posting the proposal.
-4. Continue the escalating diff-core bug-hunt (storage, licensing,
-   telemetry, pdf/reconstruct, sections/assemble); do the US date
-   validity guard (non-gated).
+4. Continue the escalating diff-core bug-hunt on the surfaces not yet
+   adversarially re-read this session: storage/idb (durability),
+   pdf/reconstruct (layout correctness), sections/assemble +
+   headings (drives classification). (Licensing was reviewed — a
+   deliberate local stub; clock-skew trial abuse is a documented
+   limitation the server client will close, not a v1 bug.)
 5. BidDiff Accessibility P2 (axe rendering tests), vetting the dep.
 
 ## Reconciliation status
