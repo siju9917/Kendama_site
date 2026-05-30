@@ -37,8 +37,9 @@
   details in `products/biddiff/CRITIQUE_LOG.md`. The phase has NOT
   converged — the three original K1 P1 findings remain open and are
   all human/research/cap-gated.
-- **Build green:** 253/253 tests (was 226 at session start — 27 new
-  tests added this session), lint + typecheck clean.
+- **Build green:** 256/256 tests (was 226 at session start — 30 new
+  tests added this session), lint + typecheck clean. Production
+  `npm run build` also verified clean (for the manifest change).
 - **Next action on the product:** the escalating bug-hunt has now
   covered the whole high-value surface (diff core, both extractors,
   storage/idb, normalize/validate, telemetry, model/build, clauses,
@@ -136,11 +137,22 @@ None of these stop the factory from continuing useful zero-cost work.
     could collide and drop a change. Salted it. +1 test.
 11. Captured the session's bug archetypes as a compounding lesson in
     `brain/LESSONS.md`; consolidated the brain + digest.
+12. Grew the factory check roster: `ops/checks/human-queue.mjs`
+    (unique/contiguous NEED_FROM_HUMAN numbering — from the real
+    duplicate-#4 defect). 4 checks now.
+13. Maintainability: ReviewPrompt comment trued to actual behavior.
+14. **Security P3** — SAM attachment download now scheme-allowlisted
+    to https (`isAllowedDownloadUrl`). +3 tests.
+15. **Security P3** — `web_accessible_resources` scoped from
+    `<all_urls>` to sam.gov (build-verified). 
 
-Five genuine bugs fixed (1 P1 + 4 P2), 2 extraction-correctness
-improvements, all regression-tested; 5 critic-checklist growths
-logged (5.7.3). 226→253 tests. Adversarially reviewed the entire
-logic-bearing surface; remaining un-reviewed files are presentational.
+Five genuine bugs fixed (1 P1 + 4 P2) + 2 security hardening (P3) +
+2 extraction-correctness + 1 maintainability, all
+regression-tested/verified; 6 critic-checklist growths logged
+(5.7.3) across Correctness/Performance/Reliability/Security. 226→256
+tests. Adversarially reviewed the ENTIRE codebase
+(logic + extraction + storage + UI + runtime + manifest); the few
+remaining un-reviewed files are small presentational components.
 
 ## Next five actions
 

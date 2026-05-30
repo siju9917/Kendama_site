@@ -13,13 +13,14 @@
 The factory shipped real engineering this session: **five genuine
 bugs fixed across BidDiff** (one P1 that silently hid material money
 changes, plus four P2s found by a systematic adversarial sweep of the
-whole codebase), the **first factory self-check infrastructure**, and
-two extraction-correctness fixes — all verified with regression tests,
-253/253 green. But it's still **blocked on you for two ~2-minute
-things**: setting the spend cap and merging this session's branch.
-Details at the bottom.
+*entire* codebase), **two security-hardening fixes**, the **first
+factory self-check infrastructure**, and two extraction-correctness
+fixes — all verified with regression tests (and a clean production
+build), 256/256 green. But it's still **blocked on you for two
+~2-minute things**: setting the spend cap and merging this session's
+branch. Details at the bottom.
 
-### What got done (15 commits, all green; 226 → 253 tests)
+### What got done (22 commits, all green; 226 → 256 tests)
 
 1. **`ops/checks/` — the factory's first self-integrity checks**
    (closes `SELF_IMPROVEMENT.md` #6 + #7). Dependency-free Node
@@ -67,10 +68,15 @@ the offscreen worker) found **five** genuine bugs in total:
    drop a change; block/change IDs depend on it.
    (plus two extraction-correctness fixes — money suffixes, dates.)
 
-Every fix has a regression test; several were confirmed to fail
-without the fix. Five checklist additions across three critics
-(Correctness, Performance, Reliability) so the panel catches these
-classes next time.
+Plus two **security-hardening** fixes (defense-in-depth): SAM
+attachment downloads are now restricted to https URLs, and the
+extension's web-accessible resources were scoped from "every site" to
+sam.gov (removing an extension-detection fingerprint).
+
+Every fix has a regression test (several confirmed to fail without
+the fix). Six checklist additions across four critics (Correctness,
+Performance, Reliability, Security) so the panel catches these classes
+next time.
 
 ### Roster growth this week (5.7.3)
 
@@ -86,14 +92,17 @@ classes next time.
   wrong handler), and re-check cancellation after *every* await
   including post-success persistence. Triggered by the `.txt` and
   cancellation-race bugs.
+- **Security Critic (#3)** checklist gained: a `fetch`/navigation of a
+  DOM-sourced URL passes an explicit scheme allowlist (https), not just
+  `window.open`. Triggered by the SAM attachment download path.
 
 ### Maximization audit (5.7.7 / 5.7.8)
 
 - **5.7.1 Re-critique cadence:** N/A — no shipped products.
 - **5.7.2 Escalating critique:** HELD — a multi-pass adversarial sweep
   of the whole codebase found five real bugs.
-- **5.7.3 Roster growth:** HELD — three critic checklists strengthened
-  (five additions total).
+- **5.7.3 Roster growth:** HELD — four critic checklists strengthened
+  (six additions total).
 - **5.7.4 "Nothing is ever done":** spirit applied to K1 (found more).
 - **5.7.5 Continuous bug-hunt:** HELD — new adversarial inputs.
 - **5.7.6 Continuous ideation:** PARTIAL (flagged) — ambient findings
@@ -108,7 +117,7 @@ classes next time.
 ### Portfolio status
 
 - **BidDiff** — `build`, Phase K1 still open (3 P1s blocked on you +
-  the cap). Now 253/253 tests (started the week at 226). Code quality
+  the cap). Now 256/256 tests (started the week at 226). Code quality
   improved materially; the three structural P1s are unchanged because
   they need your input + the cap.
 
