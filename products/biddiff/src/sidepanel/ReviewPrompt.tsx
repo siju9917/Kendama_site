@@ -2,10 +2,10 @@
  * Polite Web-Store review prompt (Phase 7.8).
  *
  * Trigger logic:
- *   - Wait until the user has completed at least 5 successful diffs.
- *   - Don't prompt while a diff is open the first time it crosses the
- *     threshold — wait until the SECOND successful run AFTER that.
- *   - Once dismissed, never show again.
+ *   - Show once the user has completed at least PROMPT_AT (5) successful
+ *     diffs — the count is read on mount, so in practice the prompt
+ *     appears the next time the side panel mounts at/after the threshold.
+ *   - Once dismissed ("Leave a review" or "No thanks"), never show again.
  *
  * The prompt is non-blocking and offers a clear opt-out.
  */
