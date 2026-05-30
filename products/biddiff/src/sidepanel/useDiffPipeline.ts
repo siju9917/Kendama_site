@@ -53,6 +53,7 @@ export function useDiffPipeline(): {
   run: (current: File, prior: File) => Promise<void>;
   openSaved: (id: string) => Promise<void>;
   reset: () => void;
+  openSample: () => Promise<void>;
 } {
   const [state, setState] = useState<UiState>(INITIAL_STATE);
   const abortRef = useRef<AbortController | null>(null);
@@ -246,5 +247,21 @@ export function useDiffPipeline(): {
     setState(INITIAL_STATE);
   }, []);
 
-  return { state, storage, run, openSaved, reset };
+  // First-run "See an example": load a canned diff so a new user reaches
+  // value without finding two files first. Ephemeral — not saved to
+  // history (it isn't the user's data).
+  const openSample = useCallback(async (): Promise<void> => {
+    abortRef.current?.abort();
+    const { buildSampleResult } = await import("../core/sample/sampleDiff.js");
+    setState({
+      phase: "DONE",
+      result: buildSampleResult(),
+      error: null,
+      loadingNote: "",
+      loadingPercent: 100,
+      sessionNotices: ["This is a built-in example — it isn't saved to your history."],
+    });
+  }, []);
+
+  return { state, storage, run, openSaved, reset, openSample };
 }

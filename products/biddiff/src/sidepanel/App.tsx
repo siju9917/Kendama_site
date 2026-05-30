@@ -23,7 +23,7 @@ import { useDiffPipeline } from "./useDiffPipeline.js";
 const DISCLAIMER_DISMISSED_KEY = "biddiff.disclaimer.dismissed";
 
 export function App(): React.ReactElement {
-  const { state, storage, run, openSaved, reset } = useDiffPipeline();
+  const { state, storage, run, openSaved, reset, openSample } = useDiffPipeline();
   const [license, setLicense] = useState<LicenseState | null>(null);
   // null = haven't read storage yet, don't render to avoid a flicker
   // where the disclaimer flashes on every panel open for users who
@@ -100,6 +100,16 @@ export function App(): React.ReactElement {
           <>
             <Onboarding />
             <FilePickerWithSam onRun={run} />
+            <div style={{ textAlign: "center", marginTop: 8 }}>
+              <button
+                className="ghost"
+                style={{ fontSize: 12 }}
+                onClick={() => void openSample()}
+                title="Load a built-in example diff — no files needed"
+              >
+                New here? See an example diff
+              </button>
+            </div>
             <History storage={storage} onOpen={openSaved} />
           </>
         )}
