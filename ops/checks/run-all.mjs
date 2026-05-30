@@ -21,8 +21,9 @@ import { BLOCKING_LEVELS } from './lib.mjs';
 import * as ruleCadence from './rule-cadence-consistency.mjs';
 import * as brainIntegrity from './brain-integrity.mjs';
 import * as noGithubActions from './no-github-actions.mjs';
+import * as humanQueue from './human-queue.mjs';
 
-const CHECKS = [brainIntegrity, noGithubActions, ruleCadence];
+const CHECKS = [brainIntegrity, noGithubActions, ruleCadence, humanQueue];
 
 const ICON = { P0: '✗', P1: '✗', P2: '!', info: '·' };
 

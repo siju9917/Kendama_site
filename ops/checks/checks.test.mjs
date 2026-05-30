@@ -16,6 +16,8 @@ import { analyze } from './rule-cadence-consistency.mjs';
 import * as ruleCadence from './rule-cadence-consistency.mjs';
 import * as brainIntegrity from './brain-integrity.mjs';
 import * as noGithubActions from './no-github-actions.mjs';
+import * as humanQueue from './human-queue.mjs';
+import { analyze as analyzeQueue } from './human-queue.mjs';
 import { BLOCKING_LEVELS } from './lib.mjs';
 
 const blocking = (findings) => findings.filter((f) => BLOCKING_LEVELS.has(f.level));
@@ -61,9 +63,26 @@ test('rule-cadence: no rule definitions at all is a P0', () => {
   assert.equal(f[0].level, 'P0');
 });
 
+test('human-queue: well-numbered list passes', () => {
+  const md = '## 1. a\nbody\n## 2. b\n## 3. c\n';
+  assert.equal(blocking(analyzeQueue(md)).length, 0);
+});
+
+test('human-queue: duplicate item number is flagged', () => {
+  const md = '## 1. a\n## 2. b\n## 2. c\n## 3. d\n';
+  const hit = analyzeQueue(md).find((f) => f.message.includes('two items numbered 2'));
+  assert.ok(hit, 'expected a duplicate-number finding');
+});
+
+test('human-queue: a gap in numbering is flagged', () => {
+  const md = '## 1. a\n## 2. b\n## 4. d\n';
+  const hit = analyzeQueue(md).find((f) => f.message.includes('jumps from 2 to 4'));
+  assert.ok(hit, 'expected a contiguity-gap finding');
+});
+
 // --- Regression: real repo is currently known-good. ---
 
-for (const check of [brainIntegrity, noGithubActions, ruleCadence]) {
+for (const check of [brainIntegrity, noGithubActions, ruleCadence, humanQueue]) {
   test(`real repo passes: ${check.name}`, () => {
     const { findings } = check.run();
     const bad = blocking(findings);
