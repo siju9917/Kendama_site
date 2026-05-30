@@ -75,8 +75,12 @@ caller. This is why the engine is fuzzable and golden-testable.
    new **section type** (below).
 2. Map it to a category in `diff/classify.ts` (first match wins —
    order matters).
-3. Add the severity rule in `diff/critical.ts` (push a human-readable,
-   **non-advisory** reason).
+3. **Append a `CriticalRule` to `CRITICAL_RULES` in `diff/critical.ts`**
+   — the ruleset is data, not branching: `{ matches(input), reason(input) }`
+   with a human-readable, **non-advisory** reason. (This is also the seed
+   of the rule-pack-loader for the `regdiff`/D-family — a different
+   vertical swaps the whole `CRITICAL_RULES` pack.)
+4. Add focused cases to `diff/critical.test.ts` + a labeled corpus pair.
 4. Add a labeled corpus pair under `test/corpus/synthetic/` + a label
    in `test/corpus/labels/` proving recall, and confirm null pairs
    stay clean.
