@@ -205,8 +205,9 @@ must be resolved **before** the store submission (item 6).
 next session edits **all six OCR copy locations** to on-device-only:
 `docs/privacy-policy.md`, `docs/store-listing.md`, `src/options/index.tsx`,
 `docs/help/getting-started.md`, `docs/help/privacy-and-security.md`,
-`docs/help/faq.md`. On **B**, it's sequenced with the cloud-deploy human
-actions.
+`docs/help/faq.md`, and `docs/support-macros.md` (support reply
+templates). (The marketing site and terms-of-service have no OCR claim.)
+On **B**, it's sequenced with the cloud-deploy human actions.
 
 **Related minor item (verify at launch):** `docs/help/faq.md` describes
 Solo/Team/Enterprise tiers with seat counts (1 / 5 / 25+). The licensing
