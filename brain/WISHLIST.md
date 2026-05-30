@@ -114,3 +114,44 @@ paid SaaS for managed rule sets.
 
 **Promoted to backlog?** Not yet. Logged for the next research
 cycle.
+
+---
+
+## 2026-05-30 — A jsdom-compatible WCAG contrast checker for component tests
+
+**Friction encountered:** BidDiff's Accessibility K1 P2 (verify
+dark-mode contrast on *rendered* components, not just design tokens
+in isolation) is **browser-gated** — and the reason is concrete:
+`axe-core` / `jest-axe`, the standard a11y test tools, **cannot
+evaluate the color-contrast rule under jsdom**, because jsdom does no
+layout or computed-color resolution. So a fast, CI-friendly,
+no-real-browser way to assert "this rendered component meets WCAG
+2.1 AA contrast in light and dark mode" simply does not exist; teams
+either spin up Playwright/Chromium (slow, heavy) or skip rendered
+contrast entirely (what most do).
+
+**Where it came up:** This session, deciding how to close BidDiff's
+a11y contrast P2 without a browser. Concluded adding `jest-axe`
+would be *theater* for contrast (it silently no-ops that rule in
+jsdom), so the P2 stays correctly browser-gated.
+
+**Proposed product:** A library that, given a rendered component tree
+(jsdom) + its stylesheet(s), resolves effective foreground/background
+colors by walking the cascade itself (parse the CSS, compute
+specificity, resolve CSS variables and `currentColor`, handle alpha
+compositing) and asserts WCAG contrast ratios — no real browser, no
+layout engine needed for the *color* question. Ship as a Vitest/Jest
+matcher (`expect(el).toMeetContrast('AA')`) + a standalone checker.
+Distribution: npm/JSR (dev-tooling SEO: "jsdom contrast", "wcag
+contrast test", "jest-axe contrast"). The wedge over axe-core is
+exactly the gap axe documents it can't fill.
+
+**Initial size estimate:** Medium technical scope (a focused CSS
+cascade + color resolver; the WCAG contrast math is trivial). Audience
+is every front-end team with component tests + a dark mode. Evidence:
+Plausible. Strategic fit: this is also what BidDiff itself needs to
+close its own a11y P2 without Chromium — dogfood-able.
+
+**Promoted to backlog?** Not yet — candidate for the
+derivative/dev-tooling set when the cap unblocks deep-evaluation.
+Cross-referenced from `products/biddiff/PROGRESS.md` (the a11y P2).
