@@ -5,7 +5,7 @@
 
 | Product | One-line | Status | Build % | Critique status | Shipped | MRR | Notes |
 |---|---|---|---:|---|---|---|---|
-| **BidDiff** (`products/biddiff/`) | Chrome extension that diffs amended U.S. federal solicitations. (Audience: positioning under review per `human/APPROVALS.md` proposal #1.) | `build` (active) | ~92% — code complete; K1 not converged (3 P1 open). 2026-05-30 hardened the diff core (2 bug fixes + 1 P2 closed + extraction fix; 246/246 tests). | K1 (2026-05-27) did NOT converge — 3 P1 open: Research Quality (no market evidence), Domain-Expert (critical-rule coverage gap), Ambition (audience-vs-scope mismatch). 2026-05-30 bug-hunt + polish passes closed the Product-Sense P2 and fixed a P1 correctness + a P2 reliability defect (`CRITIQUE_LOG.md`). | Not yet — ship gate not reachable until P1s close. | $0 (pre-launch) | All 2026-05-30 work is on branch `claude/saturday-task-kickoff-AfDAa`, not yet merged to `main` (`NEED_FROM_HUMAN.md` item 5). |
+| **BidDiff** (`products/biddiff/`) | Chrome extension that diffs amended U.S. federal solicitations. (Audience: positioning under review per `human/APPROVALS.md` proposal #1.) | `build` (active) | ~93% — code complete + hardened; K1 not converged (3 P1 gated). 2026-05-30: exhaustive 2-pass critique (manual + fuzz), 5 bugs + 2 security fixes, K2 ship-gate dry run, all *unblocked* gaps closed. 262/262 tests + clean build. | K1 (2026-05-27) did NOT converge — 3 P1 open (Research Quality / Domain-Expert / Ambition), all human/cap-gated. 2026-05-30: K1 got 2 independent hard passes (read + property-fuzz) → 5 bugs + 2 P3 security + 2 extraction + maintainability fixed, Product-Sense P2 closed; K2 dry run defended every QUALITY_BAR item w/ evidence (`docs/ship-gate-dry-run.md`). Remaining: 3 K1 P1s + 2 K1 P2s (a11y contrast, SAM e2e), all human/cap/browser-gated. | Not yet — ship gate not reachable until the gated P1s close + human store step. | $0 (pre-launch) | All 2026-05-30 work is on branch `claude/saturday-task-kickoff-AfDAa`, not yet merged to `main` (`NEED_FROM_HUMAN.md` item 5). |
 
 ---
 
@@ -32,7 +32,7 @@ per Section 5.7.1.
 
 | Product | Last full re-critique | Next due | Status |
 |---|---|---|---|
-| BidDiff | 2026-05-27 (Phase K1 pass 1, did NOT converge) | Re-critique once P1s addressed; monthly cadence applies after ship | open — phase not converged |
+| BidDiff | 2026-05-30 (K1: 2 independent hard passes — manual read + property fuzz; + K2 ship-gate dry run) | Re-critique once the gated P1s clear; monthly cadence applies after ship | open — phase not converged (3 P1s + 2 P2s human/cap/browser-gated) |
 
 ## Outcomes feed scoring
 
