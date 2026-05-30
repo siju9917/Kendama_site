@@ -183,6 +183,31 @@ standing work source:
 Now 262 tests. The factory has TWO independent hard passes on the
 code-correctness dimension (read + fuzz) per 5.7.2.
 
+### Further work (continuing, no stop)
+
+- **Phase K2 ship-gate dry run** (`products/biddiff/docs/ship-gate-dry-run.md`):
+  defended every QUALITY_BAR line with cited evidence. Engineering bar
+  met on every axis. K2 does NOT pass — blockers are the 3 K1 P1s + 2
+  P2s (human/cap/browser-gated) + the human store step. **Closed all 3
+  unblocked hygiene gaps:** (a) security re-audit — all 11 `npm audit`
+  vulns are dev/build-time, none ships; pinned a patched `tar` via
+  overrides (11→7); `docs/security-audit.md` corrected; (b) current
+  `CHANGELOG.md`; (c) a documented + asserted bundle-size budget
+  (`scripts/check-bundle-size.mjs` in `ci.sh`; total 396.7 kB gz).
+- **More polish:** N6 keyboard-shortcuts reference; backlog
+  self-audit (dropped ill-formed N4, gated N3 on Word-render verify).
+- **Factory:** a 5th `ops/checks/` check (`no-forbidden-markers`,
+  GUARDRAILS #10 across products); a WISHLIST entry (jsdom contrast
+  checker, from the a11y-P2 friction).
+- **Logged maintenance task:** bump Vite 5→6/7 + Vitest 2→3 to clear
+  the remaining 7 dev-only audit advisories — breaking, needs a
+  dedicated verified cycle (@crxjs vite-5 compat risk); not a shipped
+  risk. In `products/biddiff/PROGRESS.md`.
+
+Factory checks: 5 (`brain-integrity`, `no-github-actions`,
+`rule-cadence-consistency`, `human-queue`, `no-forbidden-markers`),
+all green; check tests 16/16.
+
 ## Next five actions
 
 1. Run `node ops/checks/run-all.mjs` (now the first session-start

@@ -20,7 +20,7 @@ build), 262/262 green. But it's still **blocked on you for two
 ~2-minute things**: setting the spend cap and merging this session's
 branch. Details at the bottom.
 
-### What got done (33 commits, all green; 226 → 262 tests)
+### What got done (40 commits, all green; 226 → 262 tests)
 
 1. **`ops/checks/` — the factory's first self-integrity checks**
    (closes `SELF_IMPROVEMENT.md` #6 + #7). Dependency-free Node
@@ -138,8 +138,20 @@ zero-cost queue). Then I kept working:
   random adversarial cases across the engine and every parser — all
   clean; permanent regression tests).
 - **Product polish:** a "See an example" first-run sample diff (reach
-  value with zero files), a History accessibility fix, and a current
-  architecture + "how to extend" developer doc.
+  value with zero files), a History accessibility fix, a keyboard-
+  shortcuts reference, and a current architecture + "how to extend"
+  developer doc.
+- **Ship-gate dry run (Phase K2):** defended every quality-bar item
+  with cited evidence and closed every *unblocked* gap — re-ran the
+  security audit (all 11 `npm audit` issues are dev/build tooling,
+  **none ships**; pinned a patched `tar`, 11→7), wrote a current
+  CHANGELOG, and added an asserted bundle-size budget. What's left for
+  K2 is all the same human/cap/browser gates. Logged a (non-shipped)
+  toolchain-update maintenance task for the remaining 7 dev-only
+  advisories.
+- **Factory:** a 5th self-check (no `TODO`/`FIXME` in shipped product
+  code) and a WISHLIST product idea (a jsdom contrast checker — the
+  exact gap that makes the a11y contrast P2 browser-gated).
 
 ### Portfolio status
 
