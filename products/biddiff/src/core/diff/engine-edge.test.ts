@@ -67,6 +67,37 @@ describe("DiffEngine edge cases", () => {
     expect(r.changes.length).toBeGreaterThan(0);
   });
 
+  it("a small MODIFY computes token-level spans", () => {
+    const prior = singleSection("The proposal shall not exceed 30 pages total.");
+    const current = singleSection("The proposal shall not exceed 50 pages total.");
+    const r = engine.diff(current, prior);
+    const modify = r.changes.find((c) => c.changeType === "MODIFY");
+    expect(modify).toBeTruthy();
+    expect(modify?.tokenSpans).not.toBeNull();
+  });
+
+  it("a pathologically large MODIFY degrades gracefully (no 400MB dp) and still surfaces the change", () => {
+    // ~3000 tokens on each side → product ~9M cells, over the 4M cap.
+    // The previous per-dimension 10k cap would have let this allocate a
+    // huge LCS table; the product cap skips token spans but still emits
+    // the block-level MODIFY.
+    const base = Array.from({ length: 3000 }, (_, i) => `word${i}`).join(" ");
+    const prior = singleSection(base + " original-tail-token");
+    const current = singleSection(base + " amended-tail-token");
+    const t0 = Date.now();
+    const r = engine.diff(current, prior);
+    const elapsed = Date.now() - t0;
+    const modify = r.changes.find((c) => c.changeType === "MODIFY");
+    expect(modify).toBeTruthy();
+    // Token spans are intentionally skipped for this size.
+    expect(modify?.tokenSpans).toBeNull();
+    // Both texts are still carried so the UI shows the whole-block diff.
+    expect(modify?.beforeText).toContain("original-tail-token");
+    expect(modify?.afterText).toContain("amended-tail-token");
+    // Must not have gone down the 100M-op path.
+    expect(elapsed).toBeLessThan(2000);
+  });
+
   it("a section with zero blocks does not crash the engine", () => {
     const emptySection = buildSection({
       heading: "Section Y",

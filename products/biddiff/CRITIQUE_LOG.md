@@ -282,3 +282,50 @@ remaining surface once the gated P1s clear.
 Domain-Expert, Ambition) and two P2s (Devil's-Advocate SAM e2e —
 needs Chromium; Accessibility axe rendering tests). Phase K1 does
 NOT converge.
+
+---
+
+## 2026-05-30 — Phase K1 — bug-hunt pass 2 (Performance + Adversarial, 5.7.5 + 5.7.2)
+
+**Pass type:** Continuous bug-hunt with newly invented max-size
+inputs (5.7.5), escalating (5.7.2). Re-attacked the diff-engine
+resource bounds after pass 1 found a real defect nearby.
+
+**Finding:**
+
+### P2 — Performance / Adversarial Tester (#6 / #2) — token-diff memory cap bounded per-dimension, not per-product
+
+- **Area:** `src/core/diff/engine.ts` (`buildChange` token-diff
+  guard) + `src/core/diff/myers.ts` (LCS dp allocation).
+- **Symptom:** The token-level diff guard capped each block at
+  `TOKEN_DIFF_MAX = 10_000` tokens *per dimension*. But the LCS dp
+  is an `Int32Array` of `(n+1)*(m+1)`, so a MODIFY pairing two
+  ~10k-token blocks allocates **~400 MB** (measured: 100M cells ×
+  4 bytes) and runs ~100M ops — a transient memory/CPU spike inside
+  the side panel that can OOM or badly jank on adversarial max-size
+  input. Real paragraphs are <1k tokens, so the per-dimension cap
+  was both too high and the wrong metric.
+- **Severity:** P2. Requires pathological input (a near-10k-token
+  single block on both sides — e.g. a doc whose heading detection
+  collapsed many pages into one block); core diff is unaffected for
+  realistic inputs. Not a ship blocker but a real reliability debt
+  under adversarial input, exactly the Adversarial Tester's
+  "max-size input" mandate.
+- **Fix:** Bound the **product** `n*m ≤ 4_000_000` cells (≈16 MB,
+  a few ms) instead of each dimension. Strictly better — preserves
+  token spans for cheap skewed pairs (e.g. 5000×100) while bounding
+  the dp. Larger MODIFY blocks degrade gracefully to whole-block
+  before/after (no token spans); the block-level change is still
+  fully surfaced. Verified: `src/core/diff/engine-edge.test.ts`
+  gains a control test (small MODIFY keeps spans) and a regression
+  test (a 3000-token MODIFY yields `tokenSpans === null`, still
+  surfaces both texts, completes in ms). Full suite 243/243, lint +
+  typecheck clean; perf-large-doc and memory-soak unaffected.
+- **Roster growth (5.7.3):** Performance Critic checklist gains:
+  "An O(n²)-space algorithm guarded by a per-dimension cap — the
+  bound must be on the product (the actual allocation), and the
+  cap value must be sized against real memory, not an arbitrary
+  round number."
+
+**Remaining open on K1:** unchanged (three P1s + two P2s). Phase K1
+does NOT converge.

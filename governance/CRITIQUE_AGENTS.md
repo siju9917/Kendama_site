@@ -130,6 +130,11 @@ Checklist:
 - Interactive paths meet documented latency targets (measure).
 - No O(n²) on user-scale input without documented reason and
   tested upper bound.
+- **An O(n²)-space algorithm guarded by a per-dimension cap is a
+  trap** — the bound must be on the *product* (the actual
+  allocation), and the cap value must be sized against real memory,
+  not an arbitrary round number. Added 2026-05-30 (BidDiff token
+  LCS: per-dimension 10k cap still allowed a ~400 MB dp).
 - No re-render storms; lists virtualize where needed.
 - Bundle / binary size within budget.
 - No memory leak under sustained use (soak test where meaningful).
@@ -323,6 +328,7 @@ critic is recorded here with the triggering cause.
 | 2026-05-27 | New: Ambition Critic (#13) | Added during bootstrap self-audit | Human directive that the factory be actively curious and innovative; defensive against the conservative-middle failure mode of an agent grading its own ideas |
 | 2026-05-27 | New: Research Quality Critic (#14) | Added during bootstrap self-audit | Decision-engine rigor depends on research depth; without an explicit critic, depth tends to drift toward the easy surface |
 | 2026-05-30 | Correctness Critic (#1) checklist | Added "over-normalization collapses distinct inputs (esp. numeric values) → silent false negative" | BidDiff bug-hunt pass found `isReformattingOnly` stripping decimal points, hiding `$1.5M`→`$15M`-class changes (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30) |
+| 2026-05-30 | Performance Critic (#6) checklist | Added "O(n²)-space guarded by a per-dimension cap; bound the product, size the cap against real memory" | BidDiff token-LCS per-dimension 10k cap still allowed a ~400 MB dp allocation (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30 bug-hunt pass 2) |
 
 The META loop (PART 11) audits this table every cycle. A month
 with no growth is a warning sign flagged in the weekly digest.

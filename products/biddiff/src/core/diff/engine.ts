@@ -261,17 +261,22 @@ export class DiffEngine implements IDiffEngine {
       anchors: anchorsInvolved,
     });
 
-    // Skip token-level diff for pathologically large blocks — LCS is
-    // O(n*m), so 10k×10k = 100M ops would freeze the side panel. Real
-    // paragraphs are <1k tokens; this cap is well above the realistic
-    // ceiling.
-    const TOKEN_DIFF_MAX = 10_000;
+    // Skip token-level diff for pathologically large blocks. The LCS is
+    // O(n*m) in BOTH time and space (the dp is an Int32Array of
+    // (n+1)*(m+1)). Bound the PRODUCT, not each dimension: a
+    // per-dimension cap of 10k still let a 10k×10k pair allocate ~400 MB
+    // and run ~100M ops inside the side panel — a real memory/CPU spike
+    // on adversarial max-size input. 4M cells ≈ 16 MB and a few ms,
+    // which is far above any realistic paragraph (real paragraphs are
+    // <1k tokens). Larger MODIFY blocks degrade gracefully to a
+    // whole-block before/after with no token spans; the block-level
+    // change itself is still fully surfaced.
+    const TOKEN_DIFF_MAX_CELLS = 4_000_000;
     const tokenSpans =
       p.changeType === "MODIFY" &&
       beforeBlock &&
       afterBlock &&
-      beforeBlock.tokens.length <= TOKEN_DIFF_MAX &&
-      afterBlock.tokens.length <= TOKEN_DIFF_MAX
+      beforeBlock.tokens.length * afterBlock.tokens.length <= TOKEN_DIFF_MAX_CELLS
         ? tokenDiff(beforeBlock.tokens, afterBlock.tokens)
         : null;
 
