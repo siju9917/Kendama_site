@@ -112,6 +112,31 @@ flag-critical → suppress-reformatting → render / export
 
 ---
 
+### `regdiff` extraction map (the portfolio play, grounded in code)
+
+The thesis "engine is horizontal, rule-pack is federal-specific" is
+validated by
+`products/biddiff/test/integration/engine-domain-agnostic.test.ts`.
+When a derivative (`brain/IDEA_BACKLOG.md` D-family / rank-2) is
+approved, extract the **core** below into a shared `regdiff` package
+*as a byproduct of building that product* (do not build the library as
+a standalone product first — it monetizes weakly; see the
+portfolio-sequencing insight in `IDEA_BACKLOG`). Each BidDiff module is
+one of three layers:
+
+| Layer | Modules | Reuse |
+|---|---|---|
+| **Domain-agnostic CORE** (→ `regdiff`) | `core/diff/*` (engine, align, myers, tokens, suppress), `shared/text.ts`, `shared/hash.ts`, `core/model/*`, `core/extract/sections/*`, `core/extract/pdf/reconstruct.ts`, `core/extract/normalize.ts` | Verbatim — the reusable engine + structured-doc model. |
+| **Rule-pack** (federal — swap per vertical) | `core/diff/classify.ts`, `core/diff/critical.ts`, `core/extract/anchors/index.ts` (DATE/MONEY/CLAUSE_REF/CLIN/PAGE_LIMIT/SECTION_REF), `core/clauses/*` | Replace with the new vertical's anchors + categories + criticality + reference dataset. This is the per-product work. |
+| **Product SHELL** (per distribution surface) | `sidepanel/*`, `popup/*`, `options/*`, `background/*`, `offscreen/*`, `content/*`, `core/storage/*`, `core/export/*`, `core/{licensing,telemetry}/*`, `manifest.config.ts` | Rewrite per surface (MV3 extension vs. GitHub App vs. MCP server vs. JetBrains plugin). Section B is the MV3 sub-playbook. |
+
+Decoupling work to extract cleanly (do it *as* the first derivative is
+built, not speculatively): make the rule-pack data-driven (the rank-5
+"rule-pack loader" — `classify`/`critical` become a loaded ruleset, not
+hard-coded `if`s) and parameterize the anchor set. The core already has
+no federal coupling (the thesis test proves it), so the extraction is
+mechanical, not a rewrite.
+
 ## B. The Chrome MV3 extension shell
 
 - **Surfaces:** side panel (workspace), popup (quick open + recent),
