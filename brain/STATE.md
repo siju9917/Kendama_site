@@ -59,38 +59,46 @@
   Actions, and rule/cadence consistency are now auto-checked at
   session start by `node ops/checks/run-all.mjs`.
 
-## Queue snapshot (top of stack first)
+## Queue snapshot (top of stack first) — refreshed end of 2026-05-30
 
-Priority order is `ops/loop.md`. Cap-gated and human-gated items are
-marked; the factory works the unblocked items.
+Priority order is `ops/loop.md`. Almost everything high-value is now
+externally gated; the zero-cost queue was worked hard this session.
 
-1. **P1 [cap-gated]** Complete the BidDiff market-research file
-   (`brain/RESEARCH/2026-05-27-biddiff-market-research.md`) — needs
-   live web research; blocked until the spend cap is set.
-2. **P1 [cap-gated]** Complete the rank-1 deep evaluation
-   (`brain/RESEARCH/2026-05-27-jetbrains-apex-plugin.md`) and post the
-   proposal to `human/APPROVALS.md` — needs web research.
-3. **P1 [human-gated, auto-proceeds 2026-06-03]** Action
-   `human/APPROVALS.md` proposal #1 (BidDiff positioning). If still
-   unanswered on/after 2026-06-03, apply the REPOSITION default.
-4. **P1 [human-gated]** Ingest domain-expert questionnaire responses
-   when they arrive (`products/biddiff/docs/domain-validation/`) and
-   extend `src/core/diff/critical.ts` + the Domain-Expert checklist.
-   Concrete extraction-coverage evidence is now logged in
-   `products/biddiff/PROGRESS.md` ("Documented coverage observations").
-5. **P2 [unblocked]** BidDiff Accessibility K1 P2 — axe-core rendering
-   tests for ChangeCard/Summary under dark mode (adds a dev dep;
-   vet it).
-6. **P2 [unblocked]** Continue the escalating diff-core bug-hunt on
-   the surfaces not yet adversarially re-read this session.
-7. **P2 [gated]** Remaining extraction-coverage item in `PROGRESS.md`:
-   spelled-out page limits ("ten (10) pages"). The page-limit trigger
-   is part of the gated critical ruleset — validate via BD2. (The
-   money-suffix and date-validity observations were fixed this
-   session.)
-8. **P2 [cap-gated]** Deep-evaluate ranks 3-5 in `IDEA_BACKLOG.md`.
-9. **P2 [cap-gated]** Refresh `brain/MARKET_SIGNALS.md`; META research
-   items #2-#3 (autonomous-agent best practices).
+**Cap-gated (the moment the spend cap is set — do these first):**
+1. **P1** BidDiff market research
+   (`brain/RESEARCH/2026-05-27-biddiff-market-research.md`) — fill the
+   cited competitor teardown + addressable-market + revenue benchmarks
+   (the open Research-Quality P1; the only thing between BidDiff and a
+   defensible audience claim).
+2. **P1** Finish the cited sections of the deep-evals (now all
+   first-principles-staged): rank-1 Apex, then **D2 clauseguard**,
+   **D4 Shopify**, **D3/D5 IDE**, rank-2 MCP — in the recommended order
+   (`brain/RANKING.md`). Post the winner's proposal to
+   `human/APPROVALS.md`. The build plans / risks / failure-modes /
+   provisional scores are already written; only `[CITED — cap-gated]`
+   sections remain.
+3. **P2** Refresh `brain/MARKET_SIGNALS.md`; META research #2-#3
+   (autonomous-agent best practices).
+
+**Human-gated:**
+4. **P1** Action `APPROVALS.md` #1 (BidDiff positioning) — auto-proceeds
+   to REPOSITION on 2026-06-03 if unanswered.
+5. **P1** Ingest domain-expert responses → extend `critical.ts` + the
+   Domain-Expert ruleset (evidence + the strengthened critic checklist
+   are ready; coverage observations in `PROGRESS.md`).
+
+**Browser-gated:**
+6. **P2** BidDiff a11y contrast (rendered-component, dark mode) + SAM
+   e2e — need Chromium (or the WISHLIST jsdom-contrast tool).
+
+**Unblocked (zero-cost — mostly worked this session; what's left):**
+7. **P2** The Vite/Vitest toolchain bump (clears the 7 dev-only audit
+   advisories) — breaking; a dedicated verified cycle (`PROGRESS.md`).
+8. **P2** Continued product polish from the 5.7.4 backlog (N3 redline
+   DOCX behind a Word-render verify; N8 accessible popovers with the
+   a11y pass) and any new bug-hunt finding.
+9. Continuing recurring duties: re-critique cadence, "nothing is ever
+   done" reviews, ambient ideation, the META audit — every cycle.
 
 ## Open blockers
 
