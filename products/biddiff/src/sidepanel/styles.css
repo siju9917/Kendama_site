@@ -685,13 +685,31 @@ input[type="text"]:focus-visible {
   display: flex;
   align-items: center;
   gap: 8px;
-  cursor: pointer;
   transition: background var(--duration-fast) var(--ease);
 }
 .history-item:hover {
   background: var(--bg-subtle);
 }
-.history-item:focus-visible {
+/* The open affordance is a real <button> filling the row (sibling to the
+   delete button, never nested in it) — reset its chrome so it reads as the
+   row, and give it its own keyboard focus ring since the row itself is no
+   longer the focusable element. */
+.history-item__open {
+  flex: 1;
+  min-width: 0;
+  display: block;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+.history-item__open:focus-visible,
+.history-item__delete:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }

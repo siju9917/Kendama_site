@@ -57,55 +57,44 @@ export function History({ storage, onOpen }: Props): React.ReactElement | null {
       <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {items.slice(0, 12).map((s) => {
           const unseen = !s.lastViewedAt;
+          // Two SIBLING buttons (open + delete) instead of a
+          // role="button" row containing a nested <button> — nested
+          // interactive elements are invalid ARIA and announce
+          // confusingly. The open button is keyboard-operable natively
+          // (Enter/Space), so no manual key handling is needed.
           return (
-            <li
-              key={s.id}
-              className="history-item"
-              tabIndex={0}
-              role="button"
-              onClick={() => onOpen(s.id)}
-              onKeyDown={(e) => {
-                // Enter / Space opens. Deletion is intentionally NOT bound
-                // to Delete/Backspace because it's destructive and there
-                // would be no undo — the explicit ✕ button is the only
-                // delete affordance.
-                // Skip when the focus is inside a child interactive
-                // element (the ✕ button) — otherwise pressing Enter on
-                // the button would both delete AND open this row.
-                if (e.target !== e.currentTarget) return;
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onOpen(s.id);
-                }
-              }}
-              aria-label={`Open diff: ${s.solicitationId ?? s.currentFileName}`}
-            >
-              <div className="history-item__main">
-                <div
-                  className="history-item__title"
-                  title={`${s.solicitationId ? s.solicitationId + " · " : ""}${s.currentFileName} vs. ${s.priorFileName}`}
-                >
-                  {unseen && <span className="history-item__unseen" aria-label="New" title="Not yet opened" />}
-                  {s.solicitationId ?? s.currentFileName}
-                </div>
-                <div
-                  className="history-item__meta"
-                  title={`Compared on ${new Date(s.generatedAt).toLocaleString()}`}
-                >
-                  {s.totalChanges} changes
-                  {s.criticalCount > 0 ? ` · ${s.criticalCount} critical` : ""}
-                  {" · "}
-                  {relativeTime(s.generatedAt)}
-                </div>
-              </div>
+            <li key={s.id} className="history-item">
               <button
-                className="ghost"
+                type="button"
+                className="history-item__open"
+                onClick={() => onOpen(s.id)}
+                aria-label={`Open diff: ${s.solicitationId ?? s.currentFileName}`}
+              >
+                <div className="history-item__main">
+                  <div
+                    className="history-item__title"
+                    title={`${s.solicitationId ? s.solicitationId + " · " : ""}${s.currentFileName} vs. ${s.priorFileName}`}
+                  >
+                    {unseen && <span className="history-item__unseen" aria-label="New" title="Not yet opened" />}
+                    {s.solicitationId ?? s.currentFileName}
+                  </div>
+                  <div
+                    className="history-item__meta"
+                    title={`Compared on ${new Date(s.generatedAt).toLocaleString()}`}
+                  >
+                    {s.totalChanges} changes
+                    {s.criticalCount > 0 ? ` · ${s.criticalCount} critical` : ""}
+                    {" · "}
+                    {relativeTime(s.generatedAt)}
+                  </div>
+                </div>
+              </button>
+              <button
+                type="button"
+                className="ghost history-item__delete"
                 aria-label="Delete this diff from history"
                 title="Delete"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  void onDelete(s.id, s.solicitationId ?? s.currentFileName);
-                }}
+                onClick={() => void onDelete(s.id, s.solicitationId ?? s.currentFileName)}
               >
                 ✕
               </button>

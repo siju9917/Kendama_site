@@ -78,6 +78,28 @@ These feed both `src/core/diff/critical.ts` extension work AND the
 Domain-Expert Critic checklist strengthening, once BD2's human
 validation lands.
 
+## "Nothing is ever done" review (5.7.4) — 2026-05-30
+
+Mandated re-opening review: challenge the premise that BidDiff's
+current state is as good as it gets. What would a top-tier team add?
+These are **improvements** (not bugs — the bug-hunt is separate), each
+tagged with its gate. Promising ones become POLISH/BUILD tasks.
+
+| # | Improvement (what a top-tier team would add) | Gate | Disposition |
+|---|---|---|---|
+| N1 | **Try-it-without-files sample diff** — a "See an example" button that loads a bundled before/after so a first-run user reaches value with zero setup. | none | POLISH — strong first-run win; zero-cost. Queued. |
+| N2 | **History row a11y** — the row is `role="button"` with a nested ✕ `<button>` (invalid interactive nesting). Refactor to sibling buttons (open + delete), no nesting. | none | **DOING NOW** — clear a11y fix, verifiable via History.test. |
+| N3 | **Redline DOCX export** — many capture teams want a Word redline, not just PDF/Markdown. | none (lib) | POLISH — real buyer value; needs a docx-writer dep (vet it). Queued. |
+| N4 | **"What changed since I last viewed"** — re-opening a saved diff highlights changes added since `lastViewedAt`. | none | POLISH — leverages existing `lastViewedAt`. Queued. |
+| N5 | **Change-list virtualization** for pathological diffs (DiffView renders every card). Realistic amendments are <~150 changes (fine), but a defensive cap/windowing protects the tail. | none | POLISH (low priority at realistic scale) — note the Performance-critic "virtualize where needed"; revisit if a real >500-change diff appears. |
+| N6 | **Keyboard-shortcut help overlay** (`?` opens a cheatsheet) — the tip line lists J/K/R// but a discoverable overlay is better. | none | POLISH. Queued. |
+| N7 | **Multi-amendment timeline** (diff across a chain of amendments, not just two). | human (positioning proposal — this is the "team" scope direction) | BLOCKED on `APPROVALS.md` #1. |
+| N8 | **Keyboard-accessible info popovers** — the Summary "Critical"/"Confidence" `title` tooltips are mouse-only; a real popover (focusable, `aria-describedby`) is the ship-grade version. | none (but pairs with the browser-gated contrast P2) | POLISH. Queued with the a11y pass. |
+
+Net: 7 of 8 are zero-cost/unblocked. N2 implemented this session; N1,
+N3, N4, N6, N8 queued as POLISH; N5 noted; N7 is the gated team-scope
+decision. "Done" remains provisional.
+
 ## After ship (forward look)
 
 Once BidDiff passes the ship gate and the human completes the

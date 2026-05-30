@@ -119,4 +119,18 @@ describe("History", () => {
       expect(screen.getByLabelText("New")).toBeTruthy();
     });
   });
+
+  it("uses sibling buttons, never a button nested inside another (valid ARIA)", async () => {
+    const storage = new DiffStorage();
+    await storage.saveDiff(fakeResult("d1"));
+    const { container } = render(<History storage={storage} onOpen={() => {}} />);
+    await waitFor(() => screen.getByText("d1-current.pdf"));
+    // No interactive element may contain another interactive element.
+    for (const btn of Array.from(container.querySelectorAll("button"))) {
+      expect(btn.querySelector("button"), "a button must not nest another button").toBeNull();
+    }
+    // Both affordances exist and are real buttons.
+    expect(screen.getByLabelText(/Open diff/i).tagName).toBe("BUTTON");
+    expect(screen.getByLabelText(/Delete this diff/i).tagName).toBe("BUTTON");
+  });
 });
