@@ -2,7 +2,13 @@
  * Change classification (Phase 3.6).
  *
  * Maps every Change to a ChangeCategory using anchors + section type.
- * Order is precise (first match wins) per spec Part 7.1 step 3.6.
+ * Order is precise (FIRST match wins) per spec Part 7.1 step 3.6.
+ *
+ * Like `critical.ts`, the mapping is **data, not branching**
+ * (`CLASSIFY_RULES`, evaluated in order) so a new vertical swaps the
+ * pack and a new category is an appended/inserted rule — the rule-pack
+ * abstraction for the `regdiff`/D-family. Order is preserved verbatim
+ * from the original branching implementation.
  */
 import type { Anchor, Section, SectionType } from "../model/types.js";
 import type { ChangeCategory } from "./types.js";
@@ -19,28 +25,29 @@ function hasAnchorOfType(anchors: ReadonlyArray<Anchor>, type: Anchor["type"]): 
   return false;
 }
 
+interface ClassifyRule {
+  matches: (sectionType: SectionType | null, anchors: ReadonlyArray<Anchor>) => boolean;
+  category: ChangeCategory;
+}
+
+/** First-match-wins category rules (order is significant). */
+const CLASSIFY_RULES: ReadonlyArray<ClassifyRule> = [
+  { matches: (st, a) => hasAnchorOfType(a, "CLAUSE_REF") || st === "CLAUSES", category: "CLAUSES" },
+  { matches: (st) => st === "EVALUATION_CRITERIA", category: "EVALUATION_CRITERIA" },
+  { matches: (st, a) => hasAnchorOfType(a, "DATE") || st === "DELIVERIES", category: "DATES_DEADLINES" },
+  { matches: (st, a) => hasAnchorOfType(a, "PAGE_LIMIT") || st === "INSTRUCTIONS", category: "SUBMISSION_INSTRUCTIONS" },
+  {
+    matches: (st, a) => hasAnchorOfType(a, "CLIN") || hasAnchorOfType(a, "MONEY") || st === "PRICING",
+    category: "PRICING_CLINS",
+  },
+  { matches: (st) => st === "ATTACHMENT_LIST", category: "ATTACHMENTS" },
+  { matches: (st) => st === "SOW", category: "SCOPE_SOW" },
+];
+
 export function classifyChange({ section, anchors }: ClassifyInput): ChangeCategory {
   const sectionType: SectionType | null = section?.sectionType ?? null;
-
-  // 1. Clauses
-  if (hasAnchorOfType(anchors, "CLAUSE_REF") || sectionType === "CLAUSES") return "CLAUSES";
-  // 2. Evaluation criteria
-  if (sectionType === "EVALUATION_CRITERIA") return "EVALUATION_CRITERIA";
-  // 3. Dates/deadlines
-  if (hasAnchorOfType(anchors, "DATE") || sectionType === "DELIVERIES") return "DATES_DEADLINES";
-  // 4. Submission instructions
-  if (hasAnchorOfType(anchors, "PAGE_LIMIT") || sectionType === "INSTRUCTIONS")
-    return "SUBMISSION_INSTRUCTIONS";
-  // 5. Pricing / CLINs
-  if (
-    hasAnchorOfType(anchors, "CLIN") ||
-    hasAnchorOfType(anchors, "MONEY") ||
-    sectionType === "PRICING"
-  )
-    return "PRICING_CLINS";
-  // 6. Attachments
-  if (sectionType === "ATTACHMENT_LIST") return "ATTACHMENTS";
-  // 7. Scope of work
-  if (sectionType === "SOW") return "SCOPE_SOW";
+  for (const rule of CLASSIFY_RULES) {
+    if (rule.matches(sectionType, anchors)) return rule.category;
+  }
   return "OTHER";
 }
