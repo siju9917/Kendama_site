@@ -66,6 +66,26 @@ node ops/checks/stop-guard.mjs --stopping   # exit 1 (REFUSED) while it is Satur
 Before contemplating any stop, the operator runs it; exit 1 ⇒ discard the
 stop and pull the next queue item.
 
+#### Technical interlock: the Claude Code `Stop` hook
+
+Beyond the manual `--stopping` check, the red team is wired into a
+Claude Code **`Stop` hook** (`.claude/settings.json`) so it is not a rule
+the operator must *remember* — it fires automatically on every turn-end
+attempt:
+
+```bash
+node ops/checks/stop-guard.mjs --hook   # reads the hook payload on stdin,
+                                        # writes the Stop-hook decision JSON
+```
+
+On Saturday `hookDecision()` returns `{"decision":"block","reason":…}`,
+which Claude Code honours by refusing the stop and feeding the reason back
+to the operator (forcing it to pull the next queue item). Once it is no
+longer Saturday it returns `{}` and the stop proceeds. The platform's hard
+duration limit remains the real backstop; the spend cap is the budget
+backstop. Removing the hook is a *weakening* change — log it in
+`human/APPROVALS.md` (GUARDRAILS #12).
+
 ## Adding a check
 
 1. Create `ops/checks/<name>.mjs` that exports `name` (string) and

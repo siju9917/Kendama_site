@@ -20,7 +20,7 @@ import * as humanQueue from './human-queue.mjs';
 import { analyze as analyzeQueue } from './human-queue.mjs';
 import * as noForbiddenMarkers from './no-forbidden-markers.mjs';
 import { scan as scanMarkers } from './no-forbidden-markers.mjs';
-import { redTeamStop } from './stop-guard.mjs';
+import { redTeamStop, hookDecision } from './stop-guard.mjs';
 import * as governanceIntegrity from './governance-integrity.mjs';
 import { scanText as scanGov } from './governance-integrity.mjs';
 import { BLOCKING_LEVELS } from './lib.mjs';
@@ -120,6 +120,19 @@ test('stop-guard: PERMITS a stop once it is no longer Saturday', () => {
   const f = redTeamStop(sun);
   assert.equal(blocking(f).length, 0);
   assert.ok(f.some((x) => x.level === 'info' && /Stop permitted/.test(x.message)));
+});
+
+test('stop-guard hook: BLOCKS the stop on Saturday', () => {
+  const sat = new Date('2026-05-30T12:00:00Z');
+  const d = hookDecision(sat);
+  assert.equal(d.decision, 'block');
+  assert.ok(/still Saturday/.test(d.reason));
+});
+
+test('stop-guard hook: allows the stop once it is no longer Saturday', () => {
+  const sun = new Date('2026-05-31T00:30:00Z');
+  const d = hookDecision(sun);
+  assert.deepEqual(d, {});
 });
 
 test('governance-integrity: flags leaked operator narration', () => {

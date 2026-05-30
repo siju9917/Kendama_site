@@ -1,0 +1,15 @@
+{
+  "$comment": "Kendama enforcement. The Stop hook turns the no-stop rule (CLAUDE.md 5x) into a technical interlock: every time the agent tries to end a turn, the stop-guard red team runs and BLOCKS the stop while it is Saturday (the work window), forcing the operator to pull the next queue item instead of idling/summarizing. Only 'it is no longer Saturday' (verified against the real clock) authorizes a stop. The platform's hard duration limit remains the real backstop; the spend cap is the budget backstop. To disable, remove the Stop hook below (a weakening change — log it in human/APPROVALS.md per GUARDRAILS #12).",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/ops/checks/stop-guard.mjs\" --hook"
+          }
+        ]
+      }
+    ]
+  }
+}

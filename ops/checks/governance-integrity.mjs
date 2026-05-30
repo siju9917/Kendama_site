@@ -41,14 +41,27 @@ function targetFiles() {
   );
 }
 
+// A phrase is a *mention* (documenting the forbidden text — legitimate, e.g.
+// this check's own README or a META_LESSONS post-mortem) rather than leaked
+// *use* when it is immediately wrapped in a quote or backtick. Leaked
+// scratchpad narration appears as bare prose; documentation quotes it.
+function isMention(text, start, end) {
+  const before = text[start - 1] || '';
+  const after = text[end] || '';
+  return /["'`]/.test(before) || /["'`]/.test(after);
+}
+
 export function scanText(rel, text) {
   const findings = [];
   for (const re of NARRATION) {
-    const m = text.match(re);
-    if (m) {
+    const g = new RegExp(re.source, 'gi');
+    let m;
+    while ((m = g.exec(text)) !== null) {
+      if (isMention(text, m.index, m.index + m[0].length)) continue;
       findings.push(
         finding('P1', `${rel}: leaked operator narration / mangled-edit text "${m[0]}" — a committed factory doc must not contain scratchpad prose (governance-integrity).`),
       );
+      break; // one finding per phrase is enough
     }
   }
   // Repeated-identical-line signature.

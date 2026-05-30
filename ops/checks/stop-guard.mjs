@@ -69,17 +69,54 @@ export function run() {
   return { name, findings: redTeamStop(new Date()) };
 }
 
-// CLI: red-team an actual stop attempt and exit non-zero if refused.
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const stopping = process.argv.includes('--stopping');
-  const reasonArg = process.argv.find((a) => a.startsWith('--reason='));
-  const reason = reasonArg ? reasonArg.slice('--reason='.length) : '';
-  const findings = redTeamStop(new Date(), reason);
-  const refused = findings.some((f) => f.level === 'P0');
-  for (const f of findings) console.log(`${f.level}: ${f.message}`);
-  if (stopping && refused) {
-    console.log('\n=> STOP REFUSED by the red team. Keep working.');
-    process.exit(1);
+/**
+ * Claude Code `Stop`-hook adapter. The hook fires whenever the agent tries
+ * to end a turn; this turns the red team into a TECHNICAL INTERLOCK, not a
+ * rule the operator must remember. On Saturday it emits the block decision
+ * (forcing the agent to keep working); otherwise it allows the stop. The
+ * `stop_hook_active` payload flag is intentionally ignored — on Saturday we
+ * block every time (that is the entire point: never stop on Saturday). The
+ * platform's hard duration limit remains the real backstop.
+ */
+export function hookDecision(now = new Date()) {
+  const refused = redTeamStop(now).some((f) => f.level === 'P0');
+  if (refused) {
+    return {
+      decision: 'block',
+      reason:
+        'STOP BLOCKED by the stop-guard red team: it is still Saturday (the work window). Per CLAUDE.md 5x you may NOT stop — do not summarize, do not wait, do not ask to continue. Pull the next item from the standing work source in ops/loop.md (hardening, fuzzing, first-principles ideation, playbooks, factory self-improvement, docs, polish, "nothing is ever done" reviews) and keep working. Only "it is no longer Saturday" authorizes a stop.',
+    };
   }
-  process.exit(refused ? 1 : 0);
+  return {}; // not Saturday → allow the stop
+}
+
+// CLI: --hook (Stop-hook adapter, JSON out) | --stopping (manual red-team).
+if (import.meta.url === `file://${process.argv[1]}`) {
+  if (process.argv.includes('--hook')) {
+    // Drain stdin (the hook payload) but we only need the real clock.
+    let buf = '';
+    process.stdin.on('data', (d) => (buf += d));
+    process.stdin.on('end', () => {
+      void buf;
+      process.stdout.write(JSON.stringify(hookDecision(new Date())));
+      process.exit(0); // exit 0; the JSON `decision` does the blocking
+    });
+    // If no stdin is piped, still emit a decision promptly.
+    setTimeout(() => {
+      process.stdout.write(JSON.stringify(hookDecision(new Date())));
+      process.exit(0);
+    }, 250);
+  } else {
+    const stopping = process.argv.includes('--stopping');
+    const reasonArg = process.argv.find((a) => a.startsWith('--reason='));
+    const reason = reasonArg ? reasonArg.slice('--reason='.length) : '';
+    const findings = redTeamStop(new Date(), reason);
+    const refused = findings.some((f) => f.level === 'P0');
+    for (const f of findings) console.log(`${f.level}: ${f.message}`);
+    if (stopping && refused) {
+      console.log('\n=> STOP REFUSED by the red team. Keep working.');
+      process.exit(1);
+    }
+    process.exit(refused ? 1 : 0);
+  }
 }
