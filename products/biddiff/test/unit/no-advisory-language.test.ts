@@ -33,6 +33,12 @@ const FORBIDDEN_PHRASES: RegExp[] = [
   /\bplease\s+(?:ensure|confirm\s+with|make\s+sure)/i, // "please ensure X" is advisory
   /\bit\s+is\s+recommended\b/i,
   /\boffers?\s+should\b/i,
+  // Imperative "always confirm/verify/review/check/consult" is advisory —
+  // the canonical disclaimer was deliberately reworded away from
+  // "Always confirm…" to the reporting "remains the authoritative
+  // reference." Added 2026-05-30 after store-listing.md retained the
+  // removed phrasing (and contradicted "It never advises").
+  /\balways\s+(?:confirm|verify|review|check|consult)\b/i,
 ];
 
 function readSafe(file: string): string {
@@ -113,6 +119,27 @@ describe("No advisory language in BidDiff-authored prose", () => {
           re.test(txt),
           `${path.relative(ROOT, f)} contains advisory phrasing matching ${re}`,
         ).toBe(false);
+      }
+    }
+  });
+
+  it("user-facing marketing + help docs do not advise", () => {
+    // The store listing, README, and help docs are user-facing prose and
+    // must follow "reports, never advises" too — previously unscanned,
+    // which let store-listing.md keep an "Always confirm…" directive the
+    // canonical disclaimer had dropped.
+    const docs = [
+      "README.md",
+      "docs/store-listing.md",
+      "docs/help/getting-started.md",
+      "docs/help/faq.md",
+      "docs/help/what-counts-as-critical.md",
+      "docs/help/privacy-and-security.md",
+    ];
+    for (const rel of docs) {
+      const txt = readSafe(path.join(ROOT, rel));
+      for (const re of FORBIDDEN_PHRASES) {
+        expect(re.test(txt), `${rel} contains advisory phrasing matching ${re}`).toBe(false);
       }
     }
   });

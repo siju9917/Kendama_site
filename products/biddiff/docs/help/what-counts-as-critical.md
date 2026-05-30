@@ -18,5 +18,5 @@ Everything else (e.g. SOW prose tweaks, administrative wording) is shown
 as a **normal** change so your team can still review it.
 
 BidDiff identifies textual differences to assist professional review. It
-does not provide legal, contracting, or capture advice — always confirm
-any change with the original source documents.
+does not provide legal, contracting, or capture advice; the original
+source documents remain the authoritative reference.

@@ -41,7 +41,7 @@ No more side-by-side page flipping under deadline pressure. No more team-wide "w
 
 ### Designed for federal procurement reality
 
-Built on the Uniform Contract Format (UCF) — Sections A through M — with a curated FAR/DFARS clause dataset so every clause change comes with its title and a neutral plain-language note. **BidDiff reports what changed. It never advises. Always confirm with the original source documents.**
+Built on the Uniform Contract Format (UCF) — Sections A through M — with a curated FAR/DFARS clause dataset so every clause change comes with its title and a neutral plain-language note. **BidDiff reports what changed. It never advises. The original source documents remain the authoritative reference.**
 
 ### Pricing
 
