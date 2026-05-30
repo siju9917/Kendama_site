@@ -93,7 +93,7 @@ classes next time.
 - **5.7.2 Escalating critique:** HELD — a multi-pass adversarial sweep
   of the whole codebase found five real bugs.
 - **5.7.3 Roster growth:** HELD — three critic checklists strengthened
-  (four additions total).
+  (five additions total).
 - **5.7.4 "Nothing is ever done":** spirit applied to K1 (found more).
 - **5.7.5 Continuous bug-hunt:** HELD — new adversarial inputs.
 - **5.7.6 Continuous ideation:** PARTIAL (flagged) — ambient findings
