@@ -231,6 +231,13 @@ Checklist:
 
 Checklist:
 - Privacy policy and terms exist and accurately reflect data flow.
+- **Every data flow / feature described in the privacy policy, store
+  listing, and in-app copy is implemented AND wired end-to-end — not
+  stubbed or planned. A described-but-absent data flow (or a claimed
+  dependency that isn't in the bundle) is a disclosure defect.** Added
+  2026-05-30 (BidDiff docs described an opt-in server-OCR data flow
+  that is stubbed + unwired; README claimed a Tesseract.js dep that
+  isn't present).
 - Where the product reports on regulated subject matter, it
   **reports, never advises**. Advisory phrasing is forbidden in
   BidDiff-class products and enforced by automated test.
@@ -388,6 +395,7 @@ critic is recorded here with the triggering cause.
 | 2026-05-30 | Correctness Critic (#1) checklist | Added "a hash/ID scheme delivering less entropy than its width implies — verify stated intent is implemented" | BidDiff contentHash's "salted" second pass re-hashed the same input → 32-bit doubled, not 64-bit (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30 bug-hunt pass 5) |
 | 2026-05-30 | Security Critic (#3) checklist | Added "fetch/navigation of a DOM-sourced URL passes an explicit scheme allowlist (https), not just window.open" | BidDiff fetched SAM attachment hrefs with no scheme check (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30 bug-hunt pass 6) |
 | 2026-05-30 | Domain-Expert Critic (#5) checklist | Added a federal-procurement specialization (UCF literacy, amendment mechanics, the critical-change categories a capture manager scans incl. the BD2 gaps, terminology precision, practitioner workflow) | SELF_IMPROVEMENT #4 — from public FAR/DFARS knowledge; sharpens the lens for BidDiff + the federal-solicitation family (the code ruleset still awaits the human-gated practitioner validation) |
+| 2026-05-30 | Compliance Critic (#9) checklist | Added "every described data flow / feature / dependency is implemented + wired, not stubbed/planned; a described-but-absent flow is a disclosure defect" | BidDiff docs described an opt-in server-OCR data flow that's stubbed + unwired; README claimed a Tesseract.js dep that isn't bundled (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30 bug-hunt pass 7) |
 
 The META loop (PART 11) audits this table every cycle. A month
 with no growth is a warning sign flagged in the weekly digest.

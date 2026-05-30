@@ -89,6 +89,12 @@ validation lands.
   largest chunk ≤ 230 kB gz, total ≤ 460 kB gz) wired into
   `scripts/ci.sh`; budget documented in `SPEC.md`. Observed: total
   396.7 kB gz, largest 175.8 kB gz — within budget.
+- **[OPEN, ship-gate P1, human-gated]** OCR disclosure accuracy
+  (Compliance, `CRITIQUE_LOG.md` bug-hunt pass 7): the privacy policy /
+  store listing / options copy describe an opt-in server-OCR data flow
+  that is stubbed + unwired. Before the store submission, EITHER scope
+  the copy to on-device-only (recommended, stronger privacy claim) OR
+  implement+wire OCR. Routed to `human/NEED_FROM_HUMAN.md` item 7.
 - **[OPEN, maintenance]** Bump the Vite 5→6/7 + Vitest 2→3 toolchain
   to clear the 7 dev-only `npm audit` advisories. Breaking; needs full
   re-verification (config + plugin compat + suite). Not a shipped-risk

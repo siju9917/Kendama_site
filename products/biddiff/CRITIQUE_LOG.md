@@ -407,6 +407,48 @@ the browser-gated A11y/SAM-e2e P2s.
 
 ---
 
+## 2026-05-30 — Phase K1 — bug-hunt pass 7 (Compliance, via the README accuracy pass)
+
+**Pass type:** Compliance accuracy review (triggered by finding a false
+"Tesseract.js" dependency claim in the README; followed the OCR thread).
+
+### P1 — Compliance Critic (#9) — docs describe an OCR data flow the product doesn't perform
+
+- **Area:** `docs/privacy-policy.md`, `docs/store-listing.md`,
+  `src/options/index.tsx` copy vs. `server/handlers.ts` `handleOcr` + the
+  client.
+- **Symptom:** The privacy policy, store listing, and in-app options copy
+  describe an **opt-in server-side OCR path** ("you decide per file… we
+  send the document to the OCR endpoint"). But (1) `handleOcr` is a
+  **stub** (returns `{ text: "", note: "OCR is stubbed in dev…" }`), and
+  (2) **no client code ever calls it** — the PDF extractor only emits a
+  "scanned image… OCR is required" warning; there is no OCR opt-in flow.
+  So the shipped extension performs **no OCR** and sends document content
+  **nowhere** — the disclosed "server OCR" data flow does not occur.
+- **Severity:** P1. A privacy policy / store listing describing a data
+  flow the product doesn't perform is a real compliance + Web-Store-review
+  risk and violates the QUALITY_BAR "privacy policy and terms accurately
+  reflect what the product does." (The false README "Tesseract.js" claim,
+  already fixed, was the same class.)
+- **Disposition (a decision, not a unilateral legal-doc rewrite):** before
+  launch EITHER (a) implement + wire the opt-in OCR path end-to-end (a
+  server feature gated on the human's cloud deploy — `legacy-notes/
+  BLOCKERS.md`), OR (b) scope the privacy policy / store listing / options
+  copy to reality: **all document content stays on device, no exception;
+  scanned PDFs surface a low-confidence warning; OCR is a planned future
+  option.** (b) is the more accurate AND stronger privacy claim for today
+  — recommended. Routed to `PROGRESS.md` + the human.
+- **Roster growth (5.7.3):** Compliance Critic (#9) checklist gains:
+  "every data flow / feature described in the privacy policy, store
+  listing, and in-app copy is implemented AND wired end-to-end — not
+  stubbed or planned. A described-but-absent data flow is a disclosure
+  defect."
+
+**Remaining open on K1:** the three pass-1 P1s + this Compliance P1 + the
+two P2s. Phase K1 does NOT converge.
+
+---
+
 ## 2026-05-30 — Phase K1 — bug-hunt pass 6 (Security, 5.7.5)
 
 **Pass type:** Continuous bug-hunt (5.7.5), reviewing the SAM

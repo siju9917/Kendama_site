@@ -175,6 +175,41 @@ factory's internal gate) to actually live in the store.
 
 ---
 
+## 7. **[OPEN]** Decide the OCR feature for launch (privacy-copy accuracy — pre-submission)
+
+**Why:** A K1 Compliance finding (2026-05-30, `products/biddiff/
+CRITIQUE_LOG.md` bug-hunt pass 7): the **privacy policy, store
+listing, and in-app options copy describe an opt-in server-OCR data
+flow** ("we send the document to the OCR endpoint when you consent"),
+but that path is **stubbed** (`server/handlers.ts` `handleOcr` returns
+nothing) and **never called by the client**. So the shipped extension
+sends document content **nowhere**, and the disclosed OCR flow does
+not occur. Shipping a privacy policy that describes a non-existent
+data flow is a real Chrome-Web-Store-review + compliance risk. This
+must be resolved **before** the store submission (item 6).
+
+**The decision (one of two):**
+
+- **A (recommended for now):** Scope the docs to reality — "**all
+  document content stays on device, with no exception**; scanned PDFs
+  show a low-confidence warning; OCR is a planned future option." This
+  is more accurate AND a *stronger* privacy claim. The factory can make
+  these copy edits on your say-so (privacy policy + store listing +
+  options page); it did not rewrite legal copy unilaterally.
+- **B:** Implement + wire the opt-in server-OCR path end-to-end. This
+  is a server feature that depends on the cloud deploy + OCR-provider
+  account (the human-action items in `legacy-notes/BLOCKERS.md`), then
+  the docs become accurate as-is.
+
+**Steps:** Reply A or B (here or in `human/APPROVALS.md`). On **A**, the
+next session edits the three copy locations to on-device-only. On **B**,
+it's sequenced with the cloud-deploy human actions.
+
+**Effect once done:** the privacy disclosure matches reality;
+unblocks a clean store submission (item 6).
+
+---
+
 ## How items move out of this list
 
 The factory **never deletes** entries here. When an item is done,
