@@ -204,7 +204,11 @@ submission (item 6).
   sam.gov.**" No license/telemetry/OCR uploads (none happen in v1).
   This is far more accurate AND a *much stronger* privacy claim. The
   factory can make these copy edits on your say-so across all the copy
-  locations; it did not rewrite legal copy unilaterally.
+  locations; it did not rewrite legal copy unilaterally. *(Note:
+  `SPEC.md` already states the accurate framing — "operates entirely
+  on-device" / "the v1 default is on-device only" — so option A just
+  makes the user-facing docs match the SPEC they currently
+  contradict.)*
 - **B:** Implement + wire whichever server features actually ship at
   launch (license validation, telemetry, and/or OCR). These depend on
   the cloud deploy + provider accounts (the human-action items in
