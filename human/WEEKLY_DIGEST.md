@@ -16,11 +16,11 @@ changes, plus four P2s found by a systematic adversarial sweep of the
 *entire* codebase), **two security-hardening fixes**, the **first
 factory self-check infrastructure**, and two extraction-correctness
 fixes — all verified with regression tests (and a clean production
-build), 256/256 green. But it's still **blocked on you for two
+build), 262/262 green. But it's still **blocked on you for two
 ~2-minute things**: setting the spend cap and merging this session's
 branch. Details at the bottom.
 
-### What got done (22 commits, all green; 226 → 256 tests)
+### What got done (33 commits, all green; 226 → 262 tests)
 
 1. **`ops/checks/` — the factory's first self-integrity checks**
    (closes `SELF_IMPROVEMENT.md` #6 + #7). Dependency-free Node
@@ -105,19 +105,46 @@ next time.
   (six additions total).
 - **5.7.4 "Nothing is ever done":** spirit applied to K1 (found more).
 - **5.7.5 Continuous bug-hunt:** HELD — new adversarial inputs.
-- **5.7.6 Continuous ideation:** PARTIAL (flagged) — ambient findings
-  logged, but no new *product* idea, because the unset cap blocks the
-  research/ideation surface. Honest: ideation ran below potential.
+- **5.7.6 Continuous ideation:** HELD — after correcting a wrong
+  belief that ideation was cap-blocked, generated the D1–D5
+  derivative product family from first principles (see "Also this
+  session"). Only the *cited* deep-evaluation waits on the cap.
 - **5.7.7 (this audit):** done. **5.7.8 (audit-the-auditor):** found
   that the audit "passes" partly on a technicality — most rules are
   N/A because nothing has shipped, and nothing can ship/advance
   because the cap is unset. The single highest-leverage unblock in the
   whole system is the spend cap. Escalated here.
 
+### Also this session (after a "don't stop" correction)
+
+Midway you reminded me — correctly — that the factory must work the
+whole day and never hand control back as a pause. That was a real
+process failure on my part, so I **strengthened the rules** so it
+can't recur (CLAUDE.md 5z/5y, GUARDRAILS #16, ops/loop.md: yielding
+the turn / asking to continue / declaring the queue "done" are now P0
+violations; an unset cap blocks only web research, never the infinite
+zero-cost queue). Then I kept working:
+
+- **First-principles product ideation** (no cap needed): recognized
+  BidDiff's reusable competency as "critical-change diffing of
+  structured documents" — a *horizontal* capability — and added five
+  concrete derivative products (npm library, GitHub Marketplace app,
+  JetBrains protobuf plugin, Shopify theme-risk app, OpenAPI VS Code
+  extension), ranked from first principles. Cited deep-eval still
+  waits on the cap.
+- **First playbook** distilling everything BidDiff taught, for the
+  next extension + that derivative family.
+- **Second hard critique pass via property-based fuzzing** (1,400+
+  random adversarial cases across the engine and every parser — all
+  clean; permanent regression tests).
+- **Product polish:** a "See an example" first-run sample diff (reach
+  value with zero files), a History accessibility fix, and a current
+  architecture + "how to extend" developer doc.
+
 ### Portfolio status
 
 - **BidDiff** — `build`, Phase K1 still open (3 P1s blocked on you +
-  the cap). Now 256/256 tests (started the week at 226). Code quality
+  the cap). Now 262/262 tests (started the week at 226). Code quality
   improved materially; the three structural P1s are unchanged because
   they need your input + the cap.
 
