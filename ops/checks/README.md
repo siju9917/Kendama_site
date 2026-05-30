@@ -47,6 +47,7 @@ The `no-github-actions` check enforces this for the whole repo.
 | `no-github-actions` | No `.github/workflows/` and no CI-scheduler config (GUARDRAILS.md #1-2). | P0 |
 | `rule-cadence-consistency` | The `5.7.N` maximization rules in `CLAUDE.md` are contiguous, each has an operational home in `ops/loop.md`/`CRITIQUE_AGENTS.md`, and no doc references a non-existent rule (SELF_IMPROVEMENT.md #6). | P0/P1 |
 | `human-queue` | `human/NEED_FROM_HUMAN.md` items are uniquely numbered and contiguous from 1 (the check-in walks the list by number). Added after a real duplicate-`## 4.` defect. | P1/P2 |
+| `no-forbidden-markers` | No `TODO`/`FIXME`/`XXX`/`HACK` in any product's shipped `src/` (GUARDRAILS #10) — unless recorded as a documented human-gated blocker. Excludes tests; avoids `XX.XXX`-style false positives. | P1 |
 
 ## Adding a check
 

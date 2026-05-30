@@ -18,6 +18,8 @@ import * as brainIntegrity from './brain-integrity.mjs';
 import * as noGithubActions from './no-github-actions.mjs';
 import * as humanQueue from './human-queue.mjs';
 import { analyze as analyzeQueue } from './human-queue.mjs';
+import * as noForbiddenMarkers from './no-forbidden-markers.mjs';
+import { scan as scanMarkers } from './no-forbidden-markers.mjs';
 import { BLOCKING_LEVELS } from './lib.mjs';
 
 const blocking = (findings) => findings.filter((f) => BLOCKING_LEVELS.has(f.level));
@@ -80,9 +82,27 @@ test('human-queue: a gap in numbering is flagged', () => {
   assert.ok(hit, 'expected a contiguity-gap finding');
 });
 
+test('no-forbidden-markers: flags a real TODO in product src', () => {
+  const read = () => '// TODO: fix this later\nconst x = 1;';
+  const f = scanMarkers(['products/foo/src/a.ts'], read);
+  assert.ok(f.some((x) => x.message.includes('forbidden marker')));
+});
+
+test('no-forbidden-markers: does NOT flag a clause format like XX.XXX-XXXX', () => {
+  const read = () => '// matches the canonical XX.XXX-XXXX pattern';
+  const f = scanMarkers(['products/foo/src/a.ts'], read);
+  assert.equal(blocking(f).length, 0);
+});
+
+test('no-forbidden-markers: ignores test files', () => {
+  const read = () => 'it("TODO later", () => {});';
+  const f = scanMarkers(['products/foo/src/a.test.ts'], read);
+  assert.equal(blocking(f).length, 0);
+});
+
 // --- Regression: real repo is currently known-good. ---
 
-for (const check of [brainIntegrity, noGithubActions, ruleCadence, humanQueue]) {
+for (const check of [brainIntegrity, noGithubActions, ruleCadence, humanQueue, noForbiddenMarkers]) {
   test(`real repo passes: ${check.name}`, () => {
     const { findings } = check.run();
     const bad = blocking(findings);

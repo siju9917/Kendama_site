@@ -22,8 +22,9 @@ import * as ruleCadence from './rule-cadence-consistency.mjs';
 import * as brainIntegrity from './brain-integrity.mjs';
 import * as noGithubActions from './no-github-actions.mjs';
 import * as humanQueue from './human-queue.mjs';
+import * as noForbiddenMarkers from './no-forbidden-markers.mjs';
 
-const CHECKS = [brainIntegrity, noGithubActions, ruleCadence, humanQueue];
+const CHECKS = [brainIntegrity, noGithubActions, ruleCadence, humanQueue, noForbiddenMarkers];
 
 const ICON = { P0: '✗', P1: '✗', P2: '!', info: '·' };
 
