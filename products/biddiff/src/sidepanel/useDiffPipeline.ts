@@ -159,6 +159,12 @@ export function useDiffPipeline(): {
         // otherwise the user re-sees the "Welcome to BidDiff" card on
         // every Start over until they explicitly dismiss it.
         markOnboardingSeen();
+        // Re-check abort AFTER the save window: the user may have hit
+        // "Start over" (reset) or opened a saved diff (openSaved) while
+        // saveDiff was in flight. Without this guard the final DONE
+        // setState clobbers their action and the UI snaps back to this
+        // diff. Mirrors the abort checks after the pipeline await above.
+        if (ctrl.signal.aborted) return;
         setState({
           phase: "DONE",
           result,

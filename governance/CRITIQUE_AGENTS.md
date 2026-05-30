@@ -158,6 +158,11 @@ Checklist:
   boundary with a clear message — never silently routed to the
   wrong handler (which fails later with a confusing error). Added
   2026-05-30 (BidDiff `.txt` fell through to the DOCX extractor).
+- Cancellation is re-checked after EVERY await in an async action,
+  including post-success persistence — not just after the main
+  operation. A late setState after an abort corrupts UI state.
+  Added 2026-05-30 (BidDiff save-window race flipped the UI back to
+  DONE after "Start over").
 
 ### 8. Accessibility Critic
 
@@ -334,6 +339,7 @@ critic is recorded here with the triggering cause.
 | 2026-05-30 | Correctness Critic (#1) checklist | Added "over-normalization collapses distinct inputs (esp. numeric values) → silent false negative" | BidDiff bug-hunt pass found `isReformattingOnly` stripping decimal points, hiding `$1.5M`→`$15M`-class changes (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30) |
 | 2026-05-30 | Performance Critic (#6) checklist | Added "O(n²)-space guarded by a per-dimension cap; bound the product, size the cap against real memory" | BidDiff token-LCS per-dimension 10k cap still allowed a ~400 MB dp allocation (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30 bug-hunt pass 2) |
 | 2026-05-30 | Reliability Critic (#7) checklist | Added "a recognized-but-unsupported input kind must be rejected at the trust boundary, not routed to the wrong handler" | BidDiff `.txt` validated as "TXT" then fell through to the DOCX extractor (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30 bug-hunt pass 3) |
+| 2026-05-30 | Reliability Critic (#7) checklist | Added "re-check cancellation after EVERY await, including post-success persistence" | BidDiff save-window race: reset() during saveDiff was clobbered by a late DONE setState (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30 bug-hunt pass 4) |
 
 The META loop (PART 11) audits this table every cycle. A month
 with no growth is a warning sign flagged in the weekly digest.

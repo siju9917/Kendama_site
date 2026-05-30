@@ -332,6 +332,46 @@ does NOT converge.
 
 ---
 
+## 2026-05-30 — Phase K1 — bug-hunt pass 4 (Reliability, 5.7.5)
+
+**Pass type:** Continuous bug-hunt (5.7.5), tracing the side-panel
+async state machine for cancellation correctness.
+
+**Finding:**
+
+### P2 — Reliability Critic (#7) — cancellation race in the save window
+
+- **Area:** `src/sidepanel/useDiffPipeline.ts` (`run`).
+- **Symptom:** `run()` re-checks `ctrl.signal.aborted` after the
+  extraction/diff pipeline await, but NOT after the subsequent
+  `await storage.saveDiff(result)`. If the user hit "Start over"
+  (`reset()`) or opened a saved diff (`openSaved`) — both of which
+  abort the in-flight controller — while `saveDiff` was in flight,
+  the completing run then called `setState({phase:"DONE"})`
+  unconditionally, snapping the UI back to the just-finished diff and
+  clobbering the user's action.
+- **Severity:** P2. Narrow timing window (the storage-write
+  duration) and requires a user action during it, but it's a real
+  violation of the QUALITY_BAR Reliability rule "an aborted operation
+  does not corrupt state," and "Start over" is a prominent button.
+- **Fix:** re-check `ctrl.signal.aborted` after the save window,
+  before the DONE `setState` — mirroring the two existing abort
+  checks in the same function. Verified with a regression test
+  (`src/sidepanel/useDiffPipeline.test.tsx`) that holds the save
+  open, calls `reset()`, then completes the save and asserts the
+  phase stays `EMPTY`; the test was confirmed to FAIL without the
+  guard (`'DONE'` instead of `'EMPTY'`) and pass with it. Suite
+  252/252, lint + typecheck clean.
+- **Roster growth (5.7.3):** Reliability Critic (#7) checklist gains:
+  "re-check cancellation after EVERY await in an async action,
+  including post-success persistence — not just after the main
+  operation."
+
+**Remaining open on K1:** unchanged (three P1s + two P2s). Phase K1
+does NOT converge.
+
+---
+
 ## 2026-05-30 — Phase K1 — bug-hunt pass 3 (Reliability + Adversarial, 5.7.5)
 
 **Pass type:** Continuous bug-hunt (5.7.5), tracing input-validation
