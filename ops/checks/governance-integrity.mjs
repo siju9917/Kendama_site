@@ -46,9 +46,12 @@ function targetFiles() {
 // *use* when it is immediately wrapped in a quote or backtick. Leaked
 // scratchpad narration appears as bare prose; documentation quotes it.
 function isMention(text, start, end) {
-  const before = text[start - 1] || '';
-  const after = text[end] || '';
-  return /["'`]/.test(before) || /["'`]/.test(after);
+  // Look at a small window each side so trailing/leading punctuation between
+  // the phrase and its closing quote (e.g. `directly."`) still counts as a
+  // mention, while bare-prose leaked narration (no nearby quote) does not.
+  const pre = text.slice(Math.max(0, start - 2), start);
+  const post = text.slice(end, end + 2);
+  return /["'`]/.test(pre) || /["'`]/.test(post);
 }
 
 export function scanText(rel, text) {
