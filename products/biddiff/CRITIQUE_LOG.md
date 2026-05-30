@@ -412,32 +412,51 @@ the browser-gated A11y/SAM-e2e P2s.
 **Pass type:** Compliance accuracy review (triggered by finding a false
 "Tesseract.js" dependency claim in the README; followed the OCR thread).
 
-### P1 — Compliance Critic (#9) — docs describe an OCR data flow the product doesn't perform
+### P1 — Compliance Critic (#9) — the privacy policy describes server data flows the v1 product doesn't perform
 
-- **Area:** `docs/privacy-policy.md`, `docs/store-listing.md`,
-  `src/options/index.tsx` copy vs. `server/handlers.ts` `handleOcr` + the
-  client.
-- **Symptom:** The privacy policy, store listing, and in-app options copy
-  describe an **opt-in server-side OCR path** ("you decide per file… we
-  send the document to the OCR endpoint"). But (1) `handleOcr` is a
-  **stub** (returns `{ text: "", note: "OCR is stubbed in dev…" }`), and
-  (2) **no client code ever calls it** — the PDF extractor only emits a
-  "scanned image… OCR is required" warning; there is no OCR opt-in flow.
-  So the shipped extension performs **no OCR** and sends document content
-  **nowhere** — the disclosed "server OCR" data flow does not occur.
-- **Severity:** P1. A privacy policy / store listing describing a data
-  flow the product doesn't perform is a real compliance + Web-Store-review
-  risk and violates the QUALITY_BAR "privacy policy and terms accurately
+- **Area:** `docs/privacy-policy.md` ("What BidDiff sends to its servers"),
+  `docs/store-listing.md`, `src/options/index.tsx`, the help docs +
+  support macros, vs. the actual shipped client.
+- **Symptom (broader than first thought — found by pulling the thread):**
+  the privacy policy describes **THREE** server data flows; the v1
+  shipped extension performs **none** of them:
+  1. **License validation** — "the extension sends your license key… to
+     the licensing endpoint." But only `LocalLicenseClient` is used
+     (`App.tsx`), which is **local-only** (treats any signed blob as
+     valid; no `fetch`). The server-augmented client (`handleLicenseValidate`)
+     is never wired.
+  2. **Anonymous telemetry** — "counters… sent to our endpoint." But
+     `TelemetryClient` (which has the `fetch`) is **never instantiated or
+     called** anywhere in shipped src — telemetry is not wired.
+  3. **Opt-in server OCR** — `handleOcr` is a **stub** and the client
+     never calls it.
+  The ONLY network call the v1 extension actually makes is fetching a
+  **SAM.gov attachment URL the user clicks** (`FilePickerWithSam`,
+  https-gated) — i.e. the user pulling their own document from sam.gov,
+  not content sent to BidDiff's servers. So v1 is effectively **fully
+  on-device**, yet the privacy policy's entire "sends to its servers"
+  section describes flows that don't occur.
+- **Severity:** P1. A privacy policy is the legal disclosure the Chrome
+  Web Store reviews (and that users rely on). Materially overstating
+  server interactions — describing license/telemetry/OCR uploads that
+  never happen — is a real Web-Store-review + misrepresentation risk and
+  squarely violates the QUALITY_BAR "privacy policy and terms accurately
   reflect what the product does." (The false README "Tesseract.js" claim,
-  already fixed, was the same class.)
+  already fixed, was the same class.) The accurate v1 story is
+  **simpler and a far stronger privacy claim**: "everything is on your
+  device; the only network activity is downloading an attachment you
+  click on a SAM.gov page, fetched directly from sam.gov."
 - **Disposition (a decision, not a unilateral legal-doc rewrite):** before
-  launch EITHER (a) implement + wire the opt-in OCR path end-to-end (a
-  server feature gated on the human's cloud deploy — `legacy-notes/
-  BLOCKERS.md`), OR (b) scope the privacy policy / store listing / options
-  copy to reality: **all document content stays on device, no exception;
-  scanned PDFs surface a low-confidence warning; OCR is a planned future
-  option.** (b) is the more accurate AND stronger privacy claim for today
-  — recommended. Routed to `PROGRESS.md` + the human.
+  launch EITHER (a) implement + wire whichever server features actually
+  ship (license validation, telemetry, OCR — gated on the human's cloud
+  deploy + accounts, `legacy-notes/BLOCKERS.md`), OR (b) scope the privacy
+  policy / store listing / options / help / support copy to **v1
+  reality: BidDiff runs entirely on your device; the only network
+  activity is downloading a SAM.gov attachment you click (fetched from
+  sam.gov, not via our servers).** (b) is far more accurate AND a much
+  stronger privacy claim for today — strongly recommended; the factory
+  can make those copy edits on the human's OK. Routed to `PROGRESS.md` +
+  `human/NEED_FROM_HUMAN.md` item 7.
 - **Roster growth (5.7.3):** Compliance Critic (#9) checklist gains:
   "every data flow / feature described in the privacy policy, store
   listing, and in-app copy is implemented AND wired end-to-end — not

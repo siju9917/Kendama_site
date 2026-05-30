@@ -175,39 +175,51 @@ factory's internal gate) to actually live in the store.
 
 ---
 
-## 7. **[OPEN]** Decide the OCR feature for launch (privacy-copy accuracy — pre-submission)
+## 7. **[OPEN]** Make the privacy disclosure match what v1 actually does (pre-submission)
 
 **Why:** A K1 Compliance finding (2026-05-30, `products/biddiff/
-CRITIQUE_LOG.md` bug-hunt pass 7): the **privacy policy, store
-listing, and in-app options copy describe an opt-in server-OCR data
-flow** ("we send the document to the OCR endpoint when you consent"),
-but that path is **stubbed** (`server/handlers.ts` `handleOcr` returns
-nothing) and **never called by the client**. So the shipped extension
-sends document content **nowhere**, and the disclosed OCR flow does
-not occur. Shipping a privacy policy that describes a non-existent
-data flow is a real Chrome-Web-Store-review + compliance risk. This
-must be resolved **before** the store submission (item 6).
+CRITIQUE_LOG.md` bug-hunt pass 7), **broader than first logged**: the
+privacy policy's entire "What BidDiff sends to its servers" section
+describes **three** server data flows, and the v1 shipped extension
+performs **none** of them:
+- **License validation** — only the local-only `LocalLicenseClient`
+  is used; it never calls the licensing endpoint.
+- **Anonymous telemetry** — `TelemetryClient` (which holds the fetch)
+  is never instantiated or called; telemetry is not wired.
+- **Opt-in server OCR** — `handleOcr` is a stub and the client never
+  calls it.
+The **only** network call v1 makes is downloading a SAM.gov attachment
+you click (fetched from sam.gov directly, https-only). So v1 is
+effectively **fully on-device**, yet the privacy policy describes
+license/telemetry/OCR uploads that never happen. A privacy policy that
+materially overstates server interactions is a real Chrome-Web-Store-
+review + misrepresentation risk. Resolve **before** the store
+submission (item 6).
 
 **The decision (one of two):**
 
-- **A (recommended for now):** Scope the docs to reality — "**all
-  document content stays on device, with no exception**; scanned PDFs
-  show a low-confidence warning; OCR is a planned future option." This
-  is more accurate AND a *stronger* privacy claim. The factory can make
-  these copy edits on your say-so (privacy policy + store listing +
-  options page); it did not rewrite legal copy unilaterally.
-- **B:** Implement + wire the opt-in server-OCR path end-to-end. This
-  is a server feature that depends on the cloud deploy + OCR-provider
-  account (the human-action items in `legacy-notes/BLOCKERS.md`), then
-  the docs become accurate as-is.
+- **A (recommended for now):** Scope the docs to v1 reality —
+  "**BidDiff runs entirely on your device. The only network activity
+  is downloading a SAM.gov attachment you click, fetched directly from
+  sam.gov.**" No license/telemetry/OCR uploads (none happen in v1).
+  This is far more accurate AND a *much stronger* privacy claim. The
+  factory can make these copy edits on your say-so across all the copy
+  locations; it did not rewrite legal copy unilaterally.
+- **B:** Implement + wire whichever server features actually ship at
+  launch (license validation, telemetry, and/or OCR). These depend on
+  the cloud deploy + provider accounts (the human-action items in
+  `legacy-notes/BLOCKERS.md`); then the docs become accurate as-is for
+  the features that ship. (Unshipped ones still get scoped out.)
 
 **Steps:** Reply A or B (here or in `human/APPROVALS.md`). On **A**, the
-next session edits **all six OCR copy locations** to on-device-only:
-`docs/privacy-policy.md`, `docs/store-listing.md`, `src/options/index.tsx`,
-`docs/help/getting-started.md`, `docs/help/privacy-and-security.md`,
-`docs/help/faq.md`, and `docs/support-macros.md` (support reply
-templates). (The marketing site and terms-of-service have no OCR claim.)
-On **B**, it's sequenced with the cloud-deploy human actions.
+next session scopes the copy to on-device-only across all the copy
+locations: `docs/privacy-policy.md`, `docs/store-listing.md`,
+`src/options/index.tsx`, `docs/help/getting-started.md`,
+`docs/help/privacy-and-security.md`, `docs/help/faq.md`,
+`docs/support-macros.md`, and `docs/security-audit.md` (its OCR/server
+boundary sections). (The marketing site and terms-of-service have no
+such claim.) On **B**, it's sequenced with the cloud-deploy human
+actions per feature.
 
 **Related minor item (verify at launch):** `docs/help/faq.md` describes
 Solo/Team/Enterprise tiers with seat counts (1 / 5 / 25+). The licensing

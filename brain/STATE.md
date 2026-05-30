@@ -37,11 +37,16 @@
   session; details in `products/biddiff/CRITIQUE_LOG.md`. NOT
   converged — now **FOUR P1s** open: the three original (Research
   Quality, Domain-Expert, Ambition) **plus a new Compliance P1**
-  (bug-hunt pass 7): the privacy policy / store listing / options /
-  help docs / support macros describe an opt-in server-OCR data flow
-  that is **stubbed + unwired** — a disclosure defect. Decision routed
-  to `human/NEED_FROM_HUMAN.md` item 7 (scope copy to on-device-only,
-  recommended, vs. implement OCR). All four P1s are human/cap-gated.
+  (bug-hunt pass 7): the privacy policy's entire "sends to its servers"
+  section describes **three** server flows (license validation,
+  telemetry, OCR) — and the v1 client performs **none** of them
+  (LocalLicenseClient is local-only; TelemetryClient is never called;
+  handleOcr is a stub). v1 is effectively **fully on-device** (the only
+  network call is the user-clicked SAM attachment download). A privacy
+  policy that overstates server interactions is a Web-Store-review +
+  misrepresentation risk. Decision routed to `human/NEED_FROM_HUMAN.md`
+  item 7 (recommended: scope copy to on-device-only — more accurate AND
+  a stronger privacy claim). All four P1s are human/cap-gated.
   (Positive: the FAR/DFARS clause dataset's well-known titles were
   spot-checked accurate + current.)
 - **Build green:** 282/282 tests (was 226 at session start — 56 new

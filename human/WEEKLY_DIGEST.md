@@ -198,16 +198,19 @@ Optional / pre-launch (not blocking today):
   (auto-proceeds to "reposition" on 2026-06-03).
 - Source 2-3 federal proposal/capture contacts for domain validation
   (`NEED_FROM_HUMAN.md` item 4).
-- **New — a small but important call before launch
-  (`NEED_FROM_HUMAN.md` item 7):** the privacy policy / store listing /
-  help docs describe an opt-in "server OCR" path for scanned PDFs — but
-  that path is stubbed and never actually called, so the extension
-  currently sends document content *nowhere*. A privacy policy that
-  describes a data flow the product doesn't perform is a Web-Store-
-  review risk. Recommended fix: scope the copy to "everything stays on
-  your device, no exceptions" (more accurate *and* a stronger privacy
-  promise) — I can make those edits on your OK. (Found late in the
-  session by chasing a false README dependency claim; fully logged.)
+- **New — an important call before launch (`NEED_FROM_HUMAN.md` item
+  7):** the privacy policy describes *three* ways data leaves the device
+  (license check, anonymous stats, server OCR) — but I verified the v1
+  extension does **none** of them (the license client is local-only,
+  telemetry is never actually called, OCR is a stub). The only network
+  activity is downloading an attachment you click on a SAM.gov page. So
+  v1 is effectively **fully on-device**, yet the privacy policy claims
+  server uploads that don't happen — a Web-Store-review + accuracy risk.
+  Recommended fix: scope the copy to the simpler, stronger truth —
+  "everything stays on your device; the only network call is fetching a
+  SAM attachment you click." I can make those edits on your OK. (Found
+  by chasing a false README dependency claim, then pulling the thread —
+  the deep critique paying off late in the day.)
 
 ### What's next (the upcoming session plan)
 
