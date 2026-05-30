@@ -84,7 +84,7 @@ English (initial). Additional locales in roadmap.
 | `storage`        | Save user settings, license key, and history of diffs done.                          |
 | `sidePanel`      | Open the main BidDiff workspace as a side panel next to SAM.gov.                     |
 | `offscreen`      | Run heavy PDF/DOCX processing in an offscreen document so the UI stays responsive.   |
-| `host_permissions: *://sam.gov/*` | Detect SAM.gov opportunity pages and offer a contextual affordance.    |
+| `host_permissions: https://sam.gov/*`, `https://*.sam.gov/*` | Detect SAM.gov opportunity pages (https only) and offer a contextual affordance. |
 
 No `<all_urls>`, no `tabs`, no `webRequest`. The extension never reads pages outside SAM.gov.
 
