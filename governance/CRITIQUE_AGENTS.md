@@ -53,6 +53,11 @@ Checklist:
   comparison that over-normalizes produces a silent false
   negative: a real change is dropped and never surfaced. Added
   2026-05-30 (BidDiff suppress.ts hid `$1.5M`→`$15M`).
+- **A hash / ID scheme that delivers less entropy than its width
+  implies** (e.g. duplicated halves, a "salted" pass that re-hashes
+  the same input). Verify the stated intent is actually implemented,
+  not just commented. Added 2026-05-30 (BidDiff contentHash was
+  32-bit doubled, not 64-bit).
 
 ### 2. Adversarial Tester
 
@@ -340,6 +345,7 @@ critic is recorded here with the triggering cause.
 | 2026-05-30 | Performance Critic (#6) checklist | Added "O(n²)-space guarded by a per-dimension cap; bound the product, size the cap against real memory" | BidDiff token-LCS per-dimension 10k cap still allowed a ~400 MB dp allocation (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30 bug-hunt pass 2) |
 | 2026-05-30 | Reliability Critic (#7) checklist | Added "a recognized-but-unsupported input kind must be rejected at the trust boundary, not routed to the wrong handler" | BidDiff `.txt` validated as "TXT" then fell through to the DOCX extractor (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30 bug-hunt pass 3) |
 | 2026-05-30 | Reliability Critic (#7) checklist | Added "re-check cancellation after EVERY await, including post-success persistence" | BidDiff save-window race: reset() during saveDiff was clobbered by a late DONE setState (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30 bug-hunt pass 4) |
+| 2026-05-30 | Correctness Critic (#1) checklist | Added "a hash/ID scheme delivering less entropy than its width implies — verify stated intent is implemented" | BidDiff contentHash's "salted" second pass re-hashed the same input → 32-bit doubled, not 64-bit (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30 bug-hunt pass 5) |
 
 The META loop (PART 11) audits this table every cycle. A month
 with no growth is a warning sign flagged in the weekly digest.

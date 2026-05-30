@@ -332,6 +332,43 @@ does NOT converge.
 
 ---
 
+## 2026-05-30 — Phase K1 — bug-hunt pass 5 (Correctness, 5.7.5)
+
+**Pass type:** Continuous bug-hunt (5.7.5), reading the shared
+content-hashing used for all block/section/diff IDs.
+
+**Finding:**
+
+### P2 — Correctness Critic (#1) — content hash delivered 32-bit, not the advertised 64-bit
+
+- **Area:** `src/shared/hash.ts` (`contentHash`).
+- **Symptom:** `contentHash` folds two 32-bit FNV-1a passes into a
+  16-hex string, with a comment claiming "a salted second pass." But
+  the second pass was `fnv1a32(`${input}`)` — `${input}` is the
+  identical string, so both halves were equal (`d58b3fa7d58b3fa7`).
+  The hash advertised 64-bit content-addressing but delivered 32-bit.
+- **Severity:** P2. Block/change IDs are content hashes and move
+  detection dedups inserts/deletes by `block.id` (`engine.ts`
+  `remInsertSet`/`remDeleteSet`); a 32-bit collision (birthday ~0.05%
+  for a large doc's ~2000 blocks) could cause a real INSERT/DELETE to
+  be wrongly skipped — a dropped change. Low probability, but for a
+  "never miss a change" tool, restoring the intended ~64-bit address
+  is clearly worth it. (No migration concern — BidDiff is pre-launch;
+  no persisted IDs in the field. No test or committed artifact pinned
+  specific hash values.)
+- **Fix:** salt the second pass (`HASH_SALT + input`) so the two
+  halves are independent. Regression test asserts the halves differ
+  for typical inputs. Suite 253/253, lint + typecheck clean.
+- **Roster growth (5.7.3):** Correctness Critic (#1) checklist gains:
+  "a hash/ID scheme that delivers less entropy than its width implies
+  (e.g. duplicated halves) — verify the stated intent (a 'salted'
+  pass) is actually implemented, not just commented."
+
+**Remaining open on K1:** unchanged (three P1s + two P2s). Phase K1
+does NOT converge.
+
+---
+
 ## 2026-05-30 — Phase K1 — bug-hunt pass 4 (Reliability, 5.7.5)
 
 **Pass type:** Continuous bug-hunt (5.7.5), tracing the side-panel

@@ -26,4 +26,16 @@ describe("hash", () => {
   it("handles unicode", () => {
     expect(contentHash("café — résumé")).toMatch(/^[0-9a-f]{16}$/);
   });
+
+  it("uses two INDEPENDENT halves (the second pass is salted)", () => {
+    // Regression: the second pass once re-hashed the identical input,
+    // so both 32-bit halves were equal and the hash delivered only
+    // 32-bit collision resistance despite its 16-hex width.
+    for (const s of ["hello world", "Section L", "a quick brown fox", "café"]) {
+      const h = contentHash(s);
+      expect(h.slice(0, 8), `halves should differ for ${JSON.stringify(s)}`).not.toBe(
+        h.slice(8),
+      );
+    }
+  });
 });
