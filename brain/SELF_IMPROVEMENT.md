@@ -98,7 +98,15 @@ land.
 
 **Strengthens or weakens?** stronger.
 
-**Status:** proposed.
+**Status:** **done (2026-05-30).** Added a "Federal-procurement
+specialization" block to Domain-Expert Critic #5 in
+`governance/CRITIQUE_AGENTS.md` (UCF section literacy, amendment
+mechanics, the critical-change categories a capture manager scans
+incl. the BD2 gaps, terminology precision, practitioner workflow),
+from public FAR/DFARS knowledge. The generic checklist is retained.
+Roster-growth row logged. Note: this strengthens the *critic's
+lens*; extending the *code* ruleset (`critical.ts`) still awaits the
+human-gated practitioner validation (`human/NEED_FROM_HUMAN.md` #4).
 
 **Reasoning trace:** BidDiff is the active build; the critic
 roster should specialize for the product currently in front of

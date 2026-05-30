@@ -131,6 +131,42 @@ Checklist:
 - Common-but-wrong simplifications are absent.
 - Edge cases familiar to the field are handled.
 
+**Federal-procurement specialization** (for BidDiff and the
+federal-solicitation product family; added 2026-05-30 per
+SELF_IMPROVEMENT #4 — from public FAR/DFARS knowledge. The *code*
+ruleset still needs the human-gated practitioner validation in
+`human/NEED_FROM_HUMAN.md`; this strengthens the *critic's lens*):
+- **UCF (Uniform Contract Format) literacy.** Sections A–M and what
+  each holds: B (supplies/services + CLINs), C (SOW/PWS), E
+  (inspection/acceptance), F (deliveries / period of performance),
+  H (special contract requirements), I (contract clauses), J (list
+  of attachments), K (reps & certs), L (instructions to offerors),
+  M (evaluation factors). A diff tool that mislabels these reads as
+  amateur to a practitioner.
+- **Amendment mechanics.** SF30, amendment numbering, "all other
+  terms and conditions remain unchanged," acknowledgment
+  requirements — and that a Q&A amendment can silently change a
+  material term in an answer.
+- **The critical-change categories a capture/proposal manager
+  actually scans** (and whether the product flags each): due
+  dates/times AND bid-opening/oral-presentation scheduling; page
+  limits / font / formatting mandates; evaluation factors AND their
+  *order/weighting* (LPTA vs best-value tradeoff); CLIN
+  structure/quantities/option pricing AND non-CLIN ceiling values;
+  FAR/DFARS clause add/remove/modify; attachments add/remove/modify;
+  **and the BD2-identified gaps** — source-selection timeline,
+  key-personnel/responsibility, compliance certs (ITAR/EAR/CMMC/
+  cyber/SAM registration), set-aside/socioeconomic status (8(a),
+  SDVOSB, WOSB, HUBZone), and place/period of performance.
+- **Terminology precision.** solicitation vs RFP/RFQ/IFB; offeror
+  vs bidder vs quoter; FAR Part 12 (commercial) vs Part 15
+  (negotiated); the difference between a clause *incorporated by
+  reference* and one *in full text*.
+- **Practitioner workflow.** A capture manager triages an amendment
+  in minutes under deadline pressure — "what changed that affects my
+  bid/no-bid, my pricing, or my compliance?" — so critical changes
+  must be scannable and correctly prioritized, not buried.
+
 ### 6. Performance Critic
 
 **Mandate:** Find the slow path, the leak, the bloat.
@@ -351,6 +387,7 @@ critic is recorded here with the triggering cause.
 | 2026-05-30 | Reliability Critic (#7) checklist | Added "re-check cancellation after EVERY await, including post-success persistence" | BidDiff save-window race: reset() during saveDiff was clobbered by a late DONE setState (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30 bug-hunt pass 4) |
 | 2026-05-30 | Correctness Critic (#1) checklist | Added "a hash/ID scheme delivering less entropy than its width implies — verify stated intent is implemented" | BidDiff contentHash's "salted" second pass re-hashed the same input → 32-bit doubled, not 64-bit (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30 bug-hunt pass 5) |
 | 2026-05-30 | Security Critic (#3) checklist | Added "fetch/navigation of a DOM-sourced URL passes an explicit scheme allowlist (https), not just window.open" | BidDiff fetched SAM attachment hrefs with no scheme check (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30 bug-hunt pass 6) |
+| 2026-05-30 | Domain-Expert Critic (#5) checklist | Added a federal-procurement specialization (UCF literacy, amendment mechanics, the critical-change categories a capture manager scans incl. the BD2 gaps, terminology precision, practitioner workflow) | SELF_IMPROVEMENT #4 — from public FAR/DFARS knowledge; sharpens the lens for BidDiff + the federal-solicitation family (the code ruleset still awaits the human-gated practitioner validation) |
 
 The META loop (PART 11) audits this table every cycle. A month
 with no growth is a warning sign flagged in the weekly digest.
