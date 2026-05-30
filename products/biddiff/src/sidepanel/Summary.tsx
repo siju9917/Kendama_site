@@ -140,8 +140,14 @@ export function Summary({ result }: Props): React.ReactElement {
           <span className="summary__stat-label">Total</span>
           <span className="summary__stat-value">{totalChanges}</span>
         </div>
-        <div className="summary__stat">
-          <span className="summary__stat-label">Critical</span>
+        <div
+          className="summary__stat"
+          title="What BidDiff flags as critical: changes to deadlines or dates, page limits or submission format, FAR/DFARS clause additions or removals, evaluation criteria, CLIN or pricing structure, and attachments added or removed."
+        >
+          <span className="summary__stat-label">
+            Critical
+            <span className="info-pill" aria-hidden="true">i</span>
+          </span>
           <span
             className={
               "summary__stat-value " +

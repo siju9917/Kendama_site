@@ -246,3 +246,39 @@ three K1 pass-1 P1 findings (Research Quality, Domain-Expert,
 Ambition) remain open and human/research/cap-gated. Phase K1 still
 does NOT converge. The next escalating pass continues against the
 remaining surface once the gated P1s clear.
+
+---
+
+## 2026-05-30 — Phase K1 — polish pass (addresses K1 pass-1 P2 #11)
+
+**Pass type:** Polish (closing a non-gated P2 from K1 pass 1).
+
+**Finding addressed:**
+
+### P2 — Product-Sense Critic (#11) — first-run "what is critical?" — ADDRESSED
+
+- **Was:** A new user had no inline explanation of what BidDiff
+  means by "critical"; the help doc was correct but off-screen.
+- **Fix:** The Summary's "Critical" stat now carries the same
+  inline info affordance the "Confidence" stat already used — a
+  `title` tooltip + an `info-pill` "i" — with a purely descriptive
+  (reporting, not advising) explanation naming the actual rule
+  categories (deadlines/dates, page limits/format, FAR/DFARS clause
+  add/remove, evaluation criteria, CLIN/pricing, attachments). This
+  is more prominent than the originally-suggested "first critical
+  card" because the Summary is always visible at the top of every
+  diff. Verified: `src/sidepanel/Summary.test.tsx` (2 new tests)
+  pins the affordance and that it names the real categories; the
+  no-advisory-language test still passes; full suite 241/241, lint +
+  typecheck clean.
+- **Consistency note (Professional-Polish):** the two summary stats
+  (Confidence, Critical) now share one affordance pattern.
+- **Carry-forward (Accessibility P2 #8):** the `title`-tooltip is
+  mouse-only; the same limitation applies to the pre-existing
+  Confidence affordance. Making both keyboard/SR-accessible is
+  folded into the open K1 Accessibility P2.
+
+**Remaining open on K1:** the three P1s (Research Quality,
+Domain-Expert, Ambition) and two P2s (Devil's-Advocate SAM e2e —
+needs Chromium; Accessibility axe rendering tests). Phase K1 does
+NOT converge.
