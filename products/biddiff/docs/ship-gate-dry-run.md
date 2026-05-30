@@ -71,11 +71,15 @@ Legend: ✅ met w/ evidence · ⚠️ gap (gated) · ⛔ gap (must fix to ship).
 - ✅ Keyboard-operable — J/K/R// nav; sibling-button History (this
   session); native `<details>` shortcuts; FilePicker Enter.
 - ✅ Focus order / not trapped — no custom modal; focus-visible rings.
-- ⛔→⚠️ **Contrast WCAG AA on rendered components** — token-level test
-  exists (`accessibility.test.ts`); rendered-component dark-mode
-  contrast is the open K1 P2, **browser-gated** (axe can't do contrast
-  in jsdom — see `brain/WISHLIST.md`). Gap is real but externally
-  gated, not ignored.
+- ⚠️ **Contrast WCAG AA** — base tokens AND the **actual
+  rendered-component color pairs** (diff/critical/meta text on card +
+  soft-badge surfaces, light + dark) are now all verified AA in
+  `accessibility.test.ts` (lowest 5.06:1, all ≥ 4.5). The *color-pair*
+  dimension of the K1 P2 is closed. The only remaining gap is verifying
+  these on the genuinely rendered DOM (computed-color resolution),
+  which is **browser-gated** (axe can't do contrast in jsdom — see
+  `brain/WISHLIST.md`). Narrowed from "rendered contrast unverified" to
+  "rendered-DOM verification pending a browser."
 - ✅ Accessible names — `aria-label` on icon buttons, dropzones, the
   unseen dot ("New"), progress (`role=progressbar`).
 - ✅ `prefers-reduced-motion` — honored in `DiffView` scroll.

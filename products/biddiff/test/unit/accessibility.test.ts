@@ -97,3 +97,42 @@ describe("Design system contrast — dark mode", () => {
     expect(contrast(ACCENT, BG)).toBeGreaterThanOrEqual(4.5);
   });
 });
+
+// Partially addresses K1 Accessibility P2: the base-token tests above check
+// fg/bg pairs in isolation, but real components layer diff/critical colors
+// on *card* and *soft-badge* surfaces. These assert the ACTUAL color pairs
+// the rendered components use (ChangeCard tokens, the critical badge, meta
+// text on cards) in BOTH modes. The remaining P2 gap — verifying these on
+// the genuinely rendered DOM — needs a browser (axe can't resolve computed
+// color under jsdom; see brain/WISHLIST.md), but the *color pairs* are now
+// all verified AA here. Values mirror src/sidepanel/styles.css tokens.
+describe("Rendered-component color pairs (ChangeCard / badges)", () => {
+  it("light mode: diff + critical + meta pairs on card/soft surfaces pass AA", () => {
+    const pairs: [string, string][] = [
+      ["#0f7a3a", "#ffffff"], // insert text on card bg
+      ["#0f7a3a", "#f5f7fa"], // insert text on subtle bg
+      ["#b22222", "#ffffff"], // delete text on card bg
+      ["#b22222", "#f5f7fa"], // delete text on subtle bg
+      ["#b00020", "#fdecef"], // critical text on critical-soft (badge)
+      ["#5b6573", "#f5f7fa"], // muted meta text on subtle bg
+    ];
+    for (const [fg, bg] of pairs) {
+      expect(contrast(fg, bg), `light ${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it("dark mode: diff + critical + meta pairs on card/soft surfaces pass AA", () => {
+    const pairs: [string, string][] = [
+      ["#5ce697", "#161a21"], // insert text on subtle bg
+      ["#5ce697", "#1a1f27"], // insert text on card (elev) bg
+      ["#ff8a8a", "#1a1f27"], // delete text on card bg
+      ["#ff6b88", "#1a1f27"], // critical text on card bg
+      ["#ff6b88", "#3a1a22"], // critical text on critical-soft (badge)
+      ["#a4adb8", "#1a1f27"], // muted meta text on card bg
+      ["#a4adb8", "#161a21"], // muted meta text on subtle bg
+    ];
+    for (const [fg, bg] of pairs) {
+      expect(contrast(fg, bg), `dark ${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+});
