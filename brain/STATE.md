@@ -40,17 +40,16 @@
 - **Build green:** 256/256 tests (was 226 at session start — 30 new
   tests added this session), lint + typecheck clean. Production
   `npm run build` also verified clean (for the manifest change).
-- **Next action on the product:** the escalating bug-hunt has now
-  covered the whole high-value surface (diff core, both extractors,
-  storage/idb, normalize/validate, telemetry, model/build, clauses,
-  useDiffPipeline, background, offscreen, pipeline routing) — 5 real
-  bugs fixed. Remaining un-reviewed surfaces are peripheral
-  (App/History/FilePicker/popup/options/ProgressView/Onboarding/
-  SamAttachments/sam-integration/hash/chrome-rt/messages). Next:
-  finish those + the Accessibility P2 (genuinely browser-gated for
-  contrast — `jest-axe` in jsdom can't evaluate contrast). The three
-  K1 P1s stay blocked on the human (positioning, domain-expert) + the
-  cap (market research).
+- **Next action on the product:** the escalating bug-hunt covered the
+  ENTIRE codebase this cycle (every source file — see
+  `CRITIQUE_LOG.md` "full-codebase escalating sweep: COMPLETE"); all
+  reachable defects fixed. Per 5.7.2 the next cycle owes a **second
+  independent hard pass** (the rule requires two clean passes to clear
+  a phase). The three K1 P1s remain gated: human (positioning
+  proposal; domain-expert sourcing) + cap (market research). The two
+  remaining K1 P2s (Accessibility contrast; SAM e2e) are
+  browser-gated (`jest-axe` in jsdom can't evaluate contrast; SAM e2e
+  needs Chromium). No further code bug-hunt closes the gated items.
 
 ## Overdue re-critiques
 

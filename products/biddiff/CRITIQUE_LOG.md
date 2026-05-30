@@ -332,6 +332,61 @@ does NOT converge.
 
 ---
 
+## 2026-05-30 — Phase K1 — full-codebase escalating sweep: COMPLETE for this cycle
+
+**What ran:** Per 5.7.2, the K1 pass-1 "no new findings" result from the
+Correctness/Adversarial/Security critics was treated as a hypothesis and
+attacked across the **entire** codebase, not a sample. Every source file
+of consequence was adversarially read this cycle:
+
+- **Diff core:** engine, suppress, tokens, myers, blocks, moves, anchors,
+  classify, critical.
+- **Extraction:** pdf/extract, pdf/reconstruct, pdf/pdfExtractor,
+  docx/docxExtractor, sections/assemble, sections/headings, normalize,
+  validate.
+- **Core services:** storage/index, storage/idb, model/build, clauses/client,
+  telemetry/client, licensing/client, export.
+- **Shared:** hash, text, chrome-rt, messages, disclaimer, constants.
+- **Runtime:** background, offscreen, content/sam (+ sam-integration),
+  pipeline routing, manifest.
+- **UI:** App, DiffView, Summary, ChangeCard, useDiffPipeline, History,
+  FilePicker, FilePickerWithSam, SamAttachments, ReviewPrompt, Onboarding,
+  ProgressView, ErrorBoundary, LicenseChip, options, popup.
+
+**Findings (all fixed this cycle):** 1 P1 (suppress hid numeric value
+changes) + 4 P2 (token-LCS 400 MB; `.txt` mis-route; save-window
+cancellation race; 32-bit content hash) + 2 P3 security (fetch scheme
+allowlist; web_accessible_resources scoping) + 2 extraction-correctness
+(money magnitude; impossible dates) + 1 maintainability (ReviewPrompt
+comment) + 1 closed K1 P2 (Product-Sense affordance). Six critic-checklist
+growths logged (Correctness ×2, Performance, Reliability ×2, Security).
+Suite 226 → 256, lint + typecheck + production build all clean.
+
+**Modules judged clean on this hard pass (no change made, and why):**
+export (markdown code-spanning + deterministic PDF correct), myers
+(standard LCS, tie-break deterministic), blocks/moves (relabeling +
+greedy pairing correct), telemetry (no content field; ephemeral
+session), model/build (deterministic hashing), clauses/client (simple
+map lookup), offscreen/pipeline (jobId correlation drops stale results),
+background, and all presentational UI (accessible, error/empty/loading
+states designed). Minor non-defects noted but deliberately NOT changed
+(fabricating low-value findings is itself a critique failure): PDF
+sourceFileHash is name+size by design; a bare "Heading" docx style
+without a level; `listDiffs` localeCompare ordering; a stray hyphen only
+when a page's last item carries trailing whitespace.
+
+**Convergence status:** the *code-level* quality bar is now very high and
+this cycle's escalating sweep found and fixed everything it could reach.
+Phase K1 still does **NOT** converge — the three pass-1 P1s
+(Research Quality, Domain-Expert, Ambition) are unchanged because they
+are gated on the human (positioning proposal; domain-expert sourcing)
+and the spend cap (market research). No amount of further code bug-hunt
+closes them. The next cycle: a *second* independent hard pass per 5.7.2
+(the rule requires two clean passes), the gated P1s as they unblock, and
+the browser-gated A11y/SAM-e2e P2s.
+
+---
+
 ## 2026-05-30 — Phase K1 — bug-hunt pass 6 (Security, 5.7.5)
 
 **Pass type:** Continuous bug-hunt (5.7.5), reviewing the SAM
