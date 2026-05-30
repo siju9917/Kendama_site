@@ -41,16 +41,19 @@ human mid-session; it logs gates to `human/NEED_FROM_HUMAN.md` and
 keeps pulling work.
 
 **The red-team stop gate (CLAUDE.md 5x).** Conditions 2 and 3 both
-reduce to one verifiable fact: *it is no longer Saturday.* Before the
-operator stops for ANY reason, it states "stopping because it is no
-longer Saturday" and runs `node ops/checks/stop-guard.mjs --stopping`,
-which red-teams that claim against the real clock. Exit 1 (still
-Saturday) ⇒ the stop is REFUSED, a P0; the operator discards it and
-pulls the next item. Only exit 0 (genuinely not Saturday) authorizes
-the session-end sequence below. The operator may not stop on its own
-judgment; only the verified date authorizes it (and a hard
-platform-duration cutoff, which is the platform stopping, not the
-operator choosing to).
+reduce to one verifiable fact: *it is no longer Saturday.* The only
+acceptable operator-stop reason is **"stopping because it is no longer
+Saturday."** Before ANY stop the operator states that reason and runs
+the red team — `node ops/checks/stop-guard.mjs --stopping` — which
+verifies the claim against the **real system clock** and does NOT take
+the operator's word. Exit 1 (still Saturday) ⇒ the stop is REFUSED, a
+**P0**: discard it, do not summarize, pull the next queue item. Only
+exit 0 (genuinely not Saturday) authorizes the session-end sequence
+below. The operator may not stop on its own judgment — only the
+verified date authorizes it (a hard platform-duration cutoff is the
+platform stopping, not the operator choosing to). Every non-"no longer
+Saturday" reason (queue exhausted, diminishing returns, gated, a good
+checkpoint) is rejected outright.
 
 ### The standing infinite work source (there is always a next item)
 
@@ -238,8 +241,15 @@ without a clean brain and a pushed (or committed-and-logged) repo.
 
 ## Session-end sequence
 
-When a real limit is reached:
+When a real limit appears to be reached:
 
+0. **Red-team the stop (mandatory, CLAUDE.md 5x).** State "stopping
+   because it is no longer Saturday" and run
+   `node ops/checks/stop-guard.mjs --stopping`. If it exits 1 (still
+   Saturday — a refused stop), the limit was NOT real: this is a P0
+   violation; abandon the session-end sequence and pull the next queue
+   item. Proceed to step 1 ONLY if the red team exits 0 (or a genuine
+   hard platform-duration cutoff is forcing the end).
 1. Commit and push the current unit of work.
 2. Consolidate the brain. `STATE.md` must record the exact next
    action AND a `Session-end reason` line of one of:
