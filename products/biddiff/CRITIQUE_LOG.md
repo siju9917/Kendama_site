@@ -407,6 +407,41 @@ the browser-gated A11y/SAM-e2e P2s.
 
 ---
 
+## 2026-05-30 — Phase K1 — bug-hunt pass 8 (Product-Sense, claims-vs-implementation)
+
+**Pass type:** Continued claims-vs-implementation review (the thread
+that found the Compliance P1) — store-listing feature claims vs. code.
+
+### P3 — Product-Sense Critic (#11) — "critical changes flagged at the top" but the list is document-ordered
+
+- **Area:** `docs/store-listing.md` ("Critical changes are flagged at
+  the top") vs. `src/core/diff/engine.ts` `locationSortKey` + `DiffView`.
+- **Symptom:** The listing promises critical changes appear **at the
+  top**. But the engine sorts by **document order** (UCF letter →
+  heading → ordinal; the comment explicitly excludes severity: "ordered
+  by block position, not clustered by type"), and `DiffView` renders
+  that order. Critical changes are badge-flagged, Summary-counted, and
+  one-click filterable ("Critical (N)") — but **not surfaced at the
+  top**. (All other store-listing feature claims — the 7 "what it
+  catches" categories, drop-two-files, PDF/Markdown export — verify as
+  implemented.)
+- **Severity:** P3. The product flags critical changes prominently;
+  the copy overstates *placement*. Same claims-vs-implementation class
+  as the Compliance P1.
+- **Disposition (a future cycle decides):** (a) make the copy accurate,
+  OR **(b) implement critical-first surfacing** (a "Critical changes
+  (N)" section at the top of `DiffView`, critical changes in document
+  order, above the full list). For a deadline-pressure "never miss a
+  critical change" tool, (b) is a genuine UX win that also makes the
+  marketing true — recommended, but it touches the default view +
+  export-order consistency, so a deliberate change, not a session-end
+  rush. Routed to `PROGRESS.md` as POLISH N9.
+
+**Remaining open on K1:** four P1s + this P3 + the two P2s. Phase K1
+does NOT converge.
+
+---
+
 ## 2026-05-30 — Phase K1 — bug-hunt pass 7 (Compliance, via the README accuracy pass)
 
 **Pass type:** Compliance accuracy review (triggered by finding a false
