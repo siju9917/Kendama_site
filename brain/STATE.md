@@ -37,14 +37,19 @@
   details in `products/biddiff/CRITIQUE_LOG.md`. The phase has NOT
   converged — the three original K1 P1 findings remain open and are
   all human/research/cap-gated.
-- **Build green:** 247/247 tests (was 226 at session start — 21 new
+- **Build green:** 252/252 tests (was 226 at session start — 26 new
   tests added this session), lint + typecheck clean.
-- **Next action on the product:** continue the escalating bug-hunt on
-  the un-reviewed core surfaces (storage, licensing, telemetry,
-  pdf/reconstruct, sections/assemble) and the Accessibility P2 (axe
-  rendering tests). The three P1s stay blocked until the human acts
-  (positioning proposal, domain-expert sourcing) and the cap is set
-  (market research).
+- **Next action on the product:** the escalating bug-hunt has now
+  covered the whole high-value surface (diff core, both extractors,
+  storage/idb, normalize/validate, telemetry, model/build, clauses,
+  useDiffPipeline, background, offscreen, pipeline routing) — 5 real
+  bugs fixed. Remaining un-reviewed surfaces are peripheral
+  (App/History/FilePicker/popup/options/ProgressView/Onboarding/
+  SamAttachments/sam-integration/hash/chrome-rt/messages). Next:
+  finish those + the Accessibility P2 (genuinely browser-gated for
+  contrast — `jest-axe` in jsdom can't evaluate contrast). The three
+  K1 P1s stay blocked on the human (positioning, domain-expert) + the
+  cap (market research).
 
 ## Overdue re-critiques
 
@@ -105,25 +110,32 @@ marked; the factory works the unblocked items.
 
 None of these stop the factory from continuing useful zero-cost work.
 
-## Last five actions (this session)
+## Work this session (chronological)
 
 1. Built `ops/checks/` — the first factory-level check infrastructure
    (SELF_IMPROVEMENT #6 + #7): brain-integrity, no-github-actions,
    rule-cadence-consistency, a runner, tests (8/8), wired into
    `ops/loop.md` session start.
-2. Fixed a P1 correctness bug: `isReformattingOnly` stripped
-   digit-internal punctuation, silently hiding numeric value changes
-   (`$1.5M`→`$15M`). +13 tests.
-3. Closed K1 P2 (Product-Sense): inline "what is critical?" affordance
-   on the Summary's Critical stat. +2 tests.
-4. Fixed a P2 reliability bug: token-LCS bounded per-dimension (10k)
-   allowed a ~400 MB dp; now bounded by product (4M cells). +2 tests.
-5. Parsed money magnitude suffixes ($1.5M/$2.3 million) and rejected
-   calendrically-impossible dates (Feb 30, Apr 31) — extraction
-   correctness, both non-gated. +4 tests. Ran the META audit
-   (5.7.7/5.7.8); logged coverage evidence for BD2 (3 observations,
-   2 of them now fixed; the page-limit one stays gated under the
-   critical ruleset).
+2. **Bug P1** — `suppress.ts` stripped digit-internal punctuation,
+   silently hiding numeric value changes (`$1.5M`→`$15M`). +13 tests.
+3. Closed K1 P2 (Product-Sense): inline "what is critical?" affordance.
+4. **Bug P2** — token-LCS bounded per-dimension (10k) allowed a
+   ~400 MB dp; now bounded by product (4M cells). +2 tests.
+5. Extraction correctness: money magnitude suffixes + reject
+   calendrically-impossible dates. +4 tests.
+6. META audit (5.7.7/5.7.8); coverage evidence for BD2.
+7. Integration regression test for the numeric-value-change P1
+   (full pipeline). +3 tests.
+8. **Bug P2** — `.txt` accepted by `validateInput` then mis-routed to
+   the DOCX extractor; now rejected cleanly. +1 test.
+9. **Bug P2** — cancellation race: `reset()`/`openSaved` during the
+   `saveDiff` window was clobbered by a late DONE setState; added the
+   post-save abort guard. +1 test (confirmed fail-without-fix).
+10. Brain consolidation + digest + this checkpoint.
+
+Five genuine bugs fixed (1 P1 + 4 P2), 2 extraction-correctness
+improvements, all regression-tested; 4 critic-checklist growths
+logged (5.7.3). 226→252 tests.
 
 ## Next five actions
 

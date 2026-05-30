@@ -10,15 +10,16 @@
 
 ### The one thing to know
 
-The factory shipped real engineering this session: **two genuine
-bugs fixed in BidDiff's diff engine** (one of which silently hid
-material money changes), the **first factory self-check
-infrastructure**, and an extraction fix — all verified, 246/246
-tests green. But it's still **blocked on you for two ~2-minute
+The factory shipped real engineering this session: **five genuine
+bugs fixed across BidDiff** (one P1 that silently hid material money
+changes, plus four P2s found by a systematic adversarial sweep of the
+whole codebase), the **first factory self-check infrastructure**, and
+two extraction-correctness fixes — all verified with regression tests,
+252/252 green. But it's still **blocked on you for two ~2-minute
 things**: setting the spend cap and merging this session's branch.
 Details at the bottom.
 
-### What got done (8 commits, all green; 226 → 247 tests)
+### What got done (13 commits, all green; 226 → 252 tests)
 
 1. **`ops/checks/` — the factory's first self-integrity checks**
    (closes `SELF_IMPROVEMENT.md` #6 + #7). Dependency-free Node
@@ -51,8 +52,21 @@ Details at the bottom.
 
 Per the maximization rules, the prior "no findings" result from the
 Correctness/Adversarial critics was treated as a hypothesis to
-attack, not trust. Two hard adversarial passes on the diff core
-found the two bugs above. Both are now regression-tested.
+attack, not trust. A systematic adversarial sweep of the whole
+codebase (diff core, both extractors, storage, the UI state machine,
+the offscreen worker) found **five** genuine bugs in total:
+
+1. **P1** — money/value changes silently suppressed (`$1.5M`→`$15M`).
+2. **P2** — a pathological doc could spike memory ~400 MB.
+3. **P2** — `.txt` files were mis-routed to the Word extractor and
+   failed with a confusing error instead of a clean "unsupported".
+4. **P2** — a cancellation race: hitting "Start over" while a diff
+   was saving could snap the UI back to the finished diff.
+5. (plus the two extraction-correctness fixes — money suffixes, dates)
+
+Every fix has a regression test; several were confirmed to fail
+without the fix. Four critic checklists were strengthened so the
+panel catches these classes next time.
 
 ### Roster growth this week (5.7.3)
 
@@ -63,13 +77,19 @@ found the two bugs above. Both are now regression-tested.
   algorithm guarded by a per-dimension cap is a trap — bound the
   product, size the cap against real memory." Triggered by the
   400 MB bug.
+- **Reliability Critic (#7)** checklist gained two items: reject a
+  recognized-but-unsupported input at the trust boundary (not via the
+  wrong handler), and re-check cancellation after *every* await
+  including post-success persistence. Triggered by the `.txt` and
+  cancellation-race bugs.
 
 ### Maximization audit (5.7.7 / 5.7.8)
 
 - **5.7.1 Re-critique cadence:** N/A — no shipped products.
-- **5.7.2 Escalating critique:** HELD — two adversarial passes found
-  two real bugs.
-- **5.7.3 Roster growth:** HELD — two checklists strengthened.
+- **5.7.2 Escalating critique:** HELD — a multi-pass adversarial sweep
+  of the whole codebase found five real bugs.
+- **5.7.3 Roster growth:** HELD — three critic checklists strengthened
+  (four additions total).
 - **5.7.4 "Nothing is ever done":** spirit applied to K1 (found more).
 - **5.7.5 Continuous bug-hunt:** HELD — new adversarial inputs.
 - **5.7.6 Continuous ideation:** PARTIAL (flagged) — ambient findings
@@ -84,7 +104,7 @@ found the two bugs above. Both are now regression-tested.
 ### Portfolio status
 
 - **BidDiff** — `build`, Phase K1 still open (3 P1s blocked on you +
-  the cap). Now 247/247 tests (started the week at 226). Code quality
+  the cap). Now 252/252 tests (started the week at 226). Code quality
   improved materially; the three structural P1s are unchanged because
   they need your input + the cap.
 
