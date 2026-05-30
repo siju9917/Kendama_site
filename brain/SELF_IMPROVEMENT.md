@@ -119,8 +119,15 @@ playbooks compound the factory's speed over time.
 
 **Strengthens or weakens?** stronger.
 
-**Status:** proposed (deferred until BidDiff ships — playbooks
-codify post-mortem learning).
+**Status:** **done (2026-05-30).** Shipped
+`brain/PLAYBOOKS/chrome-mv3-critical-change-diff.md`. The original
+"defer until ship" reasoning was satisfied early: an exhaustive
+two-pass critique of the whole codebase (manual read + property
+fuzz) produced the post-mortem learning a playbook codifies, and the
+D1–D5 derivative family needs the engine playbook NOW to be
+deep-evaluable. Captures both halves: the reusable critical-change
+diff engine (A) and the MV3 extension shell (B), plus the 5 recurring
+bug archetypes.
 
 **Reasoning trace:** BidDiff is the first product through the
 factory; its playbook is the first one to write.
