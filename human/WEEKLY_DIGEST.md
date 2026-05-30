@@ -15,11 +15,11 @@ bugs fixed across BidDiff** (one P1 that silently hid material money
 changes, plus four P2s found by a systematic adversarial sweep of the
 whole codebase), the **first factory self-check infrastructure**, and
 two extraction-correctness fixes — all verified with regression tests,
-252/252 green. But it's still **blocked on you for two ~2-minute
+253/253 green. But it's still **blocked on you for two ~2-minute
 things**: setting the spend cap and merging this session's branch.
 Details at the bottom.
 
-### What got done (13 commits, all green; 226 → 252 tests)
+### What got done (15 commits, all green; 226 → 253 tests)
 
 1. **`ops/checks/` — the factory's first self-integrity checks**
    (closes `SELF_IMPROVEMENT.md` #6 + #7). Dependency-free Node
@@ -62,11 +62,15 @@ the offscreen worker) found **five** genuine bugs in total:
    failed with a confusing error instead of a clean "unsupported".
 4. **P2** — a cancellation race: hitting "Start over" while a diff
    was saving could snap the UI back to the finished diff.
-5. (plus the two extraction-correctness fixes — money suffixes, dates)
+5. **P2** — the content hash delivered only 32-bit (not its
+   advertised 64-bit) collision resistance, which could in rare cases
+   drop a change; block/change IDs depend on it.
+   (plus two extraction-correctness fixes — money suffixes, dates.)
 
 Every fix has a regression test; several were confirmed to fail
-without the fix. Four critic checklists were strengthened so the
-panel catches these classes next time.
+without the fix. Five checklist additions across three critics
+(Correctness, Performance, Reliability) so the panel catches these
+classes next time.
 
 ### Roster growth this week (5.7.3)
 
@@ -104,7 +108,7 @@ panel catches these classes next time.
 ### Portfolio status
 
 - **BidDiff** — `build`, Phase K1 still open (3 P1s blocked on you +
-  the cap). Now 252/252 tests (started the week at 226). Code quality
+  the cap). Now 253/253 tests (started the week at 226). Code quality
   improved materially; the three structural P1s are unchanged because
   they need your input + the cap.
 

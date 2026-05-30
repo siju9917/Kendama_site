@@ -37,7 +37,7 @@
   details in `products/biddiff/CRITIQUE_LOG.md`. The phase has NOT
   converged — the three original K1 P1 findings remain open and are
   all human/research/cap-gated.
-- **Build green:** 252/252 tests (was 226 at session start — 26 new
+- **Build green:** 253/253 tests (was 226 at session start — 27 new
   tests added this session), lint + typecheck clean.
 - **Next action on the product:** the escalating bug-hunt has now
   covered the whole high-value surface (diff core, both extractors,
@@ -131,11 +131,16 @@ None of these stop the factory from continuing useful zero-cost work.
 9. **Bug P2** — cancellation race: `reset()`/`openSaved` during the
    `saveDiff` window was clobbered by a late DONE setState; added the
    post-save abort guard. +1 test (confirmed fail-without-fix).
-10. Brain consolidation + digest + this checkpoint.
+10. **Bug P2** — `contentHash`'s "salted" second pass re-hashed the
+    identical input → 32-bit doubled, not 64-bit; block/change IDs
+    could collide and drop a change. Salted it. +1 test.
+11. Captured the session's bug archetypes as a compounding lesson in
+    `brain/LESSONS.md`; consolidated the brain + digest.
 
 Five genuine bugs fixed (1 P1 + 4 P2), 2 extraction-correctness
-improvements, all regression-tested; 4 critic-checklist growths
-logged (5.7.3). 226→252 tests.
+improvements, all regression-tested; 5 critic-checklist growths
+logged (5.7.3). 226→253 tests. Adversarially reviewed the entire
+logic-bearing surface; remaining un-reviewed files are presentational.
 
 ## Next five actions
 

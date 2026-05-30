@@ -61,3 +61,50 @@ pass and the "nothing is ever done" review will run regardless.
 growth); `governance/QUALITY_BAR.md` (escalation rule);
 `governance/GUARDRAILS.md` (item 16, "no 'we're done' before
 the limits hit").
+
+## 2026-05-30 — A "no new findings" critic note hid 5 real bugs; recurring archetypes
+
+**Context:** BidDiff, Phase K1. The K1 pass-1 log recorded that the
+Correctness, Adversarial, and Security critics "re-ran against the
+codebase the prior loose process had already exhaustively iterated;
+they returned no new findings." Per 5.7.2 that was treated as a
+hypothesis to attack.
+
+**What happened:** A systematic adversarial sweep of the whole
+codebase (5 bug-hunt passes) found **5 genuine bugs** that the
+"exhaustively iterated, no findings" code still contained:
+
+1. **Over-normalization hid a real change** — `isReformattingOnly`
+   stripped decimal points, so `$1.5M`→`$15M` was suppressed as
+   "reformatting." (P1; the product's worst failure class.)
+2. **A per-dimension cap on an O(n²)-space algorithm** allowed a
+   ~400 MB allocation (token LCS).
+3. **A recognized-but-unsupported input** (`.txt`) was routed to the
+   wrong extractor instead of rejected at the trust boundary.
+4. **A cancellation race** — a late `setState` after an aborted async
+   action (the save window) clobbered the user's action.
+5. **A hash that delivered half its advertised entropy** — a "salted"
+   second pass that re-hashed the identical input (32-bit, not 64).
+
+**Root cause:** Two things. (a) The prior loose process's "no
+findings" was a tired-operator conclusion, not a proof — exactly the
+critique-fatigue archetype. (b) Bugs cluster at *boundaries and
+invariants that look done*: normalization (what counts as "the
+same"), resource caps (the metric you bound vs. the one that hurts),
+trust boundaries (recognized ≠ supported), async cancellation (every
+await, not just the first), and "self-evidently correct" primitives
+(a hash, a comment that lies about its own code).
+
+**Lesson:** When a critic note says "no new findings," that is the
+*start* of the hard pass, never the end (5.7.2). And when hunting,
+go to the invariants that *look* settled — the five archetypes above
+are now Correctness/Reliability/Performance checklist items
+(`governance/CRITIQUE_AGENTS.md` roster-growth log, 2026-05-30) so
+the panel pre-empts them on the next product. The first product's
+bug archetypes are the second product's checklist.
+
+**Where applied:** `governance/CRITIQUE_AGENTS.md` (Correctness #1
+×2, Performance #6, Reliability #7 ×2 checklist additions);
+`products/biddiff/CRITIQUE_LOG.md` (bug-hunt passes 1-5); future
+BidDiff playbook (`SELF_IMPROVEMENT.md` #5) will carry these as a
+"diff/extraction pipeline" bug-class checklist.
