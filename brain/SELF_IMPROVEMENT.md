@@ -145,7 +145,12 @@ automated audits — adding the structure is part of this item).
 
 **Strengthens or weakens?** stronger.
 
-**Status:** proposed.
+**Status:** **done (2026-05-30).** Shipped as
+`ops/checks/rule-cadence-consistency.mjs` with unit + regression
+tests in `ops/checks/checks.test.mjs` (8/8 passing). The check is
+bidirectional (contiguity, defined-but-unreferenced, dangling
+reference) and wired into `ops/loop.md` session start. See
+`brain/DECISIONS.md` 2026-05-30.
 
 **Reasoning trace:** Surfaced by the 5.7.8 pass on this
 session's META audit (logged in `brain/META_LESSONS.md`). The
@@ -172,7 +177,17 @@ Must NOT use GitHub Actions or any prohibited surface (per
 
 **Strengthens or weakens?** stronger.
 
-**Status:** proposed.
+**Status:** **done (2026-05-30).** Shipped the `ops/checks/`
+scaffolding: a dependency-free runner (`run-all.mjs`), shared
+helpers (`lib.mjs`), the first three checks (`brain-integrity`,
+`no-github-actions`, `rule-cadence-consistency`), a test suite,
+and `README.md` with an "adding a check" guide. Triggered by
+`ops/loop.md` at session start, never by CI (the
+`no-github-actions` check enforces that). See
+`brain/DECISIONS.md` 2026-05-30. Follow-on check ideas
+(branch-policy, NEED_FROM_HUMAN status-format, APPROVALS
+auto-proceed-window arithmetic) are logged as future roster
+growth in the README's "Adding a check" section.
 
 **Reasoning trace:** Item #6 above motivates the first check;
 others (brain integrity, branch policy, guardrails compliance)

@@ -198,3 +198,53 @@ in either direction; silence is acceptable.
 **Reversibility:** Human can REDIRECT/REJECT before deadline.
 
 **Where applied:** `human/APPROVALS.md` proposal #1.
+
+## 2026-05-30 — Built the first factory-level check infrastructure (`ops/checks/`)
+
+**Decision:** Implement `SELF_IMPROVEMENT.md` #6 and #7 as a
+dependency-free Node ESM check suite under `ops/checks/`,
+runnable as `node ops/checks/run-all.mjs` and wired into
+`ops/loop.md`'s session-start brain-reconciliation step. Three
+checks ship: `brain-integrity` (load-bearing files present and
+non-empty, STATE.md handoff sections intact), `no-github-actions`
+(GUARDRAILS.md #1-2 enforced repo-wide), and
+`rule-cadence-consistency` (the 5.7.N rules in CLAUDE.md are
+contiguous, each referenced in an operational doc, with no
+dangling references). Each has unit tests plus a real-repo
+regression test (8/8 passing).
+
+**Alternatives considered:**
+
+- **A `.test.ts` under a root toolchain** (as #6 originally
+  sketched). Rejected. There is no root `package.json`; adding a
+  Vitest/TS toolchain at the factory level for three checks is
+  disproportionate and would not run on a fresh clone before
+  `npm install`. Dependency-free `.mjs` + `node:test` runs with
+  only Node, which is exactly what a session-start check needs.
+- **A shell script of greps.** Rejected. The bidirectional
+  rule/cadence consistency logic (contiguity, defined-but-
+  unreferenced, dangling reference) is awkward and untestable in
+  shell; a small JS module with a pure `analyze()` is testable on
+  synthetic input.
+- **Wire the checks into `ops/run-kendama.sh`.** Rejected. The
+  checks are a session responsibility (the factory fixes a
+  blocking finding as queue priority 1), not a launcher gate;
+  failing in the launcher before the session starts contradicts
+  the fix-it-in-session model.
+
+**Reasoning:** Until now every factory invariant was policed only
+by human attention or by the META loop reading files by hand —
+the exact silent-drift risk #6/#7 target. The 5.7.8 audit last
+cycle surfaced rule/cadence drift as a real class of defect; this
+makes a would-have-caught-it check permanent. The check roster is
+designed to grow like the critique roster (5.7.3).
+
+**Reversibility:** Self-contained under `ops/checks/`; deleting
+the directory and reverting the two `ops/loop.md` edits fully
+removes it. No product code touched.
+
+**Where applied:** `ops/checks/` (new: `lib.mjs`, `run-all.mjs`,
+`brain-integrity.mjs`, `no-github-actions.mjs`,
+`rule-cadence-consistency.mjs`, `checks.test.mjs`, `README.md`);
+`ops/loop.md` (priority-1 step + cadence table);
+`brain/SELF_IMPROVEMENT.md` (#6, #7 marked done).

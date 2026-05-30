@@ -39,9 +39,12 @@ In every other case, the loop continues.
 Every cycle pulls from this queue. The priority order (highest
 first) is exactly PART 4.6:
 
-1. **Brain reconciliation.** If `STATE.md`, `PORTFOLIO.md`, and
-   per-product `STATUS.md` disagree, fix the brain before
-   anything else.
+1. **Brain reconciliation.** First action of every session: run
+   `node ops/checks/run-all.mjs` (the factory-level checks — see
+   `ops/checks/README.md`). A blocking (P0/P1) finding is the
+   highest-priority queue item and is fixed before anything else.
+   Then, if `STATE.md`, `PORTFOLIO.md`, and per-product
+   `STATUS.md` disagree, fix the brain.
 2. **Critical critique findings on shipped products.** Any P0
    finding from any critique pass on any shipped product
    preempts everything else.
@@ -100,7 +103,8 @@ triggers the lapse-restore rule above (priority 3).
 | Continuous bug-hunt (new inputs, no code change) | Weekly minimum, per shipped product | 5.7.5 |
 | Continuous ideation logging | Every loop, ambient | 5.7.6 |
 | META-loop audit of 5.7.1–5.7.6 | Every cycle | 5.7.7 |
-| Brain integrity check | Every session start | PART 2.4 |
+| Factory checks (`node ops/checks/run-all.mjs`) | Every session start | `ops/checks/` |
+| Brain integrity check | Every session start (now automated by `ops/checks/brain-integrity.mjs`) | PART 2.4 |
 | Research-loop refresh of `MARKET_SIGNALS.md` | Every session | PART 4.4 |
 | Re-rank of `IDEA_BACKLOG.md` | Whenever any rank-input changes | PART 3.4 |
 | Spend-cap monthly reset | Calendar month, UTC | `SPEND_CAP.md` |
