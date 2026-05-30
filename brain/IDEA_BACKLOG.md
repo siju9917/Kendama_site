@@ -46,8 +46,44 @@ candidate.
 
 ### Derivative-reasoning candidates
 
-Empty at bootstrap. Generated during research cycles by chaining
-forward from validated ideas into under-served adjacent niches.
+**Core insight (2026-05-30, first-principles ideation — zero-cost,
+cap-independent):** BidDiff's real, reusable competency is **"diff
+two versions of a structured document and classify which changes are
+*materially critical* to a specific professional."** That capability
+is *horizontal* — the federal-solicitation specifics are one rule
+pack on top of a generic engine (align → classify → flag-critical →
+report-never-advise). The same engine, with a different rule pack and
+a different distribution surface, is a different product in a
+different market. This is the derivative-reasoning family the spec
+(PART 3.1) asks the factory to generate. Each candidate below reuses
+BidDiff's engine (high strategic fit) but reaches a distinct buyer
+through a distinct marketplace (distribution-without-marketing).
+
+Provisional sub-scores use `governance/SCORING_MODEL.md` factors
+(Rev ceiling / Prob / Distribution / Maint / Build / Self-serve /
+Defensibility / Evidence / Strategic). They are **first-principles
+estimates pending the cited deep-evaluation**, which is the only part
+gated by the unset spend cap. None is approved.
+
+| Idea | Distribution surface | Buyer | Evidence (prov.) | Strategic fit | Notes |
+|---|---|---|---|---|---|
+| **D1. `regdiff` — open-core regulated-document diff library (npm + JSR)** | npm/JSR keyword SEO ("redline", "amendment diff", "document diff") + docs-site SEO | Devs at GovTech / LegalTech / compliance vendors who need amendment diffing + critical-change rules and don't want to build alignment from scratch | Plausible | **High (10)** — directly extracts BidDiff's engine; the rank-5 rules DSL is its rule layer | MIT core + paid commercial rule-packs / hosted self-serve API (Stripe). Weakness: libraries monetize weakly without a hosted tier; npm SEO is discovery but not buy-intent traffic. |
+| **D2. `clauseguard` — GitHub Marketplace app (read-only) flagging stale/changed regulatory-clause references in repos** | GitHub Marketplace (intent traffic from compliance-conscious orgs) | Eng/compliance teams whose code, docs, or config cite FAR/DFARS/HIPAA/PCI/SOC2 controls | Plausible | High (9) — reuses the clause dataset + critical-change engine | GitHub **App** (webhooks), NOT Actions — permitted by GUARDRAILS #1's read-only carve-out and IDEA_BACKLOG standing category #4. Self-serve via GitHub Marketplace billing. Weakness: needs a hosted webhook receiver (maintenance fit ↓). Moat: the curated clause dataset. |
+| **D3. JetBrains plugin for protobuf / gRPC breaking-change diffing** | JetBrains Marketplace (proven paid-plugin revenue + intent traffic) | Backend/platform engineers maintaining `.proto` contracts across services | Proven-leaning (incumbent **buf.build** proves the pain + willingness to pay; an IDE-native experience is the wedge) | Medium (7) — reuses the "classify breaking vs safe changes" core, different parser | Self-serve via JetBrains billing. Diversifies the JetBrains-marketplace bet beyond rank-1 Apex. Risk: Buf is a strong incumbent (compete on IDE-native immediacy, not parity). |
+| **D4. Shopify app: theme/liquid change-risk diff before publish** | Shopify App Store (strong intent + a Proven $20k+/mo revenue category) | Shopify merchants / agencies editing themes who fear breaking checkout, cart, tracking pixels, structured data | Plausible | Medium (8) — reuses diff + critical-classification, new "risky-edit" rule pack | Self-serve via Shopify Billing API. Highest revenue ceiling of the family. Weakness: hosting + Shopify API-version churn (maintenance fit ↓); furthest from BidDiff's domain. |
+| **D5. OpenAPI / API-spec breaking-change diff — VS Code extension + CI-free check** | VS Code Marketplace (largest dev marketplace) | API teams reviewing `openapi.yaml`/`swagger` changes for breaking edits | Proven-leaning (oasdiff / openapi-diff exist as CLIs — proves demand; an IDE-native, classified experience is the wedge) | Medium (7) — same breaking-change classification core | Monetization DIY via external license server (VS Code has no built-in billing) — self-serve but more build. Distribution excellent. |
+
+**Why this family is strong strategically:** it converts BidDiff from
+"one product" into a **reusable engine + a portfolio of rule-pack
+products**, each compounding the same code and the same critique
+playbook. The Ambition Critic's "what would not appear on a listicle"
+test: D1/D2 (regulated-reference tooling) and the unifying
+"critical-change diff as a horizontal capability" framing are
+genuinely non-obvious and not listicle picks.
+
+**Next (when the cap is set):** deep-evaluate D1 and D2 first (highest
+strategic fit + clearest distribution), then D3–D5. Until then they
+stay first-principles-ranked candidates, not approved builds.
 
 ### Standing candidate categories to populate via research
 

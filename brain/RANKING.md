@@ -46,7 +46,33 @@ evaluations land.
    is too new to claim Proven. Higher upside than rank suggests,
    but evidence quality docks the score.
 
-3. _(Further prior-research ideas to be reconstructed and ranked.)_
+3. **Derivative-reasoning family (D1–D5) — added 2026-05-30 by
+   first-principles ideation.** See `brain/IDEA_BACKLOG.md`
+   "Derivative-reasoning candidates." The unifying insight:
+   BidDiff's reusable competency is *critical-change diffing of
+   structured documents*, a horizontal capability. Provisional
+   placement within the candidate set:
+   - **D1 (`regdiff` library) and D2 (`clauseguard` GitHub app)**
+     rank just below the FAR/DFARS MCP server (rank 2) on strategic
+     fit — both directly compound BidDiff's engine + clause dataset
+     and have real marketplace/registry distribution. D2's GitHub
+     Marketplace distribution is stronger buy-intent than D1's npm
+     SEO, so D2 ≳ D1 provisionally.
+   - **D4 (Shopify theme-risk app)** has the highest revenue ceiling
+     of the family (Proven Shopify-app revenue category) but the
+     weakest strategic fit and worst maintenance fit (hosting + API
+     churn) — a higher-variance bet.
+   - **D3 (protobuf JetBrains plugin) and D5 (OpenAPI VS Code
+     extension)** are "Proven-leaning" because incumbents
+     (buf.build, oasdiff) prove the pain, but they compete against
+     those incumbents — wedge is IDE-native immediacy.
+   None is approved or deep-evaluated; the cited deep-evaluation is
+   the cap-gated step. They are ranked here from first principles so
+   the BUILD loop has a real, reasoned candidate set the moment the
+   cap unblocks evaluation.
+
+4. _(Further prior-research ideas to be reconstructed and ranked —
+   SELF_IMPROVEMENT #1, still pending the prior-research source.)_
 
 ### Provisional, not final
 
@@ -63,6 +89,7 @@ ranking — it builds from an approved ranking.
 | Date | Triggering event | Change | Reasoning |
 |---|---|---|---|
 | 2026-05-27 | Bootstrap | Provisional rank seeded | Carried forward from prior human research. Not final until deep evaluations land. |
+| 2026-05-30 | New ideas added (first-principles ideation) | Added derivative-reasoning family D1–D5 | "Critical-change diff" recognized as a horizontal capability; 5 concrete candidates across npm/GitHub/JetBrains/Shopify/VS Code surfaces, provisionally ranked by strategic fit × distribution × evidence. Cited deep-eval still cap-gated. |
 
 ---
 
