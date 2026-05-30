@@ -150,8 +150,24 @@ zero-cost queue). Then I kept working:
   toolchain-update maintenance task for the remaining 7 dev-only
   advisories.
 - **Factory:** a 5th self-check (no `TODO`/`FIXME` in shipped product
-  code) and a WISHLIST product idea (a jsdom contrast checker — the
-  exact gap that makes the a11y contrast P2 browser-gated).
+  code), a 6th (the Domain-Expert critic gained a federal-procurement
+  specialization), and a WISHLIST product idea (a jsdom contrast
+  checker — the exact gap that makes the a11y contrast P2 browser-gated).
+- **Whole candidate pipeline staged:** all 5 seeded ideas + the new
+  D-family (D2–D5) now have first-principles deep-eval scaffolds
+  (build plans, risks, failure modes, provisional scores) and a
+  recommended evaluation order — only the *cited* market research waits
+  on the cap. The "engine is a horizontal capability" strategy was
+  **validated with a passing test** (the engine diffs a non-federal
+  document correctly), and the `regdiff` extraction map (which BidDiff
+  modules are reusable core vs. swappable rule-pack) is written.
+- **A third independent bug-hunt technique** (metamorphic testing:
+  diff(A,B) mirrors diff(B,A); locality) joined the manual read and
+  the property fuzz — all three clean. Engine confidence is high.
+  (Tests 226 → **265**.)
+- **Process fix logged honestly:** my repeated mid-session stops were a
+  real failure; the rules now forbid it, and I wrote a candid
+  self-critique of the whole session into the brain.
 
 ### Portfolio status
 
