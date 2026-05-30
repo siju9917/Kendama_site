@@ -6,6 +6,120 @@
 
 ---
 
+## Week of 2026-05-30 — First post-bootstrap build cycle
+
+### The one thing to know
+
+The factory shipped real engineering this session: **two genuine
+bugs fixed in BidDiff's diff engine** (one of which silently hid
+material money changes), the **first factory self-check
+infrastructure**, and an extraction fix — all verified, 246/246
+tests green. But it's still **blocked on you for two ~2-minute
+things**: setting the spend cap and merging this session's branch.
+Details at the bottom.
+
+### What got done (6 commits, all green)
+
+1. **`ops/checks/` — the factory's first self-integrity checks**
+   (closes `SELF_IMPROVEMENT.md` #6 + #7). Dependency-free Node
+   checks that run at session start: brain-integrity (load-bearing
+   files present), no-github-actions (enforces the guardrail
+   repo-wide), and rule/cadence-consistency (the 5.7.N rules stay in
+   sync with their cadences). 8/8 tests. This was the exact item last
+   week's audit-of-the-auditor identified — the recursion produced a
+   real capability one cycle later.
+2. **Fixed a P1 correctness bug.** BidDiff's reformatting filter was
+   stripping decimal points, so a change like "$1.5M → $15M" (a 10×
+   contract-value change) was classified as cosmetic and **silently
+   hidden from the user.** For a tool whose whole job is "never miss a
+   critical change," this was the worst possible failure. Fixed +
+   13 regression tests.
+3. **Closed a K1 polish finding (Product-Sense).** The Summary now
+   explains inline what "critical" means (it previously assumed the
+   user already knew).
+4. **Fixed a P2 reliability bug.** A pathological document could make
+   the diff engine allocate ~400 MB at once (measured) and freeze the
+   panel; now bounded to ~16 MB. + 2 tests.
+5. **Extraction fix.** "$1.5M" / "$2.3 million" ceilings are now read
+   at their true value (they were being read as $1). + 3 tests.
+6. **Ran the mandatory self-audit** (5.7.7/5.7.8) and logged concrete
+   evidence for the open domain-expert finding.
+
+### What the critique system caught (continuous bug-hunt)
+
+Per the maximization rules, the prior "no findings" result from the
+Correctness/Adversarial critics was treated as a hypothesis to
+attack, not trust. Two hard adversarial passes on the diff core
+found the two bugs above. Both are now regression-tested.
+
+### Roster growth this week (5.7.3)
+
+- **Correctness Critic (#1)** checklist gained: "over-normalization
+  that collapses distinct inputs — especially numeric values — into
+  one (a silent false negative)." Triggered by the suppress bug.
+- **Performance Critic (#6)** checklist gained: "an O(n²)-space
+  algorithm guarded by a per-dimension cap is a trap — bound the
+  product, size the cap against real memory." Triggered by the
+  400 MB bug.
+
+### Maximization audit (5.7.7 / 5.7.8)
+
+- **5.7.1 Re-critique cadence:** N/A — no shipped products.
+- **5.7.2 Escalating critique:** HELD — two adversarial passes found
+  two real bugs.
+- **5.7.3 Roster growth:** HELD — two checklists strengthened.
+- **5.7.4 "Nothing is ever done":** spirit applied to K1 (found more).
+- **5.7.5 Continuous bug-hunt:** HELD — new adversarial inputs.
+- **5.7.6 Continuous ideation:** PARTIAL (flagged) — ambient findings
+  logged, but no new *product* idea, because the unset cap blocks the
+  research/ideation surface. Honest: ideation ran below potential.
+- **5.7.7 (this audit):** done. **5.7.8 (audit-the-auditor):** found
+  that the audit "passes" partly on a technicality — most rules are
+  N/A because nothing has shipped, and nothing can ship/advance
+  because the cap is unset. The single highest-leverage unblock in the
+  whole system is the spend cap. Escalated here.
+
+### Portfolio status
+
+- **BidDiff** — `build`, Phase K1 still open (3 P1s blocked on you +
+  the cap). Now 246/246 tests (started the week at 226). Code quality
+  improved materially; the three structural P1s are unchanged because
+  they need your input + the cap.
+
+### What the human needs to do (the most important part)
+
+**Three quick items:**
+
+1. **Set the monthly spend cap** in `governance/SPEND_CAP.md`
+   (`NEED_FROM_HUMAN.md` item 1). *This is the big one* — it has now
+   blocked two consecutive sessions from the highest-value work
+   (market research, idea evaluation, and everything that lets
+   BidDiff reach the ship gate). Suggested $100–$300/mo to start.
+2. **Merge branch `claude/saturday-task-kickoff-AfDAa` into `main`**
+   (`NEED_FROM_HUMAN.md` item 5, new). All of this session's work is
+   on that branch; the Routine reads `main`, so without the merge the
+   next session won't see it. ~2 minutes.
+3. **Create the weekly Routine** (`NEED_FROM_HUMAN.md` item 2) so the
+   factory wakes on its own each Saturday instead of needing you to
+   start it (as you did today).
+
+Optional, not blocking: respond to the BidDiff positioning proposal
+in `APPROVALS.md` (it auto-proceeds to "reposition" on 2026-06-03),
+and source 2-3 federal proposal/capture contacts for domain
+validation (`NEED_FROM_HUMAN.md` item 4).
+
+### What's next (the upcoming session plan)
+
+- If the cap is set: BidDiff market research + the rank-1 deep
+  evaluation (the two top P1s).
+- Continue the diff-core bug-hunt on the surfaces not yet
+  adversarially re-read; do the BidDiff Accessibility P2 (axe tests)
+  and the non-gated extraction guards.
+- Action the positioning proposal once it resolves (or auto-proceeds
+  2026-06-03).
+
+---
+
 ## Week of 2026-05-25 — Bootstrap
 
 ### What got done

@@ -5,7 +5,7 @@
 
 | Product | One-line | Status | Build % | Critique status | Shipped | MRR | Notes |
 |---|---|---|---:|---|---|---|---|
-| **BidDiff** (`products/biddiff/`) | Chrome extension that diffs amended U.S. federal solicitations. (Audience: positioning under review per `human/APPROVALS.md` proposal #1.) | `build` (active) | ~92% — code complete, but Kendama Phase K1 panel pass found 3 P1 + 3 P2 product findings; phase has not converged. | First formal Kendama panel pass ran 2026-05-27; did NOT converge. Three P1 open: Research Quality (no market evidence), Domain-Expert (critical-rule coverage gap), Ambition (audience-vs-scope mismatch). | Not yet — ship gate not reachable until P1s close. | $0 (pre-launch) | Carried over via migration; relocated into `products/biddiff/` with full history. K1 details in `products/biddiff/CRITIQUE_LOG.md`. |
+| **BidDiff** (`products/biddiff/`) | Chrome extension that diffs amended U.S. federal solicitations. (Audience: positioning under review per `human/APPROVALS.md` proposal #1.) | `build` (active) | ~92% — code complete; K1 not converged (3 P1 open). 2026-05-30 hardened the diff core (2 bug fixes + 1 P2 closed + extraction fix; 246/246 tests). | K1 (2026-05-27) did NOT converge — 3 P1 open: Research Quality (no market evidence), Domain-Expert (critical-rule coverage gap), Ambition (audience-vs-scope mismatch). 2026-05-30 bug-hunt + polish passes closed the Product-Sense P2 and fixed a P1 correctness + a P2 reliability defect (`CRITIQUE_LOG.md`). | Not yet — ship gate not reachable until P1s close. | $0 (pre-launch) | All 2026-05-30 work is on branch `claude/saturday-task-kickoff-AfDAa`, not yet merged to `main` (`NEED_FROM_HUMAN.md` item 5). |
 
 ---
 

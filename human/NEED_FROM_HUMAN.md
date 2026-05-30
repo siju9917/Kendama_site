@@ -138,7 +138,32 @@ finding. The ship gate becomes reachable.
 
 ---
 
-## 4. **[OPEN]** (When BidDiff is ship-gate ready) Chrome Web Store submission
+## 5. **[OPEN]** Merge `claude/saturday-task-kickoff-AfDAa` into `main`
+
+**Why:** The 2026-05-30 Saturday session was constrained by its task
+instructions to develop on the branch
+`claude/saturday-task-kickoff-AfDAa` and is not permitted to merge to
+`main` or open a PR without your say-so. The Routine reads `main`
+(`ops/SCHEDULE_SETUP.md`), so until this branch is merged, the next
+Routine session will start from a clone that does NOT include this
+session's work (the `ops/checks/` infrastructure, two diff-engine bug
+fixes, a closed K1 P2, and the money-magnitude extraction fix).
+
+**Time needed:** ~2 minutes.
+
+**Steps:**
+
+1. Review the branch `claude/saturday-task-kickoff-AfDAa` (6 commits,
+   all with green tests/lint/typecheck; see `brain/STATE.md` and
+   `human/WEEKLY_DIGEST.md` for the summary).
+2. Merge it into `main` (fast-forward or PR-merge, your preference),
+   or tell the factory in a future session that it may do so.
+
+**Effect once done:** the Saturday Routine picks up this work.
+
+---
+
+## 6. **[OPEN]** (When BidDiff is ship-gate ready) Chrome Web Store submission
 
 **Why:** Per PART 7.1 and `governance/GUARDRAILS.md` #5 and #11,
 the human is the one who submits to live marketplaces. BidDiff
