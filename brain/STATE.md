@@ -216,6 +216,28 @@ Factory checks: 5 (`brain-integrity`, `no-github-actions`,
 `rule-cadence-consistency`, `human-queue`, `no-forbidden-markers`),
 all green; check tests 16/16.
 
+### Latest engineering (end of session)
+
+- **Rule-pack made data-driven** (behavior-preserving, test-locked):
+  `critical.ts` → `CRITICAL_RULES`, `classify.ts` → `CLASSIFY_RULES`.
+  The ENTIRE federal rule-pack (classify + critical + anchors + clause
+  dataset) is now data, completing the decoupling the `regdiff`
+  extraction map named. Direct standalone value: the gated BD2
+  domain-expert categories become a **data append, not a code change**;
+  and it seeds the rule-pack-loader for the D-family.
+- **More locked behaviors** (+ direct unit tests where there were only
+  indirect): `evaluateCriticality` (8), `classifyChange` (4),
+  cross-section move detection (2), clause-info enrichment regression
+  (known-over-unknown-first), a11y rendered-component color pairs,
+  metamorphic engine properties (inversion + locality), the
+  domain-agnostic thesis.
+- **Full CI gate verified green end-to-end** (typecheck + lint + 282
+  tests + build + bundle-size budget — `scripts/ci.sh`). Tree clean,
+  all pushed. 226 → **282 tests**.
+- Candidate pipeline fully staged (all 5 seeded + D2/D3/D4/D5 +
+  contrast-checker scaffolds + holistic ranking + portfolio strategy +
+  the code-validated horizontal-capability thesis).
+
 ## Next five actions
 
 1. Run `node ops/checks/run-all.mjs` (now the first session-start
