@@ -38,6 +38,16 @@ wishlist-sourced — each came from a friction moment captured
 during BidDiff work and logged in `brain/WISHLIST.md`. The PLAY
 loop will continue producing them.
 
+**Dev-tooling candidate — jsdom WCAG contrast checker** (WISHLIST
+2026-05-30; scaffold at `brain/RESEARCH/2026-05-30-jsdom-contrast-checker.md`).
+The most genuinely-original idea of the cycle (born from real friction
+— it's the exact gap that makes BidDiff's a11y contrast P2
+browser-gated). Strong technical wedge (axe documents it can't do
+contrast in jsdom; the color question needs the cascade, not layout),
+but the **weakest revenue case** (likely OSS for adoption/credibility).
+Honest disposition: build minimally to dogfood BidDiff's a11y P2 and
+open-source it — not a revenue lead. Evidence tier Speculative→Plausible.
+
 ### Market-signal-triggered candidates
 
 Empty at bootstrap. The RESEARCH loop populates
