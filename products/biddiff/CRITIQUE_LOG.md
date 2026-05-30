@@ -375,6 +375,26 @@ sourceFileHash is name+size by design; a bare "Heading" docx style
 without a level; `listDiffs` localeCompare ordering; a stray hyphen only
 when a page's last item carries trailing whitespace.
 
+## 2026-05-30 — Phase K1 — second independent hard pass (5.7.2): property-based fuzz
+
+**Pass type:** The 5.7.2 second independent hard pass, using a
+**different technique** from the first (manual adversarial reading):
+property-based fuzzing. `test/integration/fuzz-engine.test.ts`
+generates 300 random adversarial document pairs (unicode, RTL/combining,
+control chars, money/date/clause strings, 5000-char blobs, empty/
+whitespace, impossible dates) from a seeded PRNG and asserts engine
+invariants for every input: never throws, deterministic (same input →
+identical result), self-diff is empty, `criticalCount` matches,
+per-category counts sum to the change count, `diffConfidence ∈ [0,1]`
+and finite, every change well-formed (16-hex id, valid type/category/
+severity).
+
+**Result:** CLEAN — all invariants held across 300 cases. Combined with
+the first hard pass (which found and fixed 5 bugs + 2 security + others),
+the code-correctness dimension now has the two independent hard passes
+5.7.2 requires. The fuzz test stays as permanent regression protection
+and reruns every suite.
+
 **Convergence status:** the *code-level* quality bar is now very high and
 this cycle's escalating sweep found and fixed everything it could reach.
 Phase K1 still does **NOT** converge — the three pass-1 P1s
