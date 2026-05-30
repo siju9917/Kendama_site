@@ -102,15 +102,50 @@ We do not loosen it. All scripts ship in the extension bundle.
 - A user can extract the PDF.js worker and the bundle from any
   installed extension. Nothing in the bundle is sensitive.
 
+## Dependency audit — 2026-05-30 (Kendama K2 re-confirm)
+
+`npm audit` re-run during the K2 ship-gate dry run. **Key fact: zero
+of the flagged vulnerabilities ship in the extension.** The MV3 bundle
+contains only app JS + the pdf.js *browser* build + wasm; none of the
+flagged packages (`tar`, `esbuild`, `rollup`, `vite`, `canvas`) is in
+it.
+
+- **Before:** 11 vulns (6 high, 5 moderate).
+- **Fixed surgically:** added `overrides: { tar: "^7.5.15" }` to
+  `package.json`. The 6 high `tar` advisories came in via
+  `pdfjs-dist → canvas (optional, Node-only, browser-UNUSED) →
+  @mapbox/node-pre-gyp → tar`. The override pins a patched `tar`;
+  build + 262 tests + lint + typecheck all still green. → **11 → 7.**
+- **Remaining 7 (5 moderate, 2 high):** entirely the **Vite/Vitest
+  build & test toolchain** (`esbuild ≤0.24.2` via vite/vitest/
+  vite-node/@vitest/mocker; `rollup` path-traversal). These are
+  devDependencies — build-time and test-time only. The esbuild
+  advisory only matters when running `vite dev` with an untrusted
+  website open (not a factory/CI condition); rollup's is build-time
+  over trusted input. **None is exploitable in the shipped product or
+  in the factory's headless build.**
+- **Disposition:** the remaining 7 require a breaking Vite 5→6/7 +
+  Vitest 2→3 major bump. That is logged as a **maintenance task**
+  (`PROGRESS.md`) to be done with full re-verification (config +
+  plugin compat + the whole suite) — not rushed at ship gate, because
+  it cannot reduce shipped risk (already zero) and a botched toolchain
+  bump would.
+
 ## Verdict
 
-The Phase 6.5 security audit signs off:
+The Phase 6.5 security audit signs off (re-confirmed 2026-05-30):
 
-- All permissions are necessary and justified.
+- All permissions are necessary and justified — and tightened this
+  session (`web_accessible_resources` scoped off `<all_urls>` to
+  sam.gov; https-only fetch of DOM-sourced URLs).
 - Document content does not leave the device outside the opt-in OCR
   path. Enforced by integration-isolation test + telemetry schema.
 - License validation is tamper-evident on the wire.
-- No high-severity dependency vulnerabilities at the time of audit.
+- **No high-severity dependency vulnerabilities in the SHIPPED
+  bundle.** The high-severity advisories from `npm audit` are all in
+  the dev/build toolchain (see "Dependency audit" above) and do not
+  ship; the optional Node-only `canvas`/`tar` chain was pinned to a
+  patched `tar`.
 - No secrets in the bundle.
 
 Approved for production submission pending the human action items in

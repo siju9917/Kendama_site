@@ -34,7 +34,7 @@ substitutes for it.
 | # | Phase | Critique panel convergence (cycles) | Closed |
 |--:|---|---|---|
 | K1 | First formal full-panel pass against the migrated codebase. Critics 1–14 of `governance/CRITIQUE_AGENTS.md`, in particular: Ambition Critic (#13) on the product's scope vs. ceiling, Research Quality Critic (#14) on the supporting research, Domain-Expert Critic on the federal-procurement specifics. Iterate to convergence; escalate per 5.7.2. | _pending_ | _no_ |
-| K2 | Ship-gate dry run against `governance/QUALITY_BAR.md`. Defend every item with cited evidence. Address findings. | _pending_ | _no_ |
+| K2 | Ship-gate dry run against `governance/QUALITY_BAR.md`. Defend every item with cited evidence. Address findings. | **Dry run ran 2026-05-30** → `docs/ship-gate-dry-run.md`. Engineering bar defended with evidence on every axis. Closed 2 of 3 unblocked hygiene gaps (security-audit re-confirm + `tar` override 11→7 vulns; current CHANGELOG). | _no — does not pass: 3 K1 P1s + 2 P2s + 1 hygiene item still open_ |
 | K3 | Chrome Web Store submission package — staged for the human submission step (one of the `human/NEED_FROM_HUMAN.md` items, added when K2 closes). | _pending_ | _no_ |
 
 ---
@@ -77,6 +77,21 @@ session has specifics, not a vague "improve extraction":
 These feed both `src/core/diff/critical.ts` extension work AND the
 Domain-Expert Critic checklist strengthening, once BD2's human
 validation lands.
+
+## K2-surfaced hygiene tasks (from the ship-gate dry run)
+
+- **[DONE 2026-05-30]** Security-audit re-confirm + `npm audit` →
+  pinned a patched `tar` (`overrides`), 11→7 vulns; documented the
+  shipped bundle as vuln-free (`docs/security-audit.md`).
+- **[DONE 2026-05-30]** Current top-level `CHANGELOG.md`.
+- **[OPEN, unblocked, POLISH]** Assert an explicit bundle-size budget
+  (currently observed in build output — main chunk ~434 kB / 180 kB
+  gz — but not asserted). Add a budget check to `scripts/ci.sh` or a
+  test.
+- **[OPEN, maintenance]** Bump the Vite 5→6/7 + Vitest 2→3 toolchain
+  to clear the 7 dev-only `npm audit` advisories. Breaking; needs full
+  re-verification (config + plugin compat + suite). Not a shipped-risk
+  item (those advisories don't ship). Do it in a dedicated cycle.
 
 ## "Nothing is ever done" review (5.7.4) — 2026-05-30
 
