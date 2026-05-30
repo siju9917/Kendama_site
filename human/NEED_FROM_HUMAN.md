@@ -153,8 +153,10 @@ fixes, a closed K1 P2, and the money-magnitude extraction fix).
 
 **Steps:**
 
-1. Review the branch `claude/saturday-task-kickoff-AfDAa` (6 commits,
-   all with green tests/lint/typecheck; see `brain/STATE.md` and
+1. Review the branch `claude/saturday-task-kickoff-AfDAa` (now 12 commits,
+   all with green tests/lint/typecheck — incl. the Saturday stop-hook
+   interlock, the `ops/checks/` infrastructure + `governance-integrity`
+   check, and BidDiff bug-hunt passes through 9; see `brain/STATE.md` and
    `human/WEEKLY_DIGEST.md` for the summary).
 2. Merge it into `main` (fast-forward or PR-merge, your preference),
    or tell the factory in a future session that it may do so.
