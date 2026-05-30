@@ -10,7 +10,7 @@
  *   - CLIN is only emitted in PRICING-context calls (the caller decides).
  *   - DATE handles three explicit formats + deadline phrases.
  */
-import type { Anchor, AnchorType } from "../../model/types.js";
+import type { Anchor } from "../../model/types.js";
 import { normalizeText } from "../../../shared/text.js";
 
 export interface DetectorContext {
@@ -98,19 +98,45 @@ function isoDate(year: number, month: number, day: number): string {
   return `${year}-${mm}-${dd}`;
 }
 
+function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+}
+
+/**
+ * Calendar validity, not just regex shape. The regexes admit
+ * month 02 with day 30 ("02/30/2026") or April 31, which would
+ * normalize to an impossible ISO date. A date anchor is only useful
+ * if it denotes a real day; an impossible one is a typo or a false
+ * match, so we drop it (the block-level diff still surfaces the
+ * surrounding textual change). Matches the conservative-detection
+ * philosophy documented at the top of this module.
+ */
+function isValidYmd(year: number, month: number, day: number): boolean {
+  if (month < 1 || month > 12 || day < 1) return false;
+  const lengths = [31, isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return day <= lengths[month - 1];
+}
+
 export function detectDates(text: string): Anchor[] {
   const out: Anchor[] = [];
 
-  const pushIfValid = (a: Omit<Anchor, "type"> & { type: AnchorType }): void => {
-    out.push(a);
+  // Push a DATE anchor only when the (year, month, day) is a real
+  // calendar date.
+  const pushIfValid = (
+    year: number,
+    month: number,
+    day: number,
+    fields: { raw: string; normalized: string; charStart: number; charEnd: number },
+  ): void => {
+    if (!isValidYmd(year, month, day)) return;
+    out.push({ type: "DATE", ...fields });
   };
 
   // ISO
   ISO_DATE_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
   while ((m = ISO_DATE_RE.exec(text)) !== null) {
-    pushIfValid({
-      type: "DATE",
+    pushIfValid(Number(m[1]), Number(m[2]), Number(m[3]), {
       raw: m[0],
       normalized: `${m[1]}-${m[2]}-${m[3]}`,
       charStart: m.index,
@@ -124,8 +150,7 @@ export function detectDates(text: string): Anchor[] {
     const month = Number(m[1]);
     const day = Number(m[2]);
     const year = Number(m[3]);
-    pushIfValid({
-      type: "DATE",
+    pushIfValid(year, month, day, {
       raw: m[0],
       normalized: isoDate(year, month, day),
       charStart: m.index,
@@ -140,8 +165,7 @@ export function detectDates(text: string): Anchor[] {
     const day = Number(m[2]);
     const year = Number(m[3]);
     if (mn) {
-      pushIfValid({
-        type: "DATE",
+      pushIfValid(year, mn, day, {
         raw: m[0],
         normalized: isoDate(year, mn, day),
         charStart: m.index,
@@ -157,8 +181,7 @@ export function detectDates(text: string): Anchor[] {
     const day = Number(m[1]);
     const year = Number(m[3]);
     if (mn) {
-      pushIfValid({
-        type: "DATE",
+      pushIfValid(year, mn, day, {
         raw: m[0],
         normalized: isoDate(year, mn, day),
         charStart: m.index,
@@ -174,8 +197,7 @@ export function detectDates(text: string): Anchor[] {
     const day = Number(m[1]);
     const year = Number(m[3]);
     if (mn) {
-      pushIfValid({
-        type: "DATE",
+      pushIfValid(year, mn, day, {
         raw: m[0],
         normalized: isoDate(year, mn, day),
         charStart: m.index,

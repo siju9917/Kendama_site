@@ -68,6 +68,18 @@ describe("dates", () => {
     expect(detectDates("99/99/2026 is not a date").length).toBe(0);
   });
 
+  it("rejects calendrically-impossible but regex-shaped dates", () => {
+    // These pass the regex (month/day in range) but are not real days,
+    // so they must not produce a normalized impossible ISO date.
+    expect(detectDates("02/30/2026").length).toBe(0); // Feb 30
+    expect(detectDates("2026-02-30").length).toBe(0); // ISO Feb 30
+    expect(detectDates("04/31/2026").length).toBe(0); // Apr 31
+    expect(detectDates("February 30, 2026").length).toBe(0);
+    // Leap-year boundary: 2026 is not a leap year, 2028 is.
+    expect(detectDates("02/29/2026").length).toBe(0);
+    expect(detectDates("02/29/2028").map((x) => x.normalized)).toEqual(["2028-02-29"]);
+  });
+
   it("dedupes overlapping forms", () => {
     // "2026-08-15" appearing once should produce one anchor.
     expect(detectDates("Date: 2026-08-15. End.").length).toBe(1);

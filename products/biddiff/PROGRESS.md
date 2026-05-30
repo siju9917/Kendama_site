@@ -64,10 +64,15 @@ session has specifics, not a vague "improve extraction":
    so "shall not exceed ten (10) pages" — a very common federal
    phrasing — is missed. Candidate fix: allow an optional
    spelled-number + parenthetical digit form.
-3. **US date validity not checked.** `US_DATE_RE` accepts "02/30/2026"
-   and normalizes it to an impossible ISO date. Low impact for diff
-   (string comparison still flags the change) but worth a validity
-   guard so a normalized anchor is never a non-existent date.
+3. **US date validity not checked. — ADDRESSED 2026-05-30.**
+   `US_DATE_RE` (and the ISO + month-name forms) accepted
+   calendrically-impossible dates like "02/30/2026" and normalized
+   them to an impossible ISO date. `detectDates` now validates each
+   candidate against a real calendar (with leap-year handling) and
+   drops impossible ones — they are typos or false matches, and the
+   block-level diff still surfaces any surrounding change. Non-gated
+   extraction correctness. New test cases in
+   `src/core/extract/anchors/index.test.ts`.
 
 These feed both `src/core/diff/critical.ts` extension work AND the
 Domain-Expert Critic checklist strengthening, once BD2's human
