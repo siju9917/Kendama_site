@@ -86,6 +86,24 @@ describe("money", () => {
   it("ignores stray dollar signs", () => {
     expect(detectMoney("The $ symbol alone").length).toBe(0);
   });
+  it("parses magnitude suffixes (M / K / B)", () => {
+    expect(detectMoney("Ceiling not to exceed $1.5M").map((x) => x.normalized)).toEqual([
+      "1500000.00",
+    ]);
+    expect(detectMoney("$500K base").map((x) => x.normalized)).toEqual(["500000.00"]);
+    expect(detectMoney("up to $1.5B over the period").map((x) => x.normalized)).toEqual([
+      "1500000000.00",
+    ]);
+  });
+  it("parses spelled-out magnitudes", () => {
+    expect(detectMoney("a ceiling of $2.3 million").map((x) => x.normalized)).toEqual([
+      "2300000.00",
+    ]);
+  });
+  it("distinguishes $1.5M from $15M (must not normalize to the same value)", () => {
+    expect(detectMoney("$1.5M").map((x) => x.normalized)).toEqual(["1500000.00"]);
+    expect(detectMoney("$15M").map((x) => x.normalized)).toEqual(["15000000.00"]);
+  });
 });
 
 describe("page limits", () => {

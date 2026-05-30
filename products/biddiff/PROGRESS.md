@@ -49,16 +49,16 @@ ruleset is human-gated pending the domain-validation responses
 (`human/NEED_FROM_HUMAN.md` item 4). Recording them so the next
 session has specifics, not a vague "improve extraction":
 
-1. **Money magnitude suffixes not parsed.** `MONEY_RE` matches
-   `$1.5M` as the value `1.00` (it stops at the decimal's single
-   digit and ignores the `M`/`K`/`B`/`million`/`billion` suffix).
-   Federal solicitations frequently express ceilings as "$1.5M" or
-   "$10 million". The block-level textual change still surfaces
-   (confirmed by the suppress fix), but the MONEY *anchor value* is
-   wrong, which can mis-drive PRICING_CLINS classification. Candidate
-   fix (separately testable, does not touch the gated ruleset):
-   extend `detectMoney` to parse magnitude suffixes into the
-   normalized value.
+1. **Money magnitude suffixes not parsed. — ADDRESSED 2026-05-30.**
+   `MONEY_RE` matched `$1.5M` as the value `1.00` (it stopped at the
+   decimal's single digit and ignored the `M`/`K`/`B`/`million`/
+   `billion` suffix). `detectMoney` now parses an optional decimal of
+   any length plus a magnitude suffix and normalizes to the true
+   value (`$1.5M → 1500000.00`, `$2.3 million → 2300000.00`). This is
+   pure extraction correctness — the MONEY anchor feeds classification
+   by *presence* only, never by value, and no test asserted the value,
+   so this does not touch the gated critical ruleset. 3 new tests in
+   `src/core/extract/anchors/index.test.ts`; full suite 246/246.
 2. **Spelled-out page limits with parenthetical not matched.**
    `PAGE_LIMIT_RE` requires digits immediately after the lead phrase,
    so "shall not exceed ten (10) pages" — a very common federal
