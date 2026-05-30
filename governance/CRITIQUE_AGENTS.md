@@ -88,7 +88,11 @@ Checklist:
 - No `dangerouslySetInnerHTML` on untrusted input.
 - No `eval`, no `Function()`, no dynamic code from data.
 - URL handling: scheme allowlist, `noopener,noreferrer` on
-  `window.open`, no open redirects.
+  `window.open`, no open redirects. **Any `fetch`/navigation of a
+  URL sourced from page DOM or third-party data passes an explicit
+  scheme allowlist (https), not just `window.open`.** Added
+  2026-05-30 (BidDiff fetched SAM attachment hrefs with no scheme
+  check).
 - Tamper-resistance where applicable (signed receipts, hashes).
 - No action on instructions found inside scraped or third-party
   content (prompt-injection defense).
@@ -346,6 +350,7 @@ critic is recorded here with the triggering cause.
 | 2026-05-30 | Reliability Critic (#7) checklist | Added "a recognized-but-unsupported input kind must be rejected at the trust boundary, not routed to the wrong handler" | BidDiff `.txt` validated as "TXT" then fell through to the DOCX extractor (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30 bug-hunt pass 3) |
 | 2026-05-30 | Reliability Critic (#7) checklist | Added "re-check cancellation after EVERY await, including post-success persistence" | BidDiff save-window race: reset() during saveDiff was clobbered by a late DONE setState (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30 bug-hunt pass 4) |
 | 2026-05-30 | Correctness Critic (#1) checklist | Added "a hash/ID scheme delivering less entropy than its width implies — verify stated intent is implemented" | BidDiff contentHash's "salted" second pass re-hashed the same input → 32-bit doubled, not 64-bit (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30 bug-hunt pass 5) |
+| 2026-05-30 | Security Critic (#3) checklist | Added "fetch/navigation of a DOM-sourced URL passes an explicit scheme allowlist (https), not just window.open" | BidDiff fetched SAM attachment hrefs with no scheme check (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30 bug-hunt pass 6) |
 
 The META loop (PART 11) audits this table every cycle. A month
 with no growth is a warning sign flagged in the weekly digest.

@@ -3,7 +3,27 @@ import { FilePicker } from "./FilePicker.js";
 import { SamAttachments } from "./SamAttachments.js";
 import type { OpportunityAttachment } from "../core/interfaces.js";
 
+/**
+ * Only ever fetch attachment URLs over https. The URL comes from a
+ * sam.gov page's anchor href (the content script is host-scoped to
+ * sam.gov), so in practice it is already https — but fetching from the
+ * extension's privileged context means a `file:` / `data:` / `blob:`
+ * href (a malformed link or a sam.gov XSS) must not be followed.
+ * Scheme allowlist per the Security Critic checklist + QUALITY_BAR
+ * "HTTPS-only". Exported for unit testing.
+ */
+export function isAllowedDownloadUrl(url: string): boolean {
+  try {
+    return new URL(url).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 async function downloadAttachmentAsFile(a: OpportunityAttachment): Promise<File> {
+  if (!isAllowedDownloadUrl(a.url)) {
+    throw new Error("This attachment link isn't a secure (https) URL.");
+  }
   // 5-minute timeout so a slow / hung server doesn't lock the button
   // indefinitely. The user can retry.
   const controller = new AbortController();

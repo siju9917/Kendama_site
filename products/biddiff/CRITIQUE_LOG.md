@@ -332,6 +332,50 @@ does NOT converge.
 
 ---
 
+## 2026-05-30 — Phase K1 — bug-hunt pass 6 (Security, 5.7.5)
+
+**Pass type:** Continuous bug-hunt (5.7.5), reviewing the SAM
+attachment download path for URL-handling discipline.
+
+**Finding:**
+
+### P3 — Security Critic (#3) — attachment download had no URL scheme allowlist
+
+- **Area:** `src/sidepanel/FilePickerWithSam.tsx`
+  (`downloadAttachmentAsFile`).
+- **Symptom:** `fetch(a.url)` was called with no scheme check. `a.url`
+  is a sam.gov anchor `href` (the content script is host-scoped to
+  `https://sam.gov/*`, so it's https in practice), but fetching from
+  the extension's privileged context means a malformed or XSS-injected
+  `file:` / `data:` / `blob:` href would be followed. The Security
+  Critic checklist ("URL handling: scheme allowlist") and the
+  QUALITY_BAR ("HTTPS-only") both require a guard.
+- **Severity:** P3. Low likelihood (requires a non-https link in
+  sam.gov's own DOM or a sam.gov XSS) and the downloaded bytes are
+  still validated as PDF/DOCX downstream — but it's a cheap,
+  clearly-correct defense-in-depth gap against the checklist.
+- **Fix:** `isAllowedDownloadUrl` (exported, unit-tested) restricts
+  downloads to `https:`; `downloadAttachmentAsFile` throws a clear
+  error otherwise. 3 tests in `FilePickerWithSam.test.tsx`. Suite
+  256/256, lint + typecheck clean.
+- **Roster growth (5.7.3):** Security Critic (#3) checklist gains:
+  "any `fetch`/navigation of a URL sourced from page DOM or
+  third-party data passes an explicit scheme allowlist (https) — not
+  just `window.open`."
+
+**Open Security follow-up (logged, not yet changed):**
+`manifest.config.ts` `web_accessible_resources` uses
+`matches: ["<all_urls>"]` for the offscreen HTML, exposing an
+extension-detection fingerprint to every site when the extension only
+operates on sam.gov. Least-privilege says scope it to sam.gov.
+Deferred pending build/runtime verification that CRXJS still bundles
+and the offscreen document still loads.
+
+**Remaining open on K1:** unchanged (three P1s + two P2s). Phase K1
+does NOT converge.
+
+---
+
 ## 2026-05-30 — Phase K1 — bug-hunt pass 5 (Correctness, 5.7.5)
 
 **Pass type:** Continuous bug-hunt (5.7.5), reading the shared
