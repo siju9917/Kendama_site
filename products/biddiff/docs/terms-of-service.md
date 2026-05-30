@@ -50,8 +50,8 @@ Our use of information is described in the Privacy Policy.
 BidDiff reports what differs between documents. **BidDiff does not
 provide legal, contracting, regulatory, or capture-management advice.**
 Every diff is intended to assist a qualified human reviewer; it does
-not replace that reviewer. Always confirm any change against the
-original source documents.
+not replace that reviewer. The original source documents remain the
+authoritative reference for any change.
 
 ## 6. Warranties and disclaimers
 

@@ -131,6 +131,9 @@ describe("No advisory language in BidDiff-authored prose", () => {
     const docs = [
       "README.md",
       "docs/store-listing.md",
+      "docs/terms-of-service.md",
+      "docs/privacy-policy.md",
+      "docs/site/index.html",
       "docs/help/getting-started.md",
       "docs/help/faq.md",
       "docs/help/what-counts-as-critical.md",
