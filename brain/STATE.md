@@ -32,12 +32,19 @@
 ## Active product
 
 - **Active build:** BidDiff (`products/biddiff/`)
-- **Phase:** Kendama Phase K1, still open. Two further critique
-  passes ran this session (bug-hunt pass 1 & 2) plus a polish pass;
-  details in `products/biddiff/CRITIQUE_LOG.md`. The phase has NOT
-  converged — the three original K1 P1 findings remain open and are
-  all human/research/cap-gated.
-- **Build green:** 262/262 tests (was 226 at session start — 36 new
+- **Phase:** Kendama Phase K1, still open. Seven bug-hunt passes +
+  polish + a full-codebase sweep + a second hard pass (fuzz) ran this
+  session; details in `products/biddiff/CRITIQUE_LOG.md`. NOT
+  converged — now **FOUR P1s** open: the three original (Research
+  Quality, Domain-Expert, Ambition) **plus a new Compliance P1**
+  (bug-hunt pass 7): the privacy policy / store listing / options /
+  help docs / support macros describe an opt-in server-OCR data flow
+  that is **stubbed + unwired** — a disclosure defect. Decision routed
+  to `human/NEED_FROM_HUMAN.md` item 7 (scope copy to on-device-only,
+  recommended, vs. implement OCR). All four P1s are human/cap-gated.
+  (Positive: the FAR/DFARS clause dataset's well-known titles were
+  spot-checked accurate + current.)
+- **Build green:** 282/282 tests (was 226 at session start — 56 new
   tests added this session), lint + typecheck clean. Production
   `npm run build` also verified clean (for the manifest change).
 - **Next action on the product:** BOTH 5.7.2 hard passes on the
