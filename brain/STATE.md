@@ -40,16 +40,18 @@
 - **Build green:** 256/256 tests (was 226 at session start — 30 new
   tests added this session), lint + typecheck clean. Production
   `npm run build` also verified clean (for the manifest change).
-- **Next action on the product:** the escalating bug-hunt covered the
-  ENTIRE codebase this cycle (every source file — see
-  `CRITIQUE_LOG.md` "full-codebase escalating sweep: COMPLETE"); all
-  reachable defects fixed. Per 5.7.2 the next cycle owes a **second
-  independent hard pass** (the rule requires two clean passes to clear
-  a phase). The three K1 P1s remain gated: human (positioning
-  proposal; domain-expert sourcing) + cap (market research). The two
-  remaining K1 P2s (Accessibility contrast; SAM e2e) are
-  browser-gated (`jest-axe` in jsdom can't evaluate contrast; SAM e2e
-  needs Chromium). No further code bug-hunt closes the gated items.
+- **Next action on the product:** BOTH 5.7.2 hard passes on the
+  code-correctness dimension are now DONE this cycle — pass 1 (manual
+  adversarial reading of every source file; 5 bugs + 2 security + more
+  fixed) and pass 2 (property-based fuzzing: 300 engine pairs + 800
+  untrusted-parser inputs, all clean; permanent regression tests). See
+  `CRITIQUE_LOG.md`. The code-level bar is very high. **The unblocked
+  queue for this cycle is exhausted.** Everything remaining is
+  externally gated: the three K1 P1s on human (positioning proposal;
+  domain-expert sourcing) + cap (market research); the two K1 P2s
+  (A11y contrast; SAM e2e) on a browser environment; and all
+  portfolio expansion / new-product research on the spend cap. K1
+  cannot converge until the gated P1s clear.
 
 ## Overdue re-critiques
 
