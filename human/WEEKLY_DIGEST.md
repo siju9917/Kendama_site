@@ -193,10 +193,21 @@ zero-cost queue). Then I kept working:
    factory wakes on its own each Saturday instead of needing you to
    start it (as you did today).
 
-Optional, not blocking: respond to the BidDiff positioning proposal
-in `APPROVALS.md` (it auto-proceeds to "reposition" on 2026-06-03),
-and source 2-3 federal proposal/capture contacts for domain
-validation (`NEED_FROM_HUMAN.md` item 4).
+Optional / pre-launch (not blocking today):
+- Respond to the BidDiff positioning proposal in `APPROVALS.md`
+  (auto-proceeds to "reposition" on 2026-06-03).
+- Source 2-3 federal proposal/capture contacts for domain validation
+  (`NEED_FROM_HUMAN.md` item 4).
+- **New — a small but important call before launch
+  (`NEED_FROM_HUMAN.md` item 7):** the privacy policy / store listing /
+  help docs describe an opt-in "server OCR" path for scanned PDFs — but
+  that path is stubbed and never actually called, so the extension
+  currently sends document content *nowhere*. A privacy policy that
+  describes a data flow the product doesn't perform is a Web-Store-
+  review risk. Recommended fix: scope the copy to "everything stays on
+  your device, no exceptions" (more accurate *and* a stronger privacy
+  promise) — I can make those edits on your OK. (Found late in the
+  session by chasing a false README dependency claim; fully logged.)
 
 ### What's next (the upcoming session plan)
 
