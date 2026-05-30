@@ -21,6 +21,46 @@ BidDiff ships.
 
 ### Candidate ranking (deep evaluations not yet done)
 
+### Holistic synthesis (2026-05-30) — recommended deep-eval order
+
+After first-principles scaffolding of all 5 seeded candidates +
+D1–D5, applying the `SCORING_MODEL.md` hard filters
+(distribution-without-marketing, self-serve, Proven evidence,
+agent-buildable) and the portfolio-sequencing insight. This is the
+order the **cap-unblocked** session should deep-evaluate (cited
+research), picking the first that confirms Proven + a clear
+marketplace + (for plugins) a chosen sub-feature:
+
+1. **Rank-1 JetBrains Apex plugin** — Proven-leaning, marketplace
+   distribution + self-serve billing, narrow scope. *Gate:* must pick
+   and defend a specific sub-feature (not "an Apex plugin"); assess
+   agent Apex-domain fluency. Still the lead.
+2. **D2 `clauseguard` (GitHub Marketplace app)** — Plausible,
+   GitHub-Marketplace buy-intent distribution, strategic-fit 9
+   (reuses BidDiff's clause dataset + engine). Strong second.
+3. **D4 Shopify theme-risk app** — highest revenue ceiling (a Proven
+   Shopify-app category) + strong marketplace, but weakest strategic
+   fit + worst maintenance-fit. A higher-variance revenue bet.
+4. **D3 protobuf JetBrains / D5 OpenAPI VS Code** — Proven-leaning
+   (incumbents buf.build / oasdiff prove the pain), marketplace
+   distribution, but compete with those incumbents; wedge = IDE-native.
+5. **Rank-2 FAR/DFARS MCP server** — strategic-fit 9, but *emerging*
+   (unproven) MCP distribution — evidence risk dominates.
+
+**Build as byproducts / infrastructure, NOT lead products** (per the
+portfolio-sequencing insight): rank-3 (PDF extractor), rank-5 / D1
+(the rule-pack loader / `regdiff` engine library). **Companion, not
+standalone:** rank-4 (SAM feed — fails the distribution hard filter
+as a SaaS).
+
+**Portfolio rule check:** the lead slate must stay majority-Proven
+(`SCORING_MODEL.md` PART 3.5). Rank-1, D3, D4, D5 are the
+Proven-leaning anchors; rank-2 + the speculative infra are a deliberate
+minority. No candidate is approved — all await the cited deep-eval +
+`human/APPROVALS.md`.
+
+---
+
 The ranking below is the **provisional** ranking inherited from the
 prior research the human passed in. It will be re-ordered as deep
 evaluations land.
@@ -90,6 +130,7 @@ ranking — it builds from an approved ranking.
 |---|---|---|---|
 | 2026-05-27 | Bootstrap | Provisional rank seeded | Carried forward from prior human research. Not final until deep evaluations land. |
 | 2026-05-30 | New ideas added (first-principles ideation) | Added derivative-reasoning family D1–D5 | "Critical-change diff" recognized as a horizontal capability; 5 concrete candidates across npm/GitHub/JetBrains/Shopify/VS Code surfaces, provisionally ranked by strategic fit × distribution × evidence. Cited deep-eval still cap-gated. |
+| 2026-05-30 | All 5 seeded candidates scaffolded + holistic synthesis | Produced the recommended deep-eval order (rank-1, D2, D4, D3/D5, rank-2) + reclassified rank-3/5/D1 as byproduct-infra and rank-4 as companion | First-principles hard-filter analysis: rank-4 fails distribution-without-marketing; rank-3/5/D1 are infrastructure not lead products; the marketplace + Proven-leaning candidates lead. Cited research still cap-gated. |
 
 ---
 
