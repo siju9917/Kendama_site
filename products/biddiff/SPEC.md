@@ -72,8 +72,11 @@ Pure core (no DOM, no chrome) lives in `src/core/`:
   test enforces these modules cannot import any model/diff/extract
   type.
 
-The full architecture write-up lives in `legacy-notes/ARCHITECTURE.md`
-and is the canonical reference until consolidated into `docs/`.
+The current, canonical developer reference — including the
+**"Extending BidDiff"** guide (how to add a critical rule, a section
+type, an input format, or an export format) — is
+`docs/architecture.md`. (`legacy-notes/ARCHITECTURE.md` is retained
+only as pre-migration history.)
 
 ## Quality bar (product-specific overlays on `governance/QUALITY_BAR.md`)
 
