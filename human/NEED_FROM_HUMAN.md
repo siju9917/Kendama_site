@@ -202,8 +202,18 @@ must be resolved **before** the store submission (item 6).
   the docs become accurate as-is.
 
 **Steps:** Reply A or B (here or in `human/APPROVALS.md`). On **A**, the
-next session edits the three copy locations to on-device-only. On **B**,
-it's sequenced with the cloud-deploy human actions.
+next session edits **all six OCR copy locations** to on-device-only:
+`docs/privacy-policy.md`, `docs/store-listing.md`, `src/options/index.tsx`,
+`docs/help/getting-started.md`, `docs/help/privacy-and-security.md`,
+`docs/help/faq.md`. On **B**, it's sequenced with the cloud-deploy human
+actions.
+
+**Related minor item (verify at launch):** `docs/help/faq.md` describes
+Solo/Team/Enterprise tiers with seat counts (1 / 5 / 25+). The licensing
+client currently implements trial → solo only; seat-managed Team/
+Enterprise tiers are not wired. This ties into the positioning decision
+(`APPROVALS.md` #1) and pricing — confirm the tier copy matches what
+actually ships.
 
 **Effect once done:** the privacy disclosure matches reality;
 unblocks a clean store submission (item 6).
