@@ -363,13 +363,23 @@ attachment download path for URL-handling discipline.
   third-party data passes an explicit scheme allowlist (https) — not
   just `window.open`."
 
-**Open Security follow-up (logged, not yet changed):**
-`manifest.config.ts` `web_accessible_resources` uses
-`matches: ["<all_urls>"]` for the offscreen HTML, exposing an
-extension-detection fingerprint to every site when the extension only
-operates on sam.gov. Least-privilege says scope it to sam.gov.
-Deferred pending build/runtime verification that CRXJS still bundles
-and the offscreen document still loads.
+### P3 — Security Critic (#3) — web_accessible_resources over-exposed (RESOLVED same session)
+
+- **Area:** `manifest.config.ts` `web_accessible_resources`.
+- **Symptom:** the offscreen HTML was declared web-accessible with
+  `matches: ["<all_urls>"]`, exposing an extension-detection
+  fingerprint to every website, though the extension only operates on
+  sam.gov and the offscreen doc is loaded extension-internally (via
+  `chrome.offscreen.createDocument`, which needs no web-accessibility
+  at all).
+- **Fix:** scoped `matches` to `https://sam.gov/*` /
+  `https://*.sam.gov/*` (least privilege). **Verified by production
+  build:** `npm run build` exits clean, `dist/src/offscreen/index.html`
+  is still emitted, and `dist/manifest.json` shows no `<all_urls>`
+  entry (CRXJS merged the offscreen resource into the sam.gov-scoped
+  entry). The offscreen document still loads because extension pages
+  load their own resources regardless of `web_accessible_resources`.
+- **Severity:** P3 (fingerprinting / least-privilege).
 
 **Remaining open on K1:** unchanged (three P1s + two P2s). Phase K1
 does NOT converge.

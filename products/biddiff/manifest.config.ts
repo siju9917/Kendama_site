@@ -27,12 +27,17 @@ export default defineManifest({
     service_worker: "src/background/index.ts",
     type: "module",
   },
-  // The offscreen document is created at runtime via chrome.offscreen.
-  // Listing it as a web-accessible resource ensures CRXJS bundles it.
+  // The offscreen document is created at runtime via chrome.offscreen
+  // (an extension-internal page load, which does NOT require
+  // web-accessibility). The entry exists only so CRXJS bundles the
+  // file; its `matches` is therefore scoped to sam.gov — the single
+  // origin the extension operates on — rather than `<all_urls>`, so a
+  // resource probe can't fingerprint the extension from arbitrary
+  // sites (least privilege, Security Critic #3).
   web_accessible_resources: [
     {
       resources: ["src/offscreen/index.html"],
-      matches: ["<all_urls>"],
+      matches: ["https://sam.gov/*", "https://*.sam.gov/*"],
     },
   ],
   content_scripts: [
