@@ -123,3 +123,84 @@ adversarial re-read. The new finding is logged per the rule.
 pass of the same shape; any cycle where 5.7.8 raises zero new
 findings is itself examined for whether 5.7.8 was run
 seriously.
+
+---
+
+## 2026-05-30 — Cycle META audit (5.7.7) + audit-of-the-auditor (5.7.8)
+
+**Operational event:** Saturday session, manually invoked (the
+Routine still does not exist — `human/NEED_FROM_HUMAN.md` item 2).
+The spend cap is still unset (`governance/SPEND_CAP.md`), so per the
+unset-cap rule the session ran zero-cost work only: no sub-agent
+fan-out, no web research. Top-of-queue P1 items (BidDiff market
+research, rank-1 deep eval) require live web research and stayed
+blocked. The session worked the unblocked queue.
+
+**5.7.7 — did the maximization rules hold this cycle?**
+
+- **5.7.1 (monthly re-critique per shipped product):** N/A — zero
+  shipped products. Not lapsed.
+- **5.7.2 (escalating critique):** HELD. The K1 pass-1 note that the
+  Correctness/Adversarial/Security critics "returned no new findings"
+  was explicitly treated as a hypothesis to attack, not a result to
+  trust. Two hard adversarial bug-hunt passes on the diff core
+  followed; both found real defects (suppress P1, token-LCS P2).
+- **5.7.3 (roster growth):** HELD. Two critic checklists strengthened
+  (Correctness #1, Performance #6), both in the roster-growth table.
+- **5.7.4 ("nothing is ever done"):** N/A for shipped products; spirit
+  applied — challenged "K1 is as critiqued as it gets" and it wasn't.
+- **5.7.5 (continuous bug-hunt, new inputs):** HELD. New adversarial
+  inputs invented (numeric-value reformatting; ~10k-token blocks).
+- **5.7.6 (continuous ideation):** PARTIALLY HELD — flagged. Ambient
+  findings were logged (3 extraction-coverage observations in
+  `products/biddiff/PROGRESS.md`; the `ops/checks/` roster-growth
+  idea). But no genuinely *new product* idea was generated this
+  cycle, because the cap blocked the research/ideation-heavy work.
+  Honest call: ideation ran below potential. Mitigation is the same
+  as the binding constraint — the cap (NEED_FROM_HUMAN item 1).
+- **Brain integrity:** HELD and now automated (`ops/checks/`).
+- **Spend trajectory:** N/A — cap unset, zero spend.
+
+**Closed loop worth noting:** last cycle's 5.7.8 pass produced the
+"rule/cadence consistency check" SELF_IMPROVEMENT item (#6). This
+cycle implemented it as the `ops/checks/` infrastructure (#6 + #7
+both done). The audit-of-the-auditor produced a concrete capability
+one cycle later — evidence the recursion is load-bearing, not
+ceremonial.
+
+**5.7.8 — audit-of-the-auditor (Ambition #13 + Research Quality #14
+examine this 5.7.7 pass):**
+
+1. **Was the audit shallow?** Eight rules + brain integrity + spend
+   each addressed with a held/lapsed verdict and evidence. Not
+   shallow.
+2. **Was an obvious lapse missed / conclusion asserted not defended?**
+   One real finding from this adversarial re-read: **the maximization
+   audit has been "passing" largely because the binding constraint
+   (unset cap) keeps the factory on a narrow zero-cost slice where
+   most rules are N/A (no shipped products) — the rules are not being
+   *exercised at full surface*, they're being satisfied on a
+   technicality.** That is itself a flag: the factory has now run two
+   sessions without the cap set, has a near-ship product that cannot
+   ship (research-gated), and a backlog that cannot advance
+   (research-gated). The single highest-leverage action in the whole
+   system is the human setting the spend cap. This is already logged,
+   but the META audit should escalate its visibility — done below.
+3. **Ambition check:** the cycle was bug-fix + infra heavy (safe,
+   high-value) and ideation-light. Acknowledged in 5.7.6 above; the
+   cause is the cap, not operator conservatism — the research/PLAY
+   surface is exactly what the cap blocks.
+
+**Escalation from 5.7.8:** raise the spend-cap blocker to the top of
+the weekly digest's "needs human" section with the explicit framing
+that *two* consecutive sessions have now been constrained by it and
+the near-ship product is stuck behind it. No new guardrail or rule
+change — the escalation is informational, to the human.
+
+**Where applied:** `human/WEEKLY_DIGEST.md` (escalated framing),
+`brain/STATE.md` (cycle recorded).
+
+**Recurrence test:** next cycle's 5.7.7 checks whether the cap was
+set; if still unset after this escalation, the META loop logs the
+consecutive-constrained-session count and asks whether the factory's
+zero-cost queue is being exhausted (a different, harder question).

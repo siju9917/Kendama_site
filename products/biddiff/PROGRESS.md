@@ -39,6 +39,40 @@ substitutes for it.
 
 ---
 
+## Documented coverage observations — evidence for K1 BD2 (Domain-Expert P1)
+
+Found during the 2026-05-30 adversarial bug-hunt pass while reading
+`src/core/extract/anchors/index.ts`. These are **extraction-coverage
+gaps**, logged as concrete evidence for the open Domain-Expert P1
+(BD2). They are NOT being changed this cycle: the critical-changes
+ruleset is human-gated pending the domain-validation responses
+(`human/NEED_FROM_HUMAN.md` item 4). Recording them so the next
+session has specifics, not a vague "improve extraction":
+
+1. **Money magnitude suffixes not parsed.** `MONEY_RE` matches
+   `$1.5M` as the value `1.00` (it stops at the decimal's single
+   digit and ignores the `M`/`K`/`B`/`million`/`billion` suffix).
+   Federal solicitations frequently express ceilings as "$1.5M" or
+   "$10 million". The block-level textual change still surfaces
+   (confirmed by the suppress fix), but the MONEY *anchor value* is
+   wrong, which can mis-drive PRICING_CLINS classification. Candidate
+   fix (separately testable, does not touch the gated ruleset):
+   extend `detectMoney` to parse magnitude suffixes into the
+   normalized value.
+2. **Spelled-out page limits with parenthetical not matched.**
+   `PAGE_LIMIT_RE` requires digits immediately after the lead phrase,
+   so "shall not exceed ten (10) pages" — a very common federal
+   phrasing — is missed. Candidate fix: allow an optional
+   spelled-number + parenthetical digit form.
+3. **US date validity not checked.** `US_DATE_RE` accepts "02/30/2026"
+   and normalizes it to an impossible ISO date. Low impact for diff
+   (string comparison still flags the change) but worth a validity
+   guard so a normalized anchor is never a non-existent date.
+
+These feed both `src/core/diff/critical.ts` extension work AND the
+Domain-Expert Critic checklist strengthening, once BD2's human
+validation lands.
+
 ## After ship (forward look)
 
 Once BidDiff passes the ship gate and the human completes the
