@@ -120,6 +120,16 @@ strategic, not just listing, decision:
 This is the kind of derivative/portfolio reasoning PART 3.1 asks for:
 the second product should be cheaper than the first, by design.
 
+**Thesis validated with running code (2026-05-30, PLAY loop):**
+`products/biddiff/test/integration/engine-domain-agnostic.test.ts`
+runs BidDiff's engine on a *non-federal* document (a generic software
+license) and confirms the core generalizes — exactly the changed
+clause surfaces as a MODIFY, unchanged paragraphs align, and the
+federal rule-pack does NOT fire (NORMAL / OTHER). So the
+"horizontal capability + separable rule-pack" claim is no longer just
+reasoning; it's a passing test. That materially de-risks the
+`regdiff`/D-family strategy: the engine reuse is real, not hoped-for.
+
 ### Standing candidate categories to populate via research
 
 The seeded backlog above is a starting point. On every RESEARCH
