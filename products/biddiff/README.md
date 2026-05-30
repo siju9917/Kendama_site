@@ -10,8 +10,12 @@ so capture teams know exactly what changed without manual page-flipping.
 
 ## Status
 
-**Code-complete.** See `BUILD_COMPLETE.md` for the measured quality metrics,
-and the final list of human-action-only items at the bottom of that file.
+**Code-complete; in the Kendama critique pipeline (pre-launch).** Phase K1
+(adversarial critique) has had two independent hard passes and K2 (ship-gate
+dry run) has run — see `docs/ship-gate-dry-run.md`. Remaining blockers are
+human/cap/browser-gated (market evidence, positioning, domain validation,
+the Chrome Web Store submission). Architecture + how-to-extend:
+`docs/architecture.md`. Changes: `CHANGELOG.md`.
 
 ## Stack
 
@@ -20,7 +24,10 @@ and the final list of human-action-only items at the bottom of that file.
 - React 18 (side panel, popup, options) with dark mode via `prefers-color-scheme`
 - Vitest (unit / integration) + @testing-library/react (components)
 - Playwright recommended for e2e (not currently a dependency; reinstall when a Chromium binary is available)
-- PDF.js + custom DOCX XML walker; Tesseract.js for OCR (stubbed for offline)
+- PDF.js (browser build) + a custom tag-aware DOCX XML walker (JSZip).
+  All text extraction is on-device; OCR for scanned PDFs is an **optional
+  server path that requires explicit per-document consent** (no OCR library
+  is bundled in the extension).
 - pdf-lib for the PDF export
 - Offscreen document hosts extraction + diff so the side panel stays responsive
 
@@ -30,7 +37,7 @@ and the final list of human-action-only items at the bottom of that file.
 npm install
 npm run typecheck      # strict TS
 npm run lint           # ESLint flat config (max-warnings=0)
-npm test               # Vitest — 206 tests across 37 files
+npm test               # Vitest — 282 tests across 52 files
 npm run build          # Vite + CRXJS production build
 npm run ci             # all gates locally
 bash scripts/package.sh    # produces biddiff-v0.1.0.zip
@@ -46,11 +53,18 @@ bash scripts/package.sh    # produces biddiff-v0.1.0.zip
 
 ## Quality
 
-- 75-pair labeled corpus: **100% recall, 100% precision, deterministic**.
+- 75-pair labeled corpus: **zero missed critical changes, recall ≥ 98%,
+  zero false positives on null pairs, byte-deterministic** (enforced by
+  `test/integration/corpus.test.ts`).
 - End-to-end PDF round-trip on representative pairs: pass.
 - 250-page PDF processes in ~4s (extract) + ~0.07s (diff) — well under budget.
 - 50-diff memory soak: 1.17× RSS ratio (threshold 3×).
-- WCAG AA contrast on every design-system color pair (light AND dark).
-- Explicit Manifest V3 CSP.
+- WCAG AA contrast on every design-system color pair AND the actual
+  rendered-component pairs (light AND dark).
+- Explicit Manifest V3 CSP; least-privilege scopes; https-only fetch of
+  page-sourced URLs.
+- Engine hardened by three independent techniques: adversarial review,
+  property-based fuzzing, and metamorphic testing.
 
-See `TESTING.md` for the full breakdown.
+See `docs/architecture.md` (test taxonomy + how to extend) and
+`docs/ship-gate-dry-run.md` (evidence per quality-bar item).
