@@ -93,14 +93,18 @@
   adversarial reading of every source file; 5 bugs + 2 security + more
   fixed) and pass 2 (property-based fuzzing: 300 engine pairs + 800
   untrusted-parser inputs, all clean; permanent regression tests). See
-  `CRITIQUE_LOG.md`. **Continuation passes 60–69 (2026-05-31) then
+  `CRITIQUE_LOG.md`. **Continuation passes 60–73 (2026-05-31) then
   systematically locked every untested failure-mode / branch:** the whole
   orchestration hook (`useDiffPipeline`: run DONE/ERROR, openSaved 3 branches,
   openSample, storage-quota-full resilience), both export paths (redline DOCX
   control-char strip — a REAL bug fixed, pass 61; PDF WinAnsi text+filenames),
   the SAM amendment parser on malformed DOM, the license trial/grace/expired/
-  solo branches, and one-of-N-duplicate-blocks alignment. The factory's own
-  `brain-integrity`/`no-github-actions` checks are now violation-tested too.
+  solo branches, one-of-N-duplicate-blocks alignment, clause revision-date
+  changes, the options clear-history destructive action, the low-confidence
+  extraction warning, and the move+modify case (a moved+edited block keeps its
+  text change visible). The factory's own `brain-integrity`/`no-github-actions`
+  checks are now violation-tested too, and the stop-guard's Mountain-midnight
+  boundary is locked.
   The code-level bar is very high; further hunting yields verified-negatives
   (probe-first, and DON'T add redundant tests on covered behavior — that is
   churn the loop forbids). **Zero-cost queue is NOT exhausted** (a queue that
