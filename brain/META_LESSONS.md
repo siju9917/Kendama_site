@@ -289,6 +289,62 @@ a future mangle of a factory doc fails the gate as a P1 before any
 other queue work proceeds.
 
 
+## 2026-05-31 — a "failing" test run was a wrong-directory artifact, not a regression
+
+**Operational event:** Applying the Adversarial #2 "run the full suite more
+than once" item, the suite reported `1 file failed | 371 passed` (down from
+`71 files | 428 passed`) on two consecutive runs — alarming until diagnosis
+showed the cwd had drifted to the repo ROOT (after a `git` command) and raw
+`npx vitest` from root has no config: it globbed the wrong files (it picked up
+`ops/checks/*.test.mjs`) and failed to resolve `jsdom` (which lives under
+`products/biddiff/node_modules`). Running from `products/biddiff` gave a clean
+428/428.
+
+**Why it happened:** the repo is effectively two packages (the factory at root,
+BidDiff under `products/biddiff/`), only the latter has a vitest config + jsdom,
+and the Bash tool's cwd persists across calls — so a `git` command at root left
+cwd there, and the next `npx vitest` silently ran in the wrong context. The
+danger is not the failure itself but the *misleading* shape: a partial green/red
+that looks like a real regression rather than an environment error.
+
+**Structural fix:** ops/loop.md verify-before-commit discipline now states: run
+the gate from `products/biddiff` or via `scripts/ci.sh` (which `cd`s itself),
+NEVER raw `npx vitest` from the repo root; and **a run that drops the file/test
+count is a cwd smell — check `pwd` before diagnosing it as a code regression.**
+
+**Where applied:** `ops/loop.md` (disciplines section).
+
+**Recurrence test:** the canonical gate `scripts/ci.sh` is cwd-independent
+(`cd "$(dirname "$0")/.."`); using it (or first confirming `pwd`) makes the
+trap unreachable. A future drop in the file/test count is now a known
+signature, not a mystery.
+
+
+## 2026-05-31 — verify-before-claim extends to superlatives about our OWN work
+
+**Operational event:** a standing brain/digest claim — "every exported core
+function is tested" — was found *overstated* (pass 60): 6 functions were covered
+only indirectly via tested callers. The claim had been asserted, never
+grep-checked against the corpus.
+
+**Why it happened:** verify-before-claim was being applied to *bug claims* and
+*product behavior* but not to the factory's self-description. A superlative
+("every", "all", "100%", "saturated") reads as a fact but is really an untested
+assertion about a body of code.
+
+**Structural fix:** Research Quality #14 gains a standing item — claims about
+our own work are artifacts to verify; a superlative must be grep-checked against
+the corpus before it is written, and softened to the literally-true statement
+when it does not strictly hold. The overstated claim was corrected to "tested
+directly or via a tested caller" everywhere it appeared.
+
+**Where applied:** `governance/CRITIQUE_AGENTS.md` #14 + roster-growth log;
+`brain/STATE.md`, `human/WEEKLY_DIGEST.md` wording.
+
+**Recurrence test:** the next self-audit greps the corpus for each superlative
+before letting it stand; a bare assertion is itself a finding.
+
+
 ## 2026-05-31 — a test can encode a bug as a requirement; flaky = shared state
 
 Two compounding lessons from the contentHash P0 (see CRITIQUE_LOG pass 11,
