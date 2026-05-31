@@ -46,9 +46,10 @@
 ## Active product
 
 - **Active build:** BidDiff (`products/biddiff/`)
-- **Phase:** Kendama Phase K1, still open. Seven bug-hunt passes +
-  polish + a full-codebase sweep + a second hard pass (fuzz) ran this
-  session; details in `products/biddiff/CRITIQUE_LOG.md`. NOT
+- **Phase:** Kendama Phase K1, still open. **74 bug-hunt passes** to date
+  (the original 7 + polish + a full-codebase sweep + a fuzz pass, then the
+  2026-05-31 continuation passes 60–74) + 2 verified-negative batches;
+  details in `products/biddiff/CRITIQUE_LOG.md`. NOT
   converged — now **FOUR P1s** open: the three original (Research
   Quality, Domain-Expert, Ambition) **plus a new Compliance P1**
   (bug-hunt pass 7): the privacy policy's entire "sends to its servers"
