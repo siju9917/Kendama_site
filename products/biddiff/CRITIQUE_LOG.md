@@ -1209,3 +1209,20 @@ property of any diff), equal ops' aIndex/bIndex are strictly increasing on
 both sides (a real alignment, not reordering), and each equal references
 genuinely matching elements. All clean. Suite 377 -> 378 green; typecheck +
 lint clean. No production change.
+
+
+## Bug-hunt pass 36 (2026-05-30 evening MT) — block alignment conservation property
+
+`alignBlocks` (fast-path + LCS relabel + DELETE/INSERT→MODIFY collapse) had 4
+example tests but no conservation property. Added a 300-pair fuzz asserting
+every input block is accounted for EXACTLY once: EQUAL/MODIFY consume one
+current + one prior, INSERT one current, DELETE one prior; the multiset of
+current-side texts referenced equals the input current (and likewise prior).
+This catches dropped/duplicated blocks — a class that would silently lose or
+double-count a change. All clean. Suite 378 -> 379 green; typecheck + lint
+clean. No production change.
+
+With passes 30/35/36 the diff core's three foundational layers — section
+alignment, the LCS sequence aligner, and block alignment — now each carry a
+property test of their defining invariant (greedy 1:1 + insert/delete;
+reconstruct-both-inputs; block conservation).
