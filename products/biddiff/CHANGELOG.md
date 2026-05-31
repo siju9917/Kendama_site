@@ -10,6 +10,33 @@ below are development milestones toward the first release (0.1.0).
 
 ## Unreleased
 
+### 2026-05-30 (evening) — Deep hardening continuation (Kendama)
+
+**Fixed (correctness/reliability)**
+- Reformatting suppression no longer hides a trailing-`%` or leading-sign
+  numeric change (`50%`≠`50`, `-5`≠`5`) — same false-negative class as the
+  earlier `$1.5M` fix. (P2)
+- Opening a saved diff with a corrupt/truncated stored payload now degrades to
+  the standard "couldn't open" path instead of throwing a raw parse error out
+  of the History click. (P2)
+
+**Changed / UX**
+- The default change list now surfaces **critical changes first** (document
+  order within each group), making the store-listing claim literally true and
+  matching the export order.
+- The Summary "Critical"/"Confidence" explanations are now keyboard- and
+  screen-reader-accessible (focusable + `aria-describedby`), not mouse-only.
+- Per-change **Copy** button (plain text incl. the disclaimer) for pasting one
+  change into an email/chat.
+
+**Internal**
+- Property tests for the diff core's defining invariants (section/LCS/block
+  alignment, critical-rule engine) + characterization of every previously
+  untested logic surface (headings, section-typing, storage durability,
+  column reconstruction, message trust boundary, SAM DOM parser, clause
+  client, chrome-rt, idb fallback, text-similarity primitives). Tests
+  262 → 388; lint + typecheck + production build + bundle budget clean.
+
 ### 2026-05-30 — Hardening + polish cycle (Kendama)
 
 **Fixed (correctness/reliability/security)**
