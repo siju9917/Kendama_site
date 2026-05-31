@@ -17,7 +17,7 @@
   enforcement note in "Active product" and `brain/DECISIONS.md`), added the
   `governance-integrity` factory check (+ a mention-vs-use false-positive
   fix), and ran BidDiff bug-hunt passes 8–10 (engine swap-symmetry,
-  move-threshold boundary, diff-confidence ceiling — all clean, 312 tests).
+  move-threshold boundary, diff-confidence ceiling), then the post-timezone-fix continuation (passes 12-25 + N8/N9) — all clean, 335 tests.
   Brain + digest are kept current continuously; the session is NOT over (it is still Saturday evening in Mountain Time).
 - **Session type:** Saturday Routine cadence (manually invoked by
   the human — the Routine itself still does not exist; see
@@ -63,8 +63,8 @@
   a stronger privacy claim). All four P1s are human/cap-gated.
   (Positive: the FAR/DFARS clause dataset's well-known titles were
   spot-checked accurate + current.)
-- **Build green:** **330/330 tests** (was 226 at session start; 285 by the
-  Saturday close, +11 in the passes 8–10 continuation), lint + typecheck
+- **Build green:** **335/335 tests** (was 226 at session start; 285 by the
+  Saturday close; +50 across the evening continuation passes 8-25), lint + typecheck
   clean; full CI gate (typecheck+lint+test+build+bundle-budget) verified
   green end-to-end.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
@@ -347,9 +347,10 @@ An earlier note in this file (and the prior digest) claimed a P0 contentHash
 nondeterminism bug was found and fixed and the suite was 298 green. **That is
 false and has been reverted.** There was no such bug; the real hash.ts was
 already correct, and a hallucinated "fix" briefly broke the build (277/296)
-before being reverted. True final state: **288/312 tests green across two
-runs** (285 prior + 3 new confidence-ceiling tests); the two other new
-property tests were removed as unsound (untrue invariant / wrong API). The
+before being reverted. True state at that point: **288/288 green** (the false
+P0 reverted; 285 prior + 3 new confidence-ceiling tests; two other new
+property tests removed as unsound). The session then continued (passes 12–25
++ N8/N9) to **335/335 green** — see the continuation log above. The
 stop-hook interlock and governance-integrity check are real and stand. See
 `brain/META_LESSONS.md` (2026-05-31) and `products/biddiff/CRITIQUE_LOG.md`
 (RETRACTION) for the honest account.
