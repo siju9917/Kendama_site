@@ -998,3 +998,13 @@ Process note: the test's unused `React` import slipped past the green suite
 run but was caught by `npm run typecheck` (exit 2) before commit — exactly
 the verify-before-commit gate working as intended (the suite passing is not
 sufficient; typecheck + lint are part of the gate).
+
+
+## Bug-hunt pass 23 (2026-05-30 evening MT) — ReviewPrompt trigger logic was untested
+
+The Web-Store `ReviewPrompt` (and `noteDiffSucceeded`) had no focused test
+despite real gating logic. Added 6: the counter increments + persists; the
+prompt is hidden below the 5-diff threshold, shown at/above it; never shows
+again once dismissed (even at count 50); "No thanks" hides + persists the
+dismissal; "Leave a review" opens the Chrome Web Store URL and dismisses.
+No production change. Suite 321 -> 327 green; typecheck + lint clean.
