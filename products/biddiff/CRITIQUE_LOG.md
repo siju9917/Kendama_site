@@ -1197,3 +1197,15 @@ containment) and is therefore >= both and bounded [0,1]; and a guard test that
 levenshteinRatio's MAX_LEN=1024 truncation keeps a 50k-char input fast (<500ms)
 and bounded. No production change. Suite 373 -> 377 green; typecheck + lint
 clean.
+
+
+## Bug-hunt pass 35 (2026-05-30 evening MT) — Myers/LCS reconstruction property
+
+`diffSequence` (the LCS aligner underpinning block + token diffing) had
+example tests but no PROPERTY test of its defining invariant. Added a 500-pair
+fuzz over a tiny alphabet asserting: equal+delete ops reconstruct input A
+exactly, equal+insert reconstruct input B exactly (the definitive correctness
+property of any diff), equal ops' aIndex/bIndex are strictly increasing on
+both sides (a real alignment, not reordering), and each equal references
+genuinely matching elements. All clean. Suite 377 -> 378 green; typecheck +
+lint clean. No production change.

@@ -48,4 +48,41 @@ describe("diffSequence", () => {
     expect(diffSequence([], ["a"], eq).map((o) => o.op)).toEqual(["insert"]);
     expect(diffSequence(["a"], [], eq).map((o) => o.op)).toEqual(["delete"]);
   });
+
+  // Property fuzz (bug-hunt pass 35): the DEFINING correctness invariant of any
+  // diff — the ops must exactly reconstruct both inputs — across 500 random
+  // pairs over a tiny alphabet (so equal runs and edits are common).
+  it("reconstructs both inputs from the ops, and equals form a common subsequence (500 pairs)", () => {
+    let s = 0xa11ce;
+    const rnd = () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 0x100000000);
+    const seq = () => {
+      const n = Math.floor(rnd() * 8); // 0..7
+      const out: string[] = [];
+      for (let i = 0; i < n; i++) out.push("abcd"[Math.floor(rnd() * 4)]);
+      return out;
+    };
+    for (let iter = 0; iter < 500; iter++) {
+      const a = seq();
+      const b = seq();
+      const ops = diffSequence(a, b, eq);
+
+      // equal+delete (in order) reconstruct A; equal+insert reconstruct B.
+      const fromA = ops.filter((o) => o.op === "equal" || o.op === "delete").map((o) => o.value);
+      const fromB = ops.filter((o) => o.op === "equal" || o.op === "insert").map((o) => o.value);
+      expect(fromA, `iter ${iter}: A reconstruct`).toEqual(a);
+      expect(fromB, `iter ${iter}: B reconstruct`).toEqual(b);
+
+      // equal ops' indices are strictly increasing on BOTH sides (a real
+      // alignment, not reordered), and reference matching elements.
+      const eqs = ops.filter((o) => o.op === "equal") as Array<{ value: string; aIndex: number; bIndex: number }>;
+      for (let k = 1; k < eqs.length; k++) {
+        expect(eqs[k].aIndex).toBeGreaterThan(eqs[k - 1].aIndex);
+        expect(eqs[k].bIndex).toBeGreaterThan(eqs[k - 1].bIndex);
+      }
+      for (const e of eqs) {
+        expect(a[e.aIndex]).toBe(e.value);
+        expect(b[e.bIndex]).toBe(e.value);
+      }
+    }
+  });
 });
