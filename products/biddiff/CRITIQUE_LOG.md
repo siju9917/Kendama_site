@@ -1141,3 +1141,23 @@ unknown-stub regulation inference from the number prefix (252.→DFARS,
 52.→FAR, else→OTHER); empty request → empty map; duplicate numbers collapse
 to one entry. No production change. Suite 358 -> 364 green; typecheck + lint
 clean.
+
+
+## Bug-hunt pass 32 (2026-05-30 evening MT) — chrome-rt safe wrappers
+
+`shared/chrome-rt.ts` (sendRuntime/postRuntime/openOptionsPage) exists
+specifically to NEVER throw and to swallow chrome.runtime.lastError so call
+sites don't each need a try/catch — exactly the kind of safety contract that
+must be pinned. It was untested. Added 7 tests (driving a fake `chrome`
+global): with no runtime, sendRuntime resolves null and the post/options
+wrappers no-op; with a runtime, sendRuntime forwards the response AND reads
+lastError (suppressing Chrome's warning), resolves null on undefined response,
+and resolves null (never throws) when sendMessage throws; postRuntime swallows
+a throwing send; openOptionsPage swallows a rejected promise. No production
+change. Suite 364 -> 371 green; typecheck + lint clean.
+
+Note: the first draft used `declare global { var chrome }`, which `tsc`
+rejected (can't augment the ambient `chrome` module) and lint flagged an
+unused disable — both caught by the FULL gate (typecheck + lint), not the
+green vitest run. Switched to a local `globalThis` cast. Reinforces: the gate
+is typecheck + lint + test, not test alone.
