@@ -320,4 +320,39 @@ describe("Hand-crafted adversarial cases", () => {
     expect(inserts.length).toBe(0);
     expect(deletes.length).toBe(0);
   });
+
+  it("a paragraph that is BOTH moved AND edited keeps the text change visible (move must not hide a modify)", () => {
+    // The dangerous regression this guards: if move-detection ever treated a
+    // relocation as position-only, a clause that moved AND changed materially
+    // (here: "Secret" → "Top Secret" clearance — a bid-disqualifying edit)
+    // would render as "just moved" and HIDE the change. The MOVE must carry
+    // both texts so the diff surfaces the edit.
+    const clause = (level: string) =>
+      `Personnel shall hold an active ${level} clearance with the United States Government.`;
+    const prior: StructuredDocument = {
+      metadata: meta("prior"),
+      sections: [
+        sec({ letter: "C", heading: "Section C - SOW", type: "SOW", ordinal: 0,
+          blocks: [paragraph("C", 0, clause("Secret")), paragraph("C", 1, "Deliverables inspected at destination.")] }),
+        sec({ letter: "H", heading: "Section H", type: "OTHER", ordinal: 1,
+          blocks: [paragraph("H", 0, "Travel reimbursed at GSA rates.")] }),
+      ],
+    };
+    const current: StructuredDocument = {
+      metadata: meta("current"),
+      sections: [
+        sec({ letter: "C", heading: "Section C - SOW", type: "SOW", ordinal: 0,
+          blocks: [paragraph("C", 0, "Deliverables inspected at destination.")] }),
+        sec({ letter: "H", heading: "Section H", type: "OTHER", ordinal: 1,
+          blocks: [paragraph("H", 0, "Travel reimbursed at GSA rates."), paragraph("H", 1, clause("Top Secret"))] }),
+      ],
+    };
+    const result = diff(current, prior);
+    const move = result.changes.find((c) => c.changeType === "MOVE");
+    expect(move).toBeDefined();
+    // The edit is preserved on the move — not collapsed to a position-only move.
+    expect(move!.beforeText).toMatch(/\bSecret clearance/);
+    expect(move!.afterText).toMatch(/Top Secret clearance/);
+    expect(move!.beforeText).not.toEqual(move!.afterText);
+  });
 });

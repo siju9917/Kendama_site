@@ -23,6 +23,32 @@ re-opening review | escalation second-pass.
 
 ---
 
+## 2026-05-31 — Phase K1 — bug-hunt pass 73 (Correctness, 5.7.5)
+
+**Pass type:** bug-hunt — the MOVE+MODIFY combined case (a paragraph that is
+relocated to another section AND edited in the same amendment).
+
+**Critics run:** Correctness #1, Adversarial #2.
+
+**Finding:** none (verified negative). A clause moved Section C→H AND edited
+("Secret" → "Top Secret" clearance — a bid-disqualifying change) is emitted as
+a single MOVE whose `beforeText`/`afterText` PRESERVE both versions
+(`textChanged` true) — the edit is visible, not collapsed to a position-only
+move. (Severity NORMAL here only because Section H is sectionType OTHER with no
+critical anchor — the known gated criticality-coverage theme, coverage-obs 6,
+not a new bug.)
+
+**Coverage gap closed:** the existing relocation test moves UNCHANGED text; the
+move+modify combination was uncovered. The dangerous regression it guards: if
+move-detection ever became position-only, a moved+materially-changed clause
+would render as "just moved" and HIDE the edit. Added a `handcrafted-adversarial`
+test asserting the MOVE carries both texts (before `Secret clearance`, after
+`Top Secret clearance`, not equal). 450 → 451.
+
+**Convergence:** clean; full gate green (451/451).
+
+---
+
 ## 2026-05-31 — Phase K1 — bug-hunt pass 72 (Reliability, 5.7.5)
 
 **Pass type:** bug-hunt — the low-confidence extraction WARNING branch (a
