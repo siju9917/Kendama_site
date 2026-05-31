@@ -298,16 +298,20 @@ all green; check tests 16/16.
    rank-1 deep evaluation (the two top P1s), posting the proposal.
    The first-principles sub-scores (RANKING.md) make D2 clauseguard and
    rank-1 Apex co-leads — the cited evidence breaks the tie.
-3. **The diff-core/extraction/UI/runtime bug-hunt is SATURATED** (44
-   passes; 429/429 tests; every exported core/shared fn tested
+3. **The diff-core/extraction/UI/runtime/export bug-hunt is SATURATED**
+   (through pass 62; 429/429 tests; every exported core/shared fn tested
    **directly or via a tested caller** (a pass-60 audit found 6 fns —
    enrichSection, withSortedBlocks, lookupClauseLocal, assembleSections,
    sectionBundleToBlocks, sortAnchors — covered only indirectly; a
    direct sortAnchors test was added, the rest are exercised through
    tested callers); all four alignment layers + the critical engine
    property-tested; full CI green). storage/idb, pdf/reconstruct,
-   sections/assemble + headings were all characterized this evening. Do
-   NOT expect easy product
+   sections/assemble + headings were all characterized. **Both EXPORT
+   paths hardened against bad characters (this continuation): pass 61
+   fixed a real latent bug — the redline DOCX escaper left XML-illegal
+   control chars that would make Word reject the file (now stripped);
+   pass 62 verified the PDF path's WinAnsi sanitizer handles CJK/emoji
+   in text AND filenames (locked by test).** Do NOT expect easy product
    bugs; if hunting further, stay probe-first (real defects are now
    rare). The 3 extraction coverage-obs are all closed.
 4. BidDiff Accessibility P2 (axe rendering tests) — still browser-gated
