@@ -311,6 +311,17 @@ factory fixes the OOXML first.
 **Effect once done:** capture teams get a Word redline to attach to reviews — a
 high buyer-value export — with no new dependency.
 
+**The exact wiring once you approve** (so it's a ~5-min deterministic change,
+not a design task): in `src/sidepanel/Summary.tsx`, add an `onExportRedline`
+handler that mirrors the existing `onExportPdf` exactly — import
+`exportRedlineDocx` from `../core/export/redlineDocx.js`, call it instead of
+`exportPdfReport`, and set the download name to
+`${safeFilename(sol)}-redline.docx`. Add a button next to "Export PDF" labeled
+"Export redline (.docx)" wired to it. The generator, its tests, and a strict
+XML-validity gate already exist; wiring the button is the only remaining step,
+and it's bundle-positive only by the small redline module (still within the
+budget).
+
 ---
 
 ## How items move out of this list
