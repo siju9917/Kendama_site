@@ -112,4 +112,32 @@ describe("diff confidence ceiling invariant (5.7.5)", () => {
     const r = engine.diff(A, A);
     expect(r.diffConfidence).toBeLessThanOrEqual(A.metadata.overallExtractionConfidence + EPS);
   });
+
+  // The OTHER half of the confidence contract (the ceiling tests above guard the
+  // upper bound): a degraded extraction (e.g. a scanned/image PDF → low per-block
+  // confidence) must SURFACE a user-facing warning, not silently present a
+  // misleadingly-confident diff. Drives the real enrich path via low-confidence
+  // blocks (enrichment recomputes overall confidence from blocks).
+  it("a low-confidence extraction surfaces the low-confidence warning", () => {
+    // Enrichment recomputes confidence from the text (clean text → ~1), so to
+    // simulate a degraded/scanned extraction we override the post-enrich
+    // overall confidence — the value the engine actually reads.
+    const rng = makeRng(123);
+    const withLowConf = (name: string): StructuredDocument => {
+      const d = enrichStructuredDocument(makeDoc(rng, name, 1));
+      return { ...d, metadata: { ...d.metadata, overallExtractionConfidence: 0.5 } };
+    };
+    const r = engine.diff(withLowConf("cur"), withLowConf("prior"));
+    expect(r.diffConfidence).toBeLessThan(0.7); // below EXTRACTION_LOW_CONFIDENCE_THRESHOLD
+    expect(r.warnings.some((w) => /extraction confidence/i.test(w) && /lower than typical/i.test(w))).toBe(true);
+  });
+
+  it("a clean (high-confidence) extraction emits NO low-confidence warning", () => {
+    const rng = makeRng(99);
+    // makeDoc's blocks default to confidence 1, so enrich yields ~1.
+    const A = enrichStructuredDocument(makeDoc(rng, "a", 1));
+    const B = enrichStructuredDocument(makeDoc(rng, "b", 1));
+    const r = engine.diff(A, B);
+    expect(r.warnings.some((w) => /lower than typical for clean text PDFs/i.test(w))).toBe(false);
+  });
 });

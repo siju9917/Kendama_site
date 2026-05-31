@@ -23,6 +23,32 @@ re-opening review | escalation second-pass.
 
 ---
 
+## 2026-05-31 — Phase K1 — bug-hunt pass 72 (Reliability, 5.7.5)
+
+**Pass type:** bug-hunt — the low-confidence extraction WARNING branch (a
+degraded/scanned PDF must warn the user, not silently present a confident-
+looking bad diff).
+
+**Critics run:** Reliability #7.
+
+**Finding:** none (verified negative). When `diffConfidence` < 0.7
+(`EXTRACTION_LOW_CONFIDENCE_THRESHOLD`) the engine surfaces "Extraction
+confidence is N% — lower than typical for clean text PDFs." (non-advisory by
+design; the disclaimer is the single canonical "you must review" place).
+
+**Coverage gap closed:** the confidence-CEILING (upper bound) was property-
+tested, but the low-confidence WARNING-emission branch — the user-facing half —
+was not. A future threshold/logic change could silently drop the warning.
+Added two tests: a degraded extraction (overall confidence overridden to 0.5
+post-enrich, since enrichment recomputes confidence from the text) emits the
+warning + diffConfidence < 0.7; a clean extraction emits NO such warning. 448 →
+450. (Note: enrichment derives confidence from the text, so low confidence is
+simulated by overriding the post-enrich metadata — the value the engine reads.)
+
+**Convergence:** clean; full gate green (450/450).
+
+---
+
 ## 2026-05-31 — Phase K1 — continuous-hunt batch (5.7.5, verified-negatives, NO new tests)
 
 **Pass type:** continuous fresh-input hunting (5.7.5 mandates new inputs even
