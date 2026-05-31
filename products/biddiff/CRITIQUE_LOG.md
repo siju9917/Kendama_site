@@ -1129,3 +1129,15 @@ prior — the second becomes an INSERT), determinism, and empty inputs. All
 green first run (inputs chosen against the real DIFF_THRESHOLDS weights:
 ucf 0.4 + type 0.1 + heading 0.5, minScore 0.5). No production change. Suite
 350 -> 358 green; typecheck + lint clean.
+
+
+## Bug-hunt pass 31 (2026-05-30 evening MT) — LocalClauseClient direct tests
+
+`LocalClauseClient` was exercised only indirectly (as the engine's clause
+dependency). Added 6 direct tests: known clause resolves from the bundled
+dataset (52.212-1 → FAR, real title); unknown → null (lookupSync) / unknown
+stub (lookup); `lookup` returns an entry for EVERY requested number; the
+unknown-stub regulation inference from the number prefix (252.→DFARS,
+52.→FAR, else→OTHER); empty request → empty map; duplicate numbers collapse
+to one entry. No production change. Suite 358 -> 364 green; typecheck + lint
+clean.
