@@ -1646,3 +1646,25 @@ odd page geometry — which would fail the human render-check (NEED_FROM_HUMAN
 Test asserts it's present + the last body child; regenerated the sample
 artifact. Suite 418 -> 419 green; typecheck + lint clean. Maximizes the chance
 the human's one-time render check passes first try.
+
+
+## Polish pass 57 (2026-05-30 evening MT) — FIX: redline rPr run-properties were in invalid schema order
+
+Continued red-teaming the N3 redline OOXML and found a REAL validity bug in my
+own pass-55/56 code: `CT_RPr` is a sequence-ordered type, but `para()` pushed
+run-properties in call order, producing invalid sequences —
+- headings emitted `<w:sz/><w:b/>` (schema requires b BEFORE sz), and
+- insertion runs emitted `<w:u/><w:color/>` (schema requires color BEFORE u).
+Word rejects out-of-order rPr with a "corrupt document, repair?" prompt — which
+would have FAILED the human render-check (NEED_FROM_HUMAN #9) on first open,
+the exact thing the gate is meant to catch but better caught now.
+
+- **Fix:** emit rPr children in canonical order (b, strike, color, sz, u)
+  regardless of which opts are set; heading is bold+sz.
+- **Guard:** a test scans every `<w:rPr>` and asserts color-before-u,
+  b-before-sz, strike-before-color. Regenerated the sample artifact.
+- Suite 419 -> 420 green; typecheck + lint clean.
+
+Three passes of red-teaming my own newly-written generator (55 build, 56
+sectPr, 57 rPr-order) each found a real Word-rendering issue — vindicating the
+"red-team your own fresh code too, not just legacy" discipline.

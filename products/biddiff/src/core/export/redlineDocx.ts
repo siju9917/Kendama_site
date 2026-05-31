@@ -27,17 +27,25 @@ export function escapeXml(s: string): string {
     .replace(/'/g, "&apos;");
 }
 
-/** A single <w:p> paragraph with one run, optional bold/color/strike/underline. */
+/** A single <w:p> paragraph with one run, optional bold/color/strike/underline.
+ *
+ * IMPORTANT: the OOXML `CT_RPr` schema is SEQUENCE-ordered — run properties
+ * must appear in a fixed order (…<w:b> <w:strike> <w:color> <w:sz> <w:u>…) or
+ * Word flags the document as corrupt and prompts to repair. We therefore emit
+ * the elements in canonical order regardless of which opts are set, rather
+ * than in call order. (A heading is bold + larger size.) */
 function para(
   text: string,
   opts: { bold?: boolean; color?: string; strike?: boolean; underline?: boolean; heading?: boolean } = {},
 ): string {
+  const bold = opts.bold || opts.heading;
   const rpr: string[] = [];
-  if (opts.bold) rpr.push("<w:b/>");
+  // Canonical CT_RPr order: b, strike, color, sz, u.
+  if (bold) rpr.push("<w:b/>");
   if (opts.strike) rpr.push("<w:strike/>");
-  if (opts.underline) rpr.push('<w:u w:val="single"/>');
   if (opts.color) rpr.push(`<w:color w:val="${opts.color}"/>`);
-  if (opts.heading) rpr.push('<w:sz w:val="28"/>', "<w:b/>");
+  if (opts.heading) rpr.push('<w:sz w:val="28"/>');
+  if (opts.underline) rpr.push('<w:u w:val="single"/>');
   const rPr = rpr.length ? `<w:rPr>${rpr.join("")}</w:rPr>` : "";
   return `<w:p><w:r>${rPr}<w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r></w:p>`;
 }

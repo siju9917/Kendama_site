@@ -58,6 +58,27 @@ describe("buildRedlineDocumentXml", () => {
     expect(allText).toContain("does not provide legal"); // disclaimer
   });
 
+  it("emits run-properties in canonical CT_RPr order (Word rejects out-of-order rPr)", () => {
+    // Insertion run = underlined + green color → color MUST precede u.
+    // Heading = bold + larger size → b MUST precede sz.
+    const xml = buildRedlineDocumentXml(
+      result([change({ severity: "CRITICAL", criticalReasons: ["A date changed."] })]),
+    );
+    // No <w:u> ever appears before its sibling <w:color> within an rPr.
+    for (const m of xml.matchAll(/<w:rPr>(.*?)<\/w:rPr>/g)) {
+      const inner = m[1];
+      if (inner.includes("<w:u ") && inner.includes("<w:color ")) {
+        expect(inner.indexOf("<w:color "), `color before u in ${inner}`).toBeLessThan(inner.indexOf("<w:u "));
+      }
+      if (inner.includes("<w:b/>") && inner.includes("<w:sz ")) {
+        expect(inner.indexOf("<w:b/>"), `b before sz in ${inner}`).toBeLessThan(inner.indexOf("<w:sz "));
+      }
+      if (inner.includes("<w:strike/>") && inner.includes("<w:color ")) {
+        expect(inner.indexOf("<w:strike/>")).toBeLessThan(inner.indexOf("<w:color "));
+      }
+    }
+  });
+
   it("ends the body with a sectPr (page geometry) so Word renders cleanly", () => {
     const xml = buildRedlineDocumentXml(result([change({})]));
     expect(xml).toContain("<w:sectPr>");
