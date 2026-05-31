@@ -72,6 +72,25 @@ describe("docs match code: critical categories", () => {
     expect(critical).toContain("isAddRemoveModify(i.changeType)"); // rule 3 uses it
     expect(/clause.*(change|amend)|(change|amend).*clause/.test(doc), "doc must say clauses can CHANGE, not just add/remove").toBe(true);
   });
+
+  it("every user-facing clause-criticality claim conveys change/amend (not add/remove only)", () => {
+    // All four surfaces must agree with the code's add/remove/MODIFY rule, so
+    // none of them under-claims (pass 51/52/53/54 docs-vs-code audit).
+    const surfaces = {
+      "store-listing": read("docs", "store-listing.md"),
+      "marketing-site": read("docs", "site", "index.html"),
+      "help-doc": read("docs", "help", "what-counts-as-critical.md"),
+    };
+    for (const [name, txt] of Object.entries(surfaces)) {
+      const t = txt.toLowerCase();
+      // Find the clause sentence and require it conveys change/amend, not a
+      // bare "added or removed".
+      expect(
+        /clause[^.]*(change|amend)/.test(t) || /(change|amend)[^.]*clause/.test(t),
+        `${name}: clause-criticality claim must convey change/amend`,
+      ).toBe(true);
+    }
+  });
 });
 
 describe("docs match code: recall claim matches the enforced audit floor", () => {

@@ -1580,3 +1580,37 @@ Continued the docs-vs-code claim audit into `docs/support-macros.md`.
   `human/NEED_FROM_HUMAN.md` item 7 — it rides the same A/B (on-device-v1 vs
   ship-the-server-features) decision; NOT a unilateral copy rewrite (launch
   scope is the human's call, like the privacy copy). No code change.
+
+
+## Bug-hunt pass 54 (2026-05-30 evening MT) — FIX: marketing site under-claimed clause criticality + cross-surface guard
+
+Completed the docs-vs-code claim audit on the last surface,
+`docs/site/index.html`. Found the same clause under-claim as pass 51: the
+site said "Clauses added or removed in Section I" while the code flags
+add/remove/**MODIFY**. Fixed to "added, removed, or changed" — now consistent
+with the help doc (pass 51), the store listing, and the FAQ. The site's
+pricing/tier table (1/5/25 seats, Team/Enterprise) is the same as the
+already-flagged tier item under NEED_FROM_HUMAN #7 (not wired in v1; gated on
+the positioning/pricing decision) — pre-launch marketing, left as-is.
+
+Added a cross-surface guard test: every user-facing clause-criticality claim
+(store-listing, marketing-site, help-doc) must convey change/amend, not
+add/remove only — so none can silently under-claim again. Suite 412 -> 413
+green; typecheck + lint clean. Doc-only change.
+
+### Docs-vs-code claim audit complete (passes 49–54)
+
+Audited every user-facing surface against coded/enforced ground truth:
+- **Verified accurate:** keyboard shortcuts (FAQ), tip-dismiss label,
+  store-listing permission disclosure (== manifest), the encrypted-PDF support
+  macro.
+- **Fixed + guarded:** clause-criticality under-claim (help doc pass 51, site
+  pass 54), the FAQ "100% recall" vs the enforced 0-critical-missed + ≥98%
+  floor (pass 52).
+- **Routed to the human (launch-scope-gated, not a unilateral rewrite):** the
+  privacy/OCR server-flow copy (Compliance P1, item 7) and the support-macro
+  server-license/billing flow (pass 53, item 7 "related #2"); the
+  Solo/Team/Enterprise tier copy (item 7 "related minor item").
+Net: 3 user-facing accuracy gaps fixed + guarded, 3 launch-scope items routed,
+the rest verified. The product's CLAIMS now match its behavior or are
+honestly gated.
