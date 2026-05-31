@@ -36,6 +36,7 @@ vi.mock("../core/storage/index.js", () => ({
 vi.mock("./ReviewPrompt.js", () => ({ noteDiffSucceeded: vi.fn(async () => {}) }));
 
 import { useDiffPipeline } from "./useDiffPipeline.js";
+import { runDiffPipeline } from "./pipeline.js";
 
 const file = (n: string): File => new File(["x"], n, { type: "application/pdf" });
 
@@ -65,6 +66,36 @@ describe("useDiffPipeline cancellation race", () => {
 
     expect(result.current.state.phase).toBe("EMPTY");
     expect(result.current.state.result).toBeNull();
+  });
+});
+
+describe("useDiffPipeline error path (extraction/pipeline failure)", () => {
+  it("prefers a friendly userMessage when the failure carries one", async () => {
+    // A corrupt / password-protected / image-only PDF: the extractor throws
+    // an error annotated with a user-facing userMessage. The UI must reach a
+    // clean ERROR state showing THAT message, not the raw technical one.
+    vi.mocked(runDiffPipeline).mockRejectedValueOnce(
+      Object.assign(new Error("InvalidPDFException: bad xref"), {
+        userMessage: "This PDF couldn't be read — it may be scanned images or password-protected.",
+      }),
+    );
+    const { result } = renderHook(() => useDiffPipeline());
+    await act(async () => {
+      await result.current.run(file("current.pdf"), file("prior.pdf"));
+    });
+    expect(result.current.state.phase).toBe("ERROR");
+    expect(result.current.state.result).toBeNull();
+    expect(result.current.state.error).toMatch(/scanned images or password-protected/);
+  });
+
+  it("falls back to the raw message when no userMessage is present", async () => {
+    vi.mocked(runDiffPipeline).mockRejectedValueOnce(new Error("boom-raw-message"));
+    const { result } = renderHook(() => useDiffPipeline());
+    await act(async () => {
+      await result.current.run(file("current.pdf"), file("prior.pdf"));
+    });
+    expect(result.current.state.phase).toBe("ERROR");
+    expect(result.current.state.error).toBe("boom-raw-message");
   });
 });
 

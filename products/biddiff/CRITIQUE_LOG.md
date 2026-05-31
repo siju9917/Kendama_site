@@ -23,6 +23,31 @@ re-opening review | escalation second-pass.
 
 ---
 
+## 2026-05-31 — Phase K1 — bug-hunt pass 65 (Reliability, 5.7.5)
+
+**Pass type:** bug-hunt — the pipeline ERROR path (extraction/pipeline
+failure: corrupt / password-protected / image-only PDF).
+
+**Critics run:** Reliability #7.
+
+**Finding:** none (verified negative). `run()`'s catch sets a clean ERROR
+state and prefers a friendly `userMessage` carried on the error
+(`(e).userMessage ?? e.message`), so a failed extraction surfaces a
+human-readable reason, not a raw stack/technical string.
+
+**Coverage gap closed:** both branches of the `userMessage ?? msg` fallback
+were untested (the `runDiffPipeline` mock only ever resolved). Added two
+`useDiffPipeline` tests: (1) a rejection annotated with `userMessage` →
+ERROR state shows that friendly message; (2) a plain `Error` with no
+`userMessage` → ERROR state shows the raw message. Result is nulled and
+phase is ERROR in both. 430 → 432.
+
+**Convergence:** clean; full gate green (432/432). The pipeline's three
+terminal paths are now all tested — DONE (with/without save failure), ERROR
+(with/without userMessage), and abort (cancellation race).
+
+---
+
 ## 2026-05-31 — Phase K1 — bug-hunt pass 64 (Reliability, 5.7.5)
 
 **Pass type:** bug-hunt — IndexedDB quota-exceeded write path.
