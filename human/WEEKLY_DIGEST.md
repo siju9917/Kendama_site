@@ -30,6 +30,23 @@ Two things happened after the main write-up below:
    factory check that catches corruption of the factory's own documents
    (added after a real `ops/loop.md` corruption was found and repaired).
 
+3. **Late-evening continuation — passes 60–63, all green and pushed.** (a)
+   Turned verify-before-claim on the factory's OWN claims and found "every
+   exported core function is tested" was overstated — corrected to "tested
+   directly or via a tested caller" and added a direct test for the one
+   genuinely uncovered helper (pass 60). (b) Found and fixed a **real latent
+   bug**: the new redline Word-export escaper left XML-illegal control
+   characters that would make Word reject the .docx as corrupt — now stripped
+   (pass 61). (c) Verified + locked the PDF export's handling of CJK/emoji in
+   text and filenames (pass 62). (d) With a federal-procurement lens, found a
+   **deadline time/timezone change** (e.g. "2:00 PM Eastern" → "11:00 AM
+   Eastern", same date) is flagged critical only inside Section L and missed
+   in an untyped section — logged as evidence for your domain-expert
+   validation (NOT changed; the critical-rule pack is intentionally frozen
+   until that validation), pass 63. (e) Reconciled doc-vs-code drift (the
+   first-run "See an example" feature was shipped but the tracker said
+   "Queued"; stale test counts). Test total now **429/429**.
+
 *Heads-up:* the editor/file tools were flaky this session, so the factory
 routed its work through verified test runs and confirmed every push by exit
 code — git history reflects only verified, green changes. Test counts below
@@ -37,7 +54,7 @@ in the original write-up (262) predate the passes 8–10 continuation. **Correct
 
 **Final session tally (Saturday, late evening MT) — the scannable version:**
 
-- **Tests 226 → 428, full CI gate green end-to-end** (typecheck + lint + build
+- **Tests 226 → 429, full CI gate green end-to-end** (typecheck + lint + build
   + bundle budget). The diff/extraction/storage/UI/runtime core is now
   characterized to saturation: every exported core/shared function is tested
   **directly or via a tested caller**, and all four diff-alignment layers + the
