@@ -8,17 +8,24 @@
 
 ## Session
 
-- **Last session date:** 2026-05-30 (Saturday, Mountain Time) — STILL IN PROGRESS.
-- **Last session ended at:** Saturday cycle that ran to the schedule-window
-  close. Late-session work (this continuation): turned the "never stop on
-  Saturday" rule into a **technical interlock** (a Claude Code `Stop` hook
-  that red-teams every stop attempt against the real clock in the human's
-  timezone (Mountain Time, not UTC — fixed this session) — see the
-  enforcement note in "Active product" and `brain/DECISIONS.md`), added the
-  `governance-integrity` factory check (+ a mention-vs-use false-positive
-  fix), and ran BidDiff bug-hunt passes 8–10 (engine swap-symmetry,
-  move-threshold boundary, diff-confidence ceiling), then the post-timezone-fix continuation (passes 12-25 + N8/N9) — all clean, 335 tests.
-  Brain + digest are kept current continuously; the session is NOT over (it is still Saturday evening in Mountain Time).
+- **Last session date:** 2026-05-30 (Saturday, Mountain Time) — in its final
+  minutes (~11:5x PM MT), consolidated for a clean close at midnight MT.
+- **Session arc (cumulative, this long Saturday):** the early continuation built
+  the never-stop **technical interlock** (the `Stop` hook + `ops/checks/stop-guard.mjs`,
+  Mountain-Time-evaluated after a UTC-bug fix) + the `governance-integrity` check,
+  and ran bug-hunt passes 8–25 (335 tests). **The final continuation
+  (2026-05-31, passes 60–77 + 3 verified-negative batches) reached genuine
+  saturation:** one real latent bug fixed (redline DOCX control-char corruption,
+  pass 61), ~15 untested failure-mode/branch/invariant locks (orchestration hook,
+  both exports, storage, SAM, license, options, duplicates, clause-revision,
+  low-confidence warning, move+modify, summary-count consistency, unicode dashes,
+  zero-change export), the factory's own checks made violation-testable + the
+  stop-guard midnight boundary locked, three ship-gate closures (threat model,
+  ship critical path, release-runbook blockers) + a verified-buildable artifact,
+  five gated coverage-obs (#5–9) + N14 for the next cycle, strategy/ideation +
+  the "consequence-aware diff" forward concept, and an honest 5.7.7/5.7.8 audit.
+  226 → **455 tests**, full gate green throughout, all pushed. Brain + digest
+  kept current continuously.
 - **Session type:** Saturday Routine cadence (manually invoked by
   the human — the Routine itself still does not exist; see
   `human/NEED_FROM_HUMAN.md` item 2).
