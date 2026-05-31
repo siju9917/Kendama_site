@@ -45,3 +45,34 @@ describe("docs match code: keyboard shortcuts", () => {
     expect(gs).toContain("`Got it`");
   });
 });
+
+describe("docs match code: store-listing permission disclosure", () => {
+  // A store listing that discloses different permissions than the manifest
+  // requests is a Web-Store-review rejection risk. Verified accurate
+  // 2026-05-30 (storage/sidePanel/offscreen + sam.gov host; no <all_urls>).
+  it("the manifest requests exactly the permissions the store listing discloses", () => {
+    const manifest = read("manifest.config.ts");
+    const listing = read("docs", "store-listing.md").toLowerCase();
+
+    // The manifest's `permissions` array — parse the literal.
+    const permLine = manifest.match(/permissions:\s*\[([^\]]*)\]/);
+    expect(permLine, "manifest permissions array not found").toBeTruthy();
+    const perms = (permLine![1].match(/"([^"]+)"/g) ?? []).map((s) => s.replace(/"/g, ""));
+    expect(new Set(perms)).toEqual(new Set(["storage", "sidePanel", "offscreen"]));
+
+    // Each disclosed permission appears in the listing; the "nothing else"
+    // promise (no <all_urls>/tabs/webRequest) is both true of the manifest
+    // and stated in the listing.
+    for (const p of perms) expect(listing).toContain(p.toLowerCase());
+    // `<all_urls>` must not be a LIVE value (it legitimately appears in a
+    // comment explaining why it's avoided) — strip line comments first.
+    const manifestCode = manifest.replace(/\/\/[^\n]*/g, "");
+    expect(manifestCode).not.toContain("<all_urls>");
+    expect(perms).not.toContain("tabs");
+    expect(perms).not.toContain("webRequest");
+    expect(listing).toContain("no `<all_urls>`");
+    // Host scope is sam.gov-only in both.
+    expect(manifest).toContain('host_permissions: ["https://sam.gov/*", "https://*.sam.gov/*"]');
+    expect(listing).toContain("sam.gov");
+  });
+});

@@ -1478,3 +1478,38 @@ getting-started tells users to click. A future code change that renames/drops
 a shortcut (or a doc edit that desyncs) now fails at test time instead of
 shipping stale instructions. Suite 407 -> 409 green; typecheck + lint clean.
 No production change.
+
+
+## Bug-hunt pass 50 (2026-05-30 evening MT) — store-listing permission disclosure matches the manifest
+
+A store listing that discloses different permissions than the manifest
+requests is a common Web-Store-review rejection cause. Verified the listing
+(`docs/store-listing.md`) matches `manifest.config.ts` EXACTLY: permissions
+`storage/sidePanel/offscreen` + host `sam.gov` (both apex + subdomain), no
+`<all_urls>`/`tabs`/`webRequest` — the listing's "nothing else" promise is
+true. Accurate, no defect.
+
+Added a guard test (in `test/unit/docs-match-code.test.ts`): parses the
+manifest's permission array and asserts it == the disclosed set, that the
+banned permissions are absent (checking the LIVE values, not a comment that
+explains why `<all_urls>` is avoided), and that the host scope matches. A
+future manifest change that adds a permission without updating the listing now
+fails at test time. Suite 409 -> 410 green; typecheck + lint clean. No
+production change.
+
+(Note: the privacy/server-OCR claim in the listing is the separate human-gated
+Compliance item 7 — out of scope here; this pass covers only the
+functional/permission disclosure.)
+
+### Session bug-hunt summary (passes 12–50, 2026-05-30 evening continuation)
+
+After the timezone-bug fix, a ~38-pass adversarial + characterization sweep:
+226 → 410 tests, full CI green throughout. Genuine fixes: suppress %/sign P2,
+corrupt-payload P2, markdown-backtick P3, telemetry PII boundary, the
+page-limit extraction gap (coverage obs #2), and the no-forbidden-markers
+case-sensitivity check hole. Verified-sound (no change): the diff core's four
+alignment layers + critical engine (now property-tested), all server-handler
+trust boundaries, the download-URL allowlist, the licensing flow, the
+corpus-audit harness, and docs/permission disclosure — each now guarded by a
+test. Two of my own near-misses (phantom contentHash P0, phantom licensing
+bug) were caught by probe-first/verify-before-claim before any false commit.
