@@ -227,6 +227,13 @@ the hard way this session — see `META_LESSONS.md`):
   `typecheck + lint + test` (run `scripts/ci.sh` for the real ship gate).
   Several real errors passed a green vitest run and were caught only by
   typecheck/lint.
+- **Edit prose/brain files with the Write/Edit tools or a small `.mjs`
+  script — NOT inline `node -e "...long string..."` / heredocs.** Multi-line
+  content with apostrophes, parens, or backticks repeatedly broke inline
+  shell escaping this session (~5 failed commands, each a retry). For any
+  block of prose: write a tiny `/tmp/edit.mjs` that does the `readFileSync` →
+  `replace`/`append` → `writeFileSync` and run it, or use the Edit tool
+  directly. Reserve inline `node -e` for short, quote-free expressions.
 
 "Manufactured churn" (adding a redundant test to an already-covered surface,
 or a fix to non-broken code) is itself a finding to avoid: when a lane is
