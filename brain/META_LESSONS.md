@@ -390,3 +390,53 @@ mechanism without checking it against the actual constraint (the human's
 real local clock; the human's actual involvement). Strength that depends on
 an unverified assumption or an approval is weaker than a simple rule that
 just runs. The human caught both; the guard and the rules now encode them.
+
+
+## 2026-05-30 — Maximization audit (5.7.7) + audit-of-the-auditor (5.7.8), evening MT
+
+Mandatory cadence audit of whether 5.7.1–5.7.6 actually held this session
+(42 commits, range 249fe7c..HEAD; full CI green, suite 285→338). Honest, with
+evidence — including the lapses.
+
+- **5.7.1 Re-critique cadence:** N/A — BidDiff has not shipped. (Vacuously met.)
+- **5.7.2 Escalating critique:** HELD — a "clean" core was attacked again and
+  again (passes 12–26); each clean result was treated as a hypothesis, not a
+  result. Caveat below (the hallucination shows escalation can MISFIRE if not
+  evidence-bound).
+- **5.7.3 Roster growth:** HELD — Correctness/Adversarial checklists grew
+  (suppress false-negative class; "run the full suite, twice; a bug claim
+  needs a pre-existing failing test"); the FACTORY check roster grew
+  (`stop-guard-logic`); CLAUDE.md gained 5x/5x.1.
+- **5.7.4 "Nothing is ever done":** HELD and exemplary — the review GREW the
+  backlog (N11–N13), SHIPPED from it (N11), and honestly PRUNED it (N12/N13
+  downgraded with reasons; N4 dropped). Growth + pruning, not just growth.
+- **5.7.5 Continuous bug-hunt:** HELD — every un-probed surface
+  (headings, assemble, storage, reconstruct, export, ErrorBoundary,
+  ProgressView, ReviewPrompt, pipeline, messages) was probed/characterized;
+  one real P2 fixed (suppress %/sign); edge cases logged not rushed.
+- **5.7.6 Continuous ideation:** HELD — the on-device-trust distribution
+  wedge is a genuinely new, cap-independent strategic insight that re-weights
+  the ranking with a reason (not a listicle pick).
+
+**5.7.8 — audit-of-the-auditor (the part that must not flatter):** this
+session contained TWO real maximization FAILURES that the audit must not bury:
+1. **A false stop.** The stop-guard's UTC bug let me declare the session over
+   on a Saturday evening — the exact failure 5z/5x exist to prevent, caused by
+   the enforcement's own bug. Caught only because the human pushed back. Fixed
+   (timezone + a self-check), but the lesson stands: enforcement must be
+   verified against the real constraint, and "the guard said so" is only as
+   good as the guard.
+2. **A hallucinated P0.** Mid-session I fabricated a contentHash bug, broke a
+   correct file, and wrote false brain entries — 5.7.2 escalation MISFIRING
+   because it wasn't bound to a pre-existing failing test. Reverted + retracted
+   loudly; the durable rule ("a bug claim requires a failing test that exists
+   BEFORE the fix") is now recorded.
+So the honest verdict is NOT "all rules held cleanly." The rules largely held,
+AND two had real lapses that were caught (one by the human, one by running the
+full suite) and converted into permanent guardrails. That conversion — lapse →
+guardrail — is the system working as intended, but the lapses themselves are
+the finding 5.7.8 demands be stated plainly rather than smoothed over. The
+single biggest residual risk is unchanged: confident, well-formatted output
+(a fabricated fix, a UTC "it's Sunday") is more dangerous than an obvious
+error, because it gets committed and believed. Verify-before-commit and
+verify-against-the-real-constraint are the countermeasures, now encoded.
