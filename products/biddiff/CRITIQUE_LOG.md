@@ -1114,3 +1114,18 @@ assumed document order, but querySelectorAll groups by comma-separated
 selector order; and a bare <tr> is dropped by jsdom). A probe showed the real
 output; tests corrected to assert by URL + wrap the row in a <table>. The
 code was correct; the test fixtures were not.
+
+
+## Bug-hunt pass 30 (2026-05-30 evening MT) — section alignment had no direct test
+
+`alignSections` / `scoreSectionPair` (diff/align/sections.ts) is the
+foundation the entire diff is built on (it pairs current↔prior sections; the
+rest of the engine diffs within pairs). It had no FOCUSED test — only indirect
+corpus coverage. Added 8: scoring (same-UCF+type+heading ≈ 1.0; all-mismatch <
+minScore), matched-pair passthrough ordered by current ordinal, INSERT
+(prior=null) for unmatched current, DELETE (current=null) for unmatched prior,
+the greedy one-to-one constraint (two current sections can't both claim one
+prior — the second becomes an INSERT), determinism, and empty inputs. All
+green first run (inputs chosen against the real DIFF_THRESHOLDS weights:
+ucf 0.4 + type 0.1 + heading 0.5, minScore 0.5). No production change. Suite
+350 -> 358 green; typecheck + lint clean.
