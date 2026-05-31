@@ -9,6 +9,7 @@ import { LocalClauseClient } from "../src/core/clauses/client.js";
 import { enrichStructuredDocument } from "../src/core/extract/normalize.js";
 import { loadPair } from "../test/corpus/harness.js";
 import { exportPdfReport } from "../src/core/export/index.js";
+import { exportRedlineDocx } from "../src/core/export/redlineDocx.js";
 
 const pair = loadPair("stress-009-all-categories");
 const engine = new DiffEngine(new LocalClauseClient());
@@ -27,3 +28,11 @@ fs.mkdirSync(outDir, { recursive: true });
 const outPath = `${outDir}/sample-report.pdf`;
 fs.writeFileSync(outPath, buf);
 console.log(`wrote ${outPath} (${buf.length} bytes; ${result.changes.length} changes, ${result.criticalCount} critical)`);
+
+// Also emit the redline .docx (POLISH N3) for the one-time human Word-render
+// check (human/NEED_FROM_HUMAN.md #9) before the export button is wired.
+const docxBlob = await exportRedlineDocx(result);
+const docxBuf = Buffer.from(await docxBlob.arrayBuffer());
+const docxPath = `${outDir}/sample-redline.docx`;
+fs.writeFileSync(docxPath, docxBuf);
+console.log(`wrote ${docxPath} (${docxBuf.length} bytes) — open in Word to verify rendering before wiring the button`);
