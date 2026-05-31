@@ -23,6 +23,32 @@ re-opening review | escalation second-pass.
 
 ---
 
+## 2026-05-31 — Phase K1 — bug-hunt pass 64 (Reliability, 5.7.5)
+
+**Pass type:** bug-hunt — IndexedDB quota-exceeded write path.
+
+**Critics run:** Reliability #7, Correctness #1.
+
+**Finding:** none (verified negative). The storage layer is robust against a
+full quota: LRU prune at `STORAGE_HARD_CAP_BYTES`, large payloads routed to
+IDB (no per-extension quota), payload rollback on index-write failure (no
+orphaned writes), and prune-after-save. The pipeline degrades gracefully — a
+`saveDiff` rejection is caught, surfaces a non-advisory "Couldn't save this
+diff to history (local storage may be full)" session notice (routed to
+`sessionNotices`, not `result.warnings`, so it stays out of the exported
+PDF/Markdown), and STILL shows the computed diff (phase DONE, result
+preserved). Losing the visible diff over a history-save error would be the
+real bug — and it does not happen.
+
+**Coverage gap closed:** the resilience was untested. Added a
+`useDiffPipeline` test that rejects `saveDiff` with `QuotaExceededError` and
+asserts phase DONE + result preserved + `error===null` + the save-failure
+notice present. Locks behavior a refactor could silently break. 429 → 430.
+
+**Convergence:** clean; full gate green (430/430).
+
+---
+
 ## 2026-05-31 — Phase K1 — bug-hunt pass 63 (Domain-Expert, 5.7.5)
 
 **Pass type:** bug-hunt with the Domain-Expert #5 federal-procurement lens
