@@ -152,6 +152,30 @@ it.
   it cannot reduce shipped risk (already zero) and a botched toolchain
   bump would.
 
+## Server-handler trust boundaries (adversarial sweep — 2026-05-30)
+
+Every `server/handlers.ts` boundary was red-teamed (the server is unwired in
+v1 per the Compliance item, but it is the shipped server *contract*):
+
+- **/telemetry** — HARDENED this session (bug-hunt pass 45): event-name
+  allow-list + a strict `counts` schema (key allow-list `changes/critical/
+  pages` + finite non-negative integers). Confirmed it now rejects an unknown
+  numeric key (`secretUserId` PII-smuggling), NaN/Infinity, negatives,
+  non-integers, and arrays.
+- **/license/validate** — sound: delegates verification to an injected HMAC
+  verifier (the `DEV-` default is a documented dev stub), validates the key is
+  a non-empty string, and SIGNS the response (HMAC over key+server-issuedAt)
+  so a client cannot forge a "valid" reply. The `|` delimiter has no
+  collision risk (issuedAt is server-generated, not client input).
+- **/clauses/lookup** — sound: rejects a non-array; a mixed adversarial array
+  (numbers/null/objects/`__proto__`) returns only valid found clauses (no
+  prototype pollution — `__proto__` is not a clause number so is never
+  written); 100k-element array handled in ~6ms (no DoS).
+- **/ocr** — sound for its v1 stub contract: rejects an empty/non-string
+  `pdfBase64`; the stub does not decode (the production adapter owns
+  decode-bomb defense).
+- **/health** — trivial, no input.
+
 ## Verdict
 
 The Phase 6.5 security audit signs off (re-confirmed 2026-05-30):
