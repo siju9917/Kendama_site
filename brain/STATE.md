@@ -63,7 +63,7 @@
   a stronger privacy claim). All four P1s are human/cap-gated.
   (Positive: the FAR/DFARS clause dataset's well-known titles were
   spot-checked accurate + current.)
-- **Build green:** **312/312 tests** (was 226 at session start; 285 by the
+- **Build green:** **330/330 tests** (was 226 at session start; 285 by the
   Saturday close, +11 in the passes 8–10 continuation), lint + typecheck
   clean; full CI gate (typecheck+lint+test+build+bundle-budget) verified
   green end-to-end.

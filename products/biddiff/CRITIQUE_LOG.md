@@ -1008,3 +1008,23 @@ prompt is hidden below the 5-diff threshold, shown at/above it; never shows
 again once dismissed (even at count 50); "No thanks" hides + persists the
 dismissal; "Leave a review" opens the Chrome Web Store URL and dismisses.
 No production change. Suite 321 -> 327 green; typecheck + lint clean.
+
+
+## Bug-hunt pass 24 (2026-05-30 evening MT) — pipeline.ts dispatch was only ever mocked
+
+`runDiffPipeline` (the side-panel pipeline) was always MOCKED in tests, so
+its real dispatch logic ran uncovered. In the Node test context `chrome` is
+undefined, so it takes the local-fallback path — exercising the real code.
+Added 3 tests pinning reliability contracts that need no PDF rendering: a
+pre-aborted AbortSignal throws AbortError before any work (cancellation
+contract); an unsupported .txt is rejected through the validate dispatch (not
+mis-routed); and onProgress fires the first note before extraction. No
+production change. Suite 327 -> 330 green; typecheck + lint clean.
+
+### UI/runtime coverage sweep (passes 21–24)
+
+Closed the untested side-panel surfaces flagged by a coverage sweep:
+ErrorBoundary (21), ProgressView (22), ReviewPrompt (23), and the pipeline
+dispatch (24). Remaining untested sidepanel files are thin presentational
+shells (App/index/Onboarding/SamAttachments) or covered indirectly; the
+logic-bearing ones now have focused tests. Suite 312 -> 330 across the sweep.
