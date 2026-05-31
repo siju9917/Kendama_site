@@ -68,6 +68,28 @@ describe("useDiffPipeline cancellation race", () => {
   });
 });
 
+describe("useDiffPipeline save-failure resilience (storage full)", () => {
+  it("still shows the computed diff and reports the save failure (never loses the result)", async () => {
+    // Quota exhausted: saveDiff rejects. The user's diff was already computed
+    // — they must still SEE it, with a clear (non-advisory) notice that local
+    // persistence failed. Losing the visible diff over a history-save error
+    // would be the real bug.
+    mocks.saveDiff.mockImplementationOnce(() =>
+      Promise.reject(new DOMException("quota", "QuotaExceededError")),
+    );
+    const { result } = renderHook(() => useDiffPipeline());
+
+    await act(async () => {
+      await result.current.run(file("current.pdf"), file("prior.pdf"));
+    });
+
+    expect(result.current.state.phase).toBe("DONE");
+    expect(result.current.state.result).not.toBeNull(); // diff is NOT lost
+    expect(result.current.state.error).toBeNull(); // a save miss is not a hard error
+    expect(result.current.state.sessionNotices.some((n) => /history|storage/i.test(n))).toBe(true);
+  });
+});
+
 describe("useDiffPipeline openSample (first-run 'See an example')", () => {
   it("loads a real, non-empty example diff, flags it ephemeral, and never persists it", async () => {
     mocks.saveDiff.mockClear();
