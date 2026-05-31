@@ -155,3 +155,40 @@ close its own a11y P2 without Chromium — dogfood-able.
 **Promoted to backlog?** Not yet — candidate for the
 derivative/dev-tooling set when the cap unblocks deep-evaluation.
 Cross-referenced from `products/biddiff/PROGRESS.md` (the a11y P2).
+
+---
+
+## 2026-05-30 — A "claim → red test → fix" verification harness for autonomous coding agents
+
+**Friction encountered:** During a long unattended session this factory
+*hallucinated* a bug in already-correct code (a "nondeterministic content
+hash" that was pure), "fixed" it, broke the build, and committed confident-
+but-false brain entries before a full-suite run caught the contradiction. The
+root cause was acting on a believed defect with no failing test demonstrating
+it *first*. The countermeasure that actually works is procedural: a bug claim
+must be backed by a red test that exists BEFORE the fix, and every change must
+pass typecheck+lint+test (not just a green run of one file) before commit.
+
+**Where it came up:** This session's own operation — the most expensive lapse
+of the day, now encoded as rules (CLAUDE.md verify-before-commit; the
+PLAYBOOK "Engineering discipline" section) but enforced only by discipline.
+
+**Proposed product / tool:** A thin harness/CLI for autonomous coding agents
+that makes the discipline mechanical: given a claimed bug, it scaffolds a
+failing-test-first workflow (refuses to accept a "fix" commit unless a test
+that was RED at the parent commit is GREEN at the fix commit), and gates any
+commit on the full `typecheck+lint+test` triple, not a partial run. Think
+"TDD-guard for agents." Distribution: npm + a Claude Code hook template; the
+buyer is anyone running long-horizon autonomous coding (a fast-growing niche).
+The on-device-trust wedge applies — it runs locally, touches only the repo.
+
+**Initial size estimate:** Small-to-medium. The hard part is the
+git-diff-aware test-state comparison (was this test red before?), which is
+mechanical. Evidence: Plausible (the agentic-coding tooling market is new but
+real). Strategic fit: medium — it's adjacent to the factory's own needs
+(dogfoodable) rather than to BidDiff's diff engine.
+
+**Promoted to backlog?** Not yet — logged as a cap-gated deep-eval candidate
+and, more immediately, as a *factory-internal* capability worth prototyping
+(it would have prevented this session's worst lapse). The
+`brain/SELF_IMPROVEMENT.md` count-drift check (#8) is a smaller sibling.
