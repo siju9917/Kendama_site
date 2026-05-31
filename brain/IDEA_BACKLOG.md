@@ -121,6 +121,27 @@ genuinely non-obvious and not listicle picks.
 strategic fit + clearest distribution), then D3–D5. Until then they
 stay first-principles-ranked candidates, not approved builds.
 
+#### Exploratory forward concept (2026-05-31, first-principles — NOT a ranked candidate yet)
+
+**"Consequence-aware diff" — from "what changed" to "what you must now do."**
+Every product in the critical-change-diff family answers *what changed* and
+*how critical*. The genuinely higher-value question, surfaced by the
+submission-destination finding (PROGRESS coverage-obs #6 — missing a
+"submit-here-instead" amendment = bid to the wrong place), is *what does this
+change invalidate in the work I've already done?* For a federal bid: a
+tightened page limit → "your current 60-page draft now exceeds it"; an added
+clause → "you now need a CMMC cert not in your profile"; a changed portal →
+"your saved submission plan points to the old address." This needs the user's
+*context* (their draft, certs, plan), so it's a larger product (a "bid-readiness
+monitor", not a diff viewer) and raises real privacy questions (now you hold the
+user's work, not just two public docs — which would stress the on-device-trust
+wedge that is currently BidDiff's strongest asset). **Why logged, not ranked:**
+it is a genuinely non-listicle direction (the Ambition Critic's test) and the
+natural "what would a top-tier team build next" answer, but it is materially
+bigger than the current slate and unvalidated — it belongs in the cited
+deep-eval's "adjacent opportunity" view, not competing with D1/D2 now. Captured
+so the post-cap research weighs it deliberately rather than rediscovering it.
+
 #### Portfolio-sequencing insight (2026-05-30, first-principles)
 
 The D-family is not five independent products — it is **one shared
