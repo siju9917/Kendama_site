@@ -114,6 +114,19 @@
   portfolio expansion / new-product research on the spend cap. K1
   cannot converge until the gated P1s clear.
 
+## Ship readiness (verified 2026-05-31)
+
+BidDiff's ship MECHANICS are verified end-to-end: `scripts/package.sh` runs the
+full gate and produces a valid `dist-zips/biddiff-v0.1.0.zip` (1.8M;
+gitignored). Ship-gate DOCS are closed this session — the ordered ship critical
+path (`products/biddiff/PROGRESS.md` "Ship sequence"), an explicit threat model
+(`docs/security-audit.md`, closing the QUALITY_BAR item), and the two hard
+content blockers added to the release-runbook pre-flight. **The only remaining
+ship blockers are HUMAN content-gates, in order:** positioning decision
+(`APPROVALS.md` #1, auto-proceeds 2026-06-03) → server-claim copy fix
+(`NEED_FROM_HUMAN.md` #7) → publish privacy URL → submit (`NEED #6`). Nothing
+ship-related needs the spend cap.
+
 ## Overdue re-critiques
 
 - **(none — no shipped products yet.)** Brain integrity, no-GitHub-
