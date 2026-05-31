@@ -46,6 +46,34 @@ describe("docs match code: keyboard shortcuts", () => {
   });
 });
 
+describe("docs match code: critical categories", () => {
+  // The "what counts as critical" help doc must describe the SAME six rule
+  // categories the engine flags (critical.ts CRITICAL_RULES). Drift here
+  // misleads users about the product's core value claim. Found + fixed a real
+  // gap 2026-05-30 (pass 51): the doc said clause "add or remove" while the
+  // code flags add/remove/MODIFY.
+  it("the help doc lists the six categories critical.ts actually flags", () => {
+    const doc = read("docs", "help", "what-counts-as-critical.md").toLowerCase();
+    const critical = read("src", "core", "diff", "critical.ts");
+    // The six rule categories (by the concept each rule matches on).
+    const concepts = [
+      /date|deadline/, // rule 1 DATES_DEADLINES / DATE
+      /page limit|format|submission/, // rule 2 SUBMISSION_INSTRUCTIONS
+      /clause/, // rule 3 CLAUSES
+      /evaluation/, // rule 4 EVALUATION_CRITERIA
+      /clin/, // rule 5 PRICING_CLINS
+      /attachment/, // rule 6 ATTACHMENTS
+    ];
+    for (const c of concepts) expect(c.test(doc), `help doc missing concept ${c}`).toBe(true);
+
+    // The clause rule flags add/remove/MODIFY (isAddRemoveModify); the doc
+    // must not under-claim it as add/remove only. Assert the doc conveys
+    // "change/amend", matching the code's MODIFY branch.
+    expect(critical).toContain("isAddRemoveModify(i.changeType)"); // rule 3 uses it
+    expect(/clause.*(change|amend)|(change|amend).*clause/.test(doc), "doc must say clauses can CHANGE, not just add/remove").toBe(true);
+  });
+});
+
 describe("docs match code: store-listing permission disclosure", () => {
   // A store listing that discloses different permissions than the manifest
   // requests is a Web-Store-review rejection risk. Verified accurate

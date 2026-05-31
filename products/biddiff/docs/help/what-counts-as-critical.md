@@ -6,8 +6,9 @@ BidDiff flags a change as **critical** when it meets at least one of these rules
    or any other deadline anchor changes.
 2. **Page limit or required format** — Section L's "not to exceed N pages"
    or any mandatory format requirement changes.
-3. **FAR / DFARS clause add or remove** — Section I gains or loses a
-   regulation clause. New clauses can impose new compliance obligations.
+3. **FAR / DFARS clause add, remove, or change** — Section I gains, loses,
+   or amends a regulation clause. New or changed clauses can impose new
+   compliance obligations.
 4. **Evaluation criteria** — Section M factors, weighting, or basis for
    award.
 5. **CLIN structure** — Section B adds, removes, or changes a Contract

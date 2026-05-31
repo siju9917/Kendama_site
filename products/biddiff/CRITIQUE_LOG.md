@@ -1513,3 +1513,27 @@ trust boundaries, the download-URL allowlist, the licensing flow, the
 corpus-audit harness, and docs/permission disclosure — each now guarded by a
 test. Two of my own near-misses (phantom contentHash P0, phantom licensing
 bug) were caught by probe-first/verify-before-claim before any false commit.
+
+
+## Bug-hunt pass 51 (2026-05-30 evening MT) — FIX: help doc under-claimed clause criticality
+
+### Product-Sense/Accuracy — `what-counts-as-critical.md` vs `critical.ts`
+
+Cross-checked the product's core value-claim doc against the rule pack. Found
+a real discrepancy: the help doc said critical category 3 is "FAR / DFARS
+clause **add or remove**", but `critical.ts` rule 3 flags clause
+**add/remove/MODIFY** (`isAddRemoveModify`, reason "A FAR/DFARS clause
+changed." for MODIFY). So an *amended* clause is correctly flagged critical by
+the code, but the help doc told the user only adds/removes count — which could
+make a user treat a flagged clause-modify as a false positive. The code is
+correct (a changed clause should be critical); the DOC was wrong.
+
+- **Fix:** doc now reads "clause add, remove, or change" — matching the code
+  AND the store listing (which already said "added, removed, or amended").
+- **Guard:** `test/unit/docs-match-code.test.ts` now asserts the help doc
+  lists the six categories critical.ts flags AND conveys that clauses can
+  *change* (not just add/remove), so this can't silently desync again.
+- Suite 410 -> 411 green; typecheck + lint clean.
+
+This is the docs-vs-code red-team finding a genuine accuracy gap (contrast the
+permission/shortcut docs which were already accurate). Doc-only change.
