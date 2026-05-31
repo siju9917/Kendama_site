@@ -440,3 +440,19 @@ single biggest residual risk is unchanged: confident, well-formatted output
 (a fabricated fix, a UTC "it's Sunday") is more dangerous than an obvious
 error, because it gets committed and believed. Verify-before-commit and
 verify-against-the-real-constraint are the countermeasures, now encoded.
+
+
+## 2026-05-30 — checks-registry meta-check (the roster guards its own wiring)
+
+A consistency audit of the factory-check suite (after this session added
+governance-integrity + stop-guard-logic) found it correctly wired — but
+nothing ENFORCED that. An added-but-unregistered check would silently never
+run at session start, a quiet erosion of the exact rigor the suite exists to
+provide. Per 5.7.3 (the net guarding the roster grows with the roster), added
+`ops/checks/checks-registry.mjs`: a pure meta-check that flags any
+`ops/checks/*.mjs` check (excluding known infrastructure) not imported in
+run-all or not documented in the README. It is itself registered + tested +
+documented (and excludes itself + stop-guard from the must-be-in-run-all rule,
+both by design). 34/34 check-tests; run-all green with 8 checks. Lesson: "the
+audit found nothing wrong" is the moment to add the check that keeps it that
+way — not to move on.

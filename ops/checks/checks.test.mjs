@@ -24,6 +24,8 @@ import { redTeamStop, hookDecision } from './stop-guard.mjs';
 import * as stopGuardLogic from './stop-guard-logic.mjs';
 import * as governanceIntegrity from './governance-integrity.mjs';
 import { scanText as scanGov } from './governance-integrity.mjs';
+import * as checksRegistry from './checks-registry.mjs';
+import { analyze as analyzeRegistry } from './checks-registry.mjs';
 import { BLOCKING_LEVELS } from './lib.mjs';
 
 const blocking = (findings) => findings.filter((f) => BLOCKING_LEVELS.has(f.level));
@@ -177,9 +179,33 @@ test('stop-guard-logic: the real guard logic is sound (no blocking findings)', (
   assert.equal(blocking(stopGuardLogic.analyze()).length, 0);
 });
 
+test('checks-registry: flags a check missing from run-all', () => {
+  const f = analyzeRegistry(['ops/checks/orphan-check.mjs'], 'const CHECKS = [];', '`orphan-check`');
+  assert.ok(f.some((x) => x.level === 'P1' && /NOT imported in run-all/.test(x.message)));
+});
+
+test('checks-registry: flags a check missing from the README', () => {
+  const f = analyzeRegistry(['ops/checks/foo.mjs'], "import * as foo from './foo.mjs'", 'no mention here');
+  assert.ok(f.some((x) => /not documented/.test(x.message)));
+});
+
+test('checks-registry: a fully-wired check passes', () => {
+  const f = analyzeRegistry(['ops/checks/foo.mjs'], "'./foo.mjs'", '`foo`');
+  assert.equal(blocking(f).length, 0);
+});
+
+test('checks-registry: ignores known infrastructure files (lib, run-all, etc.)', () => {
+  const f = analyzeRegistry(
+    ['ops/checks/lib.mjs', 'ops/checks/run-all.mjs', 'ops/checks/stop-guard.mjs', 'ops/checks/checks-registry.mjs'],
+    'const CHECKS = [];',
+    '',
+  );
+  assert.equal(blocking(f).length, 0);
+});
+
 // --- Regression: real repo is currently known-good. ---
 
-for (const check of [brainIntegrity, noGithubActions, ruleCadence, humanQueue, noForbiddenMarkers, governanceIntegrity, stopGuardLogic]) {
+for (const check of [brainIntegrity, noGithubActions, ruleCadence, humanQueue, noForbiddenMarkers, governanceIntegrity, stopGuardLogic, checksRegistry]) {
   test(`real repo passes: ${check.name}`, () => {
     const { findings } = check.run();
     const bad = blocking(findings);
