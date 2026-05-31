@@ -129,6 +129,18 @@ and that the anti-churn discipline (don't pad covered behavior) held:
 this session were found+locked in passes 60–71; the lane is now saturated and
 further probing yields verified-negatives.
 
+**Second verified-negative batch (passes 73–74 era, layers least-touched this
+session):** section SPLIT (one section → two; unchanged content stays, the
+relocated item is a MOVE — no spurious all-flagged); the `.txt` path (correctly
+REJECTED at the trust boundary with a clear message — not diffed, by design);
+unknown clause lookup (`99.999-99` → null sync / "not in local dataset" stub,
+regulation inferred from prefix — covered); and a verification that the **corpus
+recall/precision floors are genuinely enforced AND tamper-resistant** (corpus.
+test.ts hard-fails on `criticalMissed>0` / `recall<0.98` / null-pair FPs, and
+generate.test.ts pins "every CRITICAL expected is mustDetect" so the floor can't
+be silently hollowed out). The product is robust at every layer + guard probed;
+remaining genuine work is human/cap-gated.
+
 ---
 
 ## 2026-05-31 — Phase K1 — bug-hunt pass 71 (Correctness/Domain, 5.7.5)
