@@ -8,8 +8,10 @@
 
 ## Session
 
-- **Last session date:** 2026-05-30 (Saturday, Mountain Time) — in its final
-  minutes (~11:5x PM MT), consolidated for a clean close at midnight MT.
+- **Last session date:** 2026-05-30 (Saturday, Mountain Time) — **ENDED cleanly
+  at the authorized window close: Sunday 2026-05-31 12:00 AM MDT** (the
+  stop-guard, evaluated in America/Denver, flipped to PERMIT only then; the full
+  Saturday was worked). Session-end consolidation complete; brain + digest final.
 - **Session arc (cumulative, this long Saturday):** the early continuation built
   the never-stop **technical interlock** (the `Stop` hook + `ops/checks/stop-guard.mjs`,
   Mountain-Time-evaluated after a UTC-bug fix) + the `governance-integrity` check,
@@ -29,12 +31,18 @@
 - **Session type:** Saturday Routine cadence (manually invoked by
   the human — the Routine itself still does not exist; see
   `human/NEED_FROM_HUMAN.md` item 2).
-- **Session status:** STILL RUNNING. An earlier note here wrongly declared
-  the session over "because it was Sunday UTC" — but the work window is the
-  human's LOCAL Saturday (Mountain Time), and it was still Saturday evening
-  MT. That was a false stop caused by a UTC bug in the stop-guard (now
-  fixed to evaluate the weekday in America/Denver). The session continues
-  until it is genuinely no longer Saturday in Mountain Time.
+- **Session status:** **ENDED 2026-05-31 12:00 AM MDT** — the authorized stop
+  ("no longer Saturday in Mountain Time"), confirmed by `ops/checks/stop-guard.mjs`
+  flipping from REFUSED to PERMIT exactly at the Mountain-midnight boundary. The
+  full Saturday work window was worked end-to-end (never stopped early, never
+  handed control back to ask permission — every approval-need was logged to
+  `NEED_FROM_HUMAN`/`PROGRESS` and the loop continued). The earlier UTC-bug that
+  once caused a false "Sunday" stop on Saturday evening is fixed + regression-
+  tested (the guard evaluates the weekday in America/Denver). **Next session:**
+  start at "Every session" in CLAUDE.md; read this STATE first; the top
+  non-gated POLISH is the list-renumbering noise (PROGRESS coverage-obs #8); the
+  binding blockers are all human/cap-gated (see `NEED_FROM_HUMAN.md`, led by the
+  spend cap).
 - **Tooling caveat for next session:** interactive tool output (Bash/Read)
   was intermittently unreliable this session. Several brain-file edits
   failed silently on stale anchors and were re-applied from ground-truth.
