@@ -287,9 +287,11 @@ Net: the unblocked items remain zero-cost. **Done:** N1, N2, N6, N8, N9, N11
 already exists or the delta is marginal, verified by self-audit): N12, N13.
 **Queued POLISH:** N3 (generator done; human-gated Word-render verify before
 the button is wired — NEED #9), N5 (speculative virtualization), N10 (money
-edge cases). **Gated:** N7 (positioning decision). N4 dropped. "Done" remains
+edge cases), **N14 (solicitation-number mismatch guard — new 2026-05-31)**.
+**Gated:** N7 (positioning decision). N4 dropped. "Done" remains
 provisional — the list grew this session rather than shrank, which is the
-point of 5.7.4. (Reconciled 2026-05-31: the N1 row and this summary had
+point of 5.7.4. (The single highest-value non-gated POLISH across BOTH lists is
+the list-renumbering noise fix — coverage-obs #8 — flagged in `brain/STATE.md`.) (Reconciled 2026-05-31: the N1 row and this summary had
 drifted — N1 was shipped but tabled as "Queued", and N11–N13 were mislabelled
 "new/queued" when N11 was Done and N12/N13 Downgraded.)
 
