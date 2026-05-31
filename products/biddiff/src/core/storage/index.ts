@@ -266,6 +266,17 @@ export class DiffStorage implements IStorage {
       payload = await this.kv.get<string>(PAYLOAD_PREFIX + id);
     }
     if (!payload) return null;
+    // A corrupt/truncated payload (storage corruption, a partial write, a
+    // quota-eviction artifact) must NOT throw a raw SyntaxError out of a
+    // History click — degrade to null like a missing payload, mirroring the
+    // graceful handling readIndex() already gives a corrupt index. The caller
+    // shows the standard "couldn't open this saved diff" empty/notice path.
+    let result: DiffResult;
+    try {
+      result = JSON.parse(payload) as DiffResult;
+    } catch {
+      return null;
+    }
     if (e) {
       await serialize(async () => {
         const idx = await this.readIndex();
@@ -276,7 +287,7 @@ export class DiffStorage implements IStorage {
         }
       });
     }
-    return JSON.parse(payload) as DiffResult;
+    return result;
   }
 
   async deleteDiff(id: string): Promise<void> {

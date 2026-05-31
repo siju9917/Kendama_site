@@ -107,6 +107,42 @@ describe("DiffStorage", () => {
     }
   });
 
+  it("returns null (does not throw) for a corrupt/unparseable payload (bug-hunt pass 40)", async () => {
+    const real = new Map<string, unknown>();
+    const kv = {
+      async get<T>(k: string): Promise<T | null> {
+        return (real.get(k) as T) ?? null;
+      },
+      async set(k: string, v: unknown): Promise<void> {
+        real.set(k, v);
+      },
+      async remove(k: string): Promise<void> {
+        real.delete(k);
+      },
+    };
+    // An index entry whose payload is corrupt (non-JSON) — e.g. a partial
+    // write or storage corruption. A History click must degrade, not throw.
+    real.set("biddiff.diffs.index", {
+      schemaVersion: 1,
+      entries: [
+        {
+          id: "bad",
+          sizeBytes: 5,
+          lastAccess: Date.now(),
+          generatedAt: "2026-01-01T00:00:00.000Z",
+          currentFileName: "a",
+          priorFileName: "b",
+          criticalCount: 0,
+          totalChanges: 0,
+          solicitationId: null,
+        },
+      ],
+    });
+    real.set("biddiff.diff.bad", "{ not valid json ");
+    const s = new DiffStorage(kv);
+    await expect(s.getDiff("bad")).resolves.toBeNull();
+  });
+
   it("returns null for a missing diff", async () => {
     const s = new DiffStorage();
     expect(await s.getDiff("nope")).toBeNull();

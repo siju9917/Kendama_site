@@ -1269,3 +1269,33 @@ No production change. Suite 385 -> 387 green; typecheck + lint clean.
 
 This is the verify-before-claim discipline paying off: the probe prevented a
 false test, exactly the class of error the session's worst lapse taught.
+
+
+## Bug-hunt pass 40 (2026-05-30 evening MT) — P2 FIX: getDiff threw on a corrupt payload
+
+### P2 — Reliability (#7) — `getDiff` raw-threw on an unparseable stored payload
+
+- **Area:** `src/core/storage/index.ts` (`getDiff`).
+- **Probe-first:** planted an index entry whose payload was non-JSON
+  ("{ not valid json ") and called getDiff — it threw a raw `SyntaxError`
+  (failing case demonstrated BEFORE the fix, per the session's discipline).
+- **Symptom:** a corrupt/truncated payload (storage corruption, a partial
+  write, a quota-eviction artifact) makes a History click reject with an
+  uncaught `SyntaxError` instead of degrading. The *index* corruption path
+  was already handled gracefully (readIndex); the *payload* parse was not —
+  an asymmetry.
+- **Severity:** P2 — narrow trigger (corrupt storage), but a real
+  QUALITY_BAR "no confusing failures" violation on a prominent interaction.
+- **Fix:** wrap the `JSON.parse(payload)` in try/catch; on failure return
+  null, exactly like a missing payload, so the UI shows its standard
+  "couldn't open this saved diff" path. Regression test plants a corrupt
+  payload and asserts `getDiff` resolves null (not throws). Suite 387 -> 388
+  green; typecheck + lint clean.
+- **Roster growth (5.7.3):** Reliability Critic (#7) checklist gains: "every
+  JSON.parse / deserialize of STORED data is a trust boundary — guard it; a
+  corrupt persisted value must degrade, not throw out of a UI handler.
+  Symmetry check: if the index/container parse is guarded, the payload parse
+  must be too."
+
+This is the verify-first discipline producing a REAL fix (contrast the
+2026-05-30 hallucinated non-fix): a failing case existed before the change.
