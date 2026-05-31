@@ -143,3 +143,28 @@ describe("DiffEngine — within-section change order follows document position",
     }
   });
 });
+
+describe("DiffEngine — summary counts are consistent with the change list", () => {
+  // The Summary UI shows criticalCount and a per-category breakdown. If those
+  // numbers don't match the actual changes, the user is misled about what
+  // changed. Assert the invariants across the whole corpus (one test, looping
+  // over every pair so a failure names the offending pair).
+  it("category counts sum to the total and criticalCount matches, for every corpus pair", () => {
+    const engine = new DiffEngine(new LocalClauseClient());
+    for (const pair of loadAllPairs()) {
+      const r = engine.diff(
+        enrichStructuredDocument(pair.current),
+        enrichStructuredDocument(pair.prior),
+      );
+      const categorySum = Object.values(r.changeCountByCategory).reduce((a, b) => a + b, 0);
+      expect(categorySum, `${pair.pairId}: category counts must sum to changes.length`).toBe(
+        r.changes.length,
+      );
+      const actualCritical = r.changes.filter((c) => c.severity === "CRITICAL").length;
+      expect(r.criticalCount, `${pair.pairId}: criticalCount must match CRITICAL changes`).toBe(
+        actualCritical,
+      );
+      expect(r.criticalCount).toBeLessThanOrEqual(r.changes.length);
+    }
+  });
+});

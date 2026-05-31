@@ -23,6 +23,30 @@ re-opening review | escalation second-pass.
 
 ---
 
+## 2026-05-31 — Phase K1 — bug-hunt pass 74 (Correctness, 5.7.5)
+
+**Pass type:** bug-hunt — the Summary UI's count fields (`criticalCount`,
+`changeCountByCategory`) vs the actual change list.
+
+**Critics run:** Correctness #1, Product-Sense #11.
+
+**Finding:** none (verified negative). The per-category counts sum to
+`changes.length` and `criticalCount` equals the count of CRITICAL changes,
+across every corpus pair.
+
+**Coverage gap closed:** `changeCountByCategory` was only ever referenced as a
+test FIXTURE stub — the engine's tally was never asserted. If it drifted (a
+miscount or a category-mapping refactor), the Summary would show numbers that
+contradict the change list a user is reading. Added a single corpus-wide
+invariant test (loops every pair; failure names the pair): category sum ===
+total changes, criticalCount === actual CRITICAL, criticalCount ≤ total. 451 →
+452. (Authored as one looping test, not one-per-pair, to avoid misleading
+test-count inflation for a single invariant.)
+
+**Convergence:** clean; full gate green (452/452).
+
+---
+
 ## 2026-05-31 — Phase K1 — bug-hunt pass 73 (Correctness, 5.7.5)
 
 **Pass type:** bug-hunt — the MOVE+MODIFY combined case (a paragraph that is
