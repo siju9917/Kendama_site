@@ -82,6 +82,22 @@ gated by the unset spend cap. None is approved.
 | **D3. JetBrains plugin for protobuf / gRPC breaking-change diffing** | JetBrains Marketplace (proven paid-plugin revenue + intent traffic) | Backend/platform engineers maintaining `.proto` contracts across services | Proven-leaning (incumbent **buf.build** proves the pain + willingness to pay; an IDE-native experience is the wedge) | Medium (7) — reuses the "classify breaking vs safe changes" core, different parser | Self-serve via JetBrains billing. Diversifies the JetBrains-marketplace bet beyond rank-1 Apex. Risk: Buf is a strong incumbent (compete on IDE-native immediacy, not parity). |
 | **D4. Shopify app: theme/liquid change-risk diff before publish** | Shopify App Store (strong intent + a Proven $20k+/mo revenue category) | Shopify merchants / agencies editing themes who fear breaking checkout, cart, tracking pixels, structured data | Plausible | Medium (8) — reuses diff + critical-classification, new "risky-edit" rule pack | Self-serve via Shopify Billing API. Highest revenue ceiling of the family. Weakness: hosting + Shopify API-version churn (maintenance fit ↓); furthest from BidDiff's domain. |
 | **D5. OpenAPI / API-spec breaking-change diff — VS Code extension + CI-free check** | VS Code Marketplace (largest dev marketplace) | API teams reviewing `openapi.yaml`/`swagger` changes for breaking edits | Proven-leaning (oasdiff / openapi-diff exist as CLIs — proves demand; an IDE-native, classified experience is the wedge) | Medium (7) — same breaking-change classification core | Monetization DIY via external license server (VS Code has no built-in billing) — self-serve but more build. Distribution excellent. |
+| **D6. `terraform plan` destructive-change classifier — VS Code extension (NEW 2026-05-30 evening)** | VS Code Marketplace (largest dev marketplace; "terraform" is a top-searched tag) | Platform/DevOps engineers who fear `terraform apply` — they read a plan's `~`/`-/+`/`-` lines and must spot the *destructive* ones (resource REPLACEMENT, data-store deletion, security-group widening, IAM broadening) under change-window pressure | **Proven-leaning** — the pain is acute and universal (every `apply` is a held breath), and adjacent paid tooling exists (Spacelift, env0, Terraform Cloud's plan-policy) proving willingness to pay; the wedge is a *free/cheap, on-device, IDE-native "what in this plan is dangerous?"* classifier with zero CI/cloud setup | High (9) — textbook fit for the horizontal capability: parse `terraform plan` (or the `-json` plan) → classify each change's criticality (replace/destroy/privilege-widening = CRITICAL; in-place attribute tweak = NORMAL) → report, never advise. New rule-pack (HCL/plan-JSON anchors + a destructive-action ruleset), same engine + the on-device-trust wedge (infra plans are sensitive — staying local clears the security review) | Self-serve: VS Code has no built-in billing → DIY license server (like D5), or a generous-free + paid-team model. Strong: distribution + Proven-leaning pain + on-device wedge + high strategic fit. Weakness: HCL/plan parsing is a real (but well-documented, `terraform show -json` is stable) rule-pack build. |
+
+**D6 added (2026-05-30 evening, first-principles ideation per 5b/5.7.6):** the
+`terraform plan` destructive-change classifier. It is arguably the STRONGEST
+new derivative on the cap-independent factors — it stacks (a) VS Code's
+largest-marketplace distribution, (b) a Proven-leaning, acute, universal pain
+(`terraform apply` dread), (c) the on-device-trust wedge (infra plans are
+sensitive, staying local clears the security review — the exact AGAINST-server
+argument from the on-device insight below), and (d) high strategic fit (pure
+"diff two states → classify criticality → report" reuse, just a new HCL/plan
+rule-pack). It belongs in the cap-unblocked deep-eval order near D2/D5, ahead
+of the server-side D4. Provisional structural sub-score (same 6 cap-independent
+factors as RANKING.md): Dist 9, Maint 9 (on-device, no hosting), Build 7
+(HCL/`terraform show -json` parsing is the work), Self-serve 5 (VS Code DIY
+billing), Defens 6 (incumbents exist but none is free+on-device+IDE-native),
+Strategic 8 → partial 438/580 (arithmetic-verified), in the same band as MCP (436) and just behind D3 (448)/rank-1 (460)/D2 (474).
 
 **Deep-eval scaffolds (2026-05-30):** D2
 (`brain/RESEARCH/2026-05-30-clauseguard-github-app.md`), D4
