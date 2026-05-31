@@ -16,7 +16,7 @@
   enforcement note in "Active product" and `brain/DECISIONS.md`), added the
   `governance-integrity` factory check (+ a mention-vs-use false-positive
   fix), and ran BidDiff bug-hunt passes 8–10 (engine swap-symmetry,
-  move-threshold boundary, diff-confidence ceiling — all clean, 296 tests).
+  move-threshold boundary, diff-confidence ceiling — all clean, 298 tests).
   Brain consolidated + digest refreshed at session end.
 - **Session type:** Saturday Routine cadence (manually invoked by
   the human — the Routine itself still does not exist; see
@@ -60,7 +60,7 @@
   a stronger privacy claim). All four P1s are human/cap-gated.
   (Positive: the FAR/DFARS clause dataset's well-known titles were
   spot-checked accurate + current.)
-- **Build green:** **296/296 tests** (was 226 at session start; 285 by the
+- **Build green:** **298/298 tests** (was 226 at session start; 285 by the
   Saturday close, +11 in the passes 8–10 continuation), lint + typecheck
   clean; full CI gate (typecheck+lint+test+build+bundle-budget) verified
   green end-to-end.
@@ -321,3 +321,14 @@ all green; check tests 16/16.
 - If this branch has been merged to `main`, the branch-handoff note
   is resolved; if not, the work is still only on
   `claude/saturday-task-kickoff-AfDAa`.
+
+## P0 found and fixed at session boundary (2026-05-31)
+
+Running the full suite under the new property-test load exposed a FLAKY
+pre-existing **P0: `contentHash` was nondeterministic** (mutable module
+seed) — making `DiffEngine.diff` nondeterministic. Fixed to a pure FNV-1a;
+removed a test that wrongly asserted hash impurity; added purity regressions.
+Full suite now **298/298 green across three consecutive runs**. See
+`products/biddiff/CRITIQUE_LOG.md` pass 11 and `brain/DECISIONS.md`
+(2026-05-31). This corrects any earlier "all green" note in this session:
+the suite was intermittently red mid-session until this fix landed.

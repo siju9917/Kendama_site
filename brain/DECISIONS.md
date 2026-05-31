@@ -19,6 +19,34 @@
 
 ---
 
+## 2026-05-31 — Reverse the contentHash "salting": a content hash MUST be pure
+
+**Decision:** Revert the prior "salted" `contentHash` (stateful module
+seed) to a pure two-lane FNV-1a, and delete the test that asserted
+`contentHash('a') !== contentHash('a')`.
+
+**Alternatives considered:**
+- *Keep salting, fix the reset.* Rejected — the entire premise (a content
+  hash that varies per call) is wrong; position-sensitivity belongs in the
+  INPUT (the caller folds sectionPath+ordinal into the hashed string), not
+  in hidden hash state.
+- *Leave it; the flakiness is rare.* Rejected — a nondeterministic core hash
+  is a P0 for a tool that promises repeatable critical-change detection.
+
+**Reasoning:** The salting change (a prior session's P2 "entropy" fix) made
+`contentHash` stateful and was locked in by a test asserting impurity. That
+broke `DiffEngine` determinism (flaky fuzz/metamorphic failures). A content
+hash is by definition a pure function of its bytes. The pure FNV-1a restores
+determinism; the new purity regressions (1000 repeated + 500 interleaved
+calls) prevent recurrence.
+
+**Reversibility:** Full — git history retains the salted version; this entry
+explains why it must not return.
+
+**Where applied:** `products/biddiff/src/shared/hash.ts`,
+`products/biddiff/src/shared/hash.test.ts`,
+`products/biddiff/CRITIQUE_LOG.md` (pass 11).
+
 ## 2026-05-30 — Stop enforcement upgraded from rule to technical interlock (Claude Code Stop hook)
 
 **Before:** The "never stop on Saturday" rule (CLAUDE.md 5z/5x) was

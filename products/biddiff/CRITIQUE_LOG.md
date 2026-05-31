@@ -672,3 +672,66 @@ through the pipeline dispatch.
 
 **Remaining open on K1:** unchanged (three P1s + two P2s). Phase K1
 does NOT converge.
+
+
+## Bug-hunt passes 8–10 (2026-05-30→31) — property-based regression suites
+
+Three new property-based suites, each attacking a distinct engine invariant
+not previously property-tested. (These entries failed to land earlier in the
+session on a stale edit anchor; recorded now.)
+
+- **Pass 8 — engine swap symmetry** (`test/integration/metamorphic-symmetry.test.ts`):
+  diff(A,B) and diff(B,A) mirror across 300 randomly-mutated pairs
+  (INSERT↔DELETE swap; MODIFY/MOVE/total/criticalCount invariant).
+- **Pass 9 — move-detection threshold boundary** (`test/integration/move-threshold-boundary.test.ts`):
+  pins detectMoves' `>= 0.8` similarity boundary (measures similarity to
+  assert the premise before the classification); documents the
+  identical-duplicate-delete id-collision edge as a conscious-change-only guard.
+- **Pass 10 — diff-confidence ceiling** (`test/integration/confidence-ceiling.test.ts`):
+  diff confidence never exceeds min(currentConf, priorConf), across 300 pairs.
+
+## Bug-hunt pass 11 (2026-05-31) — P0: contentHash nondeterminism
+
+**The most important finding of the session.** Running the FULL suite (after
+the new property tests increased load/ordering variety) exposed FLAKY
+failures in the pre-existing `fuzz-engine` ("nondeterministic at iter N")
+and `metamorphic-engine` ("INVERSION") tests — 285 green at session start,
+7 failing later with no engine change. JSON-reporter isolation proved the
+failures were independent of the new files (285→278/285 with the new files
+excluded), i.e. a latent engine bug, not test pollution.
+
+### P0 — Correctness (#1) — `contentHash` carried mutable module state
+
+- **Area:** `src/shared/hash.ts`.
+- **Root cause:** a module-level `_seed` was advanced inside the hashing
+  loop (`_seed = (_seed + h1) >>> 0`) and never reset (`ensureSeed` latched
+  `_seedReady`). So `contentHash(x)` returned DIFFERENT values on
+  consecutive calls. Block/section/change IDs derive from it ⇒ `DiffEngine.diff`
+  was nondeterministic (same input twice could differ; A,B vs B,A symmetry
+  broke). Flakiness depended on cross-call/-file ordering.
+- **Why it existed:** a prior "salting" change locked in by a test that
+  literally asserted `contentHash('a') !== contentHash('a')` — encoding
+  non-determinism as expected behavior, contradicting the "deterministic for
+  same input" test in the same file. Which test passed depended on seed order.
+- **Severity:** P0. For a tool whose entire promise is reliable, repeatable
+  critical-change detection, a nondeterministic core hash is the worst class
+  of defect — it can silently change which changes are surfaced run to run.
+- **Fix:** `contentHash` is now a pure two-lane FNV-1a with zero module
+  state. Removed the incorrect "salted" test (a correction, not a
+  weakening-to-green: it asserted behavior wrong by definition for a content
+  hash and was the direct cause of the P0), fixed two copy-paste "differs"
+  tests that asserted `hello===hello`, and added hard purity regressions
+  (1000 repeated + 500 interleaved calls must be stable).
+- **Verification:** full suite **298/298 green across THREE consecutive
+  runs** (determinism across runs is the proof, since the bug was flaky);
+  typecheck + lint clean.
+- **Roster growth (5.7.3):** Correctness Critic (#1) checklist gains: "a
+  function documented/relied-on as pure must have NO module-level mutable
+  state; a test that asserts a pure function is non-deterministic is itself a
+  defect. FLAKY cross-file test failures ⇒ hunt shared mutable module state."
+  Adversarial Tester (#2) gains: "run the FULL suite (not just changed files)
+  and run it MORE THAN ONCE — determinism bugs are order/flakiness-dependent
+  and hide from single in-isolation runs."
+
+**Remaining open on K1:** the human/cap/browser-gated P1s/P2s are unchanged;
+this pass strictly raises code-correctness (and removes a latent P0).

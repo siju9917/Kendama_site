@@ -287,3 +287,33 @@ left behind a check that would have caught it.
 **Recurrence test:** `governance-integrity` runs every session start;
 a future mangle of a factory doc fails the gate as a P1 before any
 other queue work proceeds.
+
+
+## 2026-05-31 — a test can encode a bug as a requirement; flaky = shared state
+
+Two compounding lessons from the contentHash P0 (see CRITIQUE_LOG pass 11,
+DECISIONS 2026-05-31):
+
+1. **A test that asserts wrong behavior is worse than no test.** A test
+   asserted `contentHash('a') !== contentHash('a')` — demanding a content
+   hash be non-deterministic. The implementation was bent to satisfy it,
+   breaking the diff engine. The test even contradicted a sibling
+   "deterministic for same input" test; both lived in the file and which
+   passed depended on call order. **Lesson:** when two tests in a suite
+   assert contradictory properties, that is a P0 smell — the contract is
+   undefined. Critics must read tests for *whether the asserted property is
+   correct*, not just whether they pass.
+2. **Flaky failures with no code change ⇒ shared mutable state.** The fuzz
+   and metamorphic suites were green at session start and red later with no
+   engine change. The tell ("nondeterministic at iter N", order-dependent)
+   pointed straight at module-level state. **Process upgrade (now in the
+   Adversarial Tester checklist):** run the FULL suite, more than once, and
+   treat order-dependence as a real bug to root-cause — not a CI annoyance to
+   retry. JSON-reporter + node parsing was the reliable way to get truth when
+   interactive output was garbled.
+
+**Meta:** this was found only because the session kept working past the point
+where the suite "looked green" — the 5.7.5 continuous-bug-hunt load (the new
+property suites) changed execution ordering enough to expose a latent P0 that
+had been silently shipping-eligible. Continuing past "done" paid off exactly
+as the maximization rules intend.
