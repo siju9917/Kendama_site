@@ -500,3 +500,24 @@ belongs in the META loop alongside re-critiquing products — the checks are
 code with bugs, and a false-negative check silently erodes the rigor it
 exists to protect (5.7.8 applied to the check roster). One sweep per cycle
 minimum; attack new checks' matchers when they're added.
+
+## 2026-05-30 — near-miss: a probe with the WRONG key almost produced a phantom bug
+
+Red-teaming the licensing client, an early probe showed a 100-day-old trial
+returning "active, 14 days left" — which looked like a serious bug (expired
+trial reads as valid). Before claiming it, I drilled into WHY: the probe was
+writing the stored license to `biddiff.license.v1`, but the client's real
+`STATE_KEY` is `biddiff.license.state`. With the correct key the client
+behaves correctly (100-day trial → expired; 3-day → active 11 left; 20-day →
+grace). The only quirk (a future `trialStartedAt` from a backward clock grants
+>14 days) is the already-documented, accepted clock-skew limitation the server
+client closes — not a bug.
+
+**Lesson (reinforces the verify-before-claim rule):** when a probe shows
+"impossible" behavior, suspect the PROBE first — wrong key, wrong fixture,
+shared-vs-fresh state — before concluding the code is broken. This is the
+same failure shape as the earlier hallucinated contentHash "P0": a confident
+wrong conclusion from an unverified premise. The fix both times is to nail the
+premise (here: read back via the EXACT constant the code uses) before writing
+a single line of "fix" or a brain entry. The discipline caught it; no false
+bug was committed.
