@@ -192,6 +192,46 @@ queue is **never empty** — and a session that thinks it is
 empty is more likely to have a tired operator than a finished
 factory.
 
+### Lane rotation under saturation (the deep-session pattern, 2026-05-30)
+
+A long unattended window does not stay in one lane until it "runs out" —
+it ROTATES lanes as each saturates, which is how the queue stays full
+without manufacturing churn. The validated rotation (≈46 passes in one
+Saturday):
+
+1. **Bug-hunt / characterization** of product logic — until a coverage
+   audit shows every exported function is tested and the engine's
+   invariants are property-tested. SATURATION SIGNAL: new probes return
+   "sound, no defect" far more often than they find a real bug.
+2. **Red-team the trust/security boundaries** AND **the factory checks'
+   own matchers** (5.7.8 applied to the checks — a false-negative check is
+   worse than none; this session found a real case-sensitivity hole).
+3. **Factory self-improvement** — close the silent-failure classes the
+   session itself hit (each becomes a check); keep the check roster sound.
+4. **Strategy / first-principles ideation** (cap-independent): score the
+   candidate slate on the structural factors, generate genuinely-new ideas,
+   sharpen the portfolio reasoning.
+5. **Docs / playbook / brain reconciliation** — capture the session's
+   lessons where they compound; keep counts and status honest.
+
+**Two non-negotiable disciplines that hold across all lanes** (both earned
+the hard way this session — see `META_LESSONS.md`):
+- **Probe-first / verify-before-claim.** A bug claim requires a failing
+  test (or a reproduced wrong output) that exists BEFORE the fix. When a
+  probe shows "impossible" behavior, suspect the PROBE first (wrong key,
+  wrong fixture, stale state) — a confident wrong conclusion from an
+  unverified premise is the most dangerous failure mode (it gets committed
+  and believed). This session it caught two near-misses (a phantom
+  contentHash "P0" and a phantom licensing bug).
+- **Verify-before-commit is the full gate**, not a green partial run:
+  `typecheck + lint + test` (run `scripts/ci.sh` for the real ship gate).
+  Several real errors passed a green vitest run and were caught only by
+  typecheck/lint.
+
+"Manufactured churn" (adding a redundant test to an already-covered surface,
+or a fix to non-broken code) is itself a finding to avoid: when a lane is
+saturated, say so and SWITCH lanes — don't pad it.
+
 ---
 
 ## Continuous self-audit while building (not only after)
