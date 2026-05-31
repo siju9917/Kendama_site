@@ -136,6 +136,22 @@ session has specifics, not a vague "improve extraction":
    than re-deriving the list. The submission-destination one is the strongest
    standalone case and worth raising first in the BD2 conversation.
 
+7. **Money in currency-code / spelled-out notation not parsed. — OPEN
+   (gated; low-severity extraction gap; found bug-hunt pass-76 follow-on,
+   2026-05-31).** `detectMoney` only matches `$`-prefixed amounts. A 5-case
+   probe: `$5,000,000` → parsed; but `USD 5,000,000`, `5,000,000 USD`,
+   `USD 5M`, and `5 million dollars` all yield NO money anchor. Federal
+   solicitations do use "USD" and "...dollars" notation. **Low severity** (same
+   class as obs #1-3): the MONEY anchor feeds classification by *presence* only
+   and merely *boosts* a change toward PRICING/critical — a miss still surfaces
+   as a normal text diff, so no change is hidden. **NOT fixed on a hunch:**
+   widening `MONEY_RE` to "USD"/"dollars" risks false positives ("5 USD per
+   line item", "dollars" in prose) and money-regex changes are exactly where
+   this session's bugs hid (suppress %/sign, the magnitude bug) — the lesson is
+   to validate a money-regex widening against the corpus + real notation
+   patterns (BD2), with characterization tests first, not rush it. Logged for
+   the post-validation cycle.
+
 These feed both `src/core/diff/critical.ts` extension work AND the
 Domain-Expert Critic checklist strengthening, once BD2's human
 validation lands.
