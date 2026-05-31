@@ -26,6 +26,26 @@ describe("classifyHeadingSectionType", () => {
   it("returns OTHER when nothing matches", () => {
     expect(classifyHeadingSectionType("Background Information", null)).toBe("OTHER");
   });
+
+  // Precedence guard (bug-hunt pass 18, 2026-05-30): the UCF letter is the
+  // STRONGEST signal and must win even when the heading text contains a
+  // keyword for a DIFFERENT type. The UCF letter is structural (the
+  // solicitation's own section labelling); a stray keyword in the title must
+  // not override it.
+  it("UCF letter wins over a conflicting heading keyword", () => {
+    // Section C is the SOW; "source selection" is an EVALUATION keyword.
+    expect(classifyHeadingSectionType("Source Selection Notes", "C")).toBe("SOW");
+    // Section M is EVALUATION; "statement of work" is a SOW keyword.
+    expect(classifyHeadingSectionType("Statement of Work References", "M")).toBe(
+      "EVALUATION_CRITERIA",
+    );
+  });
+
+  it("an out-of-range UCF letter falls through to keywords / OTHER", () => {
+    // 'Z' is not a UCF letter, so the keyword path decides.
+    expect(classifyHeadingSectionType("Price Schedule", "Z")).toBe("PRICING");
+    expect(classifyHeadingSectionType("Nothing relevant", "Z")).toBe("OTHER");
+  });
 });
 
 describe("sectionsFromRawLines", () => {

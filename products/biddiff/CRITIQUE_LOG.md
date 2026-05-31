@@ -907,3 +907,23 @@ Two real durability properties were NOT covered by tests, now added:
 
 Suite 306 -> 308 green; typecheck + lint clean. No production change — this
 hardens the test net around the concurrency-critical persistence layer.
+
+
+## Bug-hunt pass 18 (2026-05-30 evening MT) — section-type classification precedence
+
+Probed `classifyHeadingSectionType` (assemble.ts) — maps a heading + UCF
+letter to a SectionType, which drives the whole critical-change chain — with
+16 adversarial cases. Correct throughout: UCF letter is the strongest signal
+and wins even over a conflicting keyword (C→SOW despite "Source Selection"),
+keyword fallback works for unlettered headings, an invalid UCF letter (Z)
+falls through to keyword/OTHER, empty → OTHER. No defect.
+
+Added 2 precedence guards (the conflict case + out-of-range letter fallback)
+that weren't explicitly pinned. Suite 308 -> 310 green; typecheck + lint
+clean. No production change.
+
+Note: with passes 16–18 the section-typing → classification chain
+(headings → assemble → classify) is now characterized end to end, and the
+extraction surfaces STATE flagged as un-probed (headings, assemble, storage)
+are covered. Remaining engine surfaces (pdf/reconstruct, docx walker) already
+carry property-fuzz tests from earlier passes.
