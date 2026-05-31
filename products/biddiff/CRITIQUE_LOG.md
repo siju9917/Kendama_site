@@ -1094,3 +1094,23 @@ My first draft asserted the unreachable CFB→ENCRYPTED and garbage→CORRUPT
 paths and failed — caught by running the test, then corrected to the real
 behavior (verify-before-claim). No production change. Suite 341 -> 345 green;
 typecheck + lint clean.
+
+
+## Bug-hunt pass 29 (2026-05-30 evening MT) — SAM.gov content-script DOM parser
+
+`SamIntegration` (content/sam/sam-integration.ts) parses UNTRUSTED DOM from
+an external site (sam.gov) and is the source of v1's only network activity
+(the user-clicked attachment download). It was untested. Added 5 jsdom tests:
+findAttachments finds .pdf/.docx/download links and guesses mime *through
+query strings* (the reason the selector uses `*=`); the filename fallback
+chain (download attr → text → index, exercising the empty-string `||` not
+`??` case); the index-prefixed id that prevents duplicate data-attachment-id
+React-key collisions; empty-page → []; and readAmendmentMetadata (datetime
+preferred over text). No production change. Suite 345 -> 350 green; typecheck
++ lint clean.
+
+**Verify-before-claim in action:** two first-draft assertions were wrong (I
+assumed document order, but querySelectorAll groups by comma-separated
+selector order; and a bare <tr> is dropped by jsdom). A probe showed the real
+output; tests corrected to assert by URL + wrap the row in a <table>. The
+code was correct; the test fixtures were not.
