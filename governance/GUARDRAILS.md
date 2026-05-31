@@ -115,12 +115,28 @@ a human approval entry** in `human/APPROVALS.md`.
     Saturday" (the schedule window closed). Before ANY stop the
     operator states that reason and runs the red team —
     `node ops/checks/stop-guard.mjs --stopping` — which verifies the
-    claim against the real system clock and does not take the
-    operator's word. If the red team refuses (still Saturday), the
-    stop claim was false → P0: discard the stop and keep working.
-    Every non-"no longer Saturday" stop reason is rejected outright.
-    This makes "no stopping on Saturday" a *verifiable* gate, not a
-    matter of operator discretion.
+    claim against the real clock **in the human's timezone (Mountain
+    Time, `America/Denver`), NOT UTC**, and does not take the
+    operator's word. (A Saturday *evening* in Mountain time is already
+    Sunday in UTC; a UTC check wrongly authorizes a stop — this exact
+    bug caused a false session-end on 2026-05-30.) If the red team
+    refuses (still Saturday), the stop claim was false → P0: discard
+    the stop and keep working. Every non-"no longer Saturday" stop
+    reason is rejected outright. This makes "no stopping on Saturday"
+    a *verifiable* gate, not a matter of operator discretion. The
+    guard's own logic is regression-checked at session start by
+    `ops/checks/stop-guard-logic.mjs`.
+
+    **Building enforcement must never create a human dependency
+    (CLAUDE.md 5x.1).** Anything that requires human approval to take
+    effect (a Claude Code hook, a permission, a paid resource) is
+    optional belt-and-suspenders: log the approval-need to
+    `human/NEED_FROM_HUMAN.md` and KEEP WORKING — never pause to ask
+    "can you approve this?". The primary enforcement is always the
+    version that needs zero approvals (the written rule + the manual
+    red team). Asking for approval to make the factory stronger is
+    itself the stop-and-wait violation above.
+
     The human saying "work all day" is a standing instruction, not
     a per-task one — re-asking for it is the violation. The only
     legitimate human-facing output mid-session is logging a gate to
