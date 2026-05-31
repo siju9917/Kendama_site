@@ -162,6 +162,42 @@ validation lands.
   re-verification (config + plugin compat + suite). Not a shipped-risk
   item (those advisories don't ship). Do it in a dedicated cycle.
 
+## Ship sequence (the critical path) — consolidated 2026-05-31
+
+The ship *mechanics* are already built (`scripts/package.sh` runs the full gate,
+builds `dist/`, and writes `dist-zips/biddiff-v<version>.zip` + prints the
+submission steps). What this section adds is the **ordered critical path** —
+the gates that must clear, and in what order, BEFORE that package+submit step is
+safe to run — so the cap/human-unblocked session (or the human) ships without
+re-deriving it. F = factory can do autonomously; H = human-gated.
+
+1. **[H] Decide positioning** (`APPROVALS.md` #1; auto-proceeds to "reposition"
+   on 2026-06-03). Gates the listing copy's framing (individual vs team tool).
+2. **[H] Resolve the server-claim copy** (`NEED_FROM_HUMAN.md` #7 — option A
+   on-device-only recommended). Until this is decided, the privacy policy /
+   store listing / **options page** / help / support copy overstate
+   license/telemetry/OCR server flows v1 does not perform — a Web-Store-review +
+   misrepresentation risk. **Hard blocker for submission.**
+3. **[F] Apply the copy decision** across all surfaces once #2 is decided
+   (`NEED #7` lists the exact files incl. `src/options/index.tsx`,
+   `docs/privacy-policy.md`, `docs/store-listing.md`, help docs,
+   `docs/support-macros.md`). The `docs-match-code` + `no-advisory-language`
+   tests then re-confirm accuracy.
+4. **[F] (optional) Wire the redline DOCX export button** after the human
+   one-time Word-render check (`NEED #9`) — additive, not a submission blocker.
+5. **[F] Publish the privacy policy** at a public URL (the listing needs the
+   URL) — depends on the human's hosting/domain (a `NEED` item if not yet set).
+6. **[F] Run `scripts/package.sh`** → produces the gate-verified zip. (Bump
+   `manifest.config.ts` version if re-submitting.)
+7. **[H] Submit**: upload the zip to the Web Store dev console, paste the
+   listing + permission justifications from `docs/store-listing.md`, set the
+   privacy-policy URL, submit for review (`NEED_FROM_HUMAN.md` #6).
+
+**Critical path = 1 → 2 → 3 → 5 → 6 → 7.** Steps 1, 2, 5, 7 are human-gated;
+everything else the factory does. The single hardest blocker is #2 (the copy
+must match what v1 actually does before a reviewer sees it). Nothing here needs
+the spend cap.
+
 ## "Nothing is ever done" review (5.7.4) — 2026-05-30
 
 Mandated re-opening review: challenge the premise that BidDiff's
