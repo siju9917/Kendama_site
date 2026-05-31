@@ -23,6 +23,29 @@ re-opening review | escalation second-pass.
 
 ---
 
+## 2026-05-31 — Phase K1 — bug-hunt pass 69 (Correctness, 5.7.5)
+
+**Pass type:** bug-hunt — newly-invented engine input (5.7.5 mandates fresh
+adversarial inputs even with no code change): N identical boilerplate blocks
+where only ONE copy changes.
+
+**Critics run:** Correctness #1, Adversarial #2.
+
+**Finding:** none (verified negative). Real solicitations repeat boilerplate
+("[End of Section]", clause-incorporation lines). With 3 identical blocks and
+only the middle one amended, the LCS alignment correctly anchors the two
+unchanged copies and emits exactly one MODIFY for the changed one — no
+all-three-flagged, no spurious INSERT+DELETE from mis-pairing duplicates.
+
+**Coverage gap closed:** the existing duplicate test changed BOTH copies; the
+one-of-N-changed case (the harder alignment problem) was uncovered. Added a
+`handcrafted-adversarial` test asserting exactly one MODIFY (`as amended`) and
+zero INSERT/DELETE. 441 → 442.
+
+**Convergence:** clean; full gate green (442/442).
+
+---
+
 ## 2026-05-31 — Phase K1 — bug-hunt pass 68 (Correctness, 5.7.5)
 
 **Pass type:** bug-hunt — the LocalLicenseClient trial/grace/license state

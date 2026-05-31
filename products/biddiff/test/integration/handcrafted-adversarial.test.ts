@@ -192,6 +192,48 @@ describe("Hand-crafted adversarial cases", () => {
     expect(inserts.length + deletes.length).toBeLessThanOrEqual(0);
   });
 
+  it("when only ONE of several identical boilerplate blocks changes, only that one is flagged", () => {
+    // Real solicitations repeat boilerplate ("[End of Section]", a clause-
+    // incorporation line). If one copy is amended, the alignment must anchor
+    // the unchanged copies and isolate the single change — not flag all of
+    // them, and not degrade to a spurious INSERT+DELETE.
+    const boiler = "Boilerplate clause text.";
+    const prior: StructuredDocument = {
+      metadata: meta("prior"),
+      sections: [
+        sec({
+          letter: "C",
+          heading: "Section C - SOW",
+          type: "SOW",
+          ordinal: 0,
+          blocks: [paragraph("C", 0, boiler), paragraph("C", 1, boiler), paragraph("C", 2, boiler)],
+        }),
+      ],
+    };
+    const current: StructuredDocument = {
+      metadata: meta("current"),
+      sections: [
+        sec({
+          letter: "C",
+          heading: "Section C - SOW",
+          type: "SOW",
+          ordinal: 0,
+          blocks: [
+            paragraph("C", 0, boiler),
+            paragraph("C", 1, `${boiler.slice(0, -1)}, as amended.`), // only the middle copy changes
+            paragraph("C", 2, boiler),
+          ],
+        }),
+      ],
+    };
+    const result = diff(current, prior);
+    expect(result.changes.length).toBe(1);
+    expect(result.changes[0].changeType).toBe("MODIFY");
+    expect(result.changes[0].afterText).toMatch(/as amended/);
+    // No spurious INSERT/DELETE from mis-pairing the identical duplicates.
+    expect(result.changes.filter((c) => c.changeType === "INSERT" || c.changeType === "DELETE")).toHaveLength(0);
+  });
+
   it("whole paragraph relocated between sections is detected as MOVE not separate INSERT+DELETE", () => {
     const prior: StructuredDocument = {
       metadata: meta("prior"),
