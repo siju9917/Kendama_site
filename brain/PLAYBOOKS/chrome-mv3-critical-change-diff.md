@@ -89,6 +89,29 @@ flag-critical → suppress-reformatting → render / export
 - Reject recognized-but-unsupported kinds (`.txt`) at the trust
   boundary; never let them fall through to the wrong extractor.
 
+### Office-doc EXPORT gotchas (writing OOXML — from the N3 redline, 2026-05-30)
+
+Emitting a `.docx` (a zip of OOXML) with JSZip is cheap (no new dep), but
+Word is strict where the regex *reader* is lenient — three real pitfalls,
+each of which makes Word prompt "corrupt — repair?":
+- **`CT_RPr` is SEQUENCE-ordered.** Run properties must appear in the schema
+  order (`b → strike → color → sz → u → …`), NOT call/push order. Emit them
+  in canonical order regardless of which are set. (A heading with
+  `sz`-before-`b`, or an insertion with `u`-before-`color`, is rejected.)
+- **End `<w:body>` with a `<w:sectPr>`** (page size + margins; US Letter =
+  12240×15840 twips, 1" = 1440). Omitting it warns / renders odd geometry.
+- **Escape ALL document text** for XML (`& < > " '`) before interpolation —
+  unescaped `</w:body>` in a user's text corrupts the package.
+- **Validate with a STRICT parser, not your lenient reader.** Round-tripping
+  through your own regex DOCX walker proves nothing about Word-validity; use
+  jsdom `DOMParser('application/xml')` and assert no `<parsererror>` (covers
+  injected metacharacters, empty docs, unicode). This is the headless gate;
+  a human still does a one-time real-Word render check before the button ships
+  (rendering ≠ well-formedness).
+- **General lesson:** red-team your OWN freshly-written generator as hard as
+  legacy code — the N3 redline needed three corrective passes (sectPr,
+  rPr-order, strict-XML) and each found a real Word-rejection.
+
 ### Compliance: "reports, never advises"
 
 - One canonical disclaimer string, reused in UI + every export.
