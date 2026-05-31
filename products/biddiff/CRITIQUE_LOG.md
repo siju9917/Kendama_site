@@ -1347,3 +1347,20 @@ recall/precision hard floors held (391 tests incl. the corpus audit). Suite
 Note: this is non-gated extraction correctness, distinct from the gated BD2
 critical-RULESET work (which still awaits domain-expert validation). It just
 makes the existing PAGE_LIMIT anchor fire on a phrasing it was missing.
+
+
+## Bug-hunt pass 43 (2026-05-30 evening MT) — detectMoves conservation property
+
+`detectMoves` (the greedy cross-section move detector) was only tested
+indirectly via integration scenarios — and an earlier attempt (pass 9) was
+removed as unsound (wrong API). Added a SOUND direct test against the real API
+(`jaccardSimilarity` of block tokens >= DIFF_THRESHOLDS.moveSimilarityMin =
+0.9): the threshold-constant guard; an identical relocated block pairs as a
+move; clearly-different insert/delete stay separate; greedy one-delete-per-
+insert; and a 200-random conservation property —
+`moves*2 + remainingInserts + remainingDeletes === inserts + deletes` (nothing
+lost or double-counted), every move >= threshold, and moves <= min(sides).
+All clean. Suite 391 -> 397 green; typecheck + lint clean. No production change.
+
+With pass 43 all four diff-alignment layers (section, LCS, block, move) now
+carry direct property tests of their defining invariants.
