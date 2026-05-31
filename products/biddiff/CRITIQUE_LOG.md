@@ -23,6 +23,34 @@ re-opening review | escalation second-pass.
 
 ---
 
+## 2026-05-31 — Phase K1 — bug-hunt pass 66 (Reliability, 5.7.5)
+
+**Pass type:** bug-hunt — `openSaved(id)`, the "click a history row" action.
+
+**Critics run:** Reliability #7.
+
+**Finding:** none (verified negative). `openSaved` handles all three
+outcomes: a present payload → DONE (+ markViewed); an index row whose
+payload is gone (evicted/cleared in another tab → `getDiff` resolves null)
+→ ERROR "no longer available"; a corrupt payload that throws → ERROR
+"couldn't open … try deleting it." No dead clicks, no side-panel crash.
+
+**Coverage gap closed:** `openSaved` was entirely untested. Hoisted the
+`getDiff`/`markViewed` storage mocks so tests can drive each branch, then
+added three tests (success+markViewed, null→"no longer available",
+throw→"couldn't open"+message). 432 → 435.
+
+**Note:** the cwd-trap (META_LESSONS 2026-05-31) recurred mid-pass — a
+`vitest` run from the repo root reported "no tests" + a jsdom-not-found
+error; the documented signature identified it immediately and the run from
+`products/biddiff` was clean. The lesson held.
+
+**Convergence:** clean; full gate green (435/435). Every public method of
+the core orchestration hook (`run`, `openSaved`, `openSample`, `reset`) is
+now tested across its success and failure branches.
+
+---
+
 ## 2026-05-31 — Phase K1 — bug-hunt pass 65 (Reliability, 5.7.5)
 
 **Pass type:** bug-hunt — the pipeline ERROR path (extraction/pipeline

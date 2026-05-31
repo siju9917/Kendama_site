@@ -10,7 +10,10 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 const mocks = vi.hoisted(() => {
   const save: { resolve: (() => void) | null } = { resolve: null };
   const saveDiff = vi.fn(() => new Promise<void>((res) => (save.resolve = res)));
-  return { save, saveDiff };
+  // Shared (hoisted) so individual tests can drive openSaved's branches.
+  const getDiff = vi.fn(async (_id: string) => null as unknown);
+  const markViewed = vi.fn(async (_id: string) => {});
+  return { save, saveDiff, getDiff, markViewed };
 });
 
 vi.mock("./pipeline.js", () => ({
@@ -23,8 +26,8 @@ vi.mock("./pipeline.js", () => ({
 vi.mock("../core/storage/index.js", () => ({
   DiffStorage: class {
     saveDiff = mocks.saveDiff;
-    getDiff = vi.fn(async () => null);
-    markViewed = vi.fn(async () => {});
+    getDiff = mocks.getDiff;
+    markViewed = mocks.markViewed;
   },
   makeKv: () => ({
     get: vi.fn(async () => null),
@@ -66,6 +69,44 @@ describe("useDiffPipeline cancellation race", () => {
 
     expect(result.current.state.phase).toBe("EMPTY");
     expect(result.current.state.result).toBeNull();
+  });
+});
+
+describe("useDiffPipeline openSaved (opening a history entry)", () => {
+  it("loads the saved diff into DONE and marks it viewed", async () => {
+    const saved = { id: "h1", changes: [{}], criticalCount: 0 } as unknown;
+    mocks.getDiff.mockResolvedValueOnce(saved);
+    const { result } = renderHook(() => useDiffPipeline());
+    await act(async () => {
+      await result.current.openSaved("h1");
+    });
+    expect(result.current.state.phase).toBe("DONE");
+    expect(result.current.state.result).toBe(saved);
+    expect(mocks.markViewed).toHaveBeenCalledWith("h1");
+  });
+
+  it("shows a clear error (not a dead click) when the payload is gone", async () => {
+    // Index row exists but the payload was evicted / cleared in another tab:
+    // getDiff resolves null. The user must get a message, not nothing.
+    mocks.getDiff.mockResolvedValueOnce(null);
+    const { result } = renderHook(() => useDiffPipeline());
+    await act(async () => {
+      await result.current.openSaved("gone");
+    });
+    expect(result.current.state.phase).toBe("ERROR");
+    expect(result.current.state.result).toBeNull();
+    expect(result.current.state.error).toMatch(/no longer available/i);
+  });
+
+  it("surfaces a corrupt-payload read failure as an error, not a crash", async () => {
+    mocks.getDiff.mockRejectedValueOnce(new Error("schema mismatch"));
+    const { result } = renderHook(() => useDiffPipeline());
+    await act(async () => {
+      await result.current.openSaved("bad");
+    });
+    expect(result.current.state.phase).toBe("ERROR");
+    expect(result.current.state.error).toMatch(/couldn't open that saved diff/i);
+    expect(result.current.state.error).toMatch(/schema mismatch/);
   });
 });
 
