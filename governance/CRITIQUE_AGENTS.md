@@ -58,6 +58,24 @@ Checklist:
   the same input). Verify the stated intent is actually implemented,
   not just commented. Added 2026-05-30 (BidDiff contentHash was
   32-bit doubled, not 64-bit).
+- **A "keep the value-bearing part" rule must enumerate ALL
+  value-bearing positions, not just the symmetric case** — a
+  normalizer that preserves digit-flanked punctuation must ALSO keep
+  a leading sign and a trailing unit (`%`), or `50%`==`50` / `-5`==`5`
+  collapse distinct values. Probe normalization with adversarial value
+  pairs, asserting the failing case before the fix. Added 2026-05-30
+  (suppress.ts %/sign false-negative, pass 12).
+- **A function relied on as pure must have NO module-level mutable
+  state; and a TEST that asserts a pure function is non-deterministic
+  is itself a defect.** Two tests asserting contradictory properties
+  in one suite is a P0 smell — read tests for whether the asserted
+  property is correct, not just whether they pass. Added 2026-05-30
+  (the hallucinated-then-reverted contentHash episode + its bad test).
+- **When a module has a safe-rendering/escaping helper for one field,
+  audit EVERY other interpolation of user-controlled data in that
+  module for the same treatment** — partial application is the bug
+  (header metadata is user-controlled too). Added 2026-05-30 (markdown
+  export escaped change text but not filenames, pass 41).
 
 ### 2. Adversarial Tester
 
@@ -73,6 +91,17 @@ Checklist:
 - Hostile input attempting injection / traversal / parsing exploit.
 - Inputs at the boundary (off by one, exactly the limit, one over).
 - Inputs in the wrong language / locale / encoding.
+- **Run the FULL suite, and run it MORE THAN ONCE.** Determinism /
+  shared-mutable-state bugs are order- and flakiness-dependent and
+  hide from single in-isolation runs; flaky failures with no code
+  change ⇒ hunt shared module state. A green changed-file run is not
+  evidence the suite is green. Added 2026-05-30 (the contentHash
+  flakiness surfaced only under full-suite ordering).
+- **Red-team the factory's OWN check matchers + your own freshly
+  written code** with the inputs they should catch, in the forms they
+  might miss (case, whitespace, unicode, schema-order). "It passed"
+  only means it ran. Added 2026-05-30 (no-forbidden-markers was
+  case-sensitive; the redline OOXML needed 3 corrective passes).
 
 ### 3. Security Critic
 
@@ -208,6 +237,12 @@ Checklist:
   operation. A late setState after an abort corrupts UI state.
   Added 2026-05-30 (BidDiff save-window race flipped the UI back to
   DONE after "Start over").
+- **Every `JSON.parse` / deserialize of STORED or persisted data is a
+  trust boundary** — wrap it; a corrupt/truncated persisted value must
+  degrade (return null / the empty state), not throw out of a UI
+  handler. Symmetry check: if the container/index parse is guarded,
+  the payload parse must be too. Added 2026-05-30 (getDiff raw-threw a
+  SyntaxError on a corrupt stored payload, pass 40).
 
 ### 8. Accessibility Critic
 
@@ -237,7 +272,18 @@ Checklist:
   dependency that isn't in the bundle) is a disclosure defect.** Added
   2026-05-30 (BidDiff docs described an opt-in server-OCR data flow
   that is stubbed + unwired; README claimed a Tesseract.js dep that
-  isn't present).
+  isn't present). **This includes SUPPORT/help copy and tier/pricing
+  copy** — a support macro that walks the user through a server
+  license-activation/billing flow the v1 product doesn't have is the
+  same defect (added 2026-05-30, support-macros pass 53).
+- **Every quantitative claim in user-facing copy must match the
+  ENFORCED guarantee, not a fragile point-in-time measurement.** "100%
+  recall" is a defect if the gate only enforces ≥98% (a future dip
+  passes the gate but falsifies the claim); state what is actually
+  guaranteed. A numeric-fields validator is not enough for a PII
+  boundary — enforce a key allow-list (unknown keys smuggle data) +
+  finite-integer bounds (`typeof number` admits NaN/Infinity). Added
+  2026-05-30 (FAQ recall claim pass 52; telemetry counts schema pass 45).
 - Where the product reports on regulated subject matter, it
   **reports, never advises**. Advisory phrasing is forbidden in
   BidDiff-class products and enforced by automated test.
@@ -397,6 +443,11 @@ critic is recorded here with the triggering cause.
 | 2026-05-30 | Domain-Expert Critic (#5) checklist | Added a federal-procurement specialization (UCF literacy, amendment mechanics, the critical-change categories a capture manager scans incl. the BD2 gaps, terminology precision, practitioner workflow) | SELF_IMPROVEMENT #4 — from public FAR/DFARS knowledge; sharpens the lens for BidDiff + the federal-solicitation family (the code ruleset still awaits the human-gated practitioner validation) |
 | 2026-05-30 | Compliance Critic (#9) checklist | Added "every described data flow / feature / dependency is implemented + wired, not stubbed/planned; a described-but-absent flow is a disclosure defect" | BidDiff docs described an opt-in server-OCR data flow that's stubbed + unwired; README claimed a Tesseract.js dep that isn't bundled (`products/biddiff/CRITIQUE_LOG.md` 2026-05-30 bug-hunt pass 7) |
 | 2026-05-30 | Compliance Critic (#9) — no-advisory test scope | Extended `test/unit/no-advisory-language.test.ts` to scan the store listing + README + help docs (was UI/disclaimer/export/clause notes only) + added the "always confirm/verify/review/check/consult" imperative pattern | Store listing kept an "Always confirm…" directive the canonical disclaimer had dropped (contradicting "It never advises"); the extended test then caught a second instance in `what-counts-as-critical.md` |
+| 2026-05-30 (evening) | Correctness Critic (#1) | Added: value-bearing-punctuation rule must enumerate ALL positions (leading sign, trailing %); a pure fn must have no module state + a test asserting impurity is itself a defect; when a module has an escape helper, audit every user-data interpolation | suppress %/sign (pass 12); the hallucinated contentHash P0 + its bad test; markdown export escaped change text but not filenames (pass 41) |
+| 2026-05-30 (evening) | Adversarial Tester (#2) | Added: run the FULL suite, more than once (determinism/shared-state bugs hide from isolation runs); red-team the factory's own check matchers + your own freshly written code | contentHash flakiness surfaced only under full-suite ordering; no-forbidden-markers case-sensitivity hole; the redline OOXML's 3 corrective passes |
+| 2026-05-30 (evening) | Reliability Critic (#7) | Added: every JSON.parse/deserialize of STORED data is a trust boundary — guard it; symmetry with the container parse | getDiff raw-threw a SyntaxError on a corrupt stored payload (pass 40) |
+| 2026-05-30 (evening) | Compliance Critic (#9) | Added: described-but-absent flows include SUPPORT/help + tier copy; every quantitative claim must match the ENFORCED guarantee not a point-in-time measurement; a PII boundary needs a key allow-list + finite-integer bounds, not just "numbers only" | support-macros' server license/billing flow (pass 53); FAQ "100% recall" vs the ≥98% floor (pass 52); telemetry counts schema (pass 45) |
+| 2026-05-30 (evening) | AUDIT NOTE | The above evening rows were logged in `products/biddiff/CRITIQUE_LOG.md` as "roster growth" across passes 12–53 but had NOT actually landed in this file until 2026-05-30 evening (caught by cross-checking the log vs the roster). Lapse fixed; lesson: "roster growth" claimed in a critique log must be verified to land in CRITIQUE_AGENTS.md (5.7.3 + verify-before-claim). | self-audit of the roster-growth claims |
 
 The META loop (PART 11) audits this table every cycle. A month
 with no growth is a warning sign flagged in the weekly digest.

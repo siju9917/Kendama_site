@@ -1686,3 +1686,28 @@ This completes the N3-redline de-risking trilogy (sectPr, rPr-order,
 strict-XML); the human's one-time Word render-check (#9) is now backed by
 structural + schema-order + strict-well-formedness verification, maximizing
 first-try success.
+
+
+## META pass 59 (2026-05-30 evening MT) — FIX a real 5.7.3 lapse: roster-growth was claimed but not landed
+
+Self-audited the session's "Roster growth (5.7.3)" claims by cross-checking
+CRITIQUE_LOG against `governance/CRITIQUE_AGENTS.md`. **Finding: the early
+passes (1–7) DID land both the checklist items and the roster-growth-log rows,
+but the evening passes (12, 40, 41, 45, 52, 53, and the Adversarial
+full-suite/red-team-own-code items) were described in this log as "roster
+growth" yet NEVER added to the critic roster.** A CRITIQUE_LOG mention is not
+roster growth — the critic's actual checklist must change, or the next
+critique pass won't catch the class.
+
+- **Fixed:** added the missing items to Correctness (#1), Adversarial (#2),
+  Reliability (#7), and Compliance (#9), plus 5 roster-growth-log rows AND an
+  explicit AUDIT NOTE row recording the claimed-but-not-landed lapse. rule-
+  cadence + governance-integrity checks green.
+- **Lesson (the 5.7.8 spirit):** "we grew the roster" is itself a claim to
+  verify against the artifact, exactly like "we fixed a bug" needs a failing
+  test. Same verify-before-claim discipline that caught the contentHash and
+  licensing near-misses. Recorded so future sessions verify roster-growth
+  claims land, not just get logged.
+
+No code change. The product suite is unaffected (423/423); this is a
+governance/brain-integrity fix.
