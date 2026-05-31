@@ -1614,3 +1614,23 @@ Audited every user-facing surface against coded/enforced ground truth:
 Net: 3 user-facing accuracy gaps fixed + guarded, 3 launch-scope items routed,
 the rest verified. The product's CLAIMS now match its behavior or are
 honestly gated.
+
+
+## Polish pass 55 (2026-05-30 evening MT) — N3 redline DOCX generator (built behind the gate)
+
+Built the long-queued N3 redline Word export — high buyer value (capture teams
+live in Word), no new dependency (a .docx is a zip of OOXML; reused the
+existing JSZip). `src/core/export/redlineDocx.ts`: struck-red deletions,
+underlined-green insertions, critical-first ordering (matches the other
+exports), the canonical disclaimer, and a proper XML escaper so document text
+can't break the OOXML. 5 structural tests: the generated XML round-trips
+through the product's OWN DOCX walker (parseDocumentXml), contains the change
+text + disclaimer, orders critical-first, and is XML-injection-safe; the .docx
+zip has the right OOXML parts.
+
+Per the N3 gate, it is NOT wired to a UI button — a Word document must render
+*professionally* in real Word, which a headless test can't confirm. Added
+NEED_FROM_HUMAN #9 (a ~3-min human visual check of a sample redline.docx)
+before the button is exposed. Bundle-neutral: tree-shaken out until imported
+(build verified 397.2 kB gz unchanged). Suite 413 -> 418 green; typecheck +
+lint clean.

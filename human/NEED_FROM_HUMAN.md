@@ -293,6 +293,26 @@ accordingly (documented in `ops/checks/stop-guard.mjs`).
 
 ---
 
+## 9. **[OPEN]** (Optional, ~3 min) Visually verify the redline Word export before it ships
+
+**Why:** The redline DOCX generator (`products/biddiff/src/core/export/redlineDocx.ts`)
+is built + structurally tested (valid OOXML, round-trips through the DOCX
+reader, critical-first, disclaimer, XML-injection-safe), but a Word document
+must render *professionally* in actual Word — which can't be verified in a
+headless test. So it is built BEHIND a gate and NOT yet wired to a UI button.
+
+**Steps:** Next session, ask the factory to emit a sample `redline.docx` (from
+the bundled sample diff); open it in Word / Google Docs / LibreOffice; confirm
+the struck-red deletions, underlined-green insertions, headings, and disclaimer
+render cleanly. If yes, reply "redline looks good" and the factory wires the
+"Export redline (.docx)" button. If something renders wrong, say what and the
+factory fixes the OOXML first.
+
+**Effect once done:** capture teams get a Word redline to attach to reviews — a
+high buyer-value export — with no new dependency.
+
+---
+
 ## How items move out of this list
 
 The factory **never deletes** entries here. When an item is done,
