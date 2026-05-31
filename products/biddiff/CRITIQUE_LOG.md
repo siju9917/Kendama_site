@@ -23,6 +23,38 @@ re-opening review | escalation second-pass.
 
 ---
 
+## 2026-05-31 — Phase K1 — continuous-hunt batch (5.7.5, verified-negatives, NO new tests)
+
+**Pass type:** continuous fresh-input hunting (5.7.5 mandates new inputs even
+with no code change). These probes each invented a genuinely-new realistic
+input, confirmed the behavior is correct AND already covered, and therefore
+added **no test** — recording them so the 5.7.7 audit sees the hunting happened
+and that the anti-churn discipline (don't pad covered behavior) held:
+
+- **Money magnitude word** (`$5 million` → `$5 billion`, 1000× ceiling): values
+  normalize distinctly (5e6 vs 5e9); covered by existing magnitude tests
+  ($1.5M vs $15M, $1.5B).
+- **Evaluation-factor reorder** (Section M factors resequenced): a bare reorder
+  → 1 MOVE flagged CRITICAL via the EVALUATION_CRITERIA rule (no changeType
+  restriction); covered by corpus pair `it-svc-016-eval-factor-reorder` +
+  `critical.test.ts` MOVE-criticality cases.
+- **Section heading reworded, body identical** (`L — Instructions` →
+  `L — Instructions to Offerors`): 0 changes (section aligns on UCF letter, not
+  heading text — no spurious whole-section delete+insert); the principle is
+  covered by the case-only-heading test.
+- **Running headers / "Page N of M" footers**: `stripHeadersFooters` normalizes
+  page-number patterns so varying numbers coalesce and strip above the
+  half-the-pages threshold; covered by reconstruct.test.ts line 109.
+- **Popup surface**: thin `chrome.*` glue (sidePanel.open under a user-gesture
+  constraint) — appropriately browser/e2e-gated, not unit-tested (would be
+  churn).
+
+**Convergence:** all robust; full gate green (448/448). Genuine product gaps
+this session were found+locked in passes 60–71; the lane is now saturated and
+further probing yields verified-negatives.
+
+---
+
 ## 2026-05-31 — Phase K1 — bug-hunt pass 71 (Correctness/Domain, 5.7.5)
 
 **Pass type:** bug-hunt — core engine, newly-invented federal-realistic input:
