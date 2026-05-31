@@ -234,8 +234,23 @@ Enterprise tiers are not wired. This ties into the positioning decision
 (`APPROVALS.md` #1) and pricing — confirm the tier copy matches what
 actually ships.
 
-**Effect once done:** the privacy disclosure matches reality;
-unblocks a clean store submission (item 6).
+**Related minor item #2 (verify at launch — found 2026-05-30, pass 53):**
+`docs/support-macros.md` describes a **server license-activation flow** that
+v1 does not have. The `#activation` macro tells users they must "be online
+for the first activation," then BidDiff "operates offline for up to 7 days; a
+periodic check happens when you're back online," and the `#billing` macro
+points to a "Billing portal" + merchant-of-record subscription. v1 ships the
+local-only `LocalLicenseClient` (a 14-day local trial; no key activation, no
+server check, no billing portal). Same class as the privacy/OCR copy above:
+support copy describing an **unshipped server flow**. On **A** (on-device v1),
+scope these macros to the actual v1 behavior (trial-only; no online
+activation/billing portal) OR mark them clearly as "applies once paid
+licensing ships." On **B**, they become accurate when the server license +
+billing actually ship. Either way, support must not hand users instructions
+for a flow that doesn't exist at launch.
+
+**Effect once done:** the privacy disclosure AND the support/licensing copy
+match reality; unblocks a clean store submission (item 6).
 
 ---
 

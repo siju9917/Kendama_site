@@ -1560,3 +1560,23 @@ claim pinned to a point-in-time measurement, not the guarantee.
 Second docs-vs-code accuracy fix in a row (after pass 51's clause-criticality)
 — cross-checking every user-facing CLAIM against the enforced/coded ground
 truth keeps finding real gaps the feature-description checks don't.
+
+
+## Bug-hunt pass 53 (2026-05-30 evening MT) — Compliance: support-macros describe an unshipped server license flow
+
+Continued the docs-vs-code claim audit into `docs/support-macros.md`.
+- **Verified accurate:** the `#scanned-pdf`/encrypted-PDF macro ("BidDiff
+  doesn't open encrypted PDFs — save an unprotected copy") matches the code —
+  `pdfExtractor` calls `isPdfEncrypted` (/Encrypt detection) + catches pdf.js
+  password errors with that exact message.
+- **Found (Compliance, human-gated):** the `#activation` macro describes a
+  SERVER license-activation flow v1 lacks — "online for first activation,"
+  "operates offline for up to 7 days," "a periodic check when back online" —
+  and `#billing` points to a billing portal + merchant-of-record. v1 ships
+  the local-only `LocalLicenseClient` (14-day local trial; no activation, no
+  server check, no billing). Same class as the privacy/OCR copy (Compliance
+  P1): support copy for an unshipped server flow.
+- **Disposition:** added as "Related minor item #2" under
+  `human/NEED_FROM_HUMAN.md` item 7 — it rides the same A/B (on-device-v1 vs
+  ship-the-server-features) decision; NOT a unilateral copy rewrite (launch
+  scope is the human's call, like the privacy copy). No code change.
