@@ -130,6 +130,12 @@ session has specifics, not a vague "improve extraction":
      performance references") — a tightened minimum can disqualify.
    - **Set-aside / size standard / NAICS** — a change here can change WHO is
      even eligible (overlaps the BD2 set-aside gap already noted above).
+   - **Attachment / Exhibit / Appendix cross-references** ("see Attachment 3",
+     "per Exhibit A", "Attachment J-1") — a natural extension of the existing
+     SECTION_REF anchor (probe 2026-05-31: none are detected today). Lower
+     miss-cost than the above (a reference-number change is rarer than the
+     attachment *content* changing, and that content is a separate doc not in
+     the diff), but cheap to add alongside SECTION_REF.
    These are **ideation, NOT a build list** — each new anchor risks false
    positives and must be bounded by the domain expert (NEED #4). Logged so the
    post-validation cycle weighs them against real practitioner priority rather
