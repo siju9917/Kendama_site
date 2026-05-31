@@ -3,6 +3,47 @@
 Pre-launch security review (Phase 6.5). Performed against the
 production build at branch `claude/biddiff-extension-ijZiE`.
 
+## Threat model
+
+Consolidated threat model (QUALITY_BAR "a threat model exists"). The
+per-boundary detail follows in the sections below; this is the explicit
+assets / boundaries / threat→mitigation framing.
+
+**Assets to protect.**
+1. **The user's solicitation documents** — competitively sensitive bid data.
+   The primary asset; its confidentiality is the product's core promise.
+2. **Saved diff history** (chrome.storage.local + IndexedDB) — derived from #1.
+3. **License key / trial state.**
+
+**Trust boundaries** (everything crossing one is untrusted input):
+- **B1 — document input:** a PDF/DOCX/TXT chosen by the user or fetched from
+  sam.gov. May be malformed, adversarially crafted, or huge.
+- **B2 — sam.gov page DOM:** the content script reads an external page that
+  could be malformed or hostile (XSS on sam.gov, spoofed attachment hrefs).
+- **B3 — persisted data:** chrome.storage/IDB values are tamperable and may be
+  corrupt/partial (cleared in another tab, quota-evicted).
+- **B4 — the network:** in **v1 the ONLY outbound call is the user-clicked
+  sam.gov attachment fetch.** The license/telemetry/OCR endpoints below are
+  *designed but unwired in v1* (see "Known limitations" + the Compliance item
+  in `../PROGRESS.md` / `human/NEED_FROM_HUMAN.md` #7); v1 is effectively
+  on-device.
+
+**Threat → mitigation.**
+
+| # | Threat (attacker capability) | Boundary | Mitigation (all implemented + tested) |
+|---|---|---|---|
+| T1 | Malicious PDF/DOCX crashes or hangs the extension, or exhausts memory | B1 | Parsers run on untrusted-input fuzz corpora; per-dimension LCS caps + a bounded dp product; recognized-but-unsupported kinds rejected at the boundary; an extraction failure surfaces a clean ERROR state (not a hang) |
+| T2 | Malicious document content is injected into an export (XML/OOXML/Markdown) | B1 | `escapeXml` escapes metacharacters AND strips XML-illegal control chars (Word-corruption / injection); markdown routes user values through `mdInlineCode`; PDF text is WinAnsi-sanitized |
+| T3 | Spoofed/hostile attachment href causes a fetch of a dangerous scheme | B2 | `isAllowedDownloadUrl` allowlists `https:` only (rejects `file:`/`data:`/`blob:`/`javascript:`/malformed); tested with bypass vectors |
+| T4 | Malformed sam.gov DOM crashes the content script | B2 | Defensive parsing (optional chaining + fallbacks); degrades to empty results, never throws; tested on malformed rows |
+| T5 | Corrupt/tampered stored data throws out of a UI handler or is trusted | B3 | Every `JSON.parse` of stored data is guarded → returns null/empty; a half-cleared store drops its pointer keys; license trial state treated as tamperable, paid features server-gated by design |
+| T6 | Prompt-injection text inside a document redirects behavior | B1 | The engine treats document text as DATA only — it is diffed/classified deterministically, never executed or interpreted as instructions; there is no LLM in the v1 data path, so there is no instruction-following surface to inject into |
+| T7 | PII/document content leaks via telemetry | B4 | Telemetry is unwired in v1; by design it is a key-allowlisted, finite-integer counts schema (no free text, no document content) enforced at the handler |
+| T8 | Over-broad permissions enable lateral abuse | — | Minimal permission set (storage/sidePanel/offscreen + `*://sam.gov/*`); `tabs`/`<all_urls>`/`scripting`/`cookies` explicitly not requested |
+
+Residual/accepted risks are in "Known limitations" below. The model is
+re-validated whenever a new trust boundary or outbound call is added.
+
 ## Permission audit
 
 | Permission                            | Rationale                                                              | Removable? |
