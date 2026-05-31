@@ -242,9 +242,26 @@ From `brain/LESSONS.md` 2026-05-30 — bugs cluster at invariants that
 4. **Async cancellation** — re-check after every await.
 5. **"Self-evidently correct" primitives** — a hash, a comment that
    lies about its own code.
+6. **Value-type blind spots** (2026-05-31, pass 63/coverage-obs 6). You
+   naturally build anchors for the *obvious* value types (dates, money)
+   and miss the non-obvious ones where real misses hide. Enumerate the
+   structured values whose *change* the user cannot afford to miss,
+   ranked by **miss-cost, not obviousness** — for federal solicitations
+   that surfaced: a deadline is date AND clock-time AND timezone (a
+   time/timezone-only change is equally bid-losing), and the
+   **submission destination** (email/portal — a "submit here instead"
+   amendment missed = bid to the wrong place) is arguably the highest
+   miss-cost of all yet has no obvious anchor.
+7. **Emission-boundary illegal characters** (2026-05-31, pass 61).
+   Escaping a format's metacharacters is necessary but NOT sufficient —
+   the target may forbid characters *outright* (XML 1.0 bans most C0
+   controls even as `&#7;`), and one such char in untrusted-sourced text
+   makes the consumer reject the whole file (Word: "corrupt, repair?").
+   Strip the illegal set at the serialization boundary, don't just
+   escape.
 
-These are now Correctness/Performance/Reliability/Security checklist
-items in `governance/CRITIQUE_AGENTS.md`; this playbook is the
+These are now Correctness/Performance/Reliability/Security/Domain-Expert
+checklist items in `governance/CRITIQUE_AGENTS.md`; this playbook is the
 product-build-time companion to that panel.
 
 ---
