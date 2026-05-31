@@ -30,8 +30,8 @@ Two things happened after the main write-up below:
    factory check that catches corruption of the factory's own documents
    (added after a real `ops/loop.md` corruption was found and repaired).
 
-3. **Late-evening continuation — passes 60–63, all green and pushed.** (a)
-   Turned verify-before-claim on the factory's OWN claims and found "every
+3. **Late-evening continuation — bug-hunt passes 60–68, all green and pushed.**
+   (a) Turned verify-before-claim on the factory's OWN claims and found "every
    exported core function is tested" was overstated — corrected to "tested
    directly or via a tested caller" and added a direct test for the one
    genuinely uncovered helper (pass 60). (b) Found and fixed a **real latent
@@ -43,9 +43,22 @@ Two things happened after the main write-up below:
    Eastern", same date) is flagged critical only inside Section L and missed
    in an untyped section — logged as evidence for your domain-expert
    validation (NOT changed; the critical-rule pack is intentionally frozen
-   until that validation), pass 63. (e) Reconciled doc-vs-code drift (the
+   until that validation), pass 63 — plus a first-principles enumeration of
+   higher-miss-cost value types the engine should eventually anchor (the
+   **submission destination** — email/portal — is the biggest blind spot:
+   missing a "submit here instead" amendment = bid to the wrong place).
+   (e) Closed a batch of **untested failure-mode / revenue-gating paths** by
+   locking their behavior with tests (no bugs, but a refactor could have
+   silently broken them): the storage quota-full path still shows the diff
+   (pass 64), the pipeline ERROR path's friendly message (65), opening a
+   stale/corrupt history entry (66), the SAM amendment parser on malformed
+   third-party DOM (67), and the license **trial/grace/expired/solo** branches
+   that gate paid features (68). (f) Reconciled doc-vs-code drift (the
    first-run "See an example" feature was shipped but the tracker said
-   "Queued"; stale test counts). Test total now **429/429**.
+   "Queued"; stale test counts) and captured the reusable lessons (two new
+   playbook bug-archetypes, two META post-mortems) + a cap-independent
+   first-product sequencing insight (execution risk favors shipping D2
+   clauseguard first). **Test total 226 → 441, full gate green throughout.**
 
 *Heads-up:* the editor/file tools were flaky this session, so the factory
 routed its work through verified test runs and confirmed every push by exit
@@ -54,7 +67,7 @@ in the original write-up (262) predate the passes 8–10 continuation. **Correct
 
 **Final session tally (Saturday, late evening MT) — the scannable version:**
 
-- **Tests 226 → 429, full CI gate green end-to-end** (typecheck + lint + build
+- **Tests 226 → 441, full CI gate green end-to-end** (typecheck + lint + build
   + bundle budget). The diff/extraction/storage/UI/runtime core is now
   characterized to saturation: every exported core/shared function is tested
   **directly or via a tested caller**, and all four diff-alignment layers + the
