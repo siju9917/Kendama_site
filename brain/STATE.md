@@ -346,7 +346,7 @@ all green; check tests 16/16.
   and the critical-rule engine carry property tests of their defining
   invariants. Three genuine defects fixed this evening (suppress %/sign P2,
   corrupt-payload P2, markdown-backtick P3) + the last extraction coverage-obs
-  closed (spelled-out page limits). 10 self-guarding factory checks. So the
+  closed (spelled-out page limits). 10 self-guarding factory checks (their detection matchers red-teamed 2026-05-30 — fixed a real case-sensitivity false-negative in no-forbidden-markers). So the
   next session should NOT expect easy product bugs — the high-value remaining
   work is the human/cap-gated structural P1s (positioning, domain-expert,
   market research, privacy copy) and new-product deep-evaluation once the cap
