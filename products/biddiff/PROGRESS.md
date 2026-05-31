@@ -176,6 +176,20 @@ session has specifics, not a vague "improve extraction":
    DOCX, but PDF needs a text-level leading-ordinal detector. High-value POLISH
    for a dedicated cycle.
 
+9. **Sub-CLINs (letter-suffix line items) not detected. — OPEN (gated;
+   low-severity anchor-coverage gap; found 2026-05-31).** `detectClins` catches
+   `CLIN 0001` but a 4-case probe shows `CLIN 0001AA`, `CLIN 0002AB`, and
+   `SubCLIN 0001AA` all yield NO CLIN anchor. Federal contracts routinely use
+   sub-line items (0001AA, 0001AB — option/informational SLINs) that are part
+   of the pricing structure a capture manager tracks. **Low severity** (same
+   class as #1/#7: the CLIN anchor feeds PRICING_CLINS classification by
+   *presence* only; a sub-CLIN change still surfaces as a text diff, just not
+   boosted to PRICING). False-positive risk of a fix is lower than the money
+   case (the `CLIN`/`SubCLIN` keyword + 4-digit base is distinctive), but the
+   discipline still holds — validate the sub-CLIN/SLIN convention with the
+   domain expert (BD2) and add characterization tests before widening the CLIN
+   regex. Logged for the post-validation cycle.
+
 These feed both `src/core/diff/critical.ts` extension work AND the
 Domain-Expert Critic checklist strengthening, once BD2's human
 validation lands.
