@@ -227,6 +227,17 @@ the hard way this session — see `META_LESSONS.md`):
   `typecheck + lint + test` (run `scripts/ci.sh` for the real ship gate).
   Several real errors passed a green vitest run and were caught only by
   typecheck/lint.
+- **Run the gate from `products/biddiff` (or via `scripts/ci.sh`, which
+  `cd`s itself) — NEVER raw `npx vitest` from the repo root.** The repo
+  root has no vitest config; a root invocation silently globs the wrong
+  files (it picks up `ops/checks/*.test.mjs`) and fails on `jsdom`
+  resolution (jsdom lives under `products/biddiff/node_modules`),
+  producing a *misleading partial green/red* (e.g. "371 passed, 1 file
+  failed") rather than a clear "wrong directory" error. A failing run
+  that drops the file/test count is a cwd smell — check `pwd` before
+  diagnosing it as a code regression. (Earned 2026-05-31: a twice-run
+  full-suite check false-alarmed because cwd had drifted to root after a
+  `git` command.)
 - **Edit prose/brain files with the Write/Edit tools or a small `.mjs`
   script — NOT inline `node -e "...long string..."` / heredocs.** Multi-line
   content with apostrophes, parens, or backticks repeatedly broke inline
