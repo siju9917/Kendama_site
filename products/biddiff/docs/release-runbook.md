@@ -2,6 +2,18 @@
 
 ## Pre-flight (before any release)
 
+> The authoritative gating order (incl. the human-gated decisions) is the
+> **"Ship sequence (the critical path)"** section of `PROGRESS.md`. This
+> checklist is the mechanical pre-flight; the two content gates below are the
+> hard blockers it must not skip.
+
+- [ ] **Server-claim copy matches v1 reality** (`human/NEED_FROM_HUMAN.md` #7).
+      The privacy policy / store listing / options page / help / support copy
+      must NOT describe license/telemetry/OCR server flows v1 doesn't perform.
+      Submitting with overstated server interactions is a Web-Store-review +
+      misrepresentation risk. **Hard blocker.**
+- [ ] **Positioning decided** (`human/APPROVALS.md` #1) — the listing framing
+      (individual vs team tool) is settled.
 - [ ] `bash scripts/ci.sh` is green locally (typecheck + lint + tests + build).
 - [ ] Corpus miss-rate audit passes (`test/integration/corpus.test.ts`).
 - [ ] Adversarial tests pass (`test/integration/reformatting-noise.test.ts`,
