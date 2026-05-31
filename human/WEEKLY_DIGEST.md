@@ -8,6 +8,34 @@
 
 ## Week of 2026-05-30 — First post-bootstrap build cycle
 
+### Session-end update (continuation, into Sunday 2026-05-31)
+
+Two things happened after the main write-up below:
+
+1. **You asked the factory to never stop on Saturday — that is now a
+   *technical interlock*, not just a rule.** A red-team Stop hook
+   (`.claude/settings.json` → `ops/checks/stop-guard.mjs`) fires on every
+   turn-end attempt and **blocks the stop while it is genuinely Saturday**
+   (verified against the real clock), forcing the factory to pull the next
+   queue item instead of idling or asking you to continue. The *only* thing
+   that authorizes a stop is "it is no longer Saturday," and the red team
+   checks that against the system clock — which is exactly why this session
+   ended cleanly when the clock rolled to Sunday, with no prompt needed from
+   you. (Decision logged in `brain/DECISIONS.md`; removing the hook is a
+   "weakening" change that would need your sign-off in `APPROVALS.md`.)
+
+2. **More BidDiff hardening — bug-hunt passes 8–10** (property-based engine
+   swap-symmetry, move-detection threshold boundary, and diff-confidence
+   ceiling). No new defects; three new seeded regression guards. Test total
+   is now **296** (up from 262 mid-week). Also added a `governance-integrity`
+   factory check that catches corruption of the factory's own documents
+   (added after a real `ops/loop.md` corruption was found and repaired).
+
+*Heads-up:* the editor/file tools were flaky this session, so the factory
+routed its work through verified test runs and confirmed every push by exit
+code — git history reflects only verified, green changes. Test counts below
+in the original write-up (262) predate the passes 8–10 continuation (296).
+
 ### The one thing to know
 
 The factory shipped real engineering this session: **five genuine

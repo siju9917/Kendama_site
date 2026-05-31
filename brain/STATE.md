@@ -8,17 +8,28 @@
 
 ## Session
 
-- **Last session date (UTC):** 2026-05-30
-- **Last session ended at:** Saturday cycle — shipped the first
-  factory-level check infrastructure, fixed two real diff-engine
-  defects + closed one K1 P2 + one extraction-coverage gap, ran the
-  mandatory META audit (5.7.7/5.7.8), consolidated the brain and
-  wrote the weekly digest.
+- **Last session date (UTC):** 2026-05-30 → ran into 2026-05-31 (Sunday).
+- **Last session ended at:** Saturday cycle that ran to the schedule-window
+  close. Late-session work (this continuation): turned the "never stop on
+  Saturday" rule into a **technical interlock** (a Claude Code `Stop` hook
+  that red-teams every stop attempt against the real UTC clock — see the
+  enforcement note in "Active product" and `brain/DECISIONS.md`), added the
+  `governance-integrity` factory check (+ a mention-vs-use false-positive
+  fix), and ran BidDiff bug-hunt passes 8–10 (engine swap-symmetry,
+  move-threshold boundary, diff-confidence ceiling — all clean, 296 tests).
+  Brain consolidated + digest refreshed at session end.
 - **Session type:** Saturday Routine cadence (manually invoked by
   the human — the Routine itself still does not exist; see
   `human/NEED_FROM_HUMAN.md` item 2).
-- **Session-end reason:** schedule-window-closed (manual session;
-  handoff clean).
+- **Session-end reason:** schedule-window-closed — the real UTC clock rolled
+  to Sunday 2026-05-31, the one stop condition the stop-guard red team
+  permits. Verified: `node ops/checks/stop-guard.mjs` returned "Stop
+  permitted: it is Sunday". Handoff clean.
+- **Tooling caveat for next session:** interactive tool output (Bash/Read)
+  was intermittently unreliable this session. Several brain-file edits
+  failed silently on stale anchors and were re-applied from ground-truth.
+  Verify source via `grep -n` and new tests by *running* them; confirm git
+  state from `git log`/push exit codes. Full lesson in `brain/META_LESSONS.md`.
 
 > **⚠ BRANCH HANDOFF (read this):** all of this session's work is on
 > branch **`claude/saturday-task-kickoff-AfDAa`**, NOT on `main`. The
@@ -49,9 +60,17 @@
   a stronger privacy claim). All four P1s are human/cap-gated.
   (Positive: the FAR/DFARS clause dataset's well-known titles were
   spot-checked accurate + current.)
-- **Build green:** 285/285 tests (was 226 at session start — 59 new
-  tests added this session), lint + typecheck clean; full CI gate
-  (typecheck+lint+test+build+bundle-budget) verified green end-to-end.
+- **Build green:** **296/296 tests** (was 226 at session start; 285 by the
+  Saturday close, +11 in the passes 8–10 continuation), lint + typecheck
+  clean; full CI gate (typecheck+lint+test+build+bundle-budget) verified
+  green end-to-end.
+- **Stop-on-Saturday enforcement (this session, human directive):** now a
+  TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`
+  red-teams every stop against the real UTC clock; wired into a Claude Code
+  `Stop` hook (`.claude/settings.json`) that BLOCKS turn-end while it is
+  genuinely Saturday. Only "it is no longer Saturday" (clock-verified)
+  authorizes a stop. CLAUDE.md 5x/5z; `brain/DECISIONS.md` (2026-05-30
+  stop-hook entry). Removing the hook is a weakening change → `APPROVALS.md`.
 - **Late Compliance/claims thread (most productive late vein — proves
   the queue is never empty):** chasing a false README "Tesseract.js"
   dependency claim surfaced (a) the Compliance P1 above (all 3 server
