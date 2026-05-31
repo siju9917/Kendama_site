@@ -23,6 +23,36 @@ re-opening review | escalation second-pass.
 
 ---
 
+## 2026-05-31 — Phase K1 — bug-hunt pass 67 (Reliability + Security, 5.7.5)
+
+**Pass type:** bug-hunt — the SAM.gov content-script parser
+(`readAmendmentMetadata`), which reads UNTRUSTED third-party DOM that can
+change shape at any time.
+
+**Critics run:** Reliability #7, Security #3, Adversarial #2.
+
+**Finding:** none (verified negative). The parser is defensively coded
+(optional chaining, `||`/`??` fallbacks, missing-container→document); a
+malformed/partial row degrades to empty/null fields and never throws.
+
+**Coverage gap closed + a probe-first discipline win:** `readAmendmentMetadata`
+was tested only on a complete row. Added three tests — the
+`[data-amendment-posted]` text-fallback branch, a malformed row with all
+fields missing (yields `{amendmentNumber:"", postedAt:null, description:null}`,
+no throw), and the no-rows empty list. **Discipline note:** a first draft of the
+fallback test "failed" and I nearly "fixed" non-broken code (changing `??` to
+`||` for an empty `.dateTime`). Root cause was MY wrong premise — the selector
+is `time[datetime]`, so a `<time>` without the attribute is never matched and
+the empty-`.dateTime` case cannot occur. Corrected the TEST (the real fallback
+is via a non-`<time>` `[data-amendment-posted]` element), not the code. This
+is the hallucinated-contentHash lesson held: when a probe shows "impossible"
+behavior, suspect the probe/premise first. (Kept a minor single-`querySelector`
+refactor with an accurate comment; behavior identical.) 435 → 438.
+
+**Convergence:** clean; full gate green (438/438).
+
+---
+
 ## 2026-05-31 — Phase K1 — bug-hunt pass 66 (Reliability, 5.7.5)
 
 **Pass type:** bug-hunt — `openSaved(id)`, the "click a history row" action.

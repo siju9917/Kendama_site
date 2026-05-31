@@ -73,4 +73,37 @@ describe("SamIntegration.readAmendmentMetadata", () => {
     expect(meta[0].postedAt).toBe("2026-08-01T00:00:00Z"); // dateTime wins over text
     expect(meta[0].description).toBe("Extended due date");
   });
+
+  it("falls back to text content for a non-<time> [data-amendment-posted] element", async () => {
+    // The selector also matches a [data-amendment-posted] element that is not a
+    // <time> (so it has no .dateTime); the human-readable text is then used.
+    document.body.innerHTML = `
+      <table><tbody>
+      <tr class="amendment">
+        <td><span class="amendment-number">0003</span></td>
+        <td><span data-amendment-posted>August 5, 2026</span></td>
+        <td><span class="amendment-description">Q&amp;A posted</span></td>
+      </tr>
+      </tbody></table>`;
+    const meta = await new SamIntegration().readAmendmentMetadata();
+    expect(meta[0].postedAt).toBe("August 5, 2026"); // text fallback, no machine date
+  });
+
+  it("degrades — never throws — on a malformed row with missing fields (untrusted DOM)", async () => {
+    // SAM.gov can change its markup at any time. A row missing the number,
+    // date, and description elements must yield empty/null fields, not crash
+    // the content script.
+    document.body.innerHTML = `
+      <table><tbody>
+      <tr class="amendment"><td>nothing recognizable here</td></tr>
+      </tbody></table>`;
+    const meta = await new SamIntegration().readAmendmentMetadata();
+    expect(meta).toHaveLength(1);
+    expect(meta[0]).toEqual({ amendmentNumber: "", postedAt: null, description: null });
+  });
+
+  it("returns an empty list when there are no amendment rows", async () => {
+    document.body.innerHTML = `<table><tbody></tbody></table>`;
+    expect(await new SamIntegration().readAmendmentMetadata()).toEqual([]);
+  });
 });

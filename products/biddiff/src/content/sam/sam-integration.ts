@@ -62,10 +62,11 @@ export class SamIntegration implements IOpportunitySite {
     const rows = Array.from(document.querySelectorAll<HTMLElement>(SELECTORS.amendmentRow));
     return rows.map((row) => {
       const number = row.querySelector(SELECTORS.amendmentNumber)?.textContent?.trim() ?? "";
-      const postedRaw =
-        row.querySelector<HTMLTimeElement>(SELECTORS.amendmentPostedAt)?.dateTime ??
-        row.querySelector(SELECTORS.amendmentPostedAt)?.textContent?.trim() ??
-        null;
+      // The selector matches either a `time[datetime]` (machine date wins via
+      // `.dateTime`) or a `[data-amendment-posted]` element (not a <time>, so
+      // `.dateTime` is undefined and we fall through to its text).
+      const postedEl = row.querySelector<HTMLTimeElement>(SELECTORS.amendmentPostedAt);
+      const postedRaw = (postedEl?.dateTime || postedEl?.textContent?.trim()) ?? null;
       const description = row.querySelector(SELECTORS.amendmentDescription)?.textContent?.trim() ?? null;
       return { amendmentNumber: number, postedAt: postedRaw, description };
     });
