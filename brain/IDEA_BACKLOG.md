@@ -150,6 +150,47 @@ federal rule-pack does NOT fire (NORMAL / OTHER). So the
 reasoning; it's a passing test. That materially de-risks the
 `regdiff`/D-family strategy: the engine reuse is real, not hoped-for.
 
+#### New strategic insight (2026-05-30 evening, first-principles) — the "on-device trust" wedge is itself a distribution asset
+
+The ranking so far treats BidDiff's **fully on-device** architecture (the
+Compliance finding confirmed v1 makes no server calls beyond the
+user-clicked SAM download) as a *privacy property*. Reframed, it is a
+**distribution and sales wedge** that most of the D-family inherits for free
+and that incumbents structurally cannot match:
+
+- **The buyers in BidDiff's and the D-family's markets are
+  compliance-sensitive by definition** — federal proposal/capture teams,
+  GovTech/LegalTech/compliance engineers (D1/D2), regulated-industry vendors.
+  For them "your documents never leave your machine" is not a nice-to-have;
+  it is often what clears the *security review* that gates adoption. A
+  server-side diff SaaS has to win a data-handling review; an on-device
+  extension/library/plugin frequently skips it.
+- **This inverts the usual "library/extension monetizes weakly" worry.** The
+  on-device story is a *reason the artifact itself is the product* (no hosted
+  tier needed to be trustworthy), which strengthens exactly the candidates
+  the portfolio-sequencing note worried about (D1 `regdiff`, the rules
+  loader). The moat isn't the hosting; it's the curated rule-pack + the
+  zero-exfiltration guarantee.
+- **Concrete ranking implication:** weight the **distribution-without-marketing**
+  sub-score UP for any D-family candidate whose buyer faces a security review
+  (D1, D2, the FAR/DFARS MCP server), because "runs locally / no data leaves"
+  is a self-serve trust claim that shortens the sales cycle without a
+  marketing spend — the exact property `SCORING_MODEL.md`'s hard filter
+  rewards. It is a point AGAINST the Shopify/theme app (D4) and any hosted
+  feed (rank-4), which are inherently server-side.
+- **Non-obvious corollary (the Ambition-Critic "not a listicle" test):** the
+  *strongest* first product may be the one whose buyer's security review is
+  the **hardest** (so the on-device wedge is worth the most), not the one
+  with the largest raw TAM. That argues for D2 `clauseguard` (compliance
+  teams; GitHub Marketplace buy-intent) ranking at or above the higher-TAM
+  but server-side D4 — sharpening, with a *reason*, the provisional order
+  already in `RANKING.md`.
+
+This is a cap-independent, first-principles refinement: it does not need
+cited research to be actionable; it re-weights the existing candidates by a
+property we can verify today (the on-device test passes). The cited deep-eval
+should test it, not originate it. Logged for the cap-unblocked ranking pass.
+
 ### Standing candidate categories to populate via research
 
 The seeded backlog above is a starting point. On every RESEARCH
