@@ -30,7 +30,7 @@ Two things happened after the main write-up below:
    factory check that catches corruption of the factory's own documents
    (added after a real `ops/loop.md` corruption was found and repaired).
 
-3. **Late-evening continuation — bug-hunt passes 60–68, all green and pushed.**
+3. **Late-evening continuation — bug-hunt passes 60–72 + ship-gate prep, all green and pushed.**
    (a) Turned verify-before-claim on the factory's OWN claims and found "every
    exported core function is tested" was overstated — corrected to "tested
    directly or via a tested caller" and added a direct test for the one
@@ -58,7 +58,19 @@ Two things happened after the main write-up below:
    "Queued"; stale test counts) and captured the reusable lessons (two new
    playbook bug-archetypes, two META post-mortems) + a cap-independent
    first-product sequencing insight (execution risk favors shipping D2
-   clauseguard first). **Test total 226 → 441, full gate green throughout.**
+   clauseguard first). (g) More locked paths (passes 69–72): one-of-N
+   duplicate-block alignment, clause **revision-date** changes, the
+   options-page clear-history destructive action, and the **low-confidence
+   extraction warning** (a scanned PDF warns the user, doesn't silently present
+   a confident-looking bad diff). (h) **Ship-gate prep:** consolidated the
+   **ship critical path** in PROGRESS (the ordered gates, factory vs human),
+   added an explicit **threat model** to the security audit (closing a
+   QUALITY_BAR gate item), and added the two hard content blockers to the
+   release-runbook pre-flight so a release can't skip the server-claim copy
+   fix. Also hardened the factory's OWN checks (the no-GitHub-Actions +
+   brain-integrity checks now have violation-detection tests, and the
+   stop-guard's Mountain-midnight boundary is locked). **Test total 226 → 450,
+   full gate green throughout; all 10 factory checks pass.**
 
 *Heads-up:* the editor/file tools were flaky this session, so the factory
 routed its work through verified test runs and confirmed every push by exit
@@ -67,7 +79,7 @@ in the original write-up (262) predate the passes 8–10 continuation. **Correct
 
 **Final session tally (Saturday, late evening MT) — the scannable version:**
 
-- **Tests 226 → 441, full CI gate green end-to-end** (typecheck + lint + build
+- **Tests 226 → 450, full CI gate green end-to-end** (typecheck + lint + build
   + bundle budget). The diff/extraction/storage/UI/runtime core is now
   characterized to saturation: every exported core/shared function is tested
   **directly or via a tested caller**, and all four diff-alignment layers + the
