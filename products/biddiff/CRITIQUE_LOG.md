@@ -828,3 +828,20 @@ failure the 2026-05-30 hallucination lesson warns against), this pass locked
 characterization + logged real limitations, and the loop switches lane to
 higher-value first-principles/polish work next. A queue that feels empty of
 bugs is a signal to change lane, not to invent findings.
+
+
+## Polish pass 14 (2026-05-30 evening MT) — N9 critical-first surfacing (Product-Sense P3 closed)
+
+The store listing promises "critical changes are flagged at the top," and
+the export (core/export) already lists critical-then-normal, but DiffView
+rendered the default list in document order — so the UI was inconsistent
+with both its own export and the marketing claim (Product-Sense P3, logged
+in bug-hunt pass 8 / PROGRESS N9).
+
+Fix: a pure, stable `criticalFirst(changes)` helper in DiffView, applied as
+the final step of the filtered list — CRITICAL changes first, document order
+preserved within each severity group. Display-only (keyboard nav reads the
+same `filtered` list, so navigation stays consistent; export order was
+already critical-first and is untouched). 5 unit tests (critical-first,
+within-group stability, single-severity no-op, empty, no-mutation). Suite
+296 -> 301 green; typecheck + lint clean. PROGRESS N9 -> DONE.

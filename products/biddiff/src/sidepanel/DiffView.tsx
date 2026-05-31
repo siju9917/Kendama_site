@@ -23,6 +23,23 @@ function firstVisibleChangeIndex(list: ReadonlyArray<Change>): number {
   return -1;
 }
 
+/**
+ * Stable critical-first ordering (POLISH N9 / Product-Sense P3): critical
+ * changes appear first, document order preserved WITHIN each severity group.
+ * This makes the store-listing promise ("critical changes flagged at the
+ * top") literally true in the default view and matches the export order
+ * (`core/export` already lists critical then normal). Pure + stable so the
+ * relative order of same-severity changes is unchanged.
+ */
+export function criticalFirst(changes: ReadonlyArray<Change>): Change[] {
+  const critical: Change[] = [];
+  const normal: Change[] = [];
+  for (const c of changes) {
+    (c.severity === "CRITICAL" ? critical : normal).push(c);
+  }
+  return [...critical, ...normal];
+}
+
 interface Props {
   result: DiffResult;
   /** Notices about this viewing session (e.g. save failed). Distinct
@@ -82,7 +99,9 @@ export function DiffView({ result, sessionNotices }: Props): React.ReactElement 
         return hay.includes(needle);
       });
     }
-    return out;
+    // Critical-first, document order within each group (POLISH N9). Applied
+    // last so it orders whatever the active filters produced.
+    return criticalFirst(out);
   }, [result, filter, sectionFilter, textFilter]);
 
   // Keep the latest filtered list + focused index in refs so the
