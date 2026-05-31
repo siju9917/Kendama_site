@@ -290,19 +290,29 @@ all green; check tests 16/16.
 
 ## Next five actions
 
-1. Run `node ops/checks/run-all.mjs` (now the first session-start
-   step) and reconcile the brain.
-2. If on/after 2026-06-03 and proposal #1 is still unanswered, apply
+1. Run `node ops/checks/run-all.mjs` (10 checks; first session-start
+   step) and reconcile the brain. The `approvals-window` check will
+   flag if proposal #1's 2026-06-03 window has elapsed — if so, apply
    the REPOSITION default and proceed toward ship per that option.
-3. If the cap has been set: do the BidDiff market research and the
+2. If the cap has been set: do the BidDiff market research and the
    rank-1 deep evaluation (the two top P1s), posting the proposal.
-4. Continue the escalating diff-core bug-hunt on the surfaces not yet
-   adversarially re-read this session: storage/idb (durability),
-   pdf/reconstruct (layout correctness), sections/assemble +
-   headings (drives classification). (Licensing was reviewed — a
-   deliberate local stub; clock-skew trial abuse is a documented
-   limitation the server client will close, not a v1 bug.)
-5. BidDiff Accessibility P2 (axe rendering tests), vetting the dep.
+   The first-principles sub-scores (RANKING.md) make D2 clauseguard and
+   rank-1 Apex co-leads — the cited evidence breaks the tie.
+3. **The diff-core/extraction/UI/runtime bug-hunt is SATURATED** (44
+   passes; 398/398 tests; every exported core/shared fn tested; all
+   four alignment layers + the critical engine property-tested; full CI
+   green). storage/idb, pdf/reconstruct, sections/assemble + headings
+   were all characterized this evening. Do NOT expect easy product
+   bugs; if hunting further, stay probe-first (real defects are now
+   rare). The 3 extraction coverage-obs are all closed.
+4. BidDiff Accessibility P2 (axe rendering tests) — still browser-gated
+   (needs Chromium or the WISHLIST jsdom-contrast tool). The
+   focusable/aria-describedby half of the stat-explanation a11y is DONE
+   (N8); only the rendered-contrast check remains gated.
+5. Highest-leverage remains the human/cap-gated items: spend cap, the
+   positioning decision, domain-expert validation, and the privacy-copy
+   A/B (NEED_FROM_HUMAN). Zero-cost lanes if all gated: factory
+   self-improvement, playbook depth, first-principles ideation.
 
 ## Reconciliation status
 
