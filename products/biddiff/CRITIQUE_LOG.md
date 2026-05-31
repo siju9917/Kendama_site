@@ -969,3 +969,17 @@ surfacing, closing Product-Sense P3). Plus the factory gained a
 `stop-guard-logic` session-start check so the timezone-bug class can't recur
 silently. Suite 285 -> 312 green throughout; every change verified by running
 the full suite before commit (per the 2026-05-30 verify-first lesson).
+
+
+## Bug-hunt pass 21 (2026-05-30 evening MT) — ErrorBoundary was untested
+
+The side panel's top-level `ErrorBoundary` — the last line of defense that
+keeps the panel from going blank when a descendant render throws — had NO
+focused test. Reviewed it (sound) and added 5 tests pinning its load-bearing
+behaviors: renders children when healthy; catches a render error and shows a
+recoverable `role="alert"` surface ("your saved diffs are still safe" +
+Recover button); logs the error to the console only (never remote — privacy
+boundary); TRUNCATES the shown technical detail to ~240 chars (no long
+stack/path leak); and Recover clears the error so a now-healthy subtree
+re-renders instead of staying permanently dead. No production change. Suite
+312 -> 317 green; typecheck + lint clean.
