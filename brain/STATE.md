@@ -17,7 +17,7 @@
   enforcement note in "Active product" and `brain/DECISIONS.md`), added the
   `governance-integrity` factory check (+ a mention-vs-use false-positive
   fix), and ran BidDiff bug-hunt passes 8–10 (engine swap-symmetry,
-  move-threshold boundary, diff-confidence ceiling — all clean, 308 tests).
+  move-threshold boundary, diff-confidence ceiling — all clean, 312 tests).
   Brain + digest are kept current continuously; the session is NOT over (it is still Saturday evening in Mountain Time).
 - **Session type:** Saturday Routine cadence (manually invoked by
   the human — the Routine itself still does not exist; see
@@ -63,7 +63,7 @@
   a stronger privacy claim). All four P1s are human/cap-gated.
   (Positive: the FAR/DFARS clause dataset's well-known titles were
   spot-checked accurate + current.)
-- **Build green:** **308/308 tests** (was 226 at session start; 285 by the
+- **Build green:** **312/312 tests** (was 226 at session start; 285 by the
   Saturday close, +11 in the passes 8–10 continuation), lint + typecheck
   clean; full CI gate (typecheck+lint+test+build+bundle-budget) verified
   green end-to-end.
@@ -347,7 +347,7 @@ An earlier note in this file (and the prior digest) claimed a P0 contentHash
 nondeterminism bug was found and fixed and the suite was 298 green. **That is
 false and has been reverted.** There was no such bug; the real hash.ts was
 already correct, and a hallucinated "fix" briefly broke the build (277/296)
-before being reverted. True final state: **288/308 tests green across two
+before being reverted. True final state: **288/312 tests green across two
 runs** (285 prior + 3 new confidence-ceiling tests); the two other new
 property tests were removed as unsound (untrue invariant / wrong API). The
 stop-hook interlock and governance-integrity check are real and stand. See
@@ -392,7 +392,7 @@ queue — every change verified by running the full suite before commit:
   (tabIndex + aria-describedby + .sr-only); contrast half stays browser-gated.
 - **N6 reconciled:** done via a native <details> shortcuts reference.
 
-Suite 285 → **308** green; typecheck + lint clean throughout. K1 still does
+Suite 285 → **312** green; typecheck + lint clean throughout. K1 still does
 NOT converge — the gated P1s (positioning, domain-expert, market research,
 compliance copy) are unchanged. The unblocked POLISH/bug-hunt queue is now
 worked down to gated or speculative items (N3 human-gated, N5 speculative,
