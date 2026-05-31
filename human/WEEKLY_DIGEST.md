@@ -30,7 +30,7 @@ Two things happened after the main write-up below:
    factory check that catches corruption of the factory's own documents
    (added after a real `ops/loop.md` corruption was found and repaired).
 
-3. **Late-evening continuation — bug-hunt passes 60–74 + ship-gate prep, all green and pushed.**
+3. **Late-evening continuation — bug-hunt passes 60–77 + ship-gate prep, all green and pushed.**
    (a) Turned verify-before-claim on the factory's OWN claims and found "every
    exported core function is tested" was overstated — corrected to "tested
    directly or via a tested caller" and added a direct test for the one
@@ -64,7 +64,14 @@ Two things happened after the main write-up below:
    extraction warning** (a scanned PDF warns the user, doesn't silently present
    a confident-looking bad diff), a moved-AND-edited block keeping its text
    change visible, and the Summary counts staying consistent with the change
-   list across the whole corpus. (h) **Ship-gate prep:** consolidated the
+   list across the whole corpus, plus (passes 75–77) unicode dash unification
+   (a PDF dash-character swap isn't a phantom change) and a clean zero-change
+   export. **One genuinely significant noise finding** surfaced late: inserting
+   one item into a numbered list (in a PDF) makes every *subsequent* item show
+   as a spurious "change" because its number shifted — inflating the count.
+   It's logged with evidence + a characterization test, flagged as the **top
+   technical polish for the next cycle** (the fix is a careful core-diff change,
+   not rushed tonight). (h) **Ship-gate prep:** consolidated the
    **ship critical path** in PROGRESS (the ordered gates, factory vs human),
    added an explicit **threat model** to the security audit (closing a
    QUALITY_BAR gate item), and added the two hard content blockers to the
