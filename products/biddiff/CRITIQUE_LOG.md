@@ -23,6 +23,34 @@ re-opening review | escalation second-pass.
 
 ---
 
+## 2026-05-31 — Phase K1 — bug-hunt pass 70 (Reliability, 5.7.5)
+
+**Pass type:** bug-hunt — the options page `clearHistory` destructive action
+(delete all saved diffs), an unexamined surface with no test file.
+
+**Critics run:** Reliability #7, Correctness #1.
+
+**Finding:** none (verified negative) — but the destructive logic was entirely
+untested and inline in the React component (so unreachable by a unit test).
+Extracted it to `src/options/clearHistory.ts` (`clearStoredDiffs(storage, kv,
+list)`), the component keeps the `confirm()` + status UI. Added 5 tests: all
+deleted + index/pending-open pointer keys dropped; a mid-list delete failure
+does NOT abort the rest and is counted; the pointer keys are dropped even when
+every delete fails (no dangling "open this diff" pointer); a key-removal
+failure resolves rather than throwing (best-effort cleanup); empty list is a
+no-op delete that still clears the keys. 442 → 447.
+
+**Note (process):** the options page's in-app copy still describes a server
+OCR path + an anonymous-telemetry toggle that v1 does not perform — verified
+(`handleOcr` returns a stub; `TelemetryClient` is never instantiated). This is
+launch-scope copy, already in `human/NEED_FROM_HUMAN.md` #7's scope (it lists
+`src/options/index.tsx`); NOT rewritten here (per the route-copy-to-human
+constraint).
+
+**Convergence:** clean; full gate green (447/447).
+
+---
+
 ## 2026-05-31 — Phase K1 — bug-hunt pass 69 (Correctness, 5.7.5)
 
 **Pass type:** bug-hunt — newly-invented engine input (5.7.5 mandates fresh

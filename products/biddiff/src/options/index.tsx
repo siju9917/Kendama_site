@@ -83,22 +83,8 @@ function Options(): React.ReactElement {
     if (!ok) return;
     setClearing(true);
     setStatus(`Clearing ${list.length}…`);
-    let deleted = 0;
-    let failed = 0;
-    for (const e of list) {
-      try {
-        await s.deleteDiff(e.id);
-        deleted++;
-      } catch {
-        failed++;
-      }
-    }
-    // Belt-and-suspenders: drop the index key too.
-    await kv.remove("biddiff.diffs.index").catch(() => {});
-    // Any stale popup→panel "open this diff" pointer would now resolve
-    // to a missing payload and surface as a spurious "no longer
-    // available" error in the side panel on next mount.
-    await kv.remove("biddiff.pendingOpenDiffId").catch(() => {});
+    const { clearStoredDiffs } = await import("./clearHistory.js");
+    const { deleted, failed } = await clearStoredDiffs(s, kv, list);
     setClearing(false);
     if (failed === 0) {
       setStatus(`Cleared ${deleted} ${deleted === 1 ? "diff" : "diffs"}.`);
