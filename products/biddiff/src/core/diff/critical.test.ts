@@ -81,4 +81,36 @@ describe("evaluateCriticality", () => {
   it("the ruleset is data (extensible)", () => {
     expect(CRITICAL_RULES.length).toBe(6);
   });
+
+  // Property test (bug-hunt pass 38): invariants that must hold for ANY input.
+  it("severity is CRITICAL iff there is >=1 reason, and reasons emit in rule order (400 inputs)", () => {
+    const categories = [
+      "SCOPE_SOW", "EVALUATION_CRITERIA", "DATES_DEADLINES", "CLAUSES",
+      "SUBMISSION_INSTRUCTIONS", "PRICING_CLINS", "ATTACHMENTS", "OTHER",
+    ] as const;
+    const changeTypes = ["INSERT", "DELETE", "MODIFY", "MOVE"] as const;
+    const anchorTypes = ["CLAUSE_REF", "DATE", "MONEY", "PAGE_LIMIT", "CLIN"] as const;
+    let s = 0xc4171ca1 >>> 0;
+    const rnd = () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 0x100000000);
+
+    for (let iter = 0; iter < 400; iter++) {
+      const anchors = anchorTypes
+        .filter(() => rnd() < 0.4)
+        .map((t) => anchor(t));
+      const inp = input({
+        category: categories[Math.floor(rnd() * categories.length)],
+        changeType: changeTypes[Math.floor(rnd() * changeTypes.length)],
+        anchors,
+      });
+      const { severity, reasons } = evaluateCriticality(inp);
+
+      // (1) the severity/reasons equivalence — no CRITICAL without a reason.
+      expect(severity === "CRITICAL", `iter ${iter}`).toBe(reasons.length > 0);
+
+      // (2) reasons are a subsequence of the rules' outputs IN DECLARATION
+      // ORDER — i.e. evaluateCriticality never reorders reasons.
+      const orderedReasons = CRITICAL_RULES.filter((r) => r.matches(inp)).map((r) => r.reason(inp));
+      expect(reasons).toEqual(orderedReasons);
+    }
+  });
 });

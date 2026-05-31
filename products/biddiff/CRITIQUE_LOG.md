@@ -1236,3 +1236,18 @@ CLIN-only-in-Section-B gating was covered only via the corpus. Added: the mean
 (0.4,0.8→0.6), empty→1, bounded [0,1] reflecting the floor; and direct units
 that detectBlockAnchors / enrichBlock emit a CLIN anchor iff allowClin is true.
 No production change. Suite 379 -> 384 green; typecheck + lint clean.
+
+
+## Bug-hunt pass 38 (2026-05-30 evening MT) — critical-rule engine invariants
+
+`evaluateCriticality` had 8 example tests (one per rule) but no property test
+of its two engine-level invariants. Added a 400-input property test: severity
+is CRITICAL iff there is >= 1 reason (no CRITICAL without a stated reason —
+the product's reporting integrity), and reasons always emit as a subsequence
+of CRITICAL_RULES in DECLARATION ORDER (never reordered — deterministic,
+consistent reporting). All clean. Suite 384 -> 385 green; typecheck + lint
+clean. No production change.
+
+The critical-classification chain (classify category → evaluateCriticality)
+and the diff-core algorithms (section/LCS/block alignment) now all carry
+property tests of their defining invariants.
