@@ -1226,3 +1226,13 @@ With passes 30/35/36 the diff core's three foundational layers — section
 alignment, the LCS sequence aligner, and block alignment — now each carry a
 property test of their defining invariant (greedy 1:1 + insert/delete;
 reconstruct-both-inputs; block conservation).
+
+
+## Bug-hunt pass 37 (2026-05-30 evening MT) — extraction-confidence + CLIN-gating units
+
+`computeOverallConfidence` (the mean block confidence that feeds the
+diff-confidence ceiling pinned in pass 10) was untested directly; the
+CLIN-only-in-Section-B gating was covered only via the corpus. Added: the mean
+(0.4,0.8→0.6), empty→1, bounded [0,1] reflecting the floor; and direct units
+that detectBlockAnchors / enrichBlock emit a CLIN anchor iff allowClin is true.
+No production change. Suite 379 -> 384 green; typecheck + lint clean.

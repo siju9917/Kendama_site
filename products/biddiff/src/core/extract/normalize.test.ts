@@ -1,6 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { loadAllPairs } from "../../../test/corpus/harness.js";
+import {
+  computeOverallConfidence,
+  detectBlockAnchors,
+  enrichBlock,
+} from "./normalize.js";
 import { enrichStructuredDocument } from "./normalize.js";
+import { buildBlock } from "../model/build.js";
+
+const block = (text: string, conf?: number) =>
+  buildBlock({ sectionPath: "X", ordinal: 0, blockType: "PARAGRAPH", rawText: text, extractionConfidence: conf });
 
 describe("normalize: enrichStructuredDocument", () => {
   it("adds anchors to blocks across the synthetic corpus", () => {
@@ -69,5 +78,35 @@ describe("normalize: enrichStructuredDocument", () => {
       // Each clause-reference block has exactly one CLAUSE_REF anchor.
       expect(clauseCount).toBeGreaterThanOrEqual(5);
     }
+  });
+});
+
+describe("computeOverallConfidence (previously untested)", () => {
+  it("is the mean of block confidences", () => {
+    expect(computeOverallConfidence([block("a", 0.4), block("b", 0.8)])).toBeCloseTo(0.6, 10);
+  });
+  it("returns 1 for an empty block list (vacuous)", () => {
+    expect(computeOverallConfidence([])).toBe(1);
+  });
+  it("stays bounded in [0,1] and reflects the floor", () => {
+    const v = computeOverallConfidence([block("a", 0), block("b", 0), block("c", 1)]);
+    expect(v).toBeGreaterThanOrEqual(0);
+    expect(v).toBeLessThanOrEqual(1);
+    expect(v).toBeCloseTo(1 / 3, 10);
+  });
+});
+
+describe("CLIN anchor gating (direct unit; corpus covers it indirectly)", () => {
+  it("detects a CLIN anchor only when allowClin is true (Section B / PRICING)", () => {
+    const text = "CLIN 0001 quantity 1,500 units.";
+    const withClin = detectBlockAnchors(block(text), { allowClin: true });
+    const noClin = detectBlockAnchors(block(text), { allowClin: false });
+    expect(withClin.some((a) => a.type === "CLIN")).toBe(true);
+    expect(noClin.some((a) => a.type === "CLIN")).toBe(false);
+  });
+  it("enrichBlock threads allowClin through to the produced anchors", () => {
+    const b = block("CLIN 0002 unit price applies.");
+    expect(enrichBlock(b, { allowClin: true }).anchors.some((a) => a.type === "CLIN")).toBe(true);
+    expect(enrichBlock(b, { allowClin: false }).anchors.some((a) => a.type === "CLIN")).toBe(false);
   });
 });
