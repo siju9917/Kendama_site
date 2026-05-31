@@ -1668,3 +1668,21 @@ the exact thing the gate is meant to catch but better caught now.
 Three passes of red-teaming my own newly-written generator (55 build, 56
 sectPr, 57 rPr-order) each found a real Word-rendering issue — vindicating the
 "red-team your own fresh code too, not just legacy" discipline.
+
+
+## Polish pass 58 (2026-05-30 evening MT) — strict XML well-formedness gate for the redline OOXML
+
+The redline tests so far round-trip through the product's LENIENT regex DOCX
+walker — which would not catch an unbalanced/malformed tag that Word's STRICT
+parser rejects (a "repair?" prompt → failed human render-check #9). Added
+`redlineDocx.xmlvalid.test.ts` (jsdom `DOMParser`, `application/xml`, checks
+for `<parsererror>`) — a rigorous well-formedness gate: the redline parses
+clean for a normal diff, with injected XML metacharacters (< & > " and raw
+`</w:body>`/`</w:p>` in document text), with empty changes, and with
+unicode/emoji. All clean — the escaper holds under a strict parser. Suite
+420 -> 423 green; typecheck + lint clean.
+
+This completes the N3-redline de-risking trilogy (sectPr, rPr-order,
+strict-XML); the human's one-time Word render-check (#9) is now backed by
+structural + schema-order + strict-well-formedness verification, maximizing
+first-try success.
