@@ -213,6 +213,40 @@ growth in the README's "Adding a check" section.
 others (brain integrity, branch policy, guardrails compliance)
 follow naturally. This is the right scaffolding to grow.
 
+## 8. Stop-guard hardening + a brain count-drift check (from the 2026-05-30 session)
+
+**Type:** tooling / rigor
+
+**Expected impact:** two recurring drift/defect classes this session
+exposed:
+- **Stop-guard timezone correctness — DONE (2026-05-30).** The guard
+  computed the work-window weekday in UTC, not the human's Mountain
+  Time, and authorized a false session-end on a Saturday evening MT.
+  Fixed (`America/Denver`, `KENDAMA_TZ`-overridable) and a new
+  session-start check `ops/checks/stop-guard-logic.mjs` verifies the
+  guard's logic against synthetic instants (incl. the Sat-evening-MT /
+  Sunday-UTC boundary) so the class can't recur silently. See
+  `brain/DECISIONS.md` 2026-05-30, CLAUDE.md 5x.
+- **Brain count-drift — PROPOSED.** This session I repeatedly hand-
+  reconciled the test count in `STATE.md` / `WEEKLY_DIGEST.md`
+  (288→308→312→330→335) and it drifted stale between commits. A small
+  check could parse the asserted product-test count out of the brain
+  docs and compare it to the actual `vitest` total (or simply flag a
+  brain doc claiming "N tests" that disagrees with a freshly-counted
+  total), turning a manual, error-prone reconciliation into an
+  automated one. Cost: small. Caveat: it must not *run* the full suite
+  at session start (slow); better as a stop-time / digest-time check,
+  or a lint that flags any hard-coded "NNN tests" string older than the
+  latest CI run. **Status: proposed** — logged so a future cycle builds
+  it; not built now to avoid a speculative session-start cost.
+
+**Strengthens or weakens?** stronger (both).
+
+**Reasoning trace:** 5.7.3 — every defect leaves behind a check. The
+timezone bug got its check immediately; the count-drift is a softer,
+recurring annoyance whose check needs a little design (avoid the
+slow-suite trap), so it is queued rather than rushed.
+
 ## Notes for the META loop
 
 - The META loop pulls the top item from this list each cycle,
