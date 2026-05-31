@@ -1376,3 +1376,31 @@ MODIFY→`Modified: was "..." now "..."`, plus the `[Section X]` label and the
 leading critical-reason. Pins the edges: a null UCF letter renders NO empty
 `[Section ]` bracket, and an empty reason is omitted cleanly. No production
 change. Suite 397 -> 398 green; typecheck + lint clean.
+
+
+## Bug-hunt pass 45 (2026-05-30 evening MT) — HARDEN: telemetry counts schema (PII boundary)
+
+### Compliance/Security (#3) — `handleTelemetry` counts validation was too loose
+
+- **Area:** `server/handlers.ts` (`handleTelemetry`).
+- **Probe-first:** the schema is documented `{changes?, critical?, pages?}`
+  (numeric, non-PII), but the handler accepted ANY numeric key and any
+  `typeof === "number"` value. Confirmed before the fix: a body with
+  `counts: { secretUserId: 12345 }` returned 200 (PII smuggling), as did
+  `NaN`/`Infinity`. (`counts` as an array also slipped through.)
+- **Why it matters:** the entire point of this boundary is that document
+  content / PII CANNOT be sent even by a buggy or compromised client. An
+  open numeric-key set defeats that structurally.
+- **Severity:** the telemetry path is unwired in v1 (Compliance P1, item 7),
+  but this is the shipped server contract — hardening it now is correct and
+  matches the "structurally impossible to include PII" claim in
+  `docs/security-audit.md`.
+- **Fix:** strict `counts` validation — reject a non-object/array, an unknown
+  key (allow-list: changes/critical/pages), and any value that isn't a finite
+  non-negative integer. 3 regression tests (unknown key, NaN/Inf/neg/float,
+  array). Suite 398 -> 401 green; typecheck + lint clean; security-audit doc
+  updated.
+- **Roster growth (5.7.3):** Security/Compliance Critic checklist gains: "a
+  'numeric fields only' validator is not enough for a PII boundary — enforce
+  a KEY ALLOW-LIST (unknown keys smuggle data) and FINITE-INTEGER bounds
+  (typeof number admits NaN/Infinity)."

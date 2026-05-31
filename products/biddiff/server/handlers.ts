@@ -115,11 +115,23 @@ const ALLOWED_EVENTS = new Set([
 export function handleTelemetry(body: TelemetryEvent): HandlerResponse {
   if (!body?.event || !ALLOWED_EVENTS.has(body.event)) return bad("unknown event");
   if (typeof body.sessionId !== "string") return bad("sessionId required");
-  // Validate counts schema: numbers only, no strings.
-  if (body.counts) {
-    for (const k of Object.keys(body.counts)) {
-      const v = (body.counts as Record<string, unknown>)[k];
-      if (typeof v !== "number") return bad(`counts.${k} must be a number`);
+  // Validate counts schema STRICTLY (the whole point of this boundary is that
+  // no PII can be sent even by a buggy/compromised client): an allow-list of
+  // keys + finite non-negative integers only. Reject unknown keys (so a
+  // numeric ID like `secretUserId` can't be smuggled through), NaN/Infinity,
+  // negatives, and non-integers.
+  if (body.counts !== undefined) {
+    const counts = body.counts as Record<string, unknown>;
+    if (typeof counts !== "object" || counts === null || Array.isArray(counts)) {
+      return bad("counts must be an object");
+    }
+    const ALLOWED_COUNT_KEYS = new Set(["changes", "critical", "pages"]);
+    for (const k of Object.keys(counts)) {
+      if (!ALLOWED_COUNT_KEYS.has(k)) return bad(`counts.${k} is not an allowed field`);
+      const v = counts[k];
+      if (typeof v !== "number" || !Number.isInteger(v) || v < 0) {
+        return bad(`counts.${k} must be a non-negative integer`);
+      }
     }
   }
   // The handler is intentionally side-effect-free here; the deploy adapter

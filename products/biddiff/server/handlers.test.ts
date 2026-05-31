@@ -71,6 +71,29 @@ describe("server handlers", () => {
     expect(r.status).toBe(400);
   });
 
+  // Trust-boundary hardening (bug-hunt pass 45): the counts schema must
+  // STRUCTURALLY prevent PII — an allow-list of keys + finite non-negative
+  // integers only. A buggy/compromised client must not be able to smuggle a
+  // numeric id or a non-finite value through.
+  it("telemetry rejects an unknown counts key (PII smuggling)", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const r = handleTelemetry({ event: "diff_completed", sessionId: "abc", counts: { secretUserId: 12345 } as any });
+    expect(r.status).toBe(400);
+  });
+  it("telemetry rejects NaN / Infinity / negative / non-integer counts", () => {
+    for (const bad of [NaN, Infinity, -1, 1.5]) {
+      const r = handleTelemetry({ event: "diff_completed", sessionId: "abc", counts: { changes: bad } });
+      expect(r.status, `should reject ${bad}`).toBe(400);
+    }
+  });
+  it("telemetry rejects counts that is an array, accepts the allowed integer fields", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(handleTelemetry({ event: "diff_completed", sessionId: "abc", counts: [1, 2] as any }).status).toBe(400);
+    expect(
+      handleTelemetry({ event: "diff_completed", sessionId: "abc", counts: { changes: 3, critical: 1, pages: 50 } }).status,
+    ).toBe(200);
+  });
+
   it("ocr returns a stub result", async () => {
     const r = await handleOcr({ pdfBase64: "AAA" });
     expect(r.status).toBe(200);

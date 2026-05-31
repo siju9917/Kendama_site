@@ -51,8 +51,12 @@ any model/diff/extract type. Re-run on every commit.
 
 ## Telemetry boundary
 
-- `handleTelemetry` enforces a strict event-name whitelist and rejects
-  any non-numeric `counts.*` value (`server/handlers.test.ts` covers this).
+- `handleTelemetry` enforces a strict event-name whitelist AND a strict
+  `counts` schema: an allow-list of keys (`changes`/`critical`/`pages` only)
+  plus finite NON-NEGATIVE INTEGERS — so a buggy/compromised client cannot
+  smuggle a numeric id (e.g. `secretUserId`) or a non-finite value through
+  (hardened 2026-05-30, bug-hunt pass 45; `server/handlers.test.ts` covers
+  unknown-key, NaN/Infinity/negative/non-integer, and array rejection).
 - No file name, no document content, no path, no anchor text reaches
   the telemetry layer. The schema makes it structurally impossible to
   include them.
