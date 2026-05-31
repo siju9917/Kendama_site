@@ -137,6 +137,25 @@ hard-coded `if`s) and parameterize the anchor set. The core already has
 no federal coupling (the thesis test proves it), so the extraction is
 mechanical, not a rewrite.
 
+**The CORE layer is now property-pinned (2026-05-30), which materially
+de-risks the extraction.** Every domain-agnostic CORE module carries a
+direct property/invariant test, so a derivative inherits a *verified*
+engine rather than hoping the extraction preserved behavior:
+- alignment — section (greedy 1:1 + insert/delete), LCS/myers
+  (reconstruct-both-inputs), block (conservation), move (conservation +
+  0.9 threshold) all have property tests;
+- `critical`/`classify` — severity⇔reasons + declaration-order, and the
+  category precedence (UCF-letter-wins) are pinned;
+- `shared/text` similarity primitives (jaccard/containment/modify +
+  levenshtein truncation) and `shared/hash` (purity, 16-hex) are pinned;
+- `normalize` confidence math + the diff-confidence ceiling are pinned.
+So the rank-5 rule-pack-loader refactor and the `regdiff` extraction can
+proceed test-first: lift the CORE with its tests, swap the rule-pack, and
+the inherited property tests confirm the engine still holds. This is the
+concrete payoff of the saturated bug-hunt — it converts "the core
+generalizes" from a single thesis test into a verified, transplantable
+contract.
+
 ## B. The Chrome MV3 extension shell
 
 - **Surfaces:** side panel (workspace), popup (quick open + recent),
