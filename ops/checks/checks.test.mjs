@@ -21,6 +21,7 @@ import { analyze as analyzeQueue } from './human-queue.mjs';
 import * as noForbiddenMarkers from './no-forbidden-markers.mjs';
 import { scan as scanMarkers } from './no-forbidden-markers.mjs';
 import { redTeamStop, hookDecision } from './stop-guard.mjs';
+import * as stopGuardLogic from './stop-guard-logic.mjs';
 import * as governanceIntegrity from './governance-integrity.mjs';
 import { scanText as scanGov } from './governance-integrity.mjs';
 import { BLOCKING_LEVELS } from './lib.mjs';
@@ -172,9 +173,13 @@ test('governance-integrity: clean text passes', () => {
   assert.equal(blocking(f).length, 0);
 });
 
+test('stop-guard-logic: the real guard logic is sound (no blocking findings)', () => {
+  assert.equal(blocking(stopGuardLogic.analyze()).length, 0);
+});
+
 // --- Regression: real repo is currently known-good. ---
 
-for (const check of [brainIntegrity, noGithubActions, ruleCadence, humanQueue, noForbiddenMarkers, governanceIntegrity]) {
+for (const check of [brainIntegrity, noGithubActions, ruleCadence, humanQueue, noForbiddenMarkers, governanceIntegrity, stopGuardLogic]) {
   test(`real repo passes: ${check.name}`, () => {
     const { findings } = check.run();
     const bad = blocking(findings);

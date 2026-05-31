@@ -49,6 +49,7 @@ The `no-github-actions` check enforces this for the whole repo.
 | `human-queue` | `human/NEED_FROM_HUMAN.md` items are uniquely numbered and contiguous from 1 (the check-in walks the list by number). Added after a real duplicate-`## 4.` defect. | P1/P2 |
 | `no-forbidden-markers` | No `TODO`/`FIXME`/`XXX`/`HACK` in any product's shipped `src/` (GUARDRAILS #10) — unless recorded as a documented human-gated blocker. Excludes tests; avoids `XX.XXX`-style false positives. | P1 |
 | `governance-integrity` | No corruption of factory markdown (`CLAUDE.md`, `governance/`, `ops/`, `brain/`): leaked operator narration ("there appears to be an issue…", "let me read it directly", "as an AI") or the same substantial line repeated 3+× (mangled-edit signature). Added after a real `ops/loop.md` corruption. | P1 |
+| `stop-guard-logic` | The stop-guard's own logic is sound, checked against **synthetic** instants (never the live clock): it refuses a stop on Saturday — including the Saturday-evening-MT / Sunday-UTC boundary — and permits one on Sunday, in the human's timezone (`America/Denver`). Added after a real UTC-vs-local-time bug caused a false session-end (CLAUDE.md 5x). | P0 |
 
 ### The stop-guard red team (separate — run at STOP time, not session start)
 
