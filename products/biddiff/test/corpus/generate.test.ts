@@ -38,6 +38,22 @@ describe("corpus generator", () => {
     }
   });
 
+  // Floor-integrity invariant (bug-hunt pass 47): the corpus audit's
+  // "0 critical missed" hard floor only counts CRITICAL expecteds whose
+  // `mustDetect` is truthy (harness.ts evaluatePair). If a future CRITICAL
+  // expected were added with mustDetect:false, it would silently escape the
+  // floor — weakening the headline guarantee. Pin that EVERY critical
+  // expected is must-detect so the floor cannot be quietly hollowed out.
+  it("every CRITICAL expected change is mustDetect (the floor can't be silently weakened)", () => {
+    for (const b of loadAllPairs()) {
+      for (const e of b.label.expectedChanges) {
+        if (e.severity === "CRITICAL") {
+          expect(e.mustDetect, `${b.pairId}: a CRITICAL expected must be mustDetect`).toBe(true);
+        }
+      }
+    }
+  });
+
   it("null pairs have zero expected changes and identical prior/current sections (by block IDs)", () => {
     const nullPairs = loadAllPairs().filter((b) => b.pairId.startsWith("null-"));
     expect(nullPairs.length).toBeGreaterThanOrEqual(2);

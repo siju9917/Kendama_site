@@ -1414,3 +1414,27 @@ shape as ReviewPrompt (pass 23). Added 3: shows on first run, hidden once
 SEEN_KEY is set, Dismiss hides + persists. No production change. Suite
 401 -> 404 green; typecheck + lint clean. This leaves only genuinely
 presentational shells (App/index/SamAttachments markup) untested.
+
+
+## Bug-hunt pass 47 (2026-05-30 evening MT) — corpus-audit harness soundness (the headline-guarantee foundation)
+
+Red-teamed `test/corpus/harness.ts` — the eval harness behind the "100%
+recall, 0 false positives, 0 critical missed" claim that is BidDiff's whole
+value proposition. If the harness is loose, the headline is an artifact.
+Findings:
+- **One-to-one matching is correct.** `evaluatePair` filters already-matched
+  actuals before each match (line 138), so one actual can't satisfy two
+  expecteds — the classic double-count/recall-inflation bug is correctly
+  prevented. `unmatchedActuals` (false positives) is computed from genuinely
+  unmatched actuals. Sound.
+- **The critical floor covers ALL criticals.** `missedCritical` filters
+  `severity==="CRITICAL" && mustDetect`; probed the corpus → all **108**
+  CRITICAL expecteds have `mustDetect: true`, so none escapes the "0 critical
+  missed" floor. The headline guarantee is real, not a matcher artifact.
+
+**Future-proofing (the one real gap):** a future CRITICAL expected added with
+`mustDetect:false` would silently escape the floor. Added an invariant test in
+`test/corpus/generate.test.ts` asserting every CRITICAL expected is mustDetect
+— the floor can't be quietly hollowed out. Suite 404 -> 405 green; typecheck +
+lint clean. No production change (the harness was already sound; this pins the
+invariant that keeps it sound).
