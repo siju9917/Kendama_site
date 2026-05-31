@@ -156,6 +156,11 @@ describe("exportPdfReport", () => {
     const exotic = "Ω µ ∑ ✓ 你好 😀 ¹⁰⁰ ℃";
     const cloned = {
       ...r,
+      // Exercise BOTH interpolation sites: the change body AND the header's
+      // "Compared: <file> vs <file>" line (a non-Latin attachment name is a
+      // realistic crash vector pdf-lib would otherwise throw on).
+      currentDoc: { ...r.currentDoc, sourceFileName: `改訂版😀-${exotic}.pdf` },
+      priorDoc: { ...r.priorDoc, sourceFileName: "原本.pdf" },
       changes: r.changes.map((c) => ({
         ...c,
         beforeText: `prior: ${exotic}`,
