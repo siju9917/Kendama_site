@@ -32,6 +32,20 @@ describe("buildSummaryText", () => {
     expect(text).toContain("does not provide legal");
     expect(text.length).toBeGreaterThan(100);
   });
+
+  // Ordering guard (bug-hunt pass 20, 2026-05-30): the export must list
+  // critical changes before normal ones — matching the store-listing claim
+  // ("critical changes flagged at the top") AND the DiffView default order
+  // (criticalFirst, POLISH N9). This keeps all three surfaces consistent.
+  it("lists the Critical section before the Other section", () => {
+    const text = buildSummaryText(makeResult("it-svc-011-multi-critical"));
+    const ci = text.indexOf("Critical changes:");
+    const oi = text.indexOf("Other changes:");
+    expect(ci).toBeGreaterThan(-1);
+    // If there are normal changes too, Critical must come first; if there
+    // are none, the Other section is simply absent (also acceptable).
+    if (oi !== -1) expect(ci).toBeLessThan(oi);
+  });
 });
 
 describe("buildSummaryMarkdown", () => {

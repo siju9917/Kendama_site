@@ -945,3 +945,27 @@ interleaves source order above the 30-item threshold and asserts the left
 column still reads fully before the right (extraction reads by COORDINATE,
 not source order). Passes. Suite 310 -> 311 green; typecheck + lint clean.
 No production change.
+
+
+## Bug-hunt pass 20 (2026-05-30 evening MT) — export critical-first ordering guard
+
+The export (`buildSummaryText`/`buildSummaryMarkdown`) already lists a
+"Critical changes:" section before "Other changes:", but no test pinned that
+ordering. With POLISH N9 having just made the DiffView default order
+critical-first to match, this closes the loop: a test now asserts the export's
+Critical section precedes the Other section, keeping all THREE surfaces — the
+store-listing claim, the DiffView default view, and the export — consistent on
+"critical changes flagged at the top". Suite 311 -> 312 green; typecheck +
+lint clean. No production change.
+
+### Session bug-hunt/polish summary (passes 12–20, evening MT continuation)
+
+After the stop-guard timezone fix, the diff/extraction/storage/export core
+was characterized end to end: suppress.ts P2 fix (pass 12); money (13),
+heading (16), section-typing (18), storage durability (17),
+interleaved-column reconstruction (19), and export ordering (20)
+characterization; POLISH N8 (a11y stat explanations) + N9 (critical-first
+surfacing, closing Product-Sense P3). Plus the factory gained a
+`stop-guard-logic` session-start check so the timezone-bug class can't recur
+silently. Suite 285 -> 312 green throughout; every change verified by running
+the full suite before commit (per the 2026-05-30 verify-first lesson).
