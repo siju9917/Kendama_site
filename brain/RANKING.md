@@ -21,6 +21,41 @@ BidDiff ships.
 
 ### Candidate ranking (deep evaluations not yet done)
 
+### First-principles provisional sub-scores (2026-05-30 evening) — cap-INDEPENDENT
+
+The cited revenue/evidence research is cap-gated, but the SCORING_MODEL's
+*structural* factors (distribution, maintenance, build feasibility, self-serve,
+defensibility, strategic fit) can be scored now from first principles. These
+are provisional and will be revised by the cited deep-eval; revenue/probability
+columns are left as ranges pending research and excluded from the partial total.
+Scored 0–10 per the model; the partial weighted total uses ONLY the
+cap-independent factors (Dist 14, Maint 10, Build 10, Self-serve 8, Defens 8,
+Strategic 8 = 58 of the 100 weight) so candidates are comparable today on what
+we can defensibly assess. The on-device-trust wedge (see IDEA_BACKLOG) is
+reflected in Distribution for the security-review-gated candidates.
+
+| Candidate | Dist (×14) | Maint (×10) | Build (×10) | Self-serve (×8) | Defens (×8) | Strategic (×8) | Partial /580 | Hard-filter notes |
+|---|--:|--:|--:|--:|--:|--:|--:|---|
+| **Rank-1 Apex (JetBrains)** | 9 | 9 | 6 | 10 | 6 | 7 | **460** | passes all filters; build feasibility docked (Apex-domain fluency unproven) |
+| **D2 clauseguard (GitHub app)** | 9 | 6 | 8 | 9 | 8 | 9 | **474** | on-device/clause-data moat; maint docked (hosted webhook receiver) |
+| **D4 Shopify theme-risk** | 9 | 5 | 7 | 10 | 5 | 6 | **414** | highest rev ceiling but server-side (no on-device wedge); API-version churn |
+| **D3 protobuf (JetBrains)** | 8 | 9 | 7 | 10 | 5 | 7 | **448** | Buf is a strong incumbent (defensibility docked); IDE-native wedge |
+| **D5 OpenAPI (VS Code)** | 9 | 9 | 7 | 5 | 5 | 7 | **422** | VS Code has no built-in billing (self-serve docked → DIY license server) |
+| **Rank-2 FAR/DFARS MCP** | 6 | 8 | 8 | 7 | 8 | 9 | **436** | MCP distribution emerging/unproven (Dist docked hard); strong strategic fit |
+
+**Reading (cap-independent only):** on the structural factors alone, **D2
+clauseguard** leads (474/580) — strong distribution + the clause-data/on-device
+moat + highest strategic fit — over **rank-1 Apex** (460) and **D3
+protobuf** (448). (Sub-scores verified arithmetically against the model
+weights Dist14/Maint10/Build10/Self8/Defens8/Strategic8.) This does NOT override the recommended deep-eval order below,
+because the *missing* columns (revenue ceiling 18, probability 14, evidence 10
+= 42 of 100 weight) are exactly where rank-1's "Proven" tier and Apex's
+documented paid-plugin market are expected to pull it up. The honest takeaway:
+**D2 and rank-1 are effectively co-leads pending the cited evidence** — D2 on
+structure, rank-1 on proven-revenue — which is why both sit at the top of the
+deep-eval order. D4's high revenue ceiling must overcome its weak structure +
+no on-device wedge to win.
+
 ### Holistic synthesis (2026-05-30) — recommended deep-eval order
 
 After first-principles scaffolding of all 5 seeded candidates +
@@ -131,6 +166,7 @@ ranking — it builds from an approved ranking.
 | 2026-05-27 | Bootstrap | Provisional rank seeded | Carried forward from prior human research. Not final until deep evaluations land. |
 | 2026-05-30 | New ideas added (first-principles ideation) | Added derivative-reasoning family D1–D5 | "Critical-change diff" recognized as a horizontal capability; 5 concrete candidates across npm/GitHub/JetBrains/Shopify/VS Code surfaces, provisionally ranked by strategic fit × distribution × evidence. Cited deep-eval still cap-gated. |
 | 2026-05-30 | All 5 seeded candidates scaffolded + holistic synthesis | Produced the recommended deep-eval order (rank-1, D2, D4, D3/D5, rank-2) + reclassified rank-3/5/D1 as byproduct-infra and rank-4 as companion | First-principles hard-filter analysis: rank-4 fails distribution-without-marketing; rank-3/5/D1 are infrastructure not lead products; the marketplace + Proven-leaning candidates lead. Cited research still cap-gated. |
+| 2026-05-30 (evening) | First-principles provisional sub-scores computed | Scored the 6 candidates on the 6 cap-independent SCORING_MODEL factors (partial /580): D2 clauseguard 474 ≳ rank-1 Apex 460 ≳ D3 protobuf 448 > MCP 436 > D5 422 > D4 414 | Cited revenue/probability/evidence (42 of 100 weight) still cap-gated; on structure alone D2 leads, but rank-1's expected Proven-revenue tier makes them co-leads — consistent with the deep-eval order. Arithmetic verified. |
 | 2026-05-30 (evening) | "On-device trust wedge" insight (first-principles; see IDEA_BACKLOG) | Up-weight distribution sub-score for security-review-gated, on-device candidates (D1/D2/MCP); down-weight inherently server-side ones (D4, rank-4 feed); D2 ≳ D4 sharpened with a reason | BidDiff's verified fully-on-device architecture is a *distribution* asset, not just privacy: "no data leaves your machine" clears the security review that gates adoption for compliance-sensitive buyers — a self-serve trust claim that shortens the sales cycle with zero marketing spend (exactly what the hard filter rewards), and one server-side incumbents can't match. The strongest first product may be the one whose buyer's security review is *hardest*, not the highest-TAM. Cap-independent (rests on the passing on-device test); cited deep-eval should test it, not originate it. |
 
 ---
