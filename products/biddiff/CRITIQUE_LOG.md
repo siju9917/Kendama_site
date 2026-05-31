@@ -23,6 +23,31 @@ re-opening review | escalation second-pass.
 
 ---
 
+## 2026-05-31 — Phase K1 — bug-hunt pass 68 (Correctness, 5.7.5)
+
+**Pass type:** bug-hunt — the LocalLicenseClient trial/grace/license state
+machine (revenue-gating logic).
+
+**Critics run:** Correctness #1, Product-Sense #11.
+
+**Finding:** none (verified negative). The five-branch `validate()` (solo
+blob → active; trial within window → active; just-expired → grace;
+past-grace → expired; no trialStart → invalid) computes the right state at
+each boundary.
+
+**Coverage gap closed:** only trial-active was tested — the **expired**,
+**grace**, and **solo/licensed** branches (the ones that actually gate paid
+features) were untested. A broken expired-branch is a revenue leak (free
+forever) or a wrongful lockout. Seeded the shared memory KV with an old
+`trialStartedAt` / a signed blob and added three tests: solo blob → solo
+active (+ `lastValidatedAt` passthrough); 16-days-in → grace with
+`gracePeriodSecondsLeft > 0`; 30-days-in → expired with no grace left.
+438 → 441.
+
+**Convergence:** clean; full gate green (441/441).
+
+---
+
 ## 2026-05-31 — Phase K1 — bug-hunt pass 67 (Reliability + Security, 5.7.5)
 
 **Pass type:** bug-hunt — the SAM.gov content-script parser
