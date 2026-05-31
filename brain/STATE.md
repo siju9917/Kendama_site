@@ -63,7 +63,7 @@
   a stronger privacy claim). All four P1s are human/cap-gated.
   (Positive: the FAR/DFARS clause dataset's well-known titles were
   spot-checked accurate + current.)
-- **Build green:** **373/373 tests** (was 226 at session start; 285 by the
+- **Build green:** **378/378 tests** (was 226 at session start; 285 by the
   Saturday close; +50 across the evening continuation passes 8-25), lint + typecheck
   clean; full CI gate (typecheck+lint+test+build+bundle-budget) verified
   green end-to-end.
@@ -350,7 +350,7 @@ already correct, and a hallucinated "fix" briefly broke the build (277/296)
 before being reverted. True state at that point: **288/288 green** (the false
 P0 reverted; 285 prior + 3 new confidence-ceiling tests; two other new
 property tests removed as unsound). The session then continued (passes 12–25
-+ N8/N9) to **373/373 green** — see the continuation log above. The
++ N8/N9) to **378/378 green** — see the continuation log above. The
 stop-hook interlock and governance-integrity check are real and stand. See
 `brain/META_LESSONS.md` (2026-05-31) and `products/biddiff/CRITIQUE_LOG.md`
 (RETRACTION) for the honest account.
