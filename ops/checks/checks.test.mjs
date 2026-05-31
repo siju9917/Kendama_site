@@ -28,6 +28,8 @@ import * as checksRegistry from './checks-registry.mjs';
 import { analyze as analyzeRegistry } from './checks-registry.mjs';
 import * as stateCountSanity from './state-count-sanity.mjs';
 import { analyze as analyzeStateCount } from './state-count-sanity.mjs';
+import * as approvalsWindow from './approvals-window.mjs';
+import { analyze as analyzeApprovals } from './approvals-window.mjs';
 import { BLOCKING_LEVELS } from './lib.mjs';
 
 const blocking = (findings) => findings.filter((f) => BLOCKING_LEVELS.has(f.level));
@@ -225,9 +227,43 @@ test('state-count-sanity: duplicate headlines are flagged', () => {
   assert.ok(f.some((x) => /\d+ .*headlines/.test(x.message)));
 });
 
+const APPROVALS_DOC = `## Open proposals
+### Proposal #1 — test
+- Auto-proceed window: defaults to REPOSITION if no response by 2026-06-03
+- **Status:** _awaiting human response_
+## Closed proposals (audit trail)
+### old thing — no response by 2020-01-01
+- **Status:** AUTO-PROCEEDED
+`;
+
+test('approvals-window: open proposal with elapsed window is flagged P1', () => {
+  const after = new Date('2026-06-10T12:00:00Z');
+  const f = analyzeApprovals(APPROVALS_DOC, after);
+  assert.ok(f.some((x) => x.level === 'P1' && /auto-proceed window elapsed/.test(x.message)));
+});
+
+test('approvals-window: open proposal BEFORE its window does not flag', () => {
+  const before = new Date('2026-05-30T12:00:00Z');
+  const f = analyzeApprovals(APPROVALS_DOC, before);
+  assert.equal(blocking(f).length, 0);
+});
+
+test('approvals-window: a resolved proposal never flags even past its date', () => {
+  const doc = APPROVALS_DOC.replace('_awaiting human response_', 'APPROVED on 2026-05-28 by human');
+  const f = analyzeApprovals(doc, new Date('2026-06-10T12:00:00Z'));
+  assert.equal(blocking(f).length, 0);
+});
+
+test('approvals-window: dates in the Closed section never trip the check', () => {
+  // The closed entry has a 2020 date but lives below "## Closed proposals".
+  const f = analyzeApprovals(APPROVALS_DOC, new Date('2026-06-10T12:00:00Z'));
+  // Only the open #1 should flag — exactly one P1, not two.
+  assert.equal(f.filter((x) => x.level === 'P1').length, 1);
+});
+
 // --- Regression: real repo is currently known-good. ---
 
-for (const check of [brainIntegrity, noGithubActions, ruleCadence, humanQueue, noForbiddenMarkers, governanceIntegrity, stopGuardLogic, checksRegistry, stateCountSanity]) {
+for (const check of [brainIntegrity, noGithubActions, ruleCadence, humanQueue, noForbiddenMarkers, governanceIntegrity, stopGuardLogic, checksRegistry, stateCountSanity, approvalsWindow]) {
   test(`real repo passes: ${check.name}`, () => {
     const { findings } = check.run();
     const bad = blocking(findings);

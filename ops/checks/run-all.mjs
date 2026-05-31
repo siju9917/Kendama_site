@@ -27,6 +27,7 @@ import * as governanceIntegrity from './governance-integrity.mjs';
 import * as stopGuardLogic from './stop-guard-logic.mjs';
 import * as checksRegistry from './checks-registry.mjs';
 import * as stateCountSanity from './state-count-sanity.mjs';
+import * as approvalsWindow from './approvals-window.mjs';
 
 // NOTE: stop-guard.mjs itself is deliberately NOT in this session-start suite
 // — it is the STOP-TIME red team (P0 by design while it is Saturday). Run it
@@ -35,7 +36,7 @@ import * as stateCountSanity from './state-count-sanity.mjs';
 // synthetic instants (never the live clock), so a timezone/logic regression
 // in the guard is caught at session start.
 
-const CHECKS = [brainIntegrity, noGithubActions, ruleCadence, humanQueue, noForbiddenMarkers, governanceIntegrity, stopGuardLogic, checksRegistry, stateCountSanity];
+const CHECKS = [brainIntegrity, noGithubActions, ruleCadence, humanQueue, noForbiddenMarkers, governanceIntegrity, stopGuardLogic, checksRegistry, stateCountSanity, approvalsWindow];
 
 const ICON = { P0: '✗', P1: '✗', P2: '!', info: '·' };
 

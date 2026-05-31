@@ -389,3 +389,25 @@ explicit window start/end (overkill for a weekday check).
 **Where applied:** `ops/checks/stop-guard.mjs`, `ops/checks/checks.test.mjs`
 (regression: refuse on Sat-evening-MT/Sunday-UTC), `.claude/settings.json`
 comment, CLAUDE.md 5x.
+
+
+## 2026-05-30 — approvals-window check (auto-proceed deadlines cannot be silently missed)
+
+**Decision:** Add `ops/checks/approvals-window.mjs` (10th factory check): at
+session start, flag any OPEN `human/APPROVALS.md` proposal whose auto-proceed
+window ("no response by YYYY-MM-DD") has elapsed against the real clock, as a
+P1 actionable item (apply the documented default + set Status to
+AUTO-PROCEEDED).
+
+**Reasoning:** Proposals carry an auto-proceed window so the factory is never
+blocked indefinitely on the human; but nothing enforced that an *elapsed*
+window gets noticed — a future session could keep treating an auto-proceeded
+proposal as "awaiting." This closes that silent-failure mode. Scoped to the
+"Open proposals" section so the closed/audit history (with legitimately old
+dates) never trips it.
+
+**Reversibility:** remove it from run-all's CHECKS array + delete the file.
+
+**Where applied:** `ops/checks/approvals-window.mjs`, `run-all.mjs`,
+`checks.test.mjs` (4 tests), `ops/checks/README.md`. Surfaced by a
+first-principles "what silent-failure mode do the 9 checks miss?" review.
