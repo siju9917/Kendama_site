@@ -23,6 +23,29 @@ re-opening review | escalation second-pass.
 
 ---
 
+## 2026-05-31 — Phase K1 — bug-hunt pass 76 (Reliability, 5.7.5)
+
+**Pass type:** bug-hunt — exporting a ZERO-change diff (the user compares two
+versions that are identical or differ only by suppressed reformatting, then
+exports).
+
+**Critics run:** Reliability #7.
+
+**Finding:** none (verified negative). `buildSummaryText` and `exportPdfReport`
+handle an empty change list cleanly — a valid "Total changes: 0" report + the
+disclaimer, a valid PDF blob, no crash on the empty list, no confusing blank
+document.
+
+**Coverage gap closed:** the export tests exercised changes but not the
+zero-change path — a realistic user action whose regression (an unguarded
+`changes[0]` / empty-list crash) is a common refactor bug. Added a test
+(self-diff a doc → 0 changes; assert the summary shows `Total changes: 0` + the
+disclaimer, and the PDF blob is valid). 453 → 454.
+
+**Convergence:** clean; full gate green (454/454).
+
+---
+
 ## 2026-05-31 — Phase K1 — bug-hunt pass 75 (Correctness, 5.7.5)
 
 **Pass type:** bug-hunt — newly-invented realistic input: the SAME clause/range

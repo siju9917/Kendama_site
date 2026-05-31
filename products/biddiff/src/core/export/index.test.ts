@@ -171,4 +171,21 @@ describe("exportPdfReport", () => {
     expect(blob.type).toBe("application/pdf");
     expect(blob.size).toBeGreaterThan(500);
   }, 30_000);
+
+  it("exports a valid report for a ZERO-change diff (identical versions) without crashing", async () => {
+    // A realistic path: the user compares two versions that turn out identical
+    // (or differ only by suppressed reformatting) → 0 changes, then exports.
+    // The export must produce a clean 'Total changes: 0' report, not crash on
+    // the empty change list or emit a confusing blank document.
+    const engine = new DiffEngine(new LocalClauseClient());
+    const doc = enrichStructuredDocument(loadPair("it-svc-001-due-date-shift").current);
+    const zero = engine.diff(doc, doc); // self-diff = zero changes
+    expect(zero.changes.length).toBe(0);
+    const text = buildSummaryText(zero);
+    expect(text).toMatch(/Total changes:\s*0/);
+    expect(text).toContain("BidDiff identifies textual differences"); // disclaimer still present
+    const blob = await exportPdfReport(zero);
+    expect(blob.type).toBe("application/pdf");
+    expect(blob.size).toBeGreaterThan(500);
+  }, 30_000);
 });
