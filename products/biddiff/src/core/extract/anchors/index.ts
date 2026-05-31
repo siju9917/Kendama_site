@@ -254,8 +254,12 @@ export function detectMoney(text: string): Anchor[] {
 
 // ---------- Page limit ----------
 
+// The `(?:[a-z]+\s+\()?` ... `\)?` around the digit captures the very common
+// federal phrasing "shall not exceed ten (10) pages" — a spelled-out number
+// followed by the authoritative digit in parentheses. The optional group is
+// skipped for the plain "30 pages" form, so existing matches are unaffected.
 const PAGE_LIMIT_RE =
-  /(?:not\s+(?:to\s+)?exceed|limited\s+to|no\s+more\s+than|maximum\s+of)\s+(\d{1,4})\s+pages\b|page\s+limit[:\s]+(?:of\s+)?(\d{1,4})\s+pages\b/gi;
+  /(?:not\s+(?:to\s+)?exceed|limited\s+to|no\s+more\s+than|maximum\s+of)\s+(?:[a-z]+\s+\()?(\d{1,4})\)?\s+pages\b|page\s+limit[:\s]+(?:of\s+)?(?:[a-z]+\s+\()?(\d{1,4})\)?\s+pages\b/gi;
 
 export function detectPageLimits(text: string): Anchor[] {
   PAGE_LIMIT_RE.lastIndex = 0;

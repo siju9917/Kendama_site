@@ -163,6 +163,21 @@ describe("page limits", () => {
   it("does not match generic page mentions", () => {
     expect(detectPageLimits("on page 5 of the attachment").length).toBe(0);
   });
+
+  // Bug-hunt pass 42 (PROGRESS coverage obs #2): spelled-out + parenthetical
+  // page limits ("shall not exceed ten (10) pages") are a very common federal
+  // phrasing that previously matched nothing. The authoritative digit is in
+  // the parens; extract it.
+  it("extracts the parenthetical digit from a spelled-out page limit", () => {
+    expect(detectPageLimits("shall not exceed ten (10) pages").map((x) => x.normalized)).toEqual(["10"]);
+    expect(detectPageLimits("not to exceed twenty (20) pages").map((x) => x.normalized)).toEqual(["20"]);
+    expect(detectPageLimits("page limit of fifty (50) pages").map((x) => x.normalized)).toEqual(["50"]);
+  });
+
+  it("still matches the plain digit form (no regression)", () => {
+    expect(detectPageLimits("not to exceed 30 pages").map((x) => x.normalized)).toEqual(["30"]);
+    expect(detectPageLimits("maximum of 40 pages").map((x) => x.normalized)).toEqual(["40"]);
+  });
 });
 
 describe("CLIN", () => {

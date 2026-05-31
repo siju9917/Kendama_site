@@ -1329,3 +1329,21 @@ This is the verify-first discipline producing a REAL fix (contrast the
 
 Probe-first discipline again produced a real fix (failing case existed before
 the change).
+
+
+## Bug-hunt pass 42 (2026-05-30 evening MT) — FIX: spelled-out page limits (coverage obs #2)
+
+Closes the long-standing PROGRESS coverage obs #2. `PAGE_LIMIT_RE` required
+the digit immediately after the lead phrase, so the very common federal
+phrasing "shall not exceed ten (10) pages" matched nothing (probe-confirmed
+before the fix). The authoritative digit sits in the parens; the regex now
+allows an optional `<word> (` before the digit and a `)` after, extracting
+"ten (10)" -> 10 and "fifty (50)" -> 50, with NO regression to the plain
+"30 pages" form. Pure extraction correctness (page-limit anchors feed
+classification by presence, not value). 2 regression tests; the corpus
+recall/precision hard floors held (391 tests incl. the corpus audit). Suite
+389 -> 391 green; typecheck + lint clean.
+
+Note: this is non-gated extraction correctness, distinct from the gated BD2
+critical-RULESET work (which still awaits domain-expert validation). It just
+makes the existing PAGE_LIMIT anchor fire on a phrasing it was missing.

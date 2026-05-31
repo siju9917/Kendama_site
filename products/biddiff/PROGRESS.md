@@ -59,11 +59,14 @@ session has specifics, not a vague "improve extraction":
    by *presence* only, never by value, and no test asserted the value,
    so this does not touch the gated critical ruleset. 3 new tests in
    `src/core/extract/anchors/index.test.ts`; full suite 246/246.
-2. **Spelled-out page limits with parenthetical not matched.**
-   `PAGE_LIMIT_RE` requires digits immediately after the lead phrase,
-   so "shall not exceed ten (10) pages" — a very common federal
-   phrasing — is missed. Candidate fix: allow an optional
-   spelled-number + parenthetical digit form.
+2. **Spelled-out page limits with parenthetical not matched. — ADDRESSED 2026-05-30.**
+   `PAGE_LIMIT_RE` required the digit immediately after the lead phrase,
+   so "shall not exceed ten (10) pages" — a very common federal phrasing —
+   was missed. The regex now allows an optional `<word> (` before the digit
+   and a `)` after, pulling the authoritative digit from the parenthetical
+   ("ten (10)" -> 10), with no regression to the plain "30 pages" form.
+   Pure extraction correctness (page-limit anchors feed classification by
+   presence). 2 regression tests; corpus floors held. Bug-hunt pass 42.
 3. **US date validity not checked. — ADDRESSED 2026-05-30.**
    `US_DATE_RE` (and the ISO + month-name forms) accepted
    calendrically-impossible dates like "02/30/2026" and normalized
