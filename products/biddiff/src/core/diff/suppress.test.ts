@@ -101,4 +101,17 @@ describe("aggressiveNormalize — unit behavior", () => {
   it("still treats a digit-flanked hyphen (range) as value-bearing", () => {
     expect(aggressiveNormalize("3-5")).not.toBe(aggressiveNormalize("35"));
   });
+
+  it("unifies unicode dash variants so a PDF dash swap is not a spurious change", () => {
+    // PDFs render hyphens inconsistently (ASCII '-', U+2011 non-breaking
+    // hyphen, U+2013 en-dash). The SAME clause/range with different dash chars
+    // must normalize equal — otherwise every such clause shows as a phantom
+    // change. (A real value change still differs, asserted last.)
+    const ascii = aggressiveNormalize("FAR 52.204-21");
+    expect(aggressiveNormalize("FAR 52.204‑21")).toBe(ascii); // non-breaking hyphen
+    expect(aggressiveNormalize("FAR 52.204–21")).toBe(ascii); // en-dash
+    expect(aggressiveNormalize("FAR 52.204—21")).toBe(ascii); // em-dash
+    // A genuine clause-number change must NOT be unified away.
+    expect(aggressiveNormalize("FAR 52.204-21")).not.toBe(aggressiveNormalize("FAR 52.204-25"));
+  });
 });

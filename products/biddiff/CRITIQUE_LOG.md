@@ -23,6 +23,30 @@ re-opening review | escalation second-pass.
 
 ---
 
+## 2026-05-31 — Phase K1 — bug-hunt pass 75 (Correctness, 5.7.5)
+
+**Pass type:** bug-hunt — newly-invented realistic input: the SAME clause/range
+rendered with DIFFERENT dash characters (PDFs emit ASCII `-`, U+2011
+non-breaking hyphen, U+2013 en-dash, U+2014 em-dash inconsistently).
+
+**Critics run:** Correctness #1.
+
+**Finding:** none (verified negative). `aggressiveNormalize` unifies all four
+dash variants → the same normalized string, so a dash-character swap on an
+unchanged clause is suppressed as reformatting (not a phantom change), while a
+real value change (`-21` → `-25`) still differs.
+
+**Coverage gap closed:** suppress.test.ts covered hyphen-as-sign and
+hyphen-in-word, but NOT unicode dash unification — a realistic high-frequency
+case (every clause/range in a PDF using a non-ASCII dash). If normalization
+stopped unifying them, the diff would flood with phantom changes. Added a test
+pinning ASCII == U+2011 == en-dash == em-dash, plus the real-change negative.
+452 → 453.
+
+**Convergence:** clean; full gate green (453/453).
+
+---
+
 ## 2026-05-31 — Phase K1 — bug-hunt pass 74 (Correctness, 5.7.5)
 
 **Pass type:** bug-hunt — the Summary UI's count fields (`criticalCount`,
