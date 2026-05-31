@@ -37,7 +37,7 @@ in the original write-up (262) predate the passes 8–10 continuation. **Correct
 
 **Final session tally (Saturday, late evening MT) — the scannable version:**
 
-- **Tests 226 → 398, full CI gate green end-to-end** (typecheck + lint + build
+- **Tests 226 → 423, full CI gate green end-to-end** (typecheck + lint + build
   + bundle budget). The diff/extraction/storage/UI/runtime core is now
   characterized to saturation: every exported core function is tested, and all
   four diff-alignment layers + the critical-rule engine carry property tests of
@@ -49,6 +49,8 @@ in the original write-up (262) predate the passes 8–10 continuation. **Correct
   History click (P2), and a markdown-export backtick-injection on filenames
   (P3). The last extraction coverage gap (spelled-out page limits, "ten (10)
   pages") is also closed.
+- **New feature, built behind its gate — a redline Word (.docx) export.** Capture teams live in Word; the generator is built + tested (valid OOXML, strict-XML-validated, schema-correct) but NOT yet wired to a button — a ~3-min human check that one sample renders cleanly in Word is queued (NEED_FROM_HUMAN #9), then the button ships. No new dependency.
+- **A full docs-vs-code claim audit** fixed 3 user-facing accuracy gaps (clause criticality was under-claimed as add/remove vs the code's add/remove/change; an over-stated "100% recall" vs the enforced "0 critical missed + at least 98%"; the marketing site) and routed 3 launch-scope claims to you (the privacy/OCR + support-license copy describing unshipped server flows; the tier copy). Each fix is now guarded by a test.
 - **Your "never stop on Saturday" directive is enforced and correct.** It's a
   red-team Stop hook + written rule, evaluated in **Mountain Time** (an early
   UTC bug that caused a false stop is fixed and now has a session-start
