@@ -476,3 +476,27 @@ might miss (case, whitespace, unicode, substring boundaries). "The check
 passed" only means the check ran, not that it would catch the thing. This is
 5.7.8's spirit applied to the check roster: don't trust a green check; attack
 its detection logic.
+
+## 2026-05-30 — completed a full red-team sweep of all 10 factory-check matchers
+
+Following the no-forbidden-markers false-negative, I red-teamed every check's
+detection logic with inputs it should catch (in the forms it might miss):
+- **no-forbidden-markers** — FOUND + FIXED: was case-sensitive (lowercase
+  todo/FixMe slipped through). Now `/i`, word-boundary-guarded, regression-tested.
+- **state-count-sanity** — sound: flags a red-as-green headline (380/400 P1),
+  treats 0/0 as acceptable (degenerate, can't occur in practice).
+- **approvals-window** — sound: fires ON the deadline day (the `>=` boundary
+  is correct for "by YYYY-MM-DD").
+- **human-queue** — sound: catches gaps + duplicates, ignores non-numbered
+  headings.
+- **governance-integrity** — sound: case-insensitive patterns; deliberately
+  narrow (known-signature, not a general AI-prose detector) to avoid
+  false positives — correct by design.
+- **no-github-actions / rule-cadence / brain-integrity / stop-guard-logic /
+  checks-registry** — clean on the real repo + their own unit tests.
+
+**Cadence item (added):** a periodic "red-team the checks' matchers" pass
+belongs in the META loop alongside re-critiquing products — the checks are
+code with bugs, and a false-negative check silently erodes the rigor it
+exists to protect (5.7.8 applied to the check roster). One sweep per cycle
+minimum; attack new checks' matchers when they're added.
