@@ -74,6 +74,21 @@ describe("buildSummaryMarkdown", () => {
     expect(md).toMatch(/``\s?uses a `template` literal\s?``/);
     expect(md).toMatch(/```\s?uses a ``double-back`` literal\s?```/);
   });
+
+  it("header metadata (filenames, solicitation id) survives an embedded backtick (bug-hunt pass 41)", async () => {
+    const { buildSummaryMarkdown } = await import("./index.js");
+    const r = makeResult("it-svc-001-due-date-shift");
+    r.currentDoc.sourceFileName = "weird`name.pdf";
+    r.priorDoc.sourceFileName = "ok.pdf";
+    r.currentDoc.solicitationId = "RFP-`123";
+    const md = buildSummaryMarkdown(r);
+    const compared = md.split("\n").find((l) => l.includes("Compared:")) ?? "";
+    // The fence must be wider than the embedded backtick so the span doesn't
+    // break — the filename appears intact inside a single code span.
+    expect(compared).toMatch(/``\s?weird`name\.pdf\s?``/);
+    const sol = md.split("\n").find((l) => l.includes("Solicitation:")) ?? "";
+    expect(sol).toMatch(/``\s?RFP-`123\s?``/);
+  });
 });
 
 describe("exportPdfReport", () => {

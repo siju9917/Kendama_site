@@ -1299,3 +1299,33 @@ false test, exactly the class of error the session's worst lapse taught.
 
 This is the verify-first discipline producing a REAL fix (contrast the
 2026-05-30 hallucinated non-fix): a failing case existed before the change.
+
+
+## Bug-hunt pass 41 (2026-05-30 evening MT) — P3 FIX: markdown export header metadata broke on a backtick
+
+### P3 — Correctness/Output (#1) — `buildSummaryMarkdown` header used raw code spans
+
+- **Area:** `src/core/export/index.ts` (`buildSummaryMarkdown`).
+- **Probe-first:** set a source filename to "weird`name.pdf" and rendered —
+  the **Compared:** line came out ```weird`name.pdf` vs. `ok.pdf``` i.e. the
+  code span broke at the embedded backtick (failing case before the fix).
+- **Symptom:** the change *text* was already protected by the CommonMark-safe
+  `mdInlineCode` helper, but the header metadata (file names, solicitation id)
+  used raw `\`${value}\`` template spans. File names are user-controlled
+  (the user names/drops the files), so a backtick in a name corrupts the
+  exported markdown's structure.
+- **Severity:** P3 — cosmetic corruption of an export, narrow trigger, but a
+  real output-correctness defect and an easy asymmetry to miss.
+- **Fix:** route solicitationId + both file names through `mdInlineCode`
+  (the same fence-widening helper the change text uses). Regression test
+  asserts a backtick-containing filename + solicitation id render intact
+  inside a single widened code span. Suite 388 -> 389 green; typecheck + lint
+  clean.
+- **Roster growth (5.7.3):** Correctness Critic (#1) checklist gains: "when a
+  module has a safe-rendering helper for one field (e.g. mdInlineCode for
+  change text), AUDIT every other interpolation of user-controlled data in
+  that module for the same treatment — partial application is the bug. Header
+  metadata is user-controlled too."
+
+Probe-first discipline again produced a real fix (failing case existed before
+the change).

@@ -122,9 +122,14 @@ export function buildSummaryMarkdown(result: DiffResult): string {
   const lines: string[] = [];
   lines.push("# BidDiff — Solicitation Amendment Comparison");
   if (result.currentDoc.solicitationId) {
-    lines.push(`**Solicitation:** \`${result.currentDoc.solicitationId}\``);
+    // User-controlled values (solicitation id, file names) must go through the
+    // CommonMark-safe code-span helper — a raw `${...}` span breaks if the
+    // value contains a backtick (filenames are user-supplied).
+    lines.push(`**Solicitation:** ${mdInlineCode(result.currentDoc.solicitationId)}`);
   }
-  lines.push(`**Compared:** \`${result.currentDoc.sourceFileName}\` vs. \`${result.priorDoc.sourceFileName}\``);
+  lines.push(
+    `**Compared:** ${mdInlineCode(result.currentDoc.sourceFileName)} vs. ${mdInlineCode(result.priorDoc.sourceFileName)}`,
+  );
   if (result.generatedAt) lines.push(`**Generated:** ${prettyGeneratedAt(result.generatedAt)}`);
   lines.push("");
   lines.push(`- **Total changes:** ${result.changes.length}`);
