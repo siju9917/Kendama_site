@@ -57,4 +57,32 @@ describe("Summary — Critical stat affordance (Product-Sense K1 P2)", () => {
     render(<Summary result={result(0)} />);
     expect(screen.getByText("Critical").closest(".summary__stat")).toBeTruthy();
   });
+
+  // POLISH N8: the explanation must reach screen-reader AND keyboard users,
+  // not only mouse-hover. The stat is focusable and points at a
+  // visually-hidden description via aria-describedby.
+  it("exposes the Critical explanation to assistive tech (aria-describedby + focusable)", () => {
+    render(<Summary result={result(2)} />);
+    const stat = screen.getByTitle(/what biddiff flags as critical/i);
+    expect(stat.getAttribute("tabindex")).toBe("0"); // keyboard-reachable
+    const id = stat.getAttribute("aria-describedby");
+    expect(id).toBeTruthy();
+    const desc = document.getElementById(id!);
+    expect(desc).toBeTruthy();
+    expect(desc!.className).toContain("sr-only");
+    expect(desc!.textContent ?? "").toMatch(/deadlines|dates/i);
+    expect(desc!.textContent ?? "").toMatch(/clause/i);
+  });
+
+  it("exposes the Confidence explanation to assistive tech (aria-describedby + focusable)", () => {
+    render(<Summary result={result(2)} />);
+    const stat = screen.getByTitle(/how clean the underlying text extraction/i);
+    expect(stat.getAttribute("tabindex")).toBe("0");
+    const id = stat.getAttribute("aria-describedby");
+    expect(id).toBeTruthy();
+    const desc = document.getElementById(id!);
+    expect(desc).toBeTruthy();
+    expect(desc!.className).toContain("sr-only");
+    expect(desc!.textContent ?? "").toMatch(/extraction/i);
+  });
 });

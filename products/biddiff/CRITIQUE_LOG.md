@@ -845,3 +845,19 @@ same `filtered` list, so navigation stays consistent; export order was
 already critical-first and is untouched). 5 unit tests (critical-first,
 within-group stability, single-severity no-op, empty, no-mutation). Suite
 296 -> 301 green; typecheck + lint clean. PROGRESS N9 -> DONE.
+
+
+## Polish pass 15 (2026-05-30 evening MT) — N8 keyboard/SR-accessible stat explanations
+
+The Summary "Critical" and "Confidence" stats explained themselves only via
+a mouse-only `title` tooltip, with the "i" pill marked `aria-hidden` — so
+screen-reader and keyboard users got NO explanation (an a11y gap; the A11y
+critic's "information conveyed only on hover/mouse is inaccessible").
+
+Fix: each stat is now `tabIndex=0` and `aria-describedby` a visually-hidden
+`.sr-only` description carrying the same text the `title` has. Added a
+reusable `.sr-only` utility (standard clip pattern). Keyboard users can focus
+the stat; screen readers announce the description; the `title` stays for
+mouse. 2 a11y regression tests (focusable + describedby wiring, both stats).
+Suite 301 -> 303 green; typecheck + lint clean. PROGRESS N8 -> DONE. (The
+rendered-contrast half of the a11y P2 remains correctly browser-gated.)

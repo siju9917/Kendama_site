@@ -142,11 +142,22 @@ export function Summary({ result }: Props): React.ReactElement {
         </div>
         <div
           className="summary__stat"
+          tabIndex={0}
+          aria-describedby="stat-desc-critical"
           title="What BidDiff flags as critical: changes to deadlines or dates, page limits or submission format, FAR/DFARS clause additions or removals, evaluation criteria, CLIN or pricing structure, and attachments added or removed."
         >
           <span className="summary__stat-label">
             Critical
+            {/* The same text the mouse-only `title` carries, exposed to
+                assistive tech via aria-describedby (the stat is focusable, so
+                keyboard users reach it too). The pill stays decorative. */}
             <span className="info-pill" aria-hidden="true">i</span>
+          </span>
+          <span id="stat-desc-critical" className="sr-only">
+            What BidDiff flags as critical: changes to deadlines or dates, page
+            limits or submission format, FAR/DFARS clause additions or removals,
+            evaluation criteria, CLIN or pricing structure, and attachments
+            added or removed.
           </span>
           <span
             className={
@@ -159,11 +170,18 @@ export function Summary({ result }: Props): React.ReactElement {
         </div>
         <div
           className="summary__stat"
+          tabIndex={0}
+          aria-describedby="stat-desc-confidence"
           title="How clean the underlying text extraction looked. Lower values mean the source PDFs were complex (scanned, two-column, etc.) and the diff may not catch every change."
         >
           <span className="summary__stat-label">
             Confidence
             <span className="info-pill" aria-hidden="true">i</span>
+          </span>
+          <span id="stat-desc-confidence" className="sr-only">
+            How clean the underlying text extraction looked. Lower values mean
+            the source PDFs were complex (scanned, two-column, etc.) and the
+            diff may not catch every change.
           </span>
           <span className="summary__stat-value">{(result.diffConfidence * 100).toFixed(0)}%</span>
         </div>

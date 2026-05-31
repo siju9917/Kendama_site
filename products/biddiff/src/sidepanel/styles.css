@@ -781,6 +781,22 @@ input[type="text"]:focus-visible {
   font-family: Georgia, "Times New Roman", serif;
 }
 
+/* Visually hidden but available to assistive tech (the standard a11y
+   pattern). Used for stat descriptions referenced via aria-describedby so
+   screen-reader / keyboard users get the same explanation the mouse-only
+   `title` tooltip provides. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .feedback-line {
   margin-top: var(--space-2);
   font-size: 12px;
