@@ -116,6 +116,34 @@ describe("money", () => {
     expect(detectMoney("$1.5M").map((x) => x.normalized)).toEqual(["1500000.00"]);
     expect(detectMoney("$15M").map((x) => x.normalized)).toEqual(["15000000.00"]);
   });
+
+  // Characterization tests (bug-hunt pass 13, 2026-05-30): pin the verified
+  // behavior on adversarial inputs so it cannot silently drift. Where current
+  // behavior is a known, documented limitation (PROGRESS.md N10), the test
+  // asserts the CURRENT behavior and is labelled so — a future fix updates it
+  // deliberately rather than discovering the change by surprise.
+  it("strips thousands separators and keeps decimals", () => {
+    expect(detectMoney("$1,234.56").map((x) => x.normalized)).toEqual(["1234.56"]);
+    expect(detectMoney("$1,500,000").map((x) => x.normalized)).toEqual(["1500000.00"]);
+  });
+  it("reads only well-formed grouping; a malformed group truncates at the break", () => {
+    // "$1,5M" is not valid en-US grouping (group must be exactly 3 digits),
+    // so matching stops at "$1". This is acceptable: the change still surfaces
+    // as a normal text diff; the anchor just isn't emitted.
+    expect(detectMoney("$1,5M").map((x) => x.normalized)).toEqual(["1.00"]);
+    expect(detectMoney("$12,34").map((x) => x.normalized)).toEqual(["12.00"]);
+  });
+  it("finds multiple amounts in one string", () => {
+    expect(detectMoney("price is $5 and $1.5M total").map((x) => x.normalized)).toEqual([
+      "5.00",
+      "1500000.00",
+    ]);
+  });
+  it("KNOWN LIMITATION (PROGRESS.md N10): no leading-dot or double-M support", () => {
+    // Documented, low-severity: a money miss still surfaces as a text diff.
+    expect(detectMoney("$.5M").length).toBe(0); // no leading zero → no match
+    expect(detectMoney("$1.5MM").map((x) => x.normalized)).toEqual(["1.00"]); // "MM" not recognized
+  });
 });
 
 describe("page limits", () => {

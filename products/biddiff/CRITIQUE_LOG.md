@@ -798,3 +798,33 @@ value-bearing). Suite 288→**292** green; typecheck + lint clean.
 positions, not just the symmetric (digit-flanked) case — leading signs and
 trailing units (%, etc.) change value too. Probe normalization with
 adversarial value pairs, asserting the failing case before the fix."
+
+
+## Bug-hunt pass 13 (2026-05-30 evening MT) — anchors: detectMoney probe + characterization
+
+Probed detectMoney with 23 adversarial money strings (failing-case-first
+discipline). It is robust on the cases that matter: magnitude suffixes
+(K/M/B + spelled-out), thousands separators, decimals, multiple amounts per
+string, and the load-bearing $1.5M != $15M distinction all correct.
+
+Two low-severity limitations found (NOT fixed this pass, by design):
+- "$.5M" (no leading zero before the decimal) -> no MONEY anchor.
+- "$1.5MM" (finance double-M) -> reads as $1.
+Neither hides a change: a money anchor only boosts classification toward
+PRICING/critical, so a miss still surfaces as a normal text diff. Logged as
+POLISH item PROGRESS.md N10. Deliberately not rushing a regex change on a
+Saturday evening without high confidence (per the 2026-05-30 verify-first
+lesson) — the right fix widens MONEY_RE with its own characterization tests
+in a focused cycle.
+
+Locked behavior: added characterization tests in
+src/core/extract/anchors/index.test.ts pinning the verified-correct cases
+AND the two known limitations (labelled), so any future drift is deliberate.
+Suite 292 -> 296 green; typecheck + lint clean.
+
+Process note (this turn): classify.ts and the money detector were both found
+already well-covered; rather than manufacture low-value churn (the exact
+failure the 2026-05-30 hallucination lesson warns against), this pass locked
+characterization + logged real limitations, and the loop switches lane to
+higher-value first-principles/polish work next. A queue that feels empty of
+bugs is a signal to change lane, not to invent findings.
