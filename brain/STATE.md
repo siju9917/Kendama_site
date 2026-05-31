@@ -108,7 +108,13 @@
   boundary is locked.
   The code-level bar is very high; further hunting yields verified-negatives
   (probe-first, and DON'T add redundant tests on covered behavior — that is
-  churn the loop forbids). **Zero-cost queue is NOT exhausted** (a queue that
+  churn the loop forbids). **TOP NON-GATED POLISH CANDIDATE for the next
+  cycle:** list-renumbering noise (`PROGRESS.md` coverage-obs #8) — inserting
+  one list item makes every subsequent item show as a spurious (often CRITICAL)
+  MODIFY because its shifted number prefix is value-bearing text; real for PDF,
+  degrades signal-to-noise. The fix is a careful core-diff change
+  (leading-ordinal-only-change detector) needing real-doc validation — design
+  it, don't rush it. **Zero-cost queue is NOT exhausted** (a queue that
   feels empty is a finding to attack, per ops/loop.md): continuous
   bug-hunting with genuinely-new inputs, polish, first-principles ideation,
   playbooks, and factory self-improvement remain.
