@@ -1028,3 +1028,16 @@ ErrorBoundary (21), ProgressView (22), ReviewPrompt (23), and the pipeline
 dispatch (24). Remaining untested sidepanel files are thin presentational
 shells (App/index/Onboarding/SamAttachments) or covered indirectly; the
 logic-bearing ones now have focused tests. Suite 312 -> 330 across the sweep.
+
+
+## Bug-hunt pass 25 (2026-05-30 evening MT) — message trust-boundary guard was untested
+
+`isBidDiffMessage` (shared/messages.ts) is the trust boundary every
+cross-context runtime listener routes incoming payloads through (content
+script / background / side panel / offscreen). It was untested. Added 5 tests
+pinning it: accepts every kind in the union + an unknown future biddiff/*
+kind (it's a namespace gate, not an enum); rejects nullish/non-objects,
+missing/non-string `kind`, and — security-relevant — a kind that only
+CONTAINS "biddiff/" rather than starting with it ("evil/biddiff/diff"),
+wrong case, and a leading space. No production change. Suite 330 -> 335 green;
+typecheck + lint clean.
