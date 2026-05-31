@@ -23,6 +23,32 @@ describe("buildSummaryText", () => {
     expect(text).toContain("BidDiff identifies textual differences");
   });
 
+  it("renders each change type with its verb, section label, and reason (bug-hunt pass 44)", () => {
+    const r = makeResult("it-svc-001-due-date-shift");
+    const base = {
+      category: "OTHER" as const,
+      severity: "CRITICAL" as const,
+      sectionHeading: "H",
+      tokenSpans: null,
+      anchorsInvolved: [],
+      criticalReasons: ["A reason."],
+      clauseInfo: null,
+      locationHint: "loc",
+    };
+    r.changes = [
+      { ...base, id: "1", changeType: "INSERT", ucfLetter: "L", beforeText: null, afterText: "new clause text" },
+      { ...base, id: "2", changeType: "DELETE", ucfLetter: null, beforeText: "old clause text", afterText: null, criticalReasons: [] },
+      { ...base, id: "3", changeType: "MOVE", ucfLetter: "M", beforeText: "moved text", afterText: "moved text" },
+      { ...base, id: "4", changeType: "MODIFY", ucfLetter: "C", beforeText: "was this", afterText: "now that" },
+    ];
+    const text = buildSummaryText(r);
+    expect(text).toMatch(/\[Section L\].*A reason\. Added: new clause text/);
+    expect(text).toMatch(/Removed: old clause text/); // no section label (null ucf), no reason (empty)
+    expect(text).not.toMatch(/\[Section \]/); // empty ucf never renders an empty bracket
+    expect(text).toMatch(/\[Section M\].*Moved: moved text/);
+    expect(text).toMatch(/\[Section C\].*Modified: was "was this" now "now that"/);
+  });
+
   it("never recommends an action", () => {
     const text = buildSummaryText(makeResult("it-svc-011-multi-critical"));
     // Reports, doesn't advise.

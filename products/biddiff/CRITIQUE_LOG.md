@@ -1364,3 +1364,15 @@ All clean. Suite 391 -> 397 green; typecheck + lint clean. No production change.
 
 With pass 43 all four diff-alignment layers (section, LCS, block, move) now
 carry direct property tests of their defining invariants.
+
+
+## Bug-hunt pass 44 (2026-05-30 evening MT) — export one-line change rendering
+
+`formatChangeOneLine` (the text-export per-change renderer) had its four
+change-type branches exercised only via a multi-critical corpus pair, never
+asserted individually. Added a test (through `buildSummaryText`) with one
+change of each type: INSERT→"Added:", DELETE→"Removed:", MOVE→"Moved:",
+MODIFY→`Modified: was "..." now "..."`, plus the `[Section X]` label and the
+leading critical-reason. Pins the edges: a null UCF letter renders NO empty
+`[Section ]` bracket, and an empty reason is omitted cleanly. No production
+change. Suite 397 -> 398 green; typecheck + lint clean.
