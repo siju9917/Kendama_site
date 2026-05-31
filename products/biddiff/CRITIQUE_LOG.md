@@ -188,6 +188,17 @@ generate.test.ts pins "every CRITICAL expected is mustDetect" so the floor can't
 be silently hollowed out). The product is robust at every layer + guard probed;
 remaining genuine work is human/cap-gated.
 
+**Third verified-negative batch (late-window, realistic messy-input vein):**
+smart/curly quotes + ellipsis (unified by `aggressiveNormalize`, covered by the
+general punctuation-stripping — unlike the value-bearing dash that needed pass
+75's unification); a NEW section added by an amendment (its clause content →
+INSERT flagged CRITICAL, follows from covered INSERT + clause-add-critical, no
+novel interaction); percentages / durations / place-of-performance (same class
+as coverage-obs #6, which already enumerates the principle). Money in currency-
+code/dollars notation WAS a genuine gap → logged as coverage-obs #7 (gated, not
+rush-fixed). All confirmed robust or correctly disposed; no churn tests added on
+covered-in-principle behavior. The realistic-input lane is now saturated.
+
 ---
 
 ## 2026-05-31 — Phase K1 — bug-hunt pass 71 (Correctness/Domain, 5.7.5)
