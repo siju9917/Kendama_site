@@ -37,7 +37,7 @@ in the original write-up (262) predate the passes 8–10 continuation. **Correct
 
 **Final session tally (Saturday, late evening MT) — the scannable version:**
 
-- **Tests 226 → 425, full CI gate green end-to-end** (typecheck + lint + build
+- **Tests 226 → 428, full CI gate green end-to-end** (typecheck + lint + build
   + bundle budget). The diff/extraction/storage/UI/runtime core is now
   characterized to saturation: every exported core/shared function is tested
   **directly or via a tested caller**, and all four diff-alignment layers + the
@@ -164,25 +164,45 @@ next time.
 - **Security Critic (#3)** checklist gained: a `fetch`/navigation of a
   DOM-sourced URL passes an explicit scheme allowlist (https), not just
   `window.open`. Triggered by the SAM attachment download path.
+- **Late-evening additions (passes 59–61):** Correctness #1 (enumerate
+  ALL value-bearing positions; a pure fn with module state is a defect;
+  audit every escape-helper interpolation), Adversarial #2 (run the full
+  suite twice; red-team your own freshly-written code), Reliability #7
+  (every deserialize of stored data is a trust boundary; **a markup
+  emission boundary must strip chars the format forbids outright, not
+  just escape metacharacters** — pass 61), Compliance #9 (quantitative
+  claims must match the *enforced* guarantee; PII key allow-list), and
+  Research Quality #14 (**claims about our own work are artifacts to
+  verify — a superlative must be grep-checked before it is written** —
+  pass 60). The roster grew every cycle this session.
 
 ### Maximization audit (5.7.7 / 5.7.8)
 
 - **5.7.1 Re-critique cadence:** N/A — no shipped products.
 - **5.7.2 Escalating critique:** HELD — a multi-pass adversarial sweep
-  of the whole codebase found five real bugs.
-- **5.7.3 Roster growth:** HELD — four critic checklists strengthened
-  (six additions total).
-- **5.7.4 "Nothing is ever done":** spirit applied to K1 (found more).
-- **5.7.5 Continuous bug-hunt:** HELD — new adversarial inputs.
-- **5.7.6 Continuous ideation:** HELD — after correcting a wrong
-  belief that ideation was cap-blocked, generated the D1–D5
-  derivative product family from first principles (see "Also this
-  session"). Only the *cited* deep-evaluation waits on the cap.
-- **5.7.7 (this audit):** done. **5.7.8 (audit-the-auditor):** found
-  that the audit "passes" partly on a technicality — most rules are
-  N/A because nothing has shipped, and nothing can ship/advance
-  because the cap is unset. The single highest-leverage unblock in the
-  whole system is the spend cap. Escalated here.
+  of the whole codebase found real bugs across the session.
+- **5.7.3 Roster growth:** HELD — strengthened every cycle, including
+  the late-evening Correctness/Adversarial/Reliability/Compliance/
+  Research-Quality additions (passes 59–61) now landed in
+  CRITIQUE_AGENTS.md (a pass-59 lapse — claimed-but-not-landed growth —
+  was itself caught and fixed).
+- **5.7.4 "Nothing is ever done":** HELD — re-opening reviews produced
+  the gated redline DOCX export and continued hardening.
+- **5.7.5 Continuous bug-hunt:** HELD — pass 61 (un-gated, no code
+  change) found a real latent file-corruption bug in the redline export
+  (XML-illegal control chars). Probe-first throughout.
+- **5.7.6 Continuous ideation:** HELD — generated the D1–D6 derivative
+  product family + the on-device-trust wedge from first principles
+  (see "Also this session"). Only the *cited* deep-evaluation waits on
+  the cap.
+- **5.7.7 (this audit):** done, with evidence (each rule cites a
+  concrete artifact — a pass, a commit, a roster row — not a bare
+  assertion). **5.7.8 (audit-the-auditor):** the self-audit improved
+  this session — pass 60 turned verify-before-claim on the factory's
+  OWN coverage claim and found it overstated, then corrected it. The
+  unchanged top finding: most rules read "HELD" on *factory rigor*, but
+  nothing can SHIP because the spend cap is unset — the single
+  highest-leverage unblock in the whole system. Escalated (NEED #1).
 
 ### Also this session (after a "don't stop" correction)
 

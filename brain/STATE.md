@@ -345,9 +345,9 @@ all green; check tests 16/16.
   is resolved; if not, the work is still only on
   `claude/saturday-task-kickoff-AfDAa`.
 - **Cycle depth (2026-05-30 long Saturday):** the bug-hunt/characterization
-  lane is SATURATED — 44 passes, **423/423 tests** (from 226), full CI green
+  lane is SATURATED — 44 passes, **428/428 tests** (from 226), full CI green
   end-to-end, and a coverage audit confirms every exported `core/`+`shared/`
-  function has a test. All four diff-alignment layers (section/LCS/block/move)
+  function is tested directly or via a tested caller. All four diff-alignment layers (section/LCS/block/move)
   and the critical-rule engine carry property tests of their defining
   invariants. Three genuine defects fixed this evening (suppress %/sign P2,
   corrupt-payload P2, markdown-backtick P3) + the last extraction coverage-obs
