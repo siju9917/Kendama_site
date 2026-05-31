@@ -71,7 +71,7 @@ Two things happened after the main write-up below:
    release-runbook pre-flight so a release can't skip the server-claim copy
    fix. Also hardened the factory's OWN checks (the no-GitHub-Actions +
    brain-integrity checks now have violation-detection tests, and the
-   stop-guard's Mountain-midnight boundary is locked). **Test total 226 → 454,
+   stop-guard's Mountain-midnight boundary is locked). **Test total 226 → 455,
    full gate green throughout; all 10 factory checks pass.**
 
 *Heads-up:* the editor/file tools were flaky this session, so the factory
@@ -81,7 +81,7 @@ in the original write-up (262) predate the passes 8–10 continuation. **Correct
 
 **Final session tally (Saturday, late evening MT) — the scannable version:**
 
-- **Tests 226 → 454, full CI gate green end-to-end** (typecheck + lint + build
+- **Tests 226 → 455, full CI gate green end-to-end** (typecheck + lint + build
   + bundle budget). The diff/extraction/storage/UI/runtime core is now
   characterized to saturation: every exported core/shared function is tested
   **directly or via a tested caller**, and all four diff-alignment layers + the

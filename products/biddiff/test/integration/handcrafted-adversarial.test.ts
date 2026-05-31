@@ -355,4 +355,40 @@ describe("Hand-crafted adversarial cases", () => {
     expect(move!.afterText).toMatch(/Top Secret clearance/);
     expect(move!.beforeText).not.toEqual(move!.afterText);
   });
+
+  it("KNOWN LIMITATION (PROGRESS coverage-obs #8): list renumbering makes shifted items spurious MODIFYs", () => {
+    // Characterization (NOT desired behavior): when one item is inserted into a
+    // numbered list whose numbers live in the text (real for PDF), every
+    // SUBSEQUENT item shows as a MODIFY because only its leading ordinal
+    // shifted. A capture manager sees an inflated change count. This pins the
+    // CURRENT behavior so the future leading-ordinal-only-change detector
+    // (coverage-obs #8) has a clear before/after; UPDATE this test when that
+    // fix lands (it should then become 1 INSERT + 0 spurious MODIFYs).
+    const list = (items: string[]): StructuredDocument => ({
+      metadata: meta(items.join("|")),
+      sections: [
+        sec({ letter: "L", heading: "Section L", type: "INSTRUCTIONS", ordinal: 0,
+          blocks: items.map((t, i) => paragraph("L", i, t)) }),
+      ],
+    });
+    const prior = list(["L.1 Submit one electronic copy.", "L.2 Use 12-point font.", "L.3 Page limit is 30 pages."]);
+    const current = list([
+      "L.1 Submit one electronic copy.",
+      "L.2 Include a cover letter.", // inserted
+      "L.3 Use 12-point font.", // was L.2 — only the ordinal shifted
+      "L.4 Page limit is 30 pages.", // was L.3 — only the ordinal shifted
+    ]);
+    const result = diff(current, prior);
+    const inserts = result.changes.filter((c) => c.changeType === "INSERT");
+    const modifies = result.changes.filter((c) => c.changeType === "MODIFY");
+    expect(inserts).toHaveLength(1); // the genuinely new item
+    // CURRENT (noisy) behavior: the two renumbered items are spurious MODIFYs
+    // whose content (minus the ordinal) is unchanged. The fix will drive this
+    // to 0.
+    expect(modifies.length).toBe(2);
+    for (const m of modifies) {
+      const stripOrdinal = (s: string | null) => (s ?? "").replace(/^L\.\d+\s*/, "");
+      expect(stripOrdinal(m.beforeText)).toBe(stripOrdinal(m.afterText)); // only the ordinal differs
+    }
+  });
 });

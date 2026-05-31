@@ -23,6 +23,35 @@ re-opening review | escalation second-pass.
 
 ---
 
+## 2026-05-31 — Phase K1 — bug-hunt pass 77 (Correctness/Product-Sense, 5.7.5)
+
+**Pass type:** bug-hunt — list RENUMBERING noise (a real diff-quality finding,
+not gated). The most significant noise finding of the late session.
+
+**Critics run:** Correctness #1, Product-Sense #11.
+
+**Finding (real, logged as coverage-obs #8 — NOT rushed-fixed):** inserting one
+item into a text-numbered list (`L.1/L.2/L.3`) yields 1 correct INSERT + 2
+SPURIOUS MODIFYs — the subsequent items' shifted ordinal (`L.2`→`L.3`, …) is
+value-bearing text the suppressor won't drop, and in INSTRUCTIONS they're even
+flagged CRITICAL. Inflates the change count, hurts signal-to-noise. REAL for
+PDF (rendered number extracted as text) + manual numbers; NOT for DOCX
+auto-numbered lists (`<w:numPr>` — number not in run text, confirmed).
+
+**Disposition:** the fix is a non-trivial CORE-diff change (a
+leading-ordinal-only-change detector) that must be designed + validated against
+real solicitations (must not hide a real change coinciding with a renumber),
+not rushed on a Saturday evening. Logged as coverage-obs #8 + flagged in
+STATE.md as the top non-gated POLISH candidate. Added a **characterization
+test** (per "characterization tests first") that PINS the current noisy
+behavior (1 INSERT + 2 ordinal-only MODIFYs) and is labelled to be UPDATED to
+0 spurious MODIFYs when the fix lands. 454 → 455.
+
+**Convergence:** clean; full gate green (455/455). This is the rare late find
+that proves continuous 5.7.5 probing earns its keep even at "saturation."
+
+---
+
 ## 2026-05-31 — Phase K1 — bug-hunt pass 76 (Reliability, 5.7.5)
 
 **Pass type:** bug-hunt — exporting a ZERO-change diff (the user compares two
