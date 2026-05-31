@@ -103,34 +103,55 @@ test('no-forbidden-markers: ignores test files', () => {
   assert.equal(blocking(f).length, 0);
 });
 
+// The work window is the HUMAN's local Saturday (Mountain Time). These
+// instants are chosen so the Mountain-time weekday is unambiguous.
 test('stop-guard: REFUSES a stop on Saturday (the work window)', () => {
-  const sat = new Date('2026-05-30T12:00:00Z'); // a Saturday
+  const sat = new Date('2026-05-30T18:00:00Z'); // Sat 12:00 MDT
   const f = redTeamStop(sat, 'queue exhausted');
   assert.ok(f.some((x) => x.level === 'P0' && /STOP REFUSED/.test(x.message)));
 });
 
 test('stop-guard: rejects a non-"no longer Saturday" reason on Saturday', () => {
-  const sat = new Date('2026-05-30T12:00:00Z');
+  const sat = new Date('2026-05-30T18:00:00Z');
   const f = redTeamStop(sat, 'diminishing returns');
   assert.ok(f.some((x) => x.message.includes('Rejected stop reason')));
 });
 
 test('stop-guard: PERMITS a stop once it is no longer Saturday', () => {
-  const sun = new Date('2026-05-31T00:30:00Z'); // Sunday
+  const sun = new Date('2026-05-31T18:00:00Z'); // Sun 12:00 MDT
   const f = redTeamStop(sun);
   assert.equal(blocking(f).length, 0);
   assert.ok(f.some((x) => x.level === 'info' && /Stop permitted/.test(x.message)));
 });
 
+// REGRESSION (the timezone bug): Saturday evening in Mountain time is
+// already Sunday in UTC. A UTC weekday check would wrongly authorize a stop;
+// the guard must still REFUSE because it is Saturday for the human.
+test('stop-guard: REFUSES on Saturday evening MT even though it is Sunday UTC', () => {
+  const satEveningMT = new Date('2026-05-31T00:48:00Z'); // Sat 18:48 MDT, Sun 00:48 UTC
+  assert.equal(satEveningMT.getUTCDay(), 0, 'precondition: this instant is Sunday in UTC');
+  const f = redTeamStop(satEveningMT);
+  assert.ok(
+    f.some((x) => x.level === 'P0' && /STOP REFUSED/.test(x.message)),
+    'must refuse: it is still Saturday evening in Mountain time',
+  );
+});
+
 test('stop-guard hook: BLOCKS the stop on Saturday', () => {
-  const sat = new Date('2026-05-30T12:00:00Z');
+  const sat = new Date('2026-05-30T18:00:00Z');
   const d = hookDecision(sat);
   assert.equal(d.decision, 'block');
   assert.ok(/still Saturday/.test(d.reason));
 });
 
+test('stop-guard hook: BLOCKS on Saturday evening MT (Sunday UTC)', () => {
+  const satEveningMT = new Date('2026-05-31T00:48:00Z');
+  const d = hookDecision(satEveningMT);
+  assert.equal(d.decision, 'block');
+});
+
 test('stop-guard hook: allows the stop once it is no longer Saturday', () => {
-  const sun = new Date('2026-05-31T00:30:00Z');
+  const sun = new Date('2026-05-31T18:00:00Z'); // Sun 12:00 MDT
   const d = hookDecision(sun);
   assert.deepEqual(d, {});
 });

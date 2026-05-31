@@ -182,6 +182,28 @@ session" below.
    ideas from first principles now; only the *cited deep-evaluation*
    waits on the cap.
 
+5x. **The only authorized stop is "it is no longer Saturday," verified
+   against the real clock IN THE HUMAN'S TIMEZONE (Mountain Time,
+   America/Denver) — never UTC.** A Saturday *evening* in Mountain time is
+   already Sunday in UTC, so a UTC weekday check wrongly authorizes a stop
+   while the work window is still open. Before any contemplated stop, run
+   `node ops/checks/stop-guard.mjs`; exit 1 (REFUSED) means discard the stop
+   and pull the next queue item. This rule is enforced by the written rule
+   itself plus that manual red team — **both work with zero approvals.**
+
+5x.1 **Building enforcement must NEVER create a new dependency on the
+   human.** When you strengthen the factory, anything that *requires human
+   approval to take effect* (a Claude Code hook, a permission, a settings
+   change, a paid resource) must be treated as optional belt-and-suspenders:
+   log the approval-need to `human/NEED_FROM_HUMAN.md` and **keep working** —
+   never pause, summarize, or ask "can you approve this?" mid-session. Asking
+   for approval to make yourself stronger is itself the stop-and-wait failure
+   5z forbids: the mechanism meant to remove the human from the loop must not
+   put them back in it. The primary enforcement is always the version that
+   needs no approval (a written rule, a script you run yourself); approval-
+   gated automation is a bonus the human may enable later, on their schedule,
+   not a blocker for you now.
+
 5a. **Audit yourself continuously, while you build.** Do not wait
    for the formal post-phase critique panel to find issues — the
    panel is the *audit of* your continuous self-critique habit,

@@ -360,3 +360,33 @@ when each step is independently verified. This session's genuine, verified
 output: the stop-hook interlock, the governance-integrity check (+ its
 false-positive fix), and one sound new test (confidence-ceiling). The rest
 of the late "P0" work was net-negative until reverted.
+
+## 2026-05-30 — two enforcement-design failures: UTC vs local time, and approval-gating
+
+Two related failures in the no-stop enforcement, both caught only because
+the human pushed back:
+
+1. **Timezone bug = a false stop.** The stop-guard checked the weekday in
+   UTC. The work window is the human's LOCAL Saturday (Mountain Time). On
+   Saturday ~18:48 MT (already 00:48 Sunday UTC) the guard reported "Sunday"
+   and I declared the session over and started writing a wrap-up — the exact
+   stop the whole mechanism exists to prevent, caused by the mechanism's own
+   bug. **Lesson:** a schedule defined in someone's local week MUST be
+   evaluated in their timezone; UTC is wrong specifically at the Saturday-
+   night boundary that matters most. Fixed + regression-tested.
+
+2. **Building enforcement created a dependency on the human.** I added an
+   approval-gated `Stop` hook and then effectively waited on the human to
+   approve it. A mechanism meant to remove the human from the loop must not
+   require the human to switch it on. **Lesson (now CLAUDE.md 5x.1):**
+   anything that needs human approval to take effect is optional belt-and-
+   suspenders — log it to NEED_FROM_HUMAN and keep working; the primary
+   enforcement must be the version that needs zero approvals (a written rule
+   + a script the operator runs). Asking "can you approve this?" mid-session
+   is itself the stop-and-wait failure 5z forbids.
+
+**Meta:** both failures share a root cause — I optimized for a clever/strong
+mechanism without checking it against the actual constraint (the human's
+real local clock; the human's actual involvement). Strength that depends on
+an unverified assumption or an approval is weaker than a simple rule that
+just runs. The human caught both; the guard and the rules now encode them.

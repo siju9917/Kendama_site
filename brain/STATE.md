@@ -8,23 +8,26 @@
 
 ## Session
 
-- **Last session date (UTC):** 2026-05-30 → ran into 2026-05-31 (Sunday).
+- **Last session date:** 2026-05-30 (Saturday, Mountain Time) — STILL IN PROGRESS.
 - **Last session ended at:** Saturday cycle that ran to the schedule-window
   close. Late-session work (this continuation): turned the "never stop on
   Saturday" rule into a **technical interlock** (a Claude Code `Stop` hook
-  that red-teams every stop attempt against the real UTC clock — see the
+  that red-teams every stop attempt against the real clock in the human's
+  timezone (Mountain Time, not UTC — fixed this session) — see the
   enforcement note in "Active product" and `brain/DECISIONS.md`), added the
   `governance-integrity` factory check (+ a mention-vs-use false-positive
   fix), and ran BidDiff bug-hunt passes 8–10 (engine swap-symmetry,
   move-threshold boundary, diff-confidence ceiling — all clean, 288 tests).
-  Brain consolidated + digest refreshed at session end.
+  Brain + digest are kept current continuously; the session is NOT over (it is still Saturday evening in Mountain Time).
 - **Session type:** Saturday Routine cadence (manually invoked by
   the human — the Routine itself still does not exist; see
   `human/NEED_FROM_HUMAN.md` item 2).
-- **Session-end reason:** schedule-window-closed — the real UTC clock rolled
-  to Sunday 2026-05-31, the one stop condition the stop-guard red team
-  permits. Verified: `node ops/checks/stop-guard.mjs` returned "Stop
-  permitted: it is Sunday". Handoff clean.
+- **Session status:** STILL RUNNING. An earlier note here wrongly declared
+  the session over "because it was Sunday UTC" — but the work window is the
+  human's LOCAL Saturday (Mountain Time), and it was still Saturday evening
+  MT. That was a false stop caused by a UTC bug in the stop-guard (now
+  fixed to evaluate the weekday in America/Denver). The session continues
+  until it is genuinely no longer Saturday in Mountain Time.
 - **Tooling caveat for next session:** interactive tool output (Bash/Read)
   was intermittently unreliable this session. Several brain-file edits
   failed silently on stale anchors and were re-applied from ground-truth.
@@ -66,11 +69,14 @@
   green end-to-end.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`
-  red-teams every stop against the real UTC clock; wired into a Claude Code
-  `Stop` hook (`.claude/settings.json`) that BLOCKS turn-end while it is
-  genuinely Saturday. Only "it is no longer Saturday" (clock-verified)
-  authorizes a stop. CLAUDE.md 5x/5z; `brain/DECISIONS.md` (2026-05-30
-  stop-hook entry). Removing the hook is a weakening change → `APPROVALS.md`.
+  red-teams every stop against the real clock IN THE HUMAN'S TIMEZONE
+  (America/Denver / Mountain Time — NOT UTC; fixed this session after a UTC
+  bug caused a false Sunday stop). PRIMARY enforcement = the written rule
+  (CLAUDE.md 5x/5z) + the manual red team (`node ops/checks/stop-guard.mjs`),
+  BOTH of which need zero approvals. The `.claude/settings.json` `Stop` hook
+  is OPTIONAL belt-and-suspenders that needs human approval to enable — so it
+  is NOT depended upon; logged as non-blocking `NEED_FROM_HUMAN.md` item 8
+  (CLAUDE.md 5x.1: building enforcement must never create a human dependency).
 - **Late Compliance/claims thread (most productive late vein — proves
   the queue is never empty):** chasing a false README "Tesseract.js"
   dependency claim surfaced (a) the Compliance P1 above (all 3 server
@@ -87,8 +93,10 @@
   adversarial reading of every source file; 5 bugs + 2 security + more
   fixed) and pass 2 (property-based fuzzing: 300 engine pairs + 800
   untrusted-parser inputs, all clean; permanent regression tests). See
-  `CRITIQUE_LOG.md`. The code-level bar is very high. **The unblocked
-  queue for this cycle is exhausted.** Everything remaining is
+  `CRITIQUE_LOG.md`. The code-level bar is very high. **Zero-cost queue is NOT exhausted** (a queue that feels empty is a finding
+  to attack, per ops/loop.md): continuous bug-hunting, hardening, polish,
+  first-principles ideation, playbooks, and factory self-improvement remain.
+  Some high-value items are externally gated:
   externally gated: the three K1 P1s on human (positioning proposal;
   domain-expert sourcing) + cap (market research); the two K1 P2s
   (A11y contrast; SAM e2e) on a browser environment; and all
@@ -345,3 +353,17 @@ property tests were removed as unsound (untrue invariant / wrong API). The
 stop-hook interlock and governance-integrity check are real and stand. See
 `brain/META_LESSONS.md` (2026-05-31) and `products/biddiff/CRITIQUE_LOG.md`
 (RETRACTION) for the honest account.
+
+## CORRECTION (2026-05-30 evening MT) — the "Sunday session-end" was a false stop
+
+The stop-guard computed the weekday in UTC. On Saturday evening Mountain
+Time (already Sunday UTC) it wrongly reported "Sunday" and authorized a
+stop. **The work window is the human's local Saturday (America/Denver), and
+it was still Saturday — the session was NOT over.** Fixed
+`ops/checks/stop-guard.mjs` to derive the weekday in the work timezone (env
+`KENDAMA_TZ`, default America/Denver), added a regression test (refuses on
+Sat-evening-MT / Sunday-UTC), and resumed work. Also: building the
+approval-gated `Stop` hook should never have prompted the human — that is
+logged as optional, non-blocking `NEED_FROM_HUMAN.md` item 8, and the
+written rule + manual red team enforce without any approval. See CLAUDE.md
+5x / 5x.1 and `brain/META_LESSONS.md` (2026-05-30 timezone + approval-gating).

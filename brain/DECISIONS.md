@@ -369,3 +369,23 @@ always was. **Process rule reinforced:** never "fix" code from a remembered
 or single-rendered view of a file — re-read via `grep -n` and prove any
 change by running the FULL suite before committing. (See
 `brain/META_LESSONS.md` 2026-05-31.)
+
+## 2026-05-30 — Stop-guard work window is the human's LOCAL Saturday (Mountain), not UTC
+
+**Decision:** Evaluate the Saturday work window in the human's timezone
+(`America/Denver`, override via `KENDAMA_TZ`), not UTC.
+
+**Why:** The first stop-guard used `getUTCDay()`. On Saturday evening MT
+(= Sunday UTC) it reported "Sunday" and authorized a stop while the window
+was still open — a false session-end actually occurred this session. The
+schedule is defined by the human's local week, so the weekday must be too.
+
+**Alternatives considered:** keep UTC (rejected — off by up to the UTC
+offset at exactly the boundary that matters, Saturday night); store an
+explicit window start/end (overkill for a weekday check).
+
+**Reversibility:** Full — `KENDAMA_TZ` env override; git history.
+
+**Where applied:** `ops/checks/stop-guard.mjs`, `ops/checks/checks.test.mjs`
+(regression: refuse on Sat-evening-MT/Sunday-UTC), `.claude/settings.json`
+comment, CLAUDE.md 5x.

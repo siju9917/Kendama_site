@@ -28,15 +28,37 @@ import { finding } from './lib.mjs';
 export const name = 'stop-guard';
 
 /**
- * The work window is Saturday (the scheduled Routine day). Computed in UTC
- * from the real clock — NOT from any operator-supplied value, so the
- * operator cannot talk its way past it. Returns the red-team verdict.
+ * The schedule window is the HUMAN's local Saturday. The human runs in
+ * Mountain Time (America/Denver), so the work day must be evaluated in that
+ * timezone — NOT in UTC. This matters at the boundary: e.g. Sat 18:48 MDT is
+ * already Sun 00:48 UTC, so a UTC weekday check would (wrongly) report Sunday
+ * and authorize a stop while it is still Saturday evening for the human. The
+ * weekday is derived from the real clock — NOT from any operator-supplied
+ * value — so the operator cannot talk its way past it.
+ *
+ * Override only for testing via KENDAMA_TZ; defaults to America/Denver.
  */
+const WORK_TZ = process.env.KENDAMA_TZ || 'America/Denver';
+
+/** The weekday name in the work timezone for an absolute instant. */
+export function weekdayInZone(now = new Date(), timeZone = WORK_TZ) {
+  return new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'long' }).format(now);
+}
+
+/** A human-readable local timestamp in the work timezone, for messages. */
+function localStamp(now, timeZone = WORK_TZ) {
+  // Explicit fields (not dateStyle/timeStyle) so timeZoneName can be included
+  // — Intl rejects combining the style shortcuts with timeZoneName.
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+  }).format(now);
+}
+
 export function redTeamStop(now = new Date(), claimedReason = '') {
-  const dow = now.getUTCDay(); // 0=Sun .. 6=Sat
-  const isSaturday = dow === 6;
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const today = days[dow];
+  const today = weekdayInZone(now); // weekday in the human's timezone
+  const isSaturday = today === 'Saturday';
   const findings = [];
 
   if (isSaturday) {
@@ -44,7 +66,7 @@ export function redTeamStop(now = new Date(), claimedReason = '') {
     findings.push(
       finding(
         'P0',
-        `STOP REFUSED. The system clock says it is ${today} (${now.toISOString()}), i.e. still the Saturday work window. The only permitted stop reason is "it is no longer Saturday" and that claim is FALSE. Per CLAUDE.md 5z / GUARDRAILS #16: do NOT stop, do NOT summarize-and-wait, do NOT ask to continue — discard the stop and pull the next queue item.`,
+        `STOP REFUSED. It is ${localStamp(now)} — still the Saturday work window in the human's timezone (${WORK_TZ}). The only permitted stop reason is "it is no longer Saturday" and that claim is FALSE. Per CLAUDE.md 5z / GUARDRAILS #16: do NOT stop, do NOT summarize-and-wait, do NOT ask to continue — discard the stop and pull the next queue item. (Note: this is evaluated in ${WORK_TZ}, NOT UTC — a Saturday evening in Mountain time is already Sunday in UTC, and a UTC check would wrongly authorize a stop.)`,
       ),
     );
     // Address an operator trying to launder a different reason through the
@@ -57,10 +79,11 @@ export function redTeamStop(now = new Date(), claimedReason = '') {
     return findings;
   }
 
-  // Not Saturday → the schedule window has genuinely closed; stopping is
-  // legitimate (write the digest first, per the session-end sequence).
+  // Not Saturday in the work timezone → the schedule window has genuinely
+  // closed; stopping is legitimate (write the digest first, per the
+  // session-end sequence).
   findings.push(
-    finding('info', `Stop permitted: it is ${today} (${now.toISOString()}) — no longer the Saturday work window. Complete the session-end sequence (consolidate brain + WEEKLY_DIGEST) before exiting.`),
+    finding('info', `Stop permitted: it is ${localStamp(now)} (${WORK_TZ}) — no longer the Saturday work window. Complete the session-end sequence (consolidate brain + WEEKLY_DIGEST) before exiting.`),
   );
   return findings;
 }

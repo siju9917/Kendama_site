@@ -239,6 +239,45 @@ unblocks a clean store submission (item 6).
 
 ---
 
+## 8. **[OPEN]** (Optional) Approve the `Stop`-hook interlock in `.claude/settings.json`
+
+**Why:** This session added a Claude Code `Stop` hook
+(`.claude/settings.json` → `ops/checks/stop-guard.mjs --hook`) that
+*automatically* blocks the agent from ending a turn while it is still
+Saturday in your timezone — a belt-and-suspenders version of the no-stop
+rule. **Enabling a hook requires your approval**, so it does nothing until
+you approve it.
+
+**Important — the factory does NOT depend on this.** The no-stop behavior is
+already enforced WITHOUT any approval by (a) the written rule (CLAUDE.md
+5z/5x, GUARDRAILS #16) and (b) the manual red team
+(`node ops/checks/stop-guard.mjs`, run before any contemplated stop). The
+hook is purely an extra automated safety net. So this item is **optional and
+non-blocking** — the factory logged it here and kept working, rather than
+pausing to ask (which would have been the exact "stop and wait on the human"
+failure the rule forbids).
+
+**Steps (under 1 minute):**
+
+1. Review `.claude/settings.json` (a single `Stop` hook running the
+   stop-guard red team).
+2. If you want the automated interlock on, approve/allow the hook when
+   prompted (or via your Claude Code settings); add a line to
+   `human/APPROVALS.md`. If you'd rather not, leave it — the written rule +
+   manual red team still enforce.
+
+**Effect once done:** the stop-guard fires automatically on every turn-end,
+not only when the operator remembers to run it.
+
+**Note on timezone:** the work window is your **local Saturday (Mountain
+Time, America/Denver)**, not UTC. The guard was initially written to check
+UTC, which on a Saturday *evening* MT (already Sunday UTC) wrongly reported
+"Sunday" and authorized a stop. Fixed this session to evaluate the weekday in
+`America/Denver`. If you are ever in a different timezone, set `KENDAMA_TZ`
+accordingly (documented in `ops/checks/stop-guard.mjs`).
+
+---
+
 ## How items move out of this list
 
 The factory **never deletes** entries here. When an item is done,
