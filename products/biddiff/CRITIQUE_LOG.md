@@ -1462,3 +1462,19 @@ the strand) — so a future corpus addition that would trigger a spurious audit
 failure is caught at test time, not in the audit. Harness doc updated with the
 limitation + the conservative-direction analysis. Suite 405 -> 407 green;
 typecheck + lint clean. No production change.
+
+
+## Bug-hunt pass 49 (2026-05-30 evening MT) — docs-match-code drift guard
+
+Verified the help docs are factually accurate against actual v1 behavior on
+the non-gated claims: the FAQ's keyboard shortcuts (J/K + arrows, R, /) and
+the getting-started "press Got it" tip-dismiss instruction all match
+DiffView's implementation exactly. No drift, no defect.
+
+Added `test/unit/docs-match-code.test.ts` so it STAYS accurate: it asserts the
+four shortcut keys DiffView's keydown handler dispatches on are exactly the
+ones the FAQ documents, and that the tip-footer label matches what
+getting-started tells users to click. A future code change that renames/drops
+a shortcut (or a doc edit that desyncs) now fails at test time instead of
+shipping stale instructions. Suite 407 -> 409 green; typecheck + lint clean.
+No production change.
