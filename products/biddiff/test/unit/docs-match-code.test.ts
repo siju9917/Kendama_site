@@ -74,6 +74,26 @@ describe("docs match code: critical categories", () => {
   });
 });
 
+describe("docs match code: recall claim matches the enforced audit floor", () => {
+  // The FAQ's accuracy promise must match what the corpus audit ENFORCES,
+  // not a fragile point-in-time number. Found + fixed 2026-05-30 (pass 52):
+  // the FAQ claimed a flat "100% recall" while the gate enforces 0 critical
+  // missed + recall >= 98% (currently measuring 100%).
+  it("the FAQ states the enforced guarantee (0 critical missed + >=98%), not a bare 100%", () => {
+    const faq = read("docs", "help", "faq.md").toLowerCase();
+    const audit = read("test", "integration", "corpus.test.ts");
+    // The audit's enforced floors are still in place.
+    expect(audit).toContain("metrics.criticalMissed");
+    expect(audit).toMatch(/toBeGreaterThanOrEqual\(0\.98\)/);
+    // The FAQ must convey the critical-floor guarantee + the 98% overall bar.
+    expect(/critical/.test(faq)).toBe(true);
+    expect(faq).toContain("98%");
+    // ...and must NOT make a bare unqualified "100% recall ... work hard"
+    // guarantee (the wording the fix replaced).
+    expect(/100% recall on synthetic amendments and\s+we work/.test(faq)).toBe(false);
+  });
+});
+
 describe("docs match code: store-listing permission disclosure", () => {
   // A store listing that discloses different permissions than the manifest
   // requests is a Web-Store-review rejection risk. Verified accurate

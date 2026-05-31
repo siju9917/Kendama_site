@@ -1537,3 +1537,26 @@ correct (a changed clause should be critical); the DOC was wrong.
 
 This is the docs-vs-code red-team finding a genuine accuracy gap (contrast the
 permission/shortcut docs which were already accurate). Doc-only change.
+
+
+## Bug-hunt pass 52 (2026-05-30 evening MT) — FIX: FAQ recall claim was stronger than the enforced floor
+
+### Accuracy/Compliance — `faq.md` "100% recall" vs the corpus audit's enforced bar
+
+The FAQ promised a flat "**100% recall** on synthetic amendments." True today
+(the corpus measures 100%), but the audit only ENFORCES recall ≥ 98% (with 0
+*critical* missed as the hard 100% gate). So a future non-critical change that
+dropped recall to 99% would pass the gate yet make the FAQ's "100%" false — a
+claim pinned to a point-in-time measurement, not the guarantee.
+
+- **Fix:** reworded the FAQ to the ENFORCED guarantee — "zero missed *critical*
+  changes (a hard gate) and ≥98% overall recall (currently 100%)." This is
+  both honest and durable, and the *meaningful* user promise ("never miss a
+  critical change") is the part that's actually 100%-gated.
+- **Guard:** `docs-match-code.test.ts` now ties the FAQ claim to the audit's
+  real floors (criticalMissed + recall≥0.98) and forbids the bare-100% wording.
+- Suite 411 -> 412 green; typecheck + lint clean. Doc-only change.
+
+Second docs-vs-code accuracy fix in a row (after pass 51's clause-criticality)
+— cross-checking every user-facing CLAIM against the enforced/coded ground
+truth keeps finding real gaps the feature-description checks don't.

@@ -16,10 +16,12 @@ help by emailing us the missing clause number.
 
 ## What if BidDiff misses a change?
 
-Tell us. We measure accuracy against a labeled corpus and track every
-miss as a bug. The corpus has 100% recall on synthetic amendments and
-we work hard to keep real-world recall at the same level. If you find
-a real-world miss, support@biddiff.example with the (redacted) docs.
+Tell us. We measure accuracy against a labeled corpus on every build and
+track every miss as a bug. Our enforced bar: **zero missed *critical*
+changes** (a hard gate — the build fails if any critical change is missed)
+and **≥98% overall recall** (it currently measures 100% on the synthetic
+corpus). We work hard to hold real-world recall to the same standard. If you
+find a real-world miss, email support@biddiff.example with the (redacted) docs.
 
 ## Can I use BidDiff on non-SAM.gov solicitations?
 
