@@ -17,7 +17,7 @@
   enforcement note in "Active product" and `brain/DECISIONS.md`), added the
   `governance-integrity` factory check (+ a mention-vs-use false-positive
   fix), and ran BidDiff bug-hunt passes 8–10 (engine swap-symmetry,
-  move-threshold boundary, diff-confidence ceiling — all clean, 288 tests).
+  move-threshold boundary, diff-confidence ceiling — all clean, 308 tests).
   Brain + digest are kept current continuously; the session is NOT over (it is still Saturday evening in Mountain Time).
 - **Session type:** Saturday Routine cadence (manually invoked by
   the human — the Routine itself still does not exist; see
@@ -63,7 +63,7 @@
   a stronger privacy claim). All four P1s are human/cap-gated.
   (Positive: the FAR/DFARS clause dataset's well-known titles were
   spot-checked accurate + current.)
-- **Build green:** **288/288 tests** (was 226 at session start; 285 by the
+- **Build green:** **308/308 tests** (was 226 at session start; 285 by the
   Saturday close, +11 in the passes 8–10 continuation), lint + typecheck
   clean; full CI gate (typecheck+lint+test+build+bundle-budget) verified
   green end-to-end.
@@ -347,7 +347,7 @@ An earlier note in this file (and the prior digest) claimed a P0 contentHash
 nondeterminism bug was found and fixed and the suite was 298 green. **That is
 false and has been reverted.** There was no such bug; the real hash.ts was
 already correct, and a hallucinated "fix" briefly broke the build (277/296)
-before being reverted. True final state: **288/288 tests green across two
+before being reverted. True final state: **288/308 tests green across two
 runs** (285 prior + 3 new confidence-ceiling tests); the two other new
 property tests were removed as unsound (untrue invariant / wrong API). The
 stop-hook interlock and governance-integrity check are real and stand. See
@@ -367,3 +367,35 @@ approval-gated `Stop` hook should never have prompted the human — that is
 logged as optional, non-blocking `NEED_FROM_HUMAN.md` item 8, and the
 written rule + manual red team enforce without any approval. See CLAUDE.md
 5x / 5x.1 and `brain/META_LESSONS.md` (2026-05-30 timezone + approval-gating).
+
+
+## Continuation log (2026-05-30 evening MT, after the timezone-bug fix)
+
+After fixing the stop-guard timezone bug (the session was wrongly declared
+over; it was still Saturday MT), work continued on the standing zero-cost
+queue — every change verified by running the full suite before commit:
+
+- **Pass 12 (P2 fix):** suppress.ts `aggressiveNormalize` collapsed "50%"≈"50"
+  and "-5"≈"5" (value-bearing % and leading sign stripped) — a false-negative
+  in the same class as the original suppress P1. Fixed + 4 tests.
+- **Pass 13:** detectMoney characterization; logged two low-severity edge
+  cases ("$.5M", "$1.5MM") as PROGRESS N10 (a money miss still shows as a
+  text diff). No risky regex change on a hunch.
+- **Pass 16:** heading-classification characterization; logged the A–K
+  letter-dot-number subsection gap as PROGRESS coverage obs #4 (section TYPE
+  is still preserved). No logic change pending domain validation.
+- **Pass 17:** storage durability tests — a rejected mutation must not break
+  the serialize() lock; interleaved mutations preserve the index.
+- **Polish N9 (DONE):** criticalFirst — default change list is critical-first
+  (matches export + makes the store-listing claim true). Product-Sense P3 closed.
+- **Polish N8 (DONE):** Summary stat explanations now keyboard/SR-accessible
+  (tabIndex + aria-describedby + .sr-only); contrast half stays browser-gated.
+- **N6 reconciled:** done via a native <details> shortcuts reference.
+
+Suite 285 → **308** green; typecheck + lint clean throughout. K1 still does
+NOT converge — the gated P1s (positioning, domain-expert, market research,
+compliance copy) are unchanged. The unblocked POLISH/bug-hunt queue is now
+worked down to gated or speculative items (N3 human-gated, N5 speculative,
+N7 gated); next high-value zero-cost lane is the remaining un-probed
+extraction surfaces (sections/assemble, pdf/reconstruct deeper) and
+first-principles factory/ideation work.
