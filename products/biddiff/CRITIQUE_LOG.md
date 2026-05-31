@@ -983,3 +983,18 @@ boundary); TRUNCATES the shown technical detail to ~240 chars (no long
 stack/path leak); and Recover clears the error so a now-healthy subtree
 re-renders instead of staying permanently dead. No production change. Suite
 312 -> 317 green; typecheck + lint clean.
+
+
+## Bug-hunt pass 22 (2026-05-30 evening MT) — ProgressView was untested
+
+`ProgressView` (shown during extraction/diff) had no focused test. Added 4
+pinning: it shows the provided note and reflects percent on an ARIA
+progressbar (valuenow/min/max); falls back to "Working…" on an empty note;
+is announced politely (role=status, aria-live=polite); and CLAMPS the visual
+fill to 4–100% (0% still shows a sliver, >100% can't overflow the bar). No
+production change. Suite 317 -> 321 green; typecheck + lint clean.
+
+Process note: the test's unused `React` import slipped past the green suite
+run but was caught by `npm run typecheck` (exit 2) before commit — exactly
+the verify-before-commit gate working as intended (the suite passing is not
+sufficient; typecheck + lint are part of the gate).
