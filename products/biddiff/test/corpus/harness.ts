@@ -69,6 +69,17 @@ export interface MatchVerdict {
  * Match expected → actual. We use a lightweight matcher that requires the
  * actual Change to share category, intersect with the same severity tier
  * for CRITICAL items, and (when present) contain the expected text fragments.
+ *
+ * KNOWN LIMITATION (characterized 2026-05-30, bug-hunt pass 48): `evaluatePair`
+ * assigns greedily (first compatible unmatched actual per expected, in order),
+ * which is NOT an optimal bipartite assignment. With OVERLAPPING text
+ * fragments it can strand a later expected and report a false MISS. This is
+ * deliberately left as-is because the error direction is CONSERVATIVE: a false
+ * miss makes the audit *fail loudly* (never falsely pass), so it cannot hide a
+ * real critical miss — worst case it cries wolf, which is immediately visible
+ * and fixable. The real corpus has no such fragment-overlap collision (it
+ * passes at 100%). If a future corpus addition triggers a spurious miss,
+ * upgrade to an optimal (Hungarian) assignment then — not speculatively.
  */
 export function matchExpectedAgainstActual(
   expected: ExpectedChange,

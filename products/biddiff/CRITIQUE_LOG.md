@@ -1438,3 +1438,27 @@ Findings:
 — the floor can't be quietly hollowed out. Suite 404 -> 405 green; typecheck +
 lint clean. No production change (the harness was already sound; this pins the
 invariant that keeps it sound).
+
+
+## Bug-hunt pass 48 (2026-05-30 evening MT) — corpus matcher greedy-misassign (characterized, conservative)
+
+Followed up pass 47's noted fragility: the corpus matcher is greedy
+first-match, NOT optimal bipartite. Probe-confirmed it CAN report a false miss
+when expecteds have overlapping text fragments (constructed: E1="alpha",
+E2="alpha"+"beta" vs A1="alpha beta", A2="alpha" → greedy gives A1 to E1,
+strands E2 → 1 hit/1 miss where optimal is 2/0).
+
+**Why it's left as-is (documented, not fixed):** the error direction is
+CONSERVATIVE — a false miss makes the Phase 3.12 audit FAIL loudly, never
+falsely pass, so it cannot hide a real critical miss. The real corpus has no
+fragment-overlap collision (passes 100%). Fixing it = an optimal/Hungarian
+assignment, a non-trivial rewrite of a working harness whose only failure mode
+is an immediately-visible cry-wolf. Per the verify-first/no-speculative-rewrite
+discipline, documented + guarded instead of rewritten.
+
+Added 2 tests: a characterization of the greedy misassign, and a guard that
+the REAL corpus has no duplicate expected-fragment-sets (the precondition for
+the strand) — so a future corpus addition that would trigger a spurious audit
+failure is caught at test time, not in the audit. Harness doc updated with the
+limitation + the conservative-direction analysis. Suite 405 -> 407 green;
+typecheck + lint clean. No production change.

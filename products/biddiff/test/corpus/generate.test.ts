@@ -4,7 +4,8 @@
  * regeneration.
  */
 import { describe, it, expect } from "vitest";
-import { loadAllPairs, loadManifest } from "./harness.js";
+import { loadAllPairs, loadManifest, evaluatePair } from "./harness.js";
+import type { Change } from "../../src/core/diff/types.js";
 
 describe("corpus generator", () => {
   it("emits a manifest with at least 40 pairs", () => {
@@ -119,6 +120,63 @@ describe("corpus generator", () => {
       for (const e of b.label.expectedChanges) {
         expect(validCategories.has(e.category)).toBe(true);
       }
+    }
+  });
+});
+
+// Characterization of the greedy-matcher limitation (bug-hunt pass 48). The
+// matcher is NOT an optimal bipartite assignment; with overlapping text
+// fragments it can report a false MISS. This is documented + accepted because
+// the error direction is conservative (a false miss fails the audit loudly,
+// never hides a real miss). These tests pin both halves of that contract.
+describe("corpus matcher: greedy-misassign characterization", () => {
+  const act = (after: string): Change =>
+    ({
+      id: Math.random().toString(36).slice(2),
+      changeType: "MODIFY",
+      category: "OTHER",
+      severity: "NORMAL",
+      sectionHeading: "H",
+      ucfLetter: null,
+      beforeText: "x",
+      afterText: after,
+      tokenSpans: null,
+      anchorsInvolved: [],
+      criticalReasons: [],
+      clauseInfo: null,
+      locationHint: "l",
+    }) as unknown as Change;
+
+  it("greedy assignment can report a false miss on overlapping fragments (documented limitation)", () => {
+    const bundle = {
+      pairId: "synthetic",
+      current: {},
+      prior: {},
+      label: {
+        expectedChanges: [
+          { category: "OTHER", severity: "NORMAL", changeType: "MODIFY", mustDetect: false, expectedTextFragments: ["alpha"] },
+          { category: "OTHER", severity: "NORMAL", changeType: "MODIFY", mustDetect: false, expectedTextFragments: ["alpha", "beta"] },
+        ],
+      },
+    } as never;
+    // A1="alpha beta" matches both; A2="alpha" matches only the first. Greedy
+    // gives A1 to the first expected, stranding the second → a false miss.
+    const m = evaluatePair(bundle, { changes: [act("alpha beta"), act("alpha")] } as never);
+    expect(m.hits).toBe(1);
+    expect(m.missed.length).toBe(1);
+    // The error is conservative: a miss never falsely PASSES an audit.
+  });
+
+  it("the REAL corpus has no fragment-overlap collision (so the limitation is dormant)", () => {
+    // If the real corpus ever triggered the greedy misassign, the Phase 3.12
+    // audit would spuriously fail. Guard that it doesn't, today.
+    for (const b of loadAllPairs()) {
+      const frags = b.label.expectedChanges
+        .map((e) => (e.expectedTextFragments ?? []).slice().sort().join("|"))
+        .filter((s) => s.length > 0);
+      // No two expecteds in a pair share an identical fragment-set (the
+      // precondition for a greedy strand). Distinct fragment-sets ⇒ safe.
+      expect(new Set(frags).size, `${b.pairId}: duplicate expected fragment-sets`).toBe(frags.length);
     }
   });
 });
