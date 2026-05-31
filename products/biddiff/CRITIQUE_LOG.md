@@ -1070,3 +1070,27 @@ the walker never throws, always returns well-formed paragraphs
 catastrophic-backtracking guard: a pathological 20k-open-tag/no-close input
 parses in <2s (measured 669ms). All clean — the walker is robust. Suite
 338 -> 341 green; typecheck + lint clean. No production change.
+
+
+## Bug-hunt pass 28 (2026-05-30 evening MT) — DOCX extractor error-path contracts
+
+The DocxExtractor error paths (ENCRYPTED / CORRUPT / missing document.xml)
+were untested. Added 4 tests pinning the user-facing ExtractionError codes.
+
+**Useful architectural finding (no bug, worth recording):** `extract()` runs
+`validateInput()` FIRST, and validation gates on the ZIP magic ("PK"). So a
+non-zip input — a CFB envelope (real encrypted .docx, magic D0 CF 11 E0) or
+plain garbage — is rejected as **UNSUPPORTED_FORMAT by validation BEFORE** the
+unzip step's own CFB-magic ENCRYPTED branch or its CORRUPT branch is reached.
+That CFB branch in `unzipDocxToParagraphs` is therefore defense-in-depth for a
+validation-bypass path, not the primary route. The reachable paths, now pinned:
+- CFB envelope → **UNSUPPORTED_FORMAT** (validation, not the unzip CFB branch).
+- truncated zip (valid PK magic, unparseable) → **CORRUPT** (unzip branch).
+- valid zip missing word/document.xml → **CORRUPT**.
+- valid zip containing an EncryptedPackage stream → **ENCRYPTED** (the
+  reachable encrypted path).
+
+My first draft asserted the unreachable CFB→ENCRYPTED and garbage→CORRUPT
+paths and failed — caught by running the test, then corrected to the real
+behavior (verify-before-claim). No production change. Suite 341 -> 345 green;
+typecheck + lint clean.

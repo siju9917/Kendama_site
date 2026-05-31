@@ -112,4 +112,53 @@ describe("DocxExtractor", () => {
     const extractor = new DocxExtractor();
     await expect(extractor.extract(buf, "x.docx")).rejects.toMatchObject({ code: "EMPTY" });
   });
+
+  // Error-path contracts (bug-hunt pass 28): each maps to a distinct,
+  // user-facing ExtractionError code. These were previously untested, and
+  // writing them surfaced a useful fact about the layering: extract() runs
+  // validateInput() FIRST, which gates on the ZIP magic ("PK"). So inputs
+  // that are NOT zips (a CFB envelope, plain garbage) are rejected as
+  // UNSUPPORTED_FORMAT by validation BEFORE the unzip step's own
+  // ENCRYPTED(CFB)/CORRUPT branches are reached — those branches are
+  // defense-in-depth for a bypass path, not the primary route. The tests
+  // below pin the ACTUALLY-reachable behavior.
+
+  it("validation gates a non-zip (CFB envelope) before the unzip step (UNSUPPORTED_FORMAT)", async () => {
+    // A real encrypted .docx is a CFB envelope (magic D0 CF 11 E0 ...); it is
+    // not a zip, so validateInput rejects it first. Pad past any min-size gate.
+    const cfb = new Uint8Array(64);
+    cfb.set([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);
+    const extractor = new DocxExtractor();
+    await expect(extractor.extract(cfb.buffer, "locked.docx")).rejects.toMatchObject({
+      code: "UNSUPPORTED_FORMAT",
+    });
+  });
+
+  it("rejects a truncated/corrupt zip (valid PK magic, unparseable) with CORRUPT", async () => {
+    // Starts with the ZIP magic so it passes validation, but the body is
+    // truncated so JSZip fails to open it → the unzip step's CORRUPT branch.
+    const buf = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff]);
+    const extractor = new DocxExtractor();
+    await expect(extractor.extract(buf.buffer, "broken.docx")).rejects.toMatchObject({
+      code: "CORRUPT",
+    });
+  });
+
+  it("rejects a valid zip missing word/document.xml with CORRUPT", async () => {
+    const zip = new JSZip();
+    zip.file("not-a-document.txt", "hello");
+    const buf = await zip.generateAsync({ type: "arraybuffer" });
+    const extractor = new DocxExtractor();
+    await expect(extractor.extract(buf, "wrong.docx")).rejects.toMatchObject({ code: "CORRUPT" });
+  });
+
+  it("surfaces an EncryptedPackage stream inside a parseable zip as ENCRYPTED", async () => {
+    // This is the reachable encrypted path: a real PK zip (passes validation)
+    // whose entry is the EncryptedPackage stream rather than word/document.xml.
+    const zip = new JSZip();
+    zip.file("EncryptedPackage", new Uint8Array([1, 2, 3]));
+    const buf = await zip.generateAsync({ type: "arraybuffer" });
+    const extractor = new DocxExtractor();
+    await expect(extractor.extract(buf, "enc.docx")).rejects.toMatchObject({ code: "ENCRYPTED" });
+  });
 });
