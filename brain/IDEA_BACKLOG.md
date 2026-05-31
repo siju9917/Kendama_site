@@ -97,7 +97,7 @@ of the server-side D4. Provisional structural sub-score (same 6 cap-independent
 factors as RANKING.md): Dist 9, Maint 9 (on-device, no hosting), Build 7
 (HCL/`terraform show -json` parsing is the work), Self-serve 5 (VS Code DIY
 billing), Defens 6 (incumbents exist but none is free+on-device+IDE-native),
-Strategic 8 → partial 438/580 (arithmetic-verified), in the same band as MCP (436) and just behind D3 (448)/rank-1 (460)/D2 (474).
+Strategic 8 → partial 438/580 (arithmetic-verified), in the same band as MCP (436) and just behind D3 (448)/rank-1 (460)/D2 (474). Deep-eval scaffold: `brain/RESEARCH/2026-05-30-terraform-plan-classifier.md`.
 
 **Deep-eval scaffolds (2026-05-30):** D2
 (`brain/RESEARCH/2026-05-30-clauseguard-github-app.md`), D4
