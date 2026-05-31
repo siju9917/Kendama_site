@@ -243,6 +243,16 @@ Checklist:
   handler. Symmetry check: if the container/index parse is guarded,
   the payload parse must be too. Added 2026-05-30 (getDiff raw-threw a
   SyntaxError on a corrupt stored payload, pass 40).
+- **A markup/serialization EMISSION boundary must reject or strip
+  characters the target format forbids OUTRIGHT — escaping the
+  metacharacters is necessary but not sufficient.** When building XML/
+  OOXML/HTML/CSV/etc. from text that originated in an untrusted document,
+  enumerate the format's *illegal* code points (XML 1.0 bans most C0
+  controls — 0x00-0x1F except tab/nl/cr — even as `&#7;` numeric
+  references) and strip them; otherwise a single such char in extracted
+  text produces a file the consumer rejects as corrupt. Added 2026-05-31
+  (BidDiff redline `escapeXml` escaped `< & >` but left control chars,
+  which would make Word refuse the .docx, pass 61).
 
 ### 8. Accessibility Critic
 
@@ -459,6 +469,7 @@ critic is recorded here with the triggering cause.
 | 2026-05-30 (evening) | Compliance Critic (#9) | Added: described-but-absent flows include SUPPORT/help + tier copy; every quantitative claim must match the ENFORCED guarantee not a point-in-time measurement; a PII boundary needs a key allow-list + finite-integer bounds, not just "numbers only" | support-macros' server license/billing flow (pass 53); FAQ "100% recall" vs the ≥98% floor (pass 52); telemetry counts schema (pass 45) |
 | 2026-05-30 (evening) | AUDIT NOTE | The above evening rows were logged in `products/biddiff/CRITIQUE_LOG.md` as "roster growth" across passes 12–53 but had NOT actually landed in this file until 2026-05-30 evening (caught by cross-checking the log vs the roster). Lapse fixed; lesson: "roster growth" claimed in a critique log must be verified to land in CRITIQUE_AGENTS.md (5.7.3 + verify-before-claim). | self-audit of the roster-growth claims |
 | 2026-05-31 | Research Quality Critic (#14) | Added: claims about our OWN work (coverage/quality in brain, digest, PROGRESS) are artifacts to verify — a superlative ("every", "all", "100%", "saturated") must be grep-checked against the corpus before writing and softened to the literally-true statement when it does not hold | pass 60 found "every exported core function is tested" overstated — 6 fns covered only via tested callers (`products/biddiff/CRITIQUE_LOG.md` 2026-05-31 pass 60) |
+| 2026-05-31 | Reliability Critic (#7) checklist | Added: a markup/serialization EMISSION boundary must strip characters the target format forbids outright, not just escape metacharacters (XML 1.0 bans most C0 controls even as numeric references) | pass 61 found redline `escapeXml` left XML-illegal control chars that would make Word reject the .docx as corrupt (`products/biddiff/CRITIQUE_LOG.md` 2026-05-31 pass 61) |
 
 The META loop (PART 11) audits this table every cycle. A month
 with no growth is a warning sign flagged in the weekly digest.

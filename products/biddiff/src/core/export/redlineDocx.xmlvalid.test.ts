@@ -74,4 +74,23 @@ describe("redline OOXML is strictly well-formed XML (jsdom DOMParser)", () => {
       parseErrors(buildRedlineDocumentXml(result([change({ afterText: "café — résumé 日本語 😀" })]))),
     ).toBeNull();
   });
+
+  it("stays well-formed when extracted text carries XML-illegal control chars", () => {
+    // A malformed PDF/DOCX can yield raw control codes in extracted text; the
+    // escaper strips them so the whole document stays valid (Word would
+    // otherwise reject the file as corrupt). Verify both that it parses and
+    // that no illegal code point survived anywhere in the emitted XML.
+    const xml = buildRedlineDocumentXml(
+      result([
+        change({ beforeText: "Prior\x00 due\x07 date", afterText: "New\x1f due\x0b date" }),
+        change({ severity: "CRITICAL", criticalReasons: ["Reason with \x0c form-feed."] }),
+      ]),
+    );
+    expect(parseErrors(xml)).toBeNull();
+    const illegal = [...xml].filter((ch) => {
+      const c = ch.codePointAt(0)!;
+      return (c < 0x20 && c !== 0x9 && c !== 0xa && c !== 0xd) || c === 0xfffe || c === 0xffff;
+    });
+    expect(illegal).toEqual([]);
+  });
 });

@@ -23,6 +23,47 @@ re-opening review | escalation second-pass.
 
 ---
 
+## 2026-05-31 — Phase K1 — bug-hunt pass 61 (Reliability, 5.7.5)
+
+**Pass type:** bug-hunt (continuous, not gated to a code change) —
+re-attacking the redline DOCX export with a new input class.
+
+**Critics run:** Reliability #7, Correctness #1, Adversarial #2.
+
+**Finding (P1 — latent, user-facing file corruption):** `escapeXml`
+in `redlineDocx.ts` escaped the five XML metacharacters but left
+XML-1.0-illegal control characters (0x00-0x08, 0x0B, 0x0C, 0x0E-0x1F,
+and 0xFFFE/0xFFFF) untouched. These are illegal in XML *even as `&#7;`
+numeric references*; a single one in `word/document.xml` makes Word
+reject the .docx as corrupt ("repair?"). Extracted text CAN carry them:
+the DOCX extractor's `safeCodePoint` decodes a numeric entity like
+`&#7;` to a raw bell, and raw control chars inside `<w:t>` survive. So
+a crafted/malformed prior document could make a capture team's redline
+export silently un-openable.
+
+**Probe-first:** added a failing `escapeXml` unit test (drops illegal
+controls, preserves tab/newline/CR) BEFORE the fix; confirmed it failed.
+
+**Fix:** `escapeXml` now strips the XML-illegal control set at the
+emission boundary (stripped, not escaped — they cannot be represented).
+Tab/newline/CR are preserved. Added a jsdom-DOMParser integration test
+asserting the full built document both parses and contains zero illegal
+code points when changes carry control chars. The fix is localized to
+the single XML-emission trust boundary; the extractor is left unchanged
+(control chars are harmless in the React UI and markdown — only XML
+output is corrupted by them). 425 → 428 tests.
+
+**Roster growth (5.7.3):** Reliability #7 gains — *a markup/serialization
+emission boundary must reject or strip characters the target format
+forbids OUTRIGHT, not merely escape its metacharacters; escaping is
+necessary but not sufficient (XML 1.0 bans most C0 controls even when
+numerically referenced).*
+
+**Convergence:** clean on cycle 1; full gate green (428/428, tc=0,
+lint=0; 10 factory checks pass). Recurring cadence applies.
+
+---
+
 ## 2026-05-31 — Phase K1 — pass 60 (verify-own-claims, 5.7.7 self-audit)
 
 **Pass type:** re-opening review + verify-before-claim, turned on this

@@ -63,7 +63,7 @@
   a stronger privacy claim). All four P1s are human/cap-gated.
   (Positive: the FAR/DFARS clause dataset's well-known titles were
   spot-checked accurate + current.)
-- **Build green:** **425/425 tests** (was 226 at session start; 285 by the
+- **Build green:** **428/428 tests** (was 226 at session start; 285 by the
   Saturday close; +50 across the evening continuation passes 8-25), lint + typecheck
   clean; full CI gate (typecheck+lint+test+build+bundle-budget) verified
   green end-to-end.
@@ -299,7 +299,7 @@ all green; check tests 16/16.
    The first-principles sub-scores (RANKING.md) make D2 clauseguard and
    rank-1 Apex co-leads — the cited evidence breaks the tie.
 3. **The diff-core/extraction/UI/runtime bug-hunt is SATURATED** (44
-   passes; 425/425 tests; every exported core/shared fn tested
+   passes; 428/428 tests; every exported core/shared fn tested
    **directly or via a tested caller** (a pass-60 audit found 6 fns —
    enrichSection, withSortedBlocks, lookupClauseLocal, assembleSections,
    sectionBundleToBlocks, sortAnchors — covered only indirectly; a

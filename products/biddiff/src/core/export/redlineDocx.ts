@@ -17,9 +17,19 @@ import type { Change, DiffResult } from "../diff/types.js";
 import { DISCLAIMER_TEXT } from "../../shared/disclaimer.js";
 import { CATEGORY_LABELS } from "../../shared/constants.js";
 
-/** Escape text for inclusion in XML character data / attribute values. */
+/** Escape text for inclusion in XML character data / attribute values.
+ *
+ * Also drops characters that XML 1.0 forbids entirely (most C0 control
+ * codes — 0x00-0x08, 0x0B, 0x0C, 0x0E-0x1F — plus 0xFFFE/0xFFFF): these
+ * are illegal even when numerically escaped, and a single one makes Word
+ * reject the .docx as corrupt. Extracted text can carry them (the DOCX
+ * extractor decodes numeric entities like `&#7;` to raw control chars, and
+ * raw control chars inside `<w:t>` survive), so this emission boundary is
+ * the right place to strip them. Tab/newline/CR are the control chars XML
+ * permits and are preserved. */
 export function escapeXml(s: string): string {
   return s
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")

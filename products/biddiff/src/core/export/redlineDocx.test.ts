@@ -43,6 +43,22 @@ describe("escapeXml", () => {
       "a &amp; b &lt; c &gt; d &quot; e &apos; f",
     );
   });
+
+  // Bug-hunt pass 61 (2026-05-31): XML 1.0 forbids most control characters
+  // (0x00-0x08, 0x0B, 0x0C, 0x0E-0x1F) outright — they are illegal even when
+  // numerically escaped, and Word rejects a .docx whose document.xml contains
+  // one ("file is corrupt, repair?"). Extracted text CAN carry them: the DOCX
+  // extractor's safeCodePoint() decodes a numeric entity like "&#7;" to a raw
+  // bell, and raw control chars inside <w:t> survive. The escaper is the
+  // XML-emission trust boundary, so it must drop XML-illegal chars.
+  it("drops XML-1.0-illegal control characters (Word would reject them)", () => {
+    expect(escapeXml("a\x00b\x07c\x1fd")).toBe("abcd");
+    expect(escapeXml("vert\x0btab\x0cform")).toBe("verttabform");
+  });
+
+  it("preserves the control characters XML permits (tab, newline, CR)", () => {
+    expect(escapeXml("a\tb\nc\rd")).toBe("a\tb\nc\rd");
+  });
 });
 
 describe("buildRedlineDocumentXml", () => {
