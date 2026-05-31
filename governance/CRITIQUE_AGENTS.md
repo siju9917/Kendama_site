@@ -178,7 +178,13 @@ ruleset still needs the human-gated practitioner validation in
   material term in an answer.
 - **The critical-change categories a capture/proposal manager
   actually scans** (and whether the product flags each): due
-  dates/times AND bid-opening/oral-presentation scheduling; page
+  dates/times AND bid-opening/oral-presentation scheduling — note a
+  deadline is defined by **date AND clock-time AND timezone**, so a
+  time-only ("2:00 PM" → "11:00 AM") or timezone-only ("Eastern" →
+  "Central") change with an unchanged date is just as critical as a
+  date change; do NOT assume the date token is the only deadline signal
+  (BidDiff pass-63 probe: such a change is caught only inside Section L,
+  missed in an untyped section — PROGRESS.md coverage-obs #5); page
   limits / font / formatting mandates; evaluation factors AND their
   *order/weighting* (LPTA vs best-value tradeoff); CLIN
   structure/quantities/option pricing AND non-CLIN ceiling values;
@@ -470,6 +476,7 @@ critic is recorded here with the triggering cause.
 | 2026-05-30 (evening) | AUDIT NOTE | The above evening rows were logged in `products/biddiff/CRITIQUE_LOG.md` as "roster growth" across passes 12–53 but had NOT actually landed in this file until 2026-05-30 evening (caught by cross-checking the log vs the roster). Lapse fixed; lesson: "roster growth" claimed in a critique log must be verified to land in CRITIQUE_AGENTS.md (5.7.3 + verify-before-claim). | self-audit of the roster-growth claims |
 | 2026-05-31 | Research Quality Critic (#14) | Added: claims about our OWN work (coverage/quality in brain, digest, PROGRESS) are artifacts to verify — a superlative ("every", "all", "100%", "saturated") must be grep-checked against the corpus before writing and softened to the literally-true statement when it does not hold | pass 60 found "every exported core function is tested" overstated — 6 fns covered only via tested callers (`products/biddiff/CRITIQUE_LOG.md` 2026-05-31 pass 60) |
 | 2026-05-31 | Reliability Critic (#7) checklist | Added: a markup/serialization EMISSION boundary must strip characters the target format forbids outright, not just escape metacharacters (XML 1.0 bans most C0 controls even as numeric references) | pass 61 found redline `escapeXml` left XML-illegal control chars that would make Word reject the .docx as corrupt (`products/biddiff/CRITIQUE_LOG.md` 2026-05-31 pass 61) |
+| 2026-05-31 | Domain-Expert Critic (#5) checklist | Sharpened the deadline item: a deadline = date AND clock-time AND timezone, so a time-only or timezone-only change with an unchanged date is equally critical; don't treat the date token as the sole deadline signal | pass 63 probe — a time/timezone-only deadline change is flagged only inside Section L, missed in an untyped section (`products/biddiff/PROGRESS.md` coverage-obs #5) |
 
 The META loop (PART 11) audits this table every cycle. A month
 with no growth is a warning sign flagged in the weekly digest.

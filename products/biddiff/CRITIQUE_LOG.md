@@ -23,6 +23,40 @@ re-opening review | escalation second-pass.
 
 ---
 
+## 2026-05-31 — Phase K1 — bug-hunt pass 63 (Domain-Expert, 5.7.5)
+
+**Pass type:** bug-hunt with the Domain-Expert #5 federal-procurement lens
+— attacking criticality coverage, not extraction.
+
+**Critics run:** Domain-Expert #5, Correctness #1.
+
+**Finding (gated — criticality gap, logged not fixed):** A deadline is
+defined by date AND clock-time AND timezone, but the only signals that flag
+a deadline change are a DATE anchor or a DATES_DEADLINES/SUBMISSION_INSTR.
+category — there is no TIME anchor. A 4-case engine probe confirmed: a
+time-only ("2:00 PM"→"11:00 AM") or timezone-only ("Eastern"→"Central")
+change with an unchanged date is flagged CRITICAL **only inside Section L**
+(via SUBMISSION_INSTRUCTIONS, generic reason), and is **MISSED (NORMAL)** in
+an untyped/OTHER section. For a capture manager, a deadline shifting hours
+earlier is exactly as bid-losing as a date change.
+
+**Action:** NOT fixed. `critical.ts` is explicitly append-only-when-the-BD2
+domain validation lands, and a deadline rule (TIME anchor + a new critical
+rule) is precisely the kind of domain call that must not be made on a
+Saturday-evening hunch — it risks false positives (every "2:00 PM
+conference", "30 days", "business hours"). Logged as PROGRESS.md
+coverage-obs #5 with the probe evidence + two candidate responses for BD2 to
+choose between.
+
+**Roster growth (5.7.3):** Domain-Expert #5 deadline checklist item
+sharpened — date is not the only deadline signal; time and timezone are
+co-equal.
+
+**Convergence:** N/A (gated finding, no code change). Recorded for the
+post-validation cycle.
+
+---
+
 ## 2026-05-31 — Phase K1 — bug-hunt pass 62 (Reliability, 5.7.5)
 
 **Pass type:** bug-hunt — applying pass 61's emission-boundary lesson to

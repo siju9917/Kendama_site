@@ -87,6 +87,29 @@ session has specifics, not a vague "improve extraction":
    mirroring SECTION_LM for A–K, validated against domain-expert input
    (BD2). Characterized (not changed) in headings.test.ts (bug-hunt 16).
 
+5. **Deadline TIME / TIMEZONE changes with no date token are not flagged
+   critical outside Section L. — OPEN (gated; criticality, not extraction).
+   Found bug-hunt pass 63 (2026-05-31), Domain-Expert #5 lens.** For a
+   capture manager a deadline moving from "2:00 PM Eastern" to "11:00 AM
+   Eastern" (same date) or "Eastern" → "Central" is critical (miss it = miss
+   the bid), but there is no TIME anchor, and the only signals that flag a
+   deadline are a DATE anchor or a DATES_DEADLINES / SUBMISSION_INSTRUCTIONS
+   category. Probe (4 cases, engine-level): a time-only change **in Section L
+   (INSTRUCTIONS) IS flagged CRITICAL** via SUBMISSION_INSTRUCTIONS (reason is
+   the generic "Submission instructions changed.", not "the deadline time
+   changed"); but a time-only or timezone-only change **in an OTHER/untyped
+   section is MISSED (severity NORMAL)**. Real-world frequency depends on where
+   the due date/time sits — usually Section L or the SF-1449/SF-33 cover (block
+   8). **Two candidate responses for BD2 to decide:** (a) add a `TIME` anchor +
+   a deadline-time critical rule (risk: false positives on every "2:00 PM
+   conference", duration "30 days", "business hours" — needs the domain
+   expert to bound it); or (b) confirm that in practice the due date/time
+   always co-occurs with a DATE token (so it is already caught) and the gap is
+   theoretical. **NOT changed this cycle** — `critical.ts` is explicitly
+   append-only-when-BD2-lands, and a deadline rule is precisely the kind of
+   domain call that must not be made on a Saturday-evening hunch. Evidence
+   recorded here so the post-validation cycle decides with specifics.
+
 These feed both `src/core/diff/critical.ts` extension work AND the
 Domain-Expert Critic checklist strengthening, once BD2's human
 validation lands.
