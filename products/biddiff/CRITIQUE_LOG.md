@@ -1185,3 +1185,15 @@ SamAttachments wiring, constants, disclaimer — the disclaimer is already
 covered by the no-advisory test) or environment-bound glue best covered by the
 existing integration suite. The core logic surface is comprehensively
 characterized. Full CI green; 226 → 373 tests this cycle.
+
+
+## Bug-hunt pass 34 (2026-05-30 evening MT) — text similarity primitives
+
+`containmentSimilarity` and `modifySimilarity` (shared/text.ts) — which feed
+the engine's DELETE/INSERT→MODIFY decision — had ZERO test references; only
+jaccard + levenshtein were covered. Added: containment = 1 on subset, 0 on
+disjoint/empty; a 200-pair property test that modifySimilarity == max(jaccard,
+containment) and is therefore >= both and bounded [0,1]; and a guard test that
+levenshteinRatio's MAX_LEN=1024 truncation keeps a 50k-char input fast (<500ms)
+and bounded. No production change. Suite 373 -> 377 green; typecheck + lint
+clean.

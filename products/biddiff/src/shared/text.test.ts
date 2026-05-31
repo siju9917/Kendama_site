@@ -1,8 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
+  containmentSimilarity,
   jaccardSimilarity,
   joinTokens,
   levenshteinRatio,
+  modifySimilarity,
   normalizeText,
   tokenize,
 } from "./text.js";
@@ -113,5 +115,53 @@ describe("similarity", () => {
     expect(levenshteinRatio("statement of work", "statement of work")).toBe(1);
     expect(levenshteinRatio("", "anything")).toBe(0);
     expect(levenshteinRatio("statement of work", "statement of works")).toBeGreaterThan(0.9);
+  });
+
+  it("truncates pathological inputs so it cannot freeze on a huge string", () => {
+    // The MAX_LEN=1024 guard means a 50k-char input doesn't run a 2.5B-cell dp.
+    const big = "a".repeat(50000);
+    const start = Date.now();
+    const r = levenshteinRatio(big, big.slice(0, 40000) + "b".repeat(10000));
+    expect(Date.now() - start).toBeLessThan(500);
+    expect(r).toBeGreaterThanOrEqual(0);
+    expect(r).toBeLessThanOrEqual(1);
+  });
+});
+
+describe("containmentSimilarity (previously untested)", () => {
+  it("is 1 when one token set is contained in the other", () => {
+    expect(containmentSimilarity(["a", "b"], ["a", "b", "c", "d"])).toBe(1);
+    expect(containmentSimilarity(["a", "b", "c", "d"], ["a", "b"])).toBe(1);
+  });
+  it("is 0 for disjoint or empty inputs", () => {
+    expect(containmentSimilarity(["a"], ["x"])).toBe(0);
+    expect(containmentSimilarity([], ["a"])).toBe(0);
+    expect(containmentSimilarity(["a"], [])).toBe(0);
+  });
+});
+
+describe("modifySimilarity (previously untested)", () => {
+  it("equals max(jaccard, containment) and so is >= both, across random pairs", () => {
+    const words = ["alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf"];
+    let s = 12345;
+    const rnd = () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 0x100000000);
+    const pick = () => {
+      const n = 1 + Math.floor(rnd() * words.length);
+      const out: string[] = [];
+      for (let i = 0; i < n; i++) out.push(words[Math.floor(rnd() * words.length)]);
+      return out;
+    };
+    for (let i = 0; i < 200; i++) {
+      const a = pick();
+      const b = pick();
+      const j = jaccardSimilarity(a, b);
+      const c = containmentSimilarity(a, b);
+      const m = modifySimilarity(a, b);
+      expect(m).toBeCloseTo(Math.max(j, c), 10);
+      expect(m).toBeGreaterThanOrEqual(j - 1e-9);
+      expect(m).toBeGreaterThanOrEqual(c - 1e-9);
+      expect(m).toBeGreaterThanOrEqual(0);
+      expect(m).toBeLessThanOrEqual(1);
+    }
   });
 });
