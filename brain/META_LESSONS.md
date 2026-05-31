@@ -448,6 +448,43 @@ an unverified assumption or an approval is weaker than a simple rule that
 just runs. The human caught both; the guard and the rules now encode them.
 
 
+## 2026-05-31 — Maximization audit (5.7.7) + audit-of-the-auditor (5.7.8), late-evening continuation
+
+Cadence audit of whether 5.7.1–5.7.6 held across the 2026-05-31 continuation
+(bug-hunt passes 60–71 + the verified-negative batch + factory-check/stop-guard
+work; suite 429→448; full gate green throughout; ~20 commits, all pushed).
+Honest, with evidence, including the caveat.
+
+- **5.7.1 Re-critique cadence:** N/A — BidDiff has not shipped.
+- **5.7.2 Escalating critique:** HELD in spirit — each "saturated" conclusion
+  was attacked with a harder, genuinely-new input (duplicates → one-of-N
+  duplicates → clause-revision → eval-reorder → page-number footers), and real
+  gaps fell out (pass 61's REAL control-char bug, the untested hook/license/
+  storage/SAM/options branches). **Caveat (5.7.8 finding):** this continuation
+  did NOT re-run the formal full 14-critic panel — it ran targeted critics per
+  pass + continuous hunting. Defensible for a focused mid-phase continuation
+  (no phase was closed), but the next post-phase gate (when K1's gated P1s
+  clear) MUST run the full escalating panel. Recorded so it isn't forgotten.
+- **5.7.3 Roster growth:** HELD with evidence — Research Quality #14
+  (verify-superlatives), Reliability #7 (emission-boundary illegal chars),
+  Domain-Expert #5 (deadline = date+time+timezone) each LANDED in
+  `CRITIQUE_AGENTS.md` (verified by re-reading the file, applying pass 59's
+  lesson), plus the brain-integrity/no-github-actions checks gained
+  violation-detection tests.
+- **5.7.4 "Nothing is ever done":** HELD — re-opening reviews at the product/UX
+  level (critical-only filter present, N1 drift corrected, ship critical-path
+  consolidated) and the value-type-blind-spot ideation.
+- **5.7.5 Continuous bug-hunt:** HELD — 12 logged passes + a documented
+  verified-negative batch; probe-first throughout; no test padded onto covered
+  behavior (the discipline was itself recorded).
+- **5.7.6 Continuous ideation:** HELD — candidate anchor types ranked by
+  miss-cost (coverage-obs 6), the first-product execution-risk sequencing
+  insight (RANKING).
+- **5.7.7 (this audit):** done, evidence-bound. **5.7.8 (audit-the-auditor):**
+  the one non-"HELD" item above (no full-panel re-run) is surfaced, not buried,
+  with a concrete trigger for when it becomes mandatory — so the audit is not
+  the shallow "all green" that 5.7.8 exists to catch.
+
 ## 2026-05-30 — Maximization audit (5.7.7) + audit-of-the-auditor (5.7.8), evening MT
 
 Mandatory cadence audit of whether 5.7.1–5.7.6 actually held this session
