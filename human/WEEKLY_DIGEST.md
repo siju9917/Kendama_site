@@ -8,7 +8,7 @@
 
 ## Week of 2026-05-30 — First post-bootstrap build cycle
 
-### Session-end update (continuation, into Sunday 2026-05-31)
+### Session continuation update (Saturday evening, Mountain Time)
 
 Two things happened after the main write-up below:
 
@@ -19,15 +19,14 @@ Two things happened after the main write-up below:
    (verified against the real clock), forcing the factory to pull the next
    queue item instead of idling or asking you to continue. The *only* thing
    that authorizes a stop is "it is no longer Saturday," and the red team
-   checks that against the system clock — which is exactly why this session
-   ended cleanly when the clock rolled to Sunday, with no prompt needed from
-   you. (Decision logged in `brain/DECISIONS.md`; removing the hook is a
+   checks that against the system clock — the work window is your local Saturday in Mountain Time (NOT UTC — an
+   early version of the guard used UTC and wrongly declared the session over
+   on Saturday evening MT; that bug is fixed). (Decision logged in `brain/DECISIONS.md`; removing the hook is a
    "weakening" change that would need your sign-off in `APPROVALS.md`.)
 
 2. **More BidDiff hardening — bug-hunt passes 8–10** (property-based engine
    swap-symmetry, move-detection threshold boundary, and diff-confidence
-   ceiling). No new defects; three new seeded regression guards. Test total
-   is now **288** (up from 262 mid-week). Also added a `governance-integrity`
+   ceiling). No new defects; three new seeded regression guards. Test total continued climbing from 262 (final tally 335 — see below). Also added a `governance-integrity`
    factory check that catches corruption of the factory's own documents
    (added after a real `ops/loop.md` corruption was found and repaired).
 
