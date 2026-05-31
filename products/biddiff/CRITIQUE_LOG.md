@@ -1055,3 +1055,18 @@ tag + section + reasons + before/after + clause + the canonical disclaimer —
 reports, never advises), with a graceful clipboard fallback and a "✓ Copied"
 confirmation. 3 tests (render+clipboard, formatter critical/normal shapes).
 Suite 335 -> 338 green; typecheck + lint clean. PROGRESS N11 -> DONE.
+
+
+## Bug-hunt pass 27 (2026-05-30 evening MT) — DOCX XML walker property fuzz (untrusted input)
+
+`parseDocumentXml` is a regex-based walker over word/document.xml — UNTRUSTED
+input (a .docx is a user-supplied zip) — and had no property/fuzz coverage
+(fuzz-extract covers PDF/anchors, not DOCX). Added
+`test/integration/fuzz-docx-xml.test.ts`: 500 adversarial inputs (unclosed
+tags, stray closers, deep unbalanced table nesting, huge repeats, malformed
+angle brackets, lone surrogates, entity edge cases, attribute floods) asserting
+the walker never throws, always returns well-formed paragraphs
+({text, styleName, isList}), and is deterministic. Plus an explicit
+catastrophic-backtracking guard: a pathological 20k-open-tag/no-close input
+parses in <2s (measured 669ms). All clean — the walker is robust. Suite
+338 -> 341 green; typecheck + lint clean. No production change.
