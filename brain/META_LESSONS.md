@@ -456,3 +456,23 @@ documented (and excludes itself + stop-guard from the must-be-in-run-all rule,
 both by design). 34/34 check-tests; run-all green with 8 checks. Lesson: "the
 audit found nothing wrong" is the moment to add the check that keeps it that
 way — not to move on.
+
+## 2026-05-30 — a guardrail check had a false-negative (case-sensitive marker regex)
+
+Adversarially probed the factory checks' OWN soundness (a check that misses
+its target is worse than none). `no-forbidden-markers` used a case-SENSITIVE
+regex, so a lowercase `// todo` or mixed-case `FixMe` in shipped product src
+slipped through entirely — only `TODO` was caught. Developers and agents write
+lowercase markers constantly, so this was a real hole in a GUARDRAILS #10
+check. Fixed to case-insensitive (`/i`); verified the word-boundary guards
+still reject identifiers (`todoList`, `renderTodos`, `maxxx`) and the
+`XX.XXX-XXXX` clause format — no new false positives. Real repo still clean;
+2 regression tests added.
+
+**Lesson (added to the Adversarial Tester #2 mandate):** the checks that
+police the factory are themselves code with bugs — periodically RED-TEAM each
+check's matcher with the inputs it is supposed to catch but in the forms it
+might miss (case, whitespace, unicode, substring boundaries). "The check
+passed" only means the check ran, not that it would catch the thing. This is
+5.7.8's spirit applied to the check roster: don't trust a green check; attack
+its detection logic.

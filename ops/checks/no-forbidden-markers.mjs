@@ -9,13 +9,18 @@
 //
 // The marker pattern avoids false positives: a negative lookbehind for a
 // word char OR a dot (so the `XXX` in a clause format like `XX.XXX-XXXX`
-// is NOT flagged) and a negative lookahead for a word char.
+// is NOT flagged) and a negative lookahead for a word char. It is
+// CASE-INSENSITIVE — a lowercase `// todo` or mixed-case `FixMe` is just as
+// much a forbidden marker as `TODO` (the case-sensitive version was a
+// false-negative hole: developers/agents write `todo`/`fixme` casually). The
+// word-boundary guards keep identifiers like `todoList`/`renderTodos` and the
+// `maxxx`-style substrings from matching.
 
 import { listFiles, readText, finding } from './lib.mjs';
 
 export const name = 'no-forbidden-markers';
 
-const MARKER_RE = /(?<![\w.])(TODO|FIXME|HACK|XXX)(?![\w])/;
+const MARKER_RE = /(?<![\w.])(TODO|FIXME|HACK|XXX)(?![\w])/i;
 
 export function scan(files, read) {
   const findings = [];

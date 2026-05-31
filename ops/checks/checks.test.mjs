@@ -110,6 +110,20 @@ test('no-forbidden-markers: ignores test files', () => {
   assert.equal(blocking(f).length, 0);
 });
 
+test('no-forbidden-markers: flags lowercase/mixed-case markers (case-insensitive)', () => {
+  for (const src of ['// todo: fix this', '// FixMe before ship', '/* hack */']) {
+    const f = scanMarkers(['products/foo/src/a.ts'], () => src);
+    assert.ok(f.some((x) => x.message.includes('forbidden marker')), `should flag: ${src}`);
+  }
+});
+
+test('no-forbidden-markers: does NOT flag identifiers containing a marker substring', () => {
+  for (const src of ['const todoList = [];', 'function renderTodos() {}', 'const maxxx = 9;']) {
+    const f = scanMarkers(['products/foo/src/a.ts'], () => src);
+    assert.equal(blocking(f).length, 0, `should not flag: ${src}`);
+  }
+});
+
 // The work window is the HUMAN's local Saturday (Mountain Time). These
 // instants are chosen so the Mountain-time weekday is unambiguous.
 test('stop-guard: REFUSES a stop on Saturday (the work window)', () => {
