@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { ChangeCard } from "./ChangeCard.js";
+import { ChangeCard, formatChangeForClipboard } from "./ChangeCard.js";
 import type { Change } from "../core/diff/types.js";
 
 const baseChange: Change = {
@@ -69,5 +69,50 @@ describe("ChangeCard", () => {
       <ChangeCard change={baseChange} reviewed={true} onToggleReviewed={() => {}} />,
     );
     expect(screen.getByRole("button", { name: /✓ Reviewed/i })).toBeTruthy();
+  });
+
+  // N11: per-change copy.
+  it("Copy writes the formatted change to the clipboard and confirms", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    // jsdom has no clipboard by default; define one.
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+    render(
+      <ChangeCard change={baseChange} reviewed={false} onToggleReviewed={() => {}} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /^Copy$/i }));
+    expect(writeText).toHaveBeenCalledTimes(1);
+    expect(String(writeText.mock.calls[0][0])).toContain("Section L — Instructions");
+    // Confirmation flips to "✓ Copied".
+    expect(await screen.findByRole("button", { name: /✓ Copied/i })).toBeTruthy();
+  });
+});
+
+describe("formatChangeForClipboard", () => {
+  it("includes the critical tag, reasons, before/after, and the disclaimer", () => {
+    const text = formatChangeForClipboard(baseChange);
+    expect(text).toContain("[CRITICAL] MODIFY");
+    expect(text).toContain("Section L — Instructions to Offerors");
+    expect(text).toContain("A date or deadline changed.");
+    expect(text).toContain("Prior: Offers are due 2026-08-15.");
+    expect(text).toContain("New: Offers are due 2026-08-29.");
+    // Reports, never advises — carries the canonical disclaimer.
+    expect(text).toContain("does not provide legal");
+  });
+
+  it("omits the critical tag for a normal change and omits absent fields", () => {
+    const normal: Change = {
+      ...baseChange,
+      severity: "NORMAL",
+      criticalReasons: [],
+      beforeText: null, // an INSERT-like shape
+      clauseInfo: null,
+    };
+    const text = formatChangeForClipboard(normal);
+    expect(text).not.toContain("[CRITICAL]");
+    expect(text).not.toContain("Prior:");
+    expect(text).toContain("New: Offers are due 2026-08-29.");
   });
 });

@@ -1,11 +1,34 @@
 import React, { useState } from "react";
 import type { Change, TokenSpan } from "../core/diff/types.js";
+import { DISCLAIMER_TEXT } from "../shared/disclaimer.js";
 
 interface Props {
   change: Change;
   reviewed: boolean;
   onToggleReviewed: (id: string) => void;
   defaultCollapsed?: boolean;
+}
+
+/**
+ * Plain-text rendering of a SINGLE change, for the per-change "Copy" action
+ * (N11) — matches the real deadline-triage workflow of pasting one critical
+ * change to a teammate. Pure + deterministic so it is unit-testable. Reports,
+ * never advises; carries the canonical disclaimer like the full export.
+ */
+export function formatChangeForClipboard(c: Change): string {
+  const lines: string[] = [];
+  const head = c.severity === "CRITICAL" ? `[CRITICAL] ${c.changeType}` : c.changeType;
+  lines.push(`${head} — ${c.sectionHeading}`);
+  if (c.locationHint) lines.push(c.locationHint);
+  for (const r of c.criticalReasons) lines.push(`- ${r}`);
+  if (c.beforeText) lines.push(`Prior: ${c.beforeText}`);
+  if (c.afterText) lines.push(`New: ${c.afterText}`);
+  if (c.clauseInfo) {
+    lines.push(`Clause: ${c.clauseInfo.regulation} ${c.clauseInfo.clauseNumber} — ${c.clauseInfo.title}`);
+  }
+  lines.push("");
+  lines.push(DISCLAIMER_TEXT);
+  return lines.join("\n");
 }
 
 function renderTokenSpans(spans: TokenSpan[]): React.ReactNode {
@@ -52,6 +75,22 @@ export const ChangeCard = React.memo(function ChangeCard({
 }: Props): React.ReactElement {
   const [expanded, setExpanded] = useState<boolean>(!defaultCollapsed);
   const [sideBySide, setSideBySide] = useState<boolean>(false);
+  const [copied, setCopied] = useState<boolean>(false);
+
+  const onCopy = (): void => {
+    const text = formatChangeForClipboard(change);
+    const done = (): void => {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    };
+    // navigator.clipboard is the happy path; guard for older/headless envs.
+    const clip = typeof navigator !== "undefined" ? navigator.clipboard : undefined;
+    if (clip?.writeText) {
+      clip.writeText(text).then(done, () => {
+        /* a denied clipboard permission is non-fatal; do nothing */
+      });
+    }
+  };
   const canSideBySide =
     change.changeType === "MODIFY" && !!change.beforeText && !!change.afterText;
   return (
@@ -164,6 +203,13 @@ export const ChangeCard = React.memo(function ChangeCard({
           title={reviewed ? "Mark as not reviewed" : "Mark as reviewed"}
         >
           {reviewed ? "✓ Reviewed" : "Mark as reviewed"}
+        </button>
+        <button
+          className="ghost"
+          onClick={onCopy}
+          title="Copy this change as text (to paste into an email or chat)"
+        >
+          {copied ? "✓ Copied" : "Copy"}
         </button>
       </div>
     </article>

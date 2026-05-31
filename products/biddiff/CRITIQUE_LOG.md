@@ -1041,3 +1041,17 @@ missing/non-string `kind`, and — security-relevant — a kind that only
 CONTAINS "biddiff/" rather than starting with it ("evil/biddiff/diff"),
 wrong case, and a leading space. No production change. Suite 330 -> 335 green;
 typecheck + lint clean.
+
+
+## Polish pass 26 (2026-05-30 evening MT) — N11 per-change "Copy" (5.7.4 review → shipped)
+
+The cycle's "nothing is ever done" review (5.7.4) surfaced N11–N13; N11 was
+small + buyer-grounded enough to ship immediately, demonstrating the review
+feeding real work rather than just backlog. Capture managers triaging an
+amendment under deadline routinely paste ONE critical change to a teammate;
+the only copy paths were the whole-diff exports. Added a per-ChangeCard
+"Copy" button backed by a pure, tested `formatChangeForClipboard` (critical
+tag + section + reasons + before/after + clause + the canonical disclaimer —
+reports, never advises), with a graceful clipboard fallback and a "✓ Copied"
+confirmation. 3 tests (render+clipboard, formatter critical/normal shapes).
+Suite 335 -> 338 green; typecheck + lint clean. PROGRESS N11 -> DONE.
