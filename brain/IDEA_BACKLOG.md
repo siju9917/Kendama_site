@@ -207,6 +207,40 @@ cited research to be actionable; it re-weights the existing candidates by a
 property we can verify today (the on-device test passes). The cited deep-eval
 should test it, not originate it. Logged for the cap-unblocked ranking pass.
 
+#### Meta-synthesis (2026-05-30 evening) — "IDE breaking-change classifier" is ONE product, not five
+
+D3 (protobuf), D5 (OpenAPI), and D6 (terraform plan) are the same product with
+a different parser: *an on-device, IDE-native classifier of which changes in
+format X are breaking/destructive vs safe.* The obvious next moves (SQL
+migrations, k8s manifests, GraphQL schemas, Avro, lockfiles, IAM policy) are
+MORE instances of the identical shape — and adding each as a separate D-row is
+**backlog dilution, not ideation** (the Ambition Critic's "listicle" failure).
+The genuine strategic insight is the opposite of enumerating them:
+
+- **Build the *shell* once, sell *packs*.** The real product is a single VS
+  Code/JetBrains extension — "**Breaking-Change Lens**" — whose engine + IDE
+  shell + license server are built once (the `regdiff` core + a "breaking vs
+  safe" classifier frame), and each format (proto/OpenAPI/terraform/SQL/…) is a
+  **parser+rule-pack plugin**. This is the *same* "engine + rule-pack" thesis
+  as BidDiff, applied to the dev-tooling vertical: marginal cost per new format
+  drops to "write a parser + a breaking-rules table," and one marketplace
+  listing compounds installs across all formats.
+- **Pick the BEACHHEAD format by the cited deep-eval, not by listing.** Among
+  proto/OpenAPI/terraform, lead with the one whose (a) incumbent proves
+  willingness-to-pay AND (b) on-device wedge is sharpest AND (c) parser is
+  cheapest — the cited research decides; the *architecture* (one shell, N
+  packs) is format-independent and decided now.
+- **Implication for the backlog:** do NOT keep adding D7/D8/… per format.
+  Collapse D3/D5/D6 into a single **"Breaking-Change Lens" product line** with
+  format-packs as its roadmap, and rank THAT line (its best beachhead format
+  carries the score). This is the dev-tooling analogue of the regdiff
+  portfolio play and keeps the candidate set honest (distinct *products*, not
+  distinct *file formats*).
+
+This is the kind of derivative/portfolio reasoning PART 3.1 asks for: it turns
+an enumerable list into one compounding product line, and it is a deliberate
+*de*-proliferation of the backlog — resisting the easy dilution.
+
 ### Standing candidate categories to populate via research
 
 The seeded backlog above is a starting point. On every RESEARCH
