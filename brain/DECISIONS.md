@@ -411,3 +411,33 @@ dates) never trips it.
 **Where applied:** `ops/checks/approvals-window.mjs`, `run-all.mjs`,
 `checks.test.mjs` (4 tests), `ops/checks/README.md`. Surfaced by a
 first-principles "what silent-failure mode do the 9 checks miss?" review.
+
+## 2026-05-31 — Factory checks made testable for violation detection (brain-integrity, no-github-actions)
+
+**Decision (factory self-modification — strengthening, so autonomous):** Make
+`brain-integrity.mjs` and `no-github-actions.mjs` `run()` accept injectable
+filesystem accessors (`exists`/`isDir`/`listFiles`/`readText`) defaulting to
+the real `lib.mjs` ones, and add six violation-detection unit tests
+(`checks.test.mjs`) that drive each check with a synthetic filesystem.
+
+**Before:** both checks were covered ONLY by the "real repo passes" smoke test.
+A check that silently never fired (e.g. a broken path constant) would still
+pass that test — false security on the two most load-bearing guardrails (the
+no-GitHub-Actions prohibition and brain-memory integrity).
+
+**After:** the checks are verified to FAIL on the inputs they exist to catch —
+a workflow `.yml` → P0, a foreign CI config → P0, a missing/empty required
+brain file → P0, a STATE.md missing a handoff section → P1 — while `run-all.mjs`
+is unchanged (the defaults preserve the production call `check.run()`).
+
+**Reasoning:** parity with the other eight checks, which already separate a
+pure analyzable function from filesystem I/O. Applies this session's
+"untested-branch" lens (used across BidDiff passes 64–68) to the factory's own
+quality infrastructure: a guardrail you can't prove catches its violation is
+not a guardrail.
+
+**Reversibility:** the `deps = {}` parameter is additive; revert by inlining
+the real accessors and deleting the six tests.
+
+**Where applied:** `ops/checks/brain-integrity.mjs`, `ops/checks/no-github-actions.mjs`,
+`ops/checks/checks.test.mjs` (+6 tests; also corrected the run instruction).
