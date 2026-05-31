@@ -110,6 +110,32 @@ session has specifics, not a vague "improve extraction":
    domain call that must not be made on a Saturday-evening hunch. Evidence
    recorded here so the post-validation cycle decides with specifics.
 
+6. **Candidate structured-value anchors beyond the current six. — OPEN
+   (gated ideation for BD2; first-principles, pass 63 follow-on, 2026-05-31).**
+   The engine anchors six value types (CLAUSE_REF, DATE, MONEY, PAGE_LIMIT,
+   CLIN, SECTION_REF). A first-principles enumeration of solicitation values
+   whose *change* a capture manager must not miss surfaces candidates the
+   anchor set does not capture — ranked by miss-cost:
+   - **Submission destination (email / portal URL / physical address).**
+     Highest miss-cost of all: if an amendment changes WHERE to submit, a
+     bidder who misses it sends the proposal to the wrong place = automatic
+     loss, arguably more catastrophic than a date slip. No EMAIL/URL anchor
+     today; such a change is caught only if it lands in a typed INSTRUCTIONS
+     section. Strong candidate for a dedicated anchor + critical rule.
+   - **Deadline TIME / TIMEZONE** — see obs #5.
+   - **Period / place of performance** ("12-month base + four option years";
+     a PoP location change can flip a bid/no-bid). Today only flagged if in a
+     typed section.
+   - **Quantity / staffing minimums** ("not less than 5 FTE", "minimum 3 past
+     performance references") — a tightened minimum can disqualify.
+   - **Set-aside / size standard / NAICS** — a change here can change WHO is
+     even eligible (overlaps the BD2 set-aside gap already noted above).
+   These are **ideation, NOT a build list** — each new anchor risks false
+   positives and must be bounded by the domain expert (NEED #4). Logged so the
+   post-validation cycle weighs them against real practitioner priority rather
+   than re-deriving the list. The submission-destination one is the strongest
+   standalone case and worth raising first in the BD2 conversation.
+
 These feed both `src/core/diff/critical.ts` extension work AND the
 Domain-Expert Critic checklist strengthening, once BD2's human
 validation lands.
