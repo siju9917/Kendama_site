@@ -1404,3 +1404,13 @@ change. Suite 397 -> 398 green; typecheck + lint clean.
   'numeric fields only' validator is not enough for a PII boundary — enforce
   a KEY ALLOW-LIST (unknown keys smuggle data) and FINITE-INTEGER bounds
   (typeof number admits NaN/Infinity)."
+
+
+## Bug-hunt pass 46 (2026-05-30 evening MT) — Onboarding first-run gating
+
+`Onboarding` (first-run welcome card) had real gating logic (shown until
+`biddiff.onboarding.seen` is set; Dismiss persists it) but no test — the same
+shape as ReviewPrompt (pass 23). Added 3: shows on first run, hidden once
+SEEN_KEY is set, Dismiss hides + persists. No production change. Suite
+401 -> 404 green; typecheck + lint clean. This leaves only genuinely
+presentational shells (App/index/SamAttachments markup) untested.
