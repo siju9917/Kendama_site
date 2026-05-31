@@ -52,6 +52,35 @@ describe("classifyHeading", () => {
     const c = classifyHeading({ text: "" });
     expect(c.confidence).toBe(0);
   });
+
+  // Precedence guard (bug-hunt pass 16, 2026-05-30): the SECTION_LM rule is
+  // intentionally checked BEFORE letter-dot so an "L.1"/"M.2" item is an
+  // SECTION_LM_ITEM, not a letter-dot "L"/"M". Pin it so a future reorder
+  // can't silently regress section L/M sub-item handling.
+  it("treats L.1 / M.2 as section items, not letter-dot headings", () => {
+    expect(classifyHeading({ text: "L.1 Proposal Submission" }).kind.kind).toBe("SECTION_LM_ITEM");
+    expect(classifyHeading({ text: "M.2: Technical Approach" }).kind.kind).toBe("SECTION_LM_ITEM");
+    // A bare "L." (letter-dot, no item number) stays LETTER_DOT.
+    expect(classifyHeading({ text: "L. Instructions" }).kind.kind).toBe("LETTER_DOT");
+  });
+
+  it("requires a valid UCF letter A–M (SECTION N is not a UCF header)", () => {
+    expect(classifyHeading({ text: "SECTION N — Beyond M" }).kind.kind).toBe("NONE");
+    // And must not fire on a word that merely starts with 'SECTION'.
+    expect(classifyHeading({ text: "SECTIONAL meeting notes" }).kind.kind).toBe("NONE");
+  });
+
+  // KNOWN LIMITATION (PROGRESS.md coverage obs #4): a letter-dot-NUMBER
+  // subsection for sections A–K (e.g. "C.3 ...") matches no rule and returns
+  // NONE — the SECTION_LM item rule only covers L/M. Low impact: the missed
+  // line still sits inside its parent UCF section, so the section TYPE is
+  // preserved; only sub-section granularity is lost. Characterized here (not
+  // changed) so a future fix is deliberate and validated against domain input.
+  it("KNOWN LIMITATION: 'C.3 ...' (A–K letter-dot-number) is not yet a heading", () => {
+    expect(classifyHeading({ text: "C.3 Performance Work Statement" }).kind.kind).toBe("NONE");
+    // Contrast: the L/M equivalent IS recognized.
+    expect(classifyHeading({ text: "L.3 Submission" }).kind.kind).toBe("SECTION_LM_ITEM");
+  });
 });
 
 describe("computeModalFontSize", () => {

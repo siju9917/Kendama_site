@@ -74,6 +74,16 @@ session has specifics, not a vague "improve extraction":
    extraction correctness. New test cases in
    `src/core/extract/anchors/index.test.ts`.
 
+4. **Letter-dot-number subsections for sections A–K not detected.**
+   `classifyHeading` recognizes "L.1"/"M.2" items (SECTION_LM rule) but a
+   matching "C.3 Performance Work Statement" for sections A–K matches no
+   rule and returns NONE (letter-dot needs a space after the dot; the
+   numbered rule needs a leading digit). Low impact: the line still sits
+   inside its parent UCF section, so the section TYPE is preserved — only
+   sub-section granularity is lost. Candidate fix: a SECTION_AK_ITEM rule
+   mirroring SECTION_LM for A–K, validated against domain-expert input
+   (BD2). Characterized (not changed) in headings.test.ts (bug-hunt 16).
+
 These feed both `src/core/diff/critical.ts` extension work AND the
 Domain-Expert Critic checklist strengthening, once BD2's human
 validation lands.

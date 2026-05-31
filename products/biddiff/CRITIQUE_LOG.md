@@ -861,3 +861,28 @@ the stat; screen readers announce the description; the `title` stays for
 mouse. 2 a11y regression tests (focusable + describedby wiring, both stats).
 Suite 301 -> 303 green; typecheck + lint clean. PROGRESS N8 -> DONE. (The
 rendered-contrast half of the a11y P2 remains correctly browser-gated.)
+
+
+## Bug-hunt pass 16 (2026-05-30 evening MT) — heading classification probe
+
+Probed classifyHeading (drives section typing → the whole critical-change
+classification chain) with 20 adversarial heading lines. Confirmed robust on
+the cases that matter: UCF headers (incl. lowercase + indented), L/M items
+(checked before letter-dot, as intended), letter-dot, numbered with depth,
+font heuristic, and correct rejection of "SECTION N" (invalid UCF letter),
+"SECTIONAL" (word boundary), and plain prose.
+
+One coverage gap found (logged, NOT changed — same discipline as the money
++ page-limit gaps): a letter-dot-NUMBER subsection for sections A–K, e.g.
+"C.3 Performance Work Statement", matches no rule and returns NONE; the
+SECTION_LM item rule only covers L/M. Low impact — the line still sits inside
+its parent UCF section so the section TYPE is preserved; only sub-section
+granularity is lost. Logged as PROGRESS coverage observation #4 (feeds the
+gated BD2 domain-expert ruleset work). Candidate fix: a SECTION_AK_ITEM rule
+mirroring SECTION_LM, validated against domain input.
+
+Locked behavior with 3 characterization/precedence tests (L/M-before-
+letter-dot precedence; UCF letter must be A–M; the A–K limitation, labelled).
+Suite 303 -> 306 green; typecheck + lint clean. Deliberately did not change
+classification logic on a Saturday-evening hunch (2026-05-30 verify-first
+lesson); a section-typing change must be validated against the domain.
