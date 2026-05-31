@@ -204,3 +204,45 @@ From `brain/LESSONS.md` 2026-05-30 — bugs cluster at invariants that
 These are now Correctness/Performance/Reliability/Security checklist
 items in `governance/CRITIQUE_AGENTS.md`; this playbook is the
 product-build-time companion to that panel.
+
+---
+
+## Engineering discipline (process lessons — apply to EVERY product)
+
+Distilled from the 2026-05-30 session, where a long unattended run added ~150
+tests but also produced two instructive failures. These are about *how* you
+work, and transfer to any product:
+
+1. **Verify before you claim; verify before you commit.** The gate is
+   `typecheck + lint + test`, run and *read* — not "the test I ran passed."
+   Several real errors this session (a `declare global` tsc failure, an
+   unused-eslint-disable warning) passed the green vitest run and were caught
+   only by the full gate. Run `scripts/ci.sh` before trusting "it's done."
+2. **A bug claim requires a failing test that exists BEFORE the fix.** The
+   worst incident of the session was *hallucinating* a bug in already-correct
+   code (a "nondeterministic hash" that was pure), "fixing" it, breaking the
+   build, and writing confident-but-false notes. Confident fabrication is more
+   dangerous than an obvious error because it gets committed and believed. If
+   you can't write a red test first, you don't yet have a bug.
+3. **Probe real behavior; never edit from memory or a single rendering.** When
+   a file's behavior surprises you, write a throwaway probe (or `grep -n` the
+   source) and look at the ACTUAL output before changing or asserting. Test
+   fixtures were wrong several times (querySelectorAll groups by selector, not
+   document order; a bare `<tr>` is dropped by jsdom; an unzip step gated by a
+   prior magic-byte check) — the code was right, the assumptions weren't.
+4. **Characterize, don't rush, when confidence is low.** For a regex/parse edge
+   case found late, LOCK current behavior with a labeled characterization test
+   and log the limitation, rather than ship a speculative fix. Real fixes to
+   classification/extraction get validated against domain input, not a hunch.
+5. **Distinguish a real gap from manufactured churn.** When a surface is
+   already well-covered or a feature is already delivered, say so and *prune*
+   the backlog item (with a reason) instead of adding redundant work. Growth
+   AND honest pruning are both the "nothing is ever done" review working.
+6. **Schedules are in the human's local timezone.** Any "is it still the work
+   day?" decision uses the human's TZ (Mountain), never UTC — a Saturday
+   evening is already Sunday in UTC. (Generalizes beyond this product family;
+   see `ops/checks/stop-guard.mjs`.)
+7. **Keep the brain honest in batches.** Reconcile derived facts (test counts,
+   status) to reality, but batch the updates near natural checkpoints rather
+   than re-truing after every commit; a stale or, worse, *fabricated* brain
+   entry misleads every future session.
