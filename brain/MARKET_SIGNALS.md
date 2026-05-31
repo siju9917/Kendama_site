@@ -51,3 +51,12 @@ added as the factory discovers them.
   ceilings.
 - **New AI model releases** — capabilities that change which
   products are buildable autonomously vs. defensible.
+- **On-device / IDE-native "breaking-change lens" tooling** (added
+  2026-05-30, derived from the on-device-trust wedge + the
+  Breaking-Change-Lens synthesis in `IDEA_BACKLOG.md`). Watch whether any
+  incumbent ships a *free, on-device, IDE-native* classifier of
+  breaking/destructive changes for proto / OpenAPI / terraform-plan / SQL —
+  that would erode the D3/D5/D6 wedge. Also watch infracost-style "annotate a
+  plan/PR in the IDE" tools for the UX + monetization comparable. (This is a
+  *monitoring target*, not an observed signal — the cap-unblocked sweep checks
+  it.)
