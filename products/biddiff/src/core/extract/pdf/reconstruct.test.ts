@@ -65,6 +65,25 @@ describe("itemsToRawLines (two-column)", () => {
     const lastL = lines.map((l) => l.text).lastIndexOf("L24");
     expect(lastL).toBeLessThan(firstR);
   });
+
+  // Bug-hunt pass 19 (2026-05-30): the realistic PDF case is items emitted in
+  // INTERLEAVED source order (L0, R0, L1, R1, ...) — extraction must read by
+  // COORDINATE, not source order, so the left column still comes out fully
+  // before the right. The existing test pre-groups L then R, which can't
+  // catch a source-order dependency; this interleaves and stays above the
+  // 30-item column-detection threshold.
+  it("reads left column before right even when source order interleaves them", () => {
+    const items: PageTextItem[] = [];
+    for (let i = 0; i < 20; i++) {
+      items.push(baseItem({ text: `L${i}`, x: 50, y: 700 - i * 15 }));
+      items.push(baseItem({ text: `R${i}`, x: 350, y: 700 - i * 15 }));
+    }
+    const lines = itemsToRawLines(items);
+    const firstR = lines.findIndex((l) => l.text.startsWith("R"));
+    const lastL = lines.map((l) => l.text).lastIndexOf("L19");
+    expect(firstR).toBeGreaterThan(-1);
+    expect(lastL).toBeLessThan(firstR);
+  });
 });
 
 describe("stripHeadersFooters", () => {

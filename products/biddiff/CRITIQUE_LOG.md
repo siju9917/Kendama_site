@@ -927,3 +927,21 @@ Note: with passes 16–18 the section-typing → classification chain
 extraction surfaces STATE flagged as un-probed (headings, assemble, storage)
 are covered. Remaining engine surfaces (pdf/reconstruct, docx walker) already
 carry property-fuzz tests from earlier passes.
+
+
+## Bug-hunt pass 19 (2026-05-30 evening MT) — pdf/reconstruct interleaved-column reading order
+
+Probed `itemsToRawLines` / `detectColumnSplit` (pdf/reconstruct.ts) — the
+layer that turns PDF text items into ordered lines, i.e. whether extracted
+text is even diffable. Confirmed the column logic is correct by design:
+`detectColumnSplit` requires >=30 items + a >=200pt x-span + the two-peak
+histogram, a deliberate guard against over-splitting sparse pages (a 10-item
+probe is correctly treated as single-column, not a bug).
+
+Gap in coverage (not behavior): the existing two-column test pre-groups all
+L items then all R items, so it cannot catch a SOURCE-ORDER dependency. Real
+PDFs emit two-column text INTERLEAVED (L0,R0,L1,R1,...). Added a test that
+interleaves source order above the 30-item threshold and asserts the left
+column still reads fully before the right (extraction reads by COORDINATE,
+not source order). Passes. Suite 310 -> 311 green; typecheck + lint clean.
+No production change.
