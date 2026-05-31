@@ -1,6 +1,8 @@
 // checks.test.mjs — tests for the Kendama factory-level checks.
 //
-// Run with: node --test ops/checks/
+// Run with: node --test ops/checks/*.test.mjs
+//   (the bare-directory form `node --test ops/checks/` is not supported by
+//   this Node version — it tries to load the dir as a module.)
 //
 // Dependency-free (node:test + node:assert). Two layers:
 //   1. Unit tests of rule-cadence drift detection on synthetic input.
@@ -273,6 +275,74 @@ test('approvals-window: dates in the Closed section never trip the check', () =>
   const f = analyzeApprovals(APPROVALS_DOC, new Date('2026-06-10T12:00:00Z'));
   // Only the open #1 should flag — exactly one P1, not two.
   assert.equal(f.filter((x) => x.level === 'P1').length, 1);
+});
+
+// --- Violation detection (the check must FAIL on a bad input, not just
+//     pass on the clean real repo — a check that can never fire is useless). ---
+
+test('no-github-actions: flags a workflow file as P0', () => {
+  const { findings } = noGithubActions.run({
+    isDir: (p) => p === '.github/workflows',
+    listFiles: () => ['ci.yml', 'README.md'], // only the .yml counts
+    exists: () => false,
+  });
+  const bad = blocking(findings);
+  assert.equal(bad.length, 1);
+  assert.equal(bad[0].level, 'P0');
+  assert.match(bad[0].message, /ci\.yml/);
+});
+
+test('no-github-actions: flags a foreign CI scheduler config as P0', () => {
+  const { findings } = noGithubActions.run({
+    isDir: () => false,
+    listFiles: () => [],
+    exists: (f) => f === 'Jenkinsfile',
+  });
+  const bad = blocking(findings);
+  assert.equal(bad.length, 1);
+  assert.match(bad[0].message, /Jenkinsfile/);
+});
+
+test('no-github-actions: clean filesystem yields only an info finding', () => {
+  const { findings } = noGithubActions.run({
+    isDir: () => false,
+    listFiles: () => [],
+    exists: () => false,
+  });
+  assert.equal(blocking(findings).length, 0);
+  assert.ok(findings.some((f) => f.level === 'info'));
+});
+
+const STATE_OK = '## Session\n## Active product\n## Queue snapshot\n## Next five actions\n';
+
+test('brain-integrity: flags a missing required file as P0', () => {
+  const { findings } = brainIntegrity.run({
+    exists: (f) => f !== 'CLAUDE.md', // CLAUDE.md is "missing"
+    isDir: () => true,
+    readText: (f) => (f === 'brain/STATE.md' ? STATE_OK : 'content'),
+  });
+  const bad = blocking(findings);
+  assert.ok(bad.some((f) => f.level === 'P0' && /CLAUDE\.md/.test(f.message)));
+});
+
+test('brain-integrity: flags an empty required file as P0', () => {
+  const { findings } = brainIntegrity.run({
+    exists: () => true,
+    isDir: () => true,
+    readText: (f) => (f === 'brain/STATE.md' ? STATE_OK : f === 'brain/PORTFOLIO.md' ? '   ' : 'content'),
+  });
+  const bad = blocking(findings);
+  assert.ok(bad.some((f) => f.level === 'P0' && /empty.*PORTFOLIO/i.test(f.message)));
+});
+
+test('brain-integrity: flags STATE.md missing a handoff section as P1', () => {
+  const { findings } = brainIntegrity.run({
+    exists: () => true,
+    isDir: () => true,
+    // STATE present but missing "## Queue snapshot".
+    readText: (f) => (f === 'brain/STATE.md' ? '## Session\n## Active product\n## Next five actions\n' : 'content'),
+  });
+  assert.ok(findings.some((f) => f.level === 'P1' && /Queue snapshot/.test(f.message)));
 });
 
 // --- Regression: real repo is currently known-good. ---

@@ -60,27 +60,34 @@ const STATE_SECTIONS = [
   '## Next five actions',
 ];
 
-export function run() {
+// Filesystem accessors are injectable (defaulting to the real ones) so the
+// missing-file / empty-file / missing-section violation paths are unit-testable
+// with a synthetic filesystem — the "real repo is intact" smoke test alone
+// would also pass for a check that silently never fires.
+export function run(deps = {}) {
+  const existsFn = deps.exists ?? exists;
+  const isDirFn = deps.isDir ?? isDir;
+  const readTextFn = deps.readText ?? readText;
   const findings = [];
 
   for (const f of REQUIRED_FILES) {
-    if (!exists(f)) {
+    if (!existsFn(f)) {
       findings.push(finding('P0', `Required brain/governance file missing: ${f}`));
       continue;
     }
-    if (readText(f).trim().length === 0) {
+    if (readTextFn(f).trim().length === 0) {
       findings.push(finding('P0', `Required file is empty: ${f}`));
     }
   }
 
   for (const d of REQUIRED_DIRS) {
-    if (!isDir(d)) {
+    if (!isDirFn(d)) {
       findings.push(finding('P1', `Required directory missing: ${d}/`));
     }
   }
 
-  if (exists('brain/STATE.md')) {
-    const state = readText('brain/STATE.md');
+  if (existsFn('brain/STATE.md')) {
+    const state = readTextFn('brain/STATE.md');
     for (const section of STATE_SECTIONS) {
       if (!state.includes(section)) {
         findings.push(

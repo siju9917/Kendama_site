@@ -25,11 +25,18 @@ const FORBIDDEN_CI_FILES = [
   'Jenkinsfile',
 ];
 
-export function run() {
+// Filesystem accessors are injectable (defaulting to the real ones) so the
+// violation-detection path is unit-testable with a synthetic filesystem —
+// otherwise the only coverage is "the real repo is clean", which a check that
+// silently never fires would also pass.
+export function run(deps = {}) {
+  const isDirFn = deps.isDir ?? isDir;
+  const existsFn = deps.exists ?? exists;
+  const listFilesFn = deps.listFiles ?? listFiles;
   const findings = [];
 
-  if (isDir('.github/workflows')) {
-    const workflows = listFiles('.github/workflows').filter(
+  if (isDirFn('.github/workflows')) {
+    const workflows = listFilesFn('.github/workflows').filter(
       (f) => f.endsWith('.yml') || f.endsWith('.yaml'),
     );
     if (workflows.length > 0) {
@@ -40,7 +47,7 @@ export function run() {
   }
 
   for (const f of FORBIDDEN_CI_FILES) {
-    if (exists(f)) {
+    if (existsFn(f)) {
       findings.push(
         finding('P0', `CI-scheduler config present — prohibited by GUARDRAILS.md #2: ${f}`),
       );
