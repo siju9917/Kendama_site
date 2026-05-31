@@ -122,7 +122,7 @@ tagged with its gate. Promising ones become POLISH/BUILD tasks.
 
 | # | Improvement (what a top-tier team would add) | Gate | Disposition |
 |---|---|---|---|
-| N1 | **Try-it-without-files sample diff** — a "See an example" button that loads a bundled before/after so a first-run user reaches value with zero setup. | none | POLISH — strong first-run win; zero-cost. Queued. |
+| N1 | **Try-it-without-files sample diff** — a "See an example" button that loads a bundled before/after so a first-run user reaches value with zero setup. | none | **DONE (corrected 2026-05-31 — the table had drifted to "Queued" while the feature was already shipped).** `src/core/sample/sampleDiff.ts` builds a small, realistic Section-L before/after through the REAL model + engine (genuine classification/criticality path, not a hand-mocked result); `useDiffPipeline.openSample()` loads it into a DONE state with an ephemeral "built-in example — not saved to your history" notice and never persists it; the empty state shows a "New here? See an example diff" button (App.tsx). Tests: `sampleDiff.test.ts` (builder) + a new `useDiffPipeline` openSample test (reaches a non-empty real diff, flagged ephemeral, never calls saveDiff). |
 | N2 | **History row a11y** — the row is `role="button"` with a nested ✕ `<button>` (invalid interactive nesting). Refactor to sibling buttons (open + delete), no nesting. | none | **DOING NOW** — clear a11y fix, verifiable via History.test. |
 | N3 | **Redline DOCX export** — capture teams live in Word; a redline `.docx` is what they'd attach to a review. Buildable with the existing JSZip dep (DOCX is a zip of OOXML) — **no new dependency**. | **human (visual verify)** | **GENERATOR DONE (2026-05-30), behind the gate.** Built `src/core/export/redlineDocx.ts` (existing JSZip dep; deletions struck+red, insertions underlined+green, critical-first, disclaimer) + 5 structural tests (valid OOXML round-tripping through the product DOCX walker; contains change text + disclaimer; XML-injection-safe). NOT wired to a UI button: per the gate a human opens one generated .docx in Word to confirm professional rendering first. Bundle-neutral (tree-shaken out until imported). Human step = NEED_FROM_HUMAN #9. |
 | ~~N4~~ | ~~"What changed since I last viewed"~~ | — | **DROPPED (self-audit).** Ill-formed: a saved diff is static once computed, so there's nothing "new" within it on re-open. The only meaningful "what's new" signal is *which diffs* are unseen — already covered by the History unseen-dot. No work. |
@@ -136,13 +136,16 @@ tagged with its gate. Promising ones become POLISH/BUILD tasks.
 | N12 | **Empty-but-warned clarity** — when extraction produced warnings AND zero changes, the empty state already distinguishes "identical" from "extraction may be incomplete" (verified in DiffView). A top-tier touch: when confidence is low, surface a one-line, non-advisory "the source PDFs looked complex; consider re-checking against the originals" *as a reporting statement* tied to the existing confidence stat, not a new modal. | none | **DOWNGRADED (self-audit, 2026-05-30).** Already substantially delivered: the engine emits a low-confidence *warning* ("Extraction confidence is N% — lower than typical for clean text PDFs.", surfaced in the warnings list + exports), and the Confidence stat now explains the implication accessibly (post-N8). A new message would duplicate existing, non-advisory messaging. No work unless real usage shows the warning is missed. |
 | N13 | **Section-anchored deep links within a diff** — for a long amendment, a "jump to section L / M / pricing" mini-nav above the change list (the section buckets already exist in the filter bar). Turns the existing `availableSections` data into one-click navigation, a real time-saver on a 200-change amendment. | none | **DOWNGRADED (self-audit, 2026-05-30).** The existing section *filter* bar already gives one-click access to any section's changes; a scroll-to mini-nav is a marginal scroll-vs-filter distinction, not a real new capability. Not worth building over the filter. Revisit only if a real >150-change diff shows the filter is insufficient (pairs with N5). |
 
-Net: the unblocked items remain zero-cost. **Done this session:** N1, N2, N6,
-N8, N9 (+ N10 characterized, two edge cases logged). **Queued POLISH:** N3
-(human-gated visual verify), N5 (speculative), N10, **N11–N13 (new,
-buyer-grounded, added in the 2026-05-30 evening "nothing is ever done"
-review)**. **Gated:** N7 (positioning decision). N4 dropped. "Done" remains
+Net: the unblocked items remain zero-cost. **Done:** N1, N2, N6, N8, N9, N11
+(+ N10 characterized, two edge cases logged). **Downgraded** (the capability
+already exists or the delta is marginal, verified by self-audit): N12, N13.
+**Queued POLISH:** N3 (generator done; human-gated Word-render verify before
+the button is wired — NEED #9), N5 (speculative virtualization), N10 (money
+edge cases). **Gated:** N7 (positioning decision). N4 dropped. "Done" remains
 provisional — the list grew this session rather than shrank, which is the
-point of 5.7.4.
+point of 5.7.4. (Reconciled 2026-05-31: the N1 row and this summary had
+drifted — N1 was shipped but tabled as "Queued", and N11–N13 were mislabelled
+"new/queued" when N11 was Done and N12/N13 Downgraded.)
 
 ## After ship (forward look)
 

@@ -67,3 +67,26 @@ describe("useDiffPipeline cancellation race", () => {
     expect(result.current.state.result).toBeNull();
   });
 });
+
+describe("useDiffPipeline openSample (first-run 'See an example')", () => {
+  it("loads a real, non-empty example diff, flags it ephemeral, and never persists it", async () => {
+    mocks.saveDiff.mockClear();
+    const { result } = renderHook(() => useDiffPipeline());
+
+    await act(async () => {
+      await result.current.openSample();
+    });
+
+    // Reaches a finished diff a brand-new user can read with zero setup.
+    expect(result.current.state.phase).toBe("DONE");
+    const res = result.current.state.result;
+    expect(res).not.toBeNull();
+    // It runs through the genuine engine, so it has real classified changes.
+    expect(res!.changes.length).toBeGreaterThan(0);
+
+    // It is clearly labelled as a built-in example, not the user's data...
+    expect(result.current.state.sessionNotices.some((n) => /example/i.test(n))).toBe(true);
+    // ...and it is NEVER written to the user's saved history.
+    expect(mocks.saveDiff).not.toHaveBeenCalled();
+  });
+});
