@@ -765,3 +765,36 @@ confidence tests); typecheck clean. The stop-hook interlock and the
 `governance-integrity` check (earlier commits) stand and are real. Phase K1
 unchanged. The real lesson is recorded in `brain/META_LESSONS.md`
 (2026-05-31, "I hallucinated a bug and broke a correct file").
+
+
+## Bug-hunt pass 12 (2026-05-30 evening MT) — suppress.ts false-negative gaps
+
+Correctness/Adversarial re-attack on `aggressiveNormalize` (the
+reformatting-only guard), the surface STATE flagged next. Method followed
+the hard lesson from earlier today: I PROBED the real function with
+adversarial value pairs and found failing cases BEFORE writing a fix.
+
+**Finding (two narrow false negatives, same class as the original P1):**
+`aggressiveNormalize` kept value-bearing punctuation only when flanked by
+digits on BOTH sides. So:
+- `"50%"` normalized to `"50"` — a percentage collapsed with a bare number.
+- `"-5"` (and `"+5"`) normalized to `"5"` — a signed value collapsed with
+  its unsigned form (a sign flip is a real value change).
+Either would let `isReformattingOnly` suppress a genuine numeric-value change
+— the worst class of defect for this tool. Severity P2 (narrow inputs, but a
+true false negative on the load-bearing invariant).
+
+**Fix:** also preserve (b) a `%` immediately preceded by a digit, and (c) a
+`+`/`-` sign immediately followed by a digit and not preceded by an
+alphanumeric (so a numeric sign survives, while a hyphen inside a word like
+"section-5" stays reformatting-only). Bias remains toward surfacing changes.
+
+**Tests:** 4 new regressions in `src/core/diff/suppress.test.ts` (percent,
+signed, in-word hyphen still reformatting, digit-flanked range still
+value-bearing). Suite 288→**292** green; typecheck + lint clean.
+
+**Roster growth (5.7.3):** Correctness Critic (#1) checklist gains: "a
+'keep value-bearing punctuation' rule must enumerate ALL value-bearing
+positions, not just the symmetric (digit-flanked) case — leading signs and
+trailing units (%, etc.) change value too. Probe normalization with
+adversarial value pairs, asserting the failing case before the fix."

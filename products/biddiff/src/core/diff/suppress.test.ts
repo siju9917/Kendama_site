@@ -75,4 +75,30 @@ describe("aggressiveNormalize — unit behavior", () => {
   it("drops en-US thousands commas", () => {
     expect(aggressiveNormalize("1,500")).toBe("1500");
   });
+
+  // Regression (bug-hunt, 2026-05-30): the value-bearing-punctuation guard
+  // only kept marks flanked by digits on BOTH sides, so a trailing "%" and a
+  // leading sign were stripped — collapsing genuinely different values and
+  // silently suppressing a real change (a false negative, the worst class for
+  // this tool). These must NOT normalize equal.
+  it("does not collapse a percentage with a bare number (trailing %)", () => {
+    expect(aggressiveNormalize("50%")).not.toBe(aggressiveNormalize("50"));
+    expect(reformat("50%", "50")).toBe(false);
+  });
+
+  it("does not collapse a signed number with its unsigned form (leading sign)", () => {
+    expect(aggressiveNormalize("-5")).not.toBe(aggressiveNormalize("5"));
+    expect(aggressiveNormalize("+5")).not.toBe(aggressiveNormalize("5"));
+    expect(reformat("-5", "5")).toBe(false);
+  });
+
+  it("still treats a hyphen INSIDE a word as reformatting (not a numeric sign)", () => {
+    // "section-5" vs "section 5": the hyphen is preceded by a letter, so it is
+    // not a numeric sign and this remains reformatting-only.
+    expect(aggressiveNormalize("section-5")).toBe(aggressiveNormalize("section 5"));
+  });
+
+  it("still treats a digit-flanked hyphen (range) as value-bearing", () => {
+    expect(aggressiveNormalize("3-5")).not.toBe(aggressiveNormalize("35"));
+  });
 });

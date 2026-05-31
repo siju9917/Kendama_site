@@ -41,9 +41,17 @@ export function aggressiveNormalize(s: string): string {
     .replace(/(?<=\d),(?=\d{3}(?:\D|$))/g, "");
 
   // Remove whitespace and punctuation, but KEEP a punctuation character that
-  // is flanked by digits on both sides — that mark is value-bearing and must
-  // not be collapsed (e.g. the "." in "1.5" must survive so it never equals
-  // "15"). Whitespace is always dropped.
+  // is value-bearing. Whitespace is always dropped. A punctuation mark is
+  // value-bearing (and must survive, so distinct numbers never collapse) when:
+  //   (a) it is flanked by digits on BOTH sides — e.g. the "." in "1.5" must
+  //       survive so it never equals "15", and the "-" in a "3-5" range; OR
+  //   (b) it is a "%" immediately PRECEDED by a digit — "50%" is a different
+  //       value from "50" (a percentage vs a bare count); OR
+  //   (c) it is a sign ("+"/"-") immediately FOLLOWED by a digit and NOT
+  //       preceded by an alphanumeric — i.e. it reads as the sign of a number
+  //       ("-5" differs in value from "5"), not a hyphen inside a word
+  //       ("section-5", which stays reformatting-only).
+  // The bias remains toward surfacing a change rather than hiding one.
   let out = "";
   for (let i = 0; i < base.length; i++) {
     const ch = base[i];
@@ -53,7 +61,13 @@ export function aggressiveNormalize(s: string): string {
       const next = base[i + 1];
       const flankedByDigits =
         prev !== undefined && next !== undefined && /\d/.test(prev) && /\d/.test(next);
-      if (!flankedByDigits) continue;
+      const isTrailingPercent = ch === "%" && prev !== undefined && /\d/.test(prev);
+      const isLeadingSign =
+        (ch === "-" || ch === "+") &&
+        next !== undefined &&
+        /\d/.test(next) &&
+        (prev === undefined || !/[\p{L}\p{N}]/u.test(prev));
+      if (!flankedByDigits && !isTrailingPercent && !isLeadingSign) continue;
     }
     out += ch;
   }
