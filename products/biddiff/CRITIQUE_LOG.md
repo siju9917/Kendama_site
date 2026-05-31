@@ -1251,3 +1251,21 @@ clean. No production change.
 The critical-classification chain (classify category → evaluateCriticality)
 and the diff-core algorithms (section/LCS/block alignment) now all carry
 property tests of their defining invariants.
+
+
+## Bug-hunt pass 39 (2026-05-30 evening MT) — storage prune: assertable invariants only
+
+Attacked `_pruneToLimit` (LRU eviction over the hard cap). A first-draft test
+asserted strict-LRU survivor order — but a probe showed it CANNOT be verified
+through the public surface: `listDiffs()` is a summary view that omits
+`sizeBytes`/`lastAccess`, and same-millisecond fixtures share `generatedAt`.
+Rather than commit a brittle/false assertion (verify-before-claim), kept only
+what is genuinely assertable and added it: prune is a no-op under the cap, and
+after a real prune every surviving summary still maps to a retrievable payload
+(no dangling index entry — the failure mode the source's try/finally guards).
+Documented why the precise-order claim is omitted. The existing "prunes
+oldest-access first" test continues to cover the reduce-count behavior.
+No production change. Suite 385 -> 387 green; typecheck + lint clean.
+
+This is the verify-before-claim discipline paying off: the probe prevented a
+false test, exactly the class of error the session's worst lapse taught.

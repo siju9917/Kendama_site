@@ -79,6 +79,34 @@ describe("DiffStorage", () => {
     expect(after.length).toBeLessThan(5);
   });
 
+  // NOTE (bug-hunt pass 39): the precise "strict-LRU survivor" assertion is
+  // intentionally NOT made here — `listDiffs()` is a SUMMARY view that does
+  // not expose `sizeBytes`/`lastAccess`, and same-millisecond fixtures share
+  // `generatedAt`, so eviction *order* can't be verified through the public
+  // surface without reaching into internals. (The `_pruneToLimit` source uses
+  // `sort((a,b) => a.lastAccess - b.lastAccess)` — oldest-access first — and
+  // is exercised by the existing "prunes oldest-access first when over cap"
+  // test below for the reduce-count behavior.) What IS cleanly assertable:
+  it("prune is a no-op when already under the cap", async () => {
+    const s = new DiffStorage();
+    await s.saveDiff(fakeResult("small"));
+    await s.pruneToLimit(10_000_000); // huge cap → nothing evicted
+    expect((await s.listDiffs()).map((e) => e.id)).toContain("small");
+  });
+
+  it("prune leaves a consistent index: every surviving summary maps to a live entry", async () => {
+    const s = new DiffStorage();
+    for (let i = 0; i < 5; i++) await s.saveDiff(fakeResult(`e${i}`, "x".repeat(300)));
+    await s.pruneToLimit(600);
+    const survivors = await s.listDiffs();
+    // Every survivor's payload must still be retrievable (no dangling index
+    // entry pointing at a deleted payload — the failure mode _pruneToLimit's
+    // try/finally guards against).
+    for (const e of survivors) {
+      expect(await s.getDiff(e.id), `survivor ${e.id} payload missing`).not.toBeNull();
+    }
+  });
+
   it("returns null for a missing diff", async () => {
     const s = new DiffStorage();
     expect(await s.getDiff("nope")).toBeNull();
