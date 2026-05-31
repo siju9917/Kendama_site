@@ -58,6 +58,13 @@ describe("buildRedlineDocumentXml", () => {
     expect(allText).toContain("does not provide legal"); // disclaimer
   });
 
+  it("ends the body with a sectPr (page geometry) so Word renders cleanly", () => {
+    const xml = buildRedlineDocumentXml(result([change({})]));
+    expect(xml).toContain("<w:sectPr>");
+    expect(xml).toContain('<w:pgSz w:w="12240" w:h="15840"/>'); // US Letter
+    expect(xml).toContain("</w:sectPr></w:body>"); // sectPr is the last body child
+  });
+
   it("orders critical changes before normal ones", () => {
     const xml = buildRedlineDocumentXml(
       result([

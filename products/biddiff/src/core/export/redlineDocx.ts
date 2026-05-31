@@ -81,10 +81,18 @@ export function buildRedlineDocumentXml(result: DiffResult): string {
   }
   body.push(para(""));
   body.push(para(DISCLAIMER_TEXT, { color: "595959" }));
+  // A final <w:sectPr> (US Letter, 1" margins) — Word expects the body to end
+  // with section properties; omitting it makes some Word versions warn or
+  // render with odd page geometry. Twips: 12240×15840 page, 1440 margins.
+  const sectPr =
+    `<w:sectPr>` +
+    `<w:pgSz w:w="12240" w:h="15840"/>` +
+    `<w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/>` +
+    `</w:sectPr>`;
   return (
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
     `<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
-    `<w:body>${body.join("")}</w:body></w:document>`
+    `<w:body>${body.join("")}${sectPr}</w:body></w:document>`
   );
 }
 

@@ -1634,3 +1634,15 @@ NEED_FROM_HUMAN #9 (a ~3-min human visual check of a sample redline.docx)
 before the button is exposed. Bundle-neutral: tree-shaken out until imported
 (build verified 397.2 kB gz unchanged). Suite 413 -> 418 green; typecheck +
 lint clean.
+
+
+## Polish pass 56 (2026-05-30 evening MT) — harden the N3 redline OOXML (sectPr)
+
+Red-teamed my own pass-55 redline generator: the `<w:body>` had no final
+`<w:sectPr>` (section/page properties). Word expects the body to end with
+section properties; omitting it makes some Word versions warn or render with
+odd page geometry — which would fail the human render-check (NEED_FROM_HUMAN
+#9) unnecessarily. Added a US-Letter sectPr (12240×15840 twips, 1" margins).
+Test asserts it's present + the last body child; regenerated the sample
+artifact. Suite 418 -> 419 green; typecheck + lint clean. Maximizes the chance
+the human's one-time render check passes first try.
