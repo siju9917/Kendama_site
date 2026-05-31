@@ -23,6 +23,30 @@ re-opening review | escalation second-pass.
 
 ---
 
+## 2026-05-31 — Phase K1 — bug-hunt pass 71 (Correctness/Domain, 5.7.5)
+
+**Pass type:** bug-hunt — core engine, newly-invented federal-realistic input:
+a clause whose REVISION DATE changes while the clause number stays the same
+(`FAR 52.217-9 … (MAR 2000)` → `(OCT 2010)`).
+
+**Critics run:** Correctness #1, Domain-Expert #5.
+
+**Finding:** none (verified negative). FAR/DFARS clauses are re-issued with new
+revision dates; the engine surfaces the revision change as a CRITICAL MODIFY in
+CLAUSES (existing clause-change rule) — suppression/normalization does NOT
+collapse the parenthetical date, so the material update is not hidden.
+
+**Coverage gap closed:** existing clause tests cover add/remove/number changes,
+not a revision-date-only change on the same clause number. Since `suppress.ts`
+strips some date-like punctuation, a future normalization tweak could regress
+this. Added a `handcrafted-adversarial` test asserting one CRITICAL MODIFY
+surfacing `OCT 2010`. (Characterizes EXISTING behavior — does not touch the
+gated rule pack.) 447 → 448.
+
+**Convergence:** clean; full gate green (448/448).
+
+---
+
 ## 2026-05-31 — Phase K1 — bug-hunt pass 70 (Reliability, 5.7.5)
 
 **Pass type:** bug-hunt — the options page `clearHistory` destructive action

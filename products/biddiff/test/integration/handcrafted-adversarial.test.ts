@@ -234,6 +234,30 @@ describe("Hand-crafted adversarial cases", () => {
     expect(result.changes.filter((c) => c.changeType === "INSERT" || c.changeType === "DELETE")).toHaveLength(0);
   });
 
+  it("a clause revision-date change (same clause number) is surfaced, not suppressed", () => {
+    // FAR/DFARS clauses are re-issued with new revision dates; "(MAR 2000)" →
+    // "(OCT 2010)" on the same clause number is a MATERIAL update a capture
+    // manager must see. Suppression strips some date-like punctuation, so this
+    // guards against a future normalization change collapsing the revision.
+    const clause = (rev: string): StructuredDocument => ({
+      metadata: meta(rev),
+      sections: [
+        sec({
+          letter: "I",
+          heading: "Section I - Contract Clauses",
+          type: "CLAUSES",
+          ordinal: 0,
+          blocks: [paragraph("I", 0, `FAR 52.217-9 Option to Extend the Term of the Contract (${rev})`)],
+        }),
+      ],
+    });
+    const result = diff(clause("OCT 2010"), clause("MAR 2000"));
+    expect(result.changes.length).toBe(1);
+    expect(result.changes[0].changeType).toBe("MODIFY");
+    expect(result.changes[0].afterText).toMatch(/OCT 2010/);
+    expect(result.changes[0].severity).toBe("CRITICAL"); // existing clause-change rule
+  });
+
   it("whole paragraph relocated between sections is detected as MOVE not separate INSERT+DELETE", () => {
     const prior: StructuredDocument = {
       metadata: meta("prior"),
