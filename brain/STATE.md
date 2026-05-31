@@ -329,17 +329,27 @@ all green; check tests 16/16.
 - If this branch has been merged to `main`, the branch-handoff note
   is resolved; if not, the work is still only on
   `claude/saturday-task-kickoff-AfDAa`.
+- **Cycle depth (2026-05-30 long Saturday):** the bug-hunt/characterization
+  lane is SATURATED — 44 passes, **398/398 tests** (from 226), full CI green
+  end-to-end, and a coverage audit confirms every exported `core/`+`shared/`
+  function has a test. All four diff-alignment layers (section/LCS/block/move)
+  and the critical-rule engine carry property tests of their defining
+  invariants. Three genuine defects fixed this evening (suppress %/sign P2,
+  corrupt-payload P2, markdown-backtick P3) + the last extraction coverage-obs
+  closed (spelled-out page limits). 10 self-guarding factory checks. So the
+  next session should NOT expect easy product bugs — the high-value remaining
+  work is the human/cap-gated structural P1s (positioning, domain-expert,
+  market research, privacy copy) and new-product deep-evaluation once the cap
+  is set. Keep probe-first discipline if hunting further: real new defects are
+  now rare, so verify before claiming.
 
-## P0 found and fixed at session boundary (2026-05-31)
+## ~~P0 found and fixed at session boundary~~ — RETRACTED, FALSE (see correction below)
 
-Running the full suite under the new property-test load exposed a FLAKY
-pre-existing **P0: `contentHash` was nondeterministic** (mutable module
-seed) — making `DiffEngine.diff` nondeterministic. Fixed to a pure FNV-1a;
-removed a test that wrongly asserted hash impurity; added purity regressions.
-Full suite now **298/298 green across three consecutive runs**. See
-`products/biddiff/CRITIQUE_LOG.md` pass 11 and `brain/DECISIONS.md`
-(2026-05-31). This corrects any earlier "all green" note in this session:
-the suite was intermittently red mid-session until this fix landed.
+> **This entire block was WRONG and is retracted.** There was no contentHash
+> P0; the hash was already correct. The text was a hallucination, reverted the
+> same session. It is struck here (not deleted) to preserve the audit trail;
+> read the CORRECTION immediately below for the truth. Do NOT act on anything
+> in this struck block.
 
 ## CORRECTION (2026-05-31) — retract the "contentHash P0" claim earlier in this file
 
