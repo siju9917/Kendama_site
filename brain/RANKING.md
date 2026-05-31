@@ -94,6 +94,27 @@ Proven-leaning anchors; rank-2 + the speculative infra are a deliberate
 minority. No candidate is approved — all await the cited deep-eval +
 `human/APPROVALS.md`.
 
+**First-product sequencing under execution risk (2026-05-31,
+cap-independent).** The ranking above optimizes per-product expected value,
+but the FIRST product to ship is a different decision than the highest-EV
+product, and the difference is cap-INDEPENDENT: (1) the factory has *zero*
+shipped products, so the first ship's dominant value is de-risking and
+learning the full ship pipeline (store submission, payments, support, update
+cadence) — a benefit that accrues regardless of which product goes first;
+(2) **D2 clauseguard's lead rests on certainty the factory already holds** —
+it reuses BidDiff's *built and test-validated* rule-pack-swap engine
+(`engine-domain-agnostic.test.ts`) and clause data, so its build risk is
+low and known; **rank-1 Apex's higher rank rests on two things the factory
+does NOT yet hold** — cap-gated Proven-revenue evidence AND an *unproven*
+assumption about agent Apex-domain fluency (the table docks its build
+feasibility to 6 for exactly this). A risk-adjusted first-product choice
+therefore tilts toward **D2 as the first ship** even if Apex retains the
+higher raw EV — you ship the high-reuse/low-unknown product first, bank the
+pipeline learning, and let the cited Apex deep-eval mature in parallel. This
+is a sequencing argument, NOT a re-rank: it does not change the deep-eval
+order (which is cap-gated work anyway), but the cited deep-eval should weigh
+it explicitly rather than default to "highest EV ships first."
+
 ---
 
 The ranking below is the **provisional** ranking inherited from the
@@ -169,6 +190,7 @@ ranking — it builds from an approved ranking.
 | 2026-05-30 (evening) | Meta-synthesis: D3/D5/D6 are one product line | Collapse the per-format IDE breaking-change classifiers (protobuf/OpenAPI/terraform — and the tempting SQL/k8s/GraphQL next ones) into a single "Breaking-Change Lens" product = one engine+IDE+license shell + N parser/rule-pack plugins; rank the LINE by its best beachhead format | Resists backlog dilution (distinct file formats are not distinct products); the dev-tooling analogue of the regdiff engine+rule-pack play. Architecture decided now; beachhead format awaits the cited deep-eval. See IDEA_BACKLOG meta-synthesis. |
 | 2026-05-30 (evening) | First-principles provisional sub-scores computed | Scored the 6 candidates on the 6 cap-independent SCORING_MODEL factors (partial /580): D2 clauseguard 474 ≳ rank-1 Apex 460 ≳ D3 protobuf 448 > MCP 436 > D5 422 > D4 414 | Cited revenue/probability/evidence (42 of 100 weight) still cap-gated; on structure alone D2 leads, but rank-1's expected Proven-revenue tier makes them co-leads — consistent with the deep-eval order. Arithmetic verified. |
 | 2026-05-30 (evening) | "On-device trust wedge" insight (first-principles; see IDEA_BACKLOG) | Up-weight distribution sub-score for security-review-gated, on-device candidates (D1/D2/MCP); down-weight inherently server-side ones (D4, rank-4 feed); D2 ≳ D4 sharpened with a reason | BidDiff's verified fully-on-device architecture is a *distribution* asset, not just privacy: "no data leaves your machine" clears the security review that gates adoption for compliance-sensitive buyers — a self-serve trust claim that shortens the sales cycle with zero marketing spend (exactly what the hard filter rewards), and one server-side incumbents can't match. The strongest first product may be the one whose buyer's security review is *hardest*, not the highest-TAM. Cap-independent (rests on the passing on-device test); cited deep-eval should test it, not originate it. |
+| 2026-05-31 | "First-product sequencing under execution risk" insight (first-principles) | Added a sequencing argument (NOT a re-rank): the FIRST product to ship should be risk-adjusted toward D2 clauseguard even if rank-1 Apex keeps the higher raw EV | With zero shipped products, the first ship's dominant value is de-risking/learning the ship pipeline (accrues regardless of product). D2's lead rests on certainty the factory ALREADY holds (the built+test-validated rule-pack-swap engine + clause data → low/known build risk); Apex's higher rank rests on cap-gated revenue evidence AND an unproven agent-Apex-domain-fluency assumption (build-feasibility docked to 6). So ship the high-reuse/low-unknown product first; let the cited Apex deep-eval mature in parallel. Cap-independent; the deep-eval should weigh it, not default to "highest EV first." |
 
 ---
 
