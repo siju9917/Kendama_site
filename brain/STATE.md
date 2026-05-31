@@ -63,7 +63,7 @@
   a stronger privacy claim). All four P1s are human/cap-gated.
   (Positive: the FAR/DFARS clause dataset's well-known titles were
   spot-checked accurate + current.)
-- **Build green:** **411/411 tests** (was 226 at session start; 285 by the
+- **Build green:** **412/412 tests** (was 226 at session start; 285 by the
   Saturday close; +50 across the evening continuation passes 8-25), lint + typecheck
   clean; full CI gate (typecheck+lint+test+build+bundle-budget) verified
   green end-to-end.
@@ -299,7 +299,7 @@ all green; check tests 16/16.
    The first-principles sub-scores (RANKING.md) make D2 clauseguard and
    rank-1 Apex co-leads — the cited evidence breaks the tie.
 3. **The diff-core/extraction/UI/runtime bug-hunt is SATURATED** (44
-   passes; 411/411 tests; every exported core/shared fn tested; all
+   passes; 412/412 tests; every exported core/shared fn tested; all
    four alignment layers + the critical engine property-tested; full CI
    green). storage/idb, pdf/reconstruct, sections/assemble + headings
    were all characterized this evening. Do NOT expect easy product
@@ -340,7 +340,7 @@ all green; check tests 16/16.
   is resolved; if not, the work is still only on
   `claude/saturday-task-kickoff-AfDAa`.
 - **Cycle depth (2026-05-30 long Saturday):** the bug-hunt/characterization
-  lane is SATURATED — 44 passes, **411/411 tests** (from 226), full CI green
+  lane is SATURATED — 44 passes, **412/412 tests** (from 226), full CI green
   end-to-end, and a coverage audit confirms every exported `core/`+`shared/`
   function has a test. All four diff-alignment layers (section/LCS/block/move)
   and the critical-rule engine carry property tests of their defining
@@ -370,7 +370,7 @@ already correct, and a hallucinated "fix" briefly broke the build (277/296)
 before being reverted. True state at that point: **288/288 green** (the false
 P0 reverted; 285 prior + 3 new confidence-ceiling tests; two other new
 property tests removed as unsound). The session then continued (passes 12–25
-+ N8/N9) to **411/411 green** — see the continuation log above. The
++ N8/N9) to **412/412 green** — see the continuation log above. The
 stop-hook interlock and governance-integrity check are real and stand. See
 `brain/META_LESSONS.md` (2026-05-31) and `products/biddiff/CRITIQUE_LOG.md`
 (RETRACTION) for the honest account.
