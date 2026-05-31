@@ -26,6 +26,8 @@ import * as governanceIntegrity from './governance-integrity.mjs';
 import { scanText as scanGov } from './governance-integrity.mjs';
 import * as checksRegistry from './checks-registry.mjs';
 import { analyze as analyzeRegistry } from './checks-registry.mjs';
+import * as stateCountSanity from './state-count-sanity.mjs';
+import { analyze as analyzeStateCount } from './state-count-sanity.mjs';
 import { BLOCKING_LEVELS } from './lib.mjs';
 
 const blocking = (findings) => findings.filter((f) => BLOCKING_LEVELS.has(f.level));
@@ -203,9 +205,29 @@ test('checks-registry: ignores known infrastructure files (lib, run-all, etc.)',
   assert.equal(blocking(f).length, 0);
 });
 
+test('state-count-sanity: a well-formed X/X headline passes', () => {
+  const f = analyzeStateCount('intro\n- **Build green:** **385/385 tests** lint clean\nmore');
+  assert.equal(blocking(f).length, 0);
+});
+
+test('state-count-sanity: a mangled X/Y headline is flagged P1', () => {
+  const f = analyzeStateCount('- **Build green:** **288/312 tests** green');
+  assert.ok(f.some((x) => x.level === 'P1' && /passed === total|mangled/.test(x.message)));
+});
+
+test('state-count-sanity: a missing headline is flagged', () => {
+  const f = analyzeStateCount('STATE with no build-green line at all');
+  assert.ok(f.some((x) => /no canonical/.test(x.message)));
+});
+
+test('state-count-sanity: duplicate headlines are flagged', () => {
+  const f = analyzeStateCount('**Build green:** **385/385 tests**\n**Build green:** **385/385 tests**');
+  assert.ok(f.some((x) => /\d+ .*headlines/.test(x.message)));
+});
+
 // --- Regression: real repo is currently known-good. ---
 
-for (const check of [brainIntegrity, noGithubActions, ruleCadence, humanQueue, noForbiddenMarkers, governanceIntegrity, stopGuardLogic, checksRegistry]) {
+for (const check of [brainIntegrity, noGithubActions, ruleCadence, humanQueue, noForbiddenMarkers, governanceIntegrity, stopGuardLogic, checksRegistry, stateCountSanity]) {
   test(`real repo passes: ${check.name}`, () => {
     const { findings } = check.run();
     const bad = blocking(findings);

@@ -51,6 +51,7 @@ The `no-github-actions` check enforces this for the whole repo.
 | `governance-integrity` | No corruption of factory markdown (`CLAUDE.md`, `governance/`, `ops/`, `brain/`): leaked operator narration ("there appears to be an issue…", "let me read it directly", "as an AI") or the same substantial line repeated 3+× (mangled-edit signature). Added after a real `ops/loop.md` corruption. | P1 |
 | `stop-guard-logic` | The stop-guard's own logic is sound, checked against **synthetic** instants (never the live clock): it refuses a stop on Saturday — including the Saturday-evening-MT / Sunday-UTC boundary — and permits one on Sunday, in the human's timezone (`America/Denver`). Added after a real UTC-vs-local-time bug caused a false session-end (CLAUDE.md 5x). | P0 |
 | `checks-registry` | Meta-check: every `ops/checks/*.mjs` check (excluding the known infrastructure files) is registered in `run-all.mjs`'s `CHECKS` array and documented in this README. Prevents an added-but-unregistered check from silently never running. | P1/P2 |
+| `state-count-sanity` | The one canonical `Build green: **NNN/NNN tests**` headline in `brain/STATE.md` is well-formed and self-consistent (exactly one; passed === total). Catches the count-drift class (a mangled "288/312", a "green" headline over a red count). Deliberately narrow: does NOT run the suite or scan historical narrative. | P1/P2 |
 
 ### The stop-guard red team (separate — run at STOP time, not session start)
 

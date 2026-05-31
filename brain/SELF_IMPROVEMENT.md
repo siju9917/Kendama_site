@@ -237,8 +237,7 @@ exposed:
   automated one. Cost: small. Caveat: it must not *run* the full suite
   at session start (slow); better as a stop-time / digest-time check,
   or a lint that flags any hard-coded "NNN tests" string older than the
-  latest CI run. **Status: proposed** — logged so a future cycle builds
-  it; not built now to avoid a speculative session-start cost.
+  latest CI run. **Status: DONE (2026-05-30)** — shipped as `ops/checks/state-count-sanity.mjs`, narrowly scoped per the caveat: it checks only the ONE canonical `Build green: **NNN/NNN tests**` headline in STATE.md (exactly one; passed===total), never runs the suite, never scans historical narrative. Catches the mangled-count / red-as-green drift class. 4 tests; registered + documented.
 
 **Strengthens or weakens?** stronger (both).
 
