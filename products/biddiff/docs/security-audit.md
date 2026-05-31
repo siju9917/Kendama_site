@@ -60,6 +60,23 @@ any model/diff/extract type. Re-run on every commit.
   (anonymous statistics enabled) per industry convention but the user
   can disable it before their first diff.
 
+## Attachment-download boundary
+
+- `isAllowedDownloadUrl` (`src/sidepanel/FilePickerWithSam.tsx`, exported +
+  unit-tested) gates the privileged fetch of a SAM.gov attachment to
+  `protocol === "https:"`, rejecting `http:`/`file:`/`data:`/`blob:`/
+  `javascript:` and malformed URLs. This guards against a malformed link or a
+  sam.gov XSS injecting a non-https href into the extension's privileged
+  context.
+- **Scheme-only, NOT a host allowlist — deliberate (verified 2026-05-30).**
+  SAM serves attachments from CDN/object-store hostnames (e.g.
+  `falextracts.s3.amazonaws.com`), not only `sam.gov`, so a host allowlist
+  would false-reject legitimate downloads. The test suite pins both the S3
+  hostname (allowed) and every dangerous scheme (rejected). A future
+  "tighten to a host allowlist" suggestion is therefore a regression, not a
+  hardening — the correct boundary is scheme + the content script's host
+  scoping (manifest `host_permissions` are sam.gov-scoped).
+
 ## Server OCR boundary
 
 - The OCR endpoint accepts the encoded PDF only when the user has
