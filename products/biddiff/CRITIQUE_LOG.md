@@ -1161,3 +1161,27 @@ rejected (can't augment the ambient `chrome` module) and lint flagged an
 unused disable — both caught by the FULL gate (typecheck + lint), not the
 green vitest run. Switched to a local `globalThis` cast. Reinforces: the gate
 is typecheck + lint + test, not test alone.
+
+
+## Bug-hunt pass 33 (2026-05-30 evening MT) — idb fallback contract
+
+`storage/idb.ts`'s portable, load-bearing guarantee is graceful degradation:
+`idbAvailable()` resolves FALSE (never throws) when there is no `indexedDB`
+global, which is what lets DiffStorage fall back to chrome.storage and keeps
+the storage layer working in tests + locked-down contexts. Pinned with 2
+tests (false in Node; stable across repeated calls). The put/get/delete need a
+real IndexedDB and remain covered via the DiffStorage integration tests
+(passes 17). No production change. Suite 371 -> 373 green; typecheck + lint
+clean.
+
+### Coverage-sweep status (passes 21–33)
+
+Every logic-bearing untested file flagged by the sweep now has a focused test:
+ErrorBoundary, ProgressView, ReviewPrompt, pipeline dispatch, the message
+trust boundary, the SAM content-script DOM parser, section alignment,
+LocalClauseClient, the chrome-rt safe wrappers, and the idb fallback. What
+remains genuinely untested is thin/presentational (App/index/Onboarding/
+SamAttachments wiring, constants, disclaimer — the disclaimer is already
+covered by the no-advisory test) or environment-bound glue best covered by the
+existing integration suite. The core logic surface is comprehensively
+characterized. Full CI green; 226 → 373 tests this cycle.
