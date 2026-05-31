@@ -160,6 +160,24 @@ test('stop-guard: REFUSES on Saturday evening MT even though it is Sunday UTC', 
   );
 });
 
+// BOUNDARY (the highest-stakes edge of the rule): the full Saturday in
+// Mountain time must be preserved to the last minute, and the stop becomes
+// permissible only once it is genuinely Sunday MT. MDT = UTC-6.
+test('stop-guard: REFUSES at 23:59 Saturday MDT (the full Saturday is preserved)', () => {
+  const satLastMinute = new Date('2026-05-31T05:59:00Z'); // Sat 23:59 MDT
+  const f = redTeamStop(satLastMinute);
+  assert.ok(
+    f.some((x) => x.level === 'P0' && /STOP REFUSED/.test(x.message)),
+    'one minute before Mountain midnight is still Saturday — must refuse',
+  );
+});
+
+test('stop-guard: PERMITS just after midnight Sunday MDT (00:01)', () => {
+  const sunFirstMinute = new Date('2026-05-31T06:01:00Z'); // Sun 00:01 MDT
+  const f = redTeamStop(sunFirstMinute);
+  assert.equal(blocking(f).length, 0, 'just past Mountain midnight it is Sunday — stop permitted');
+});
+
 test('stop-guard hook: BLOCKS the stop on Saturday', () => {
   const sat = new Date('2026-05-30T18:00:00Z');
   const d = hookDecision(sat);
