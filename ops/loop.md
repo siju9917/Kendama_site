@@ -46,7 +46,14 @@ acceptable operator-stop reason is **"stopping because it is no longer
 Saturday."** Before ANY stop the operator states that reason and runs
 the red team — `node ops/checks/stop-guard.mjs --stopping` — which
 verifies the claim against the **real system clock** and does NOT take
-the operator's word. Exit 1 (still Saturday) ⇒ the stop is REFUSED, a
+the operator's word. **The weekday is evaluated in the HUMAN'S timezone
+(Mountain Time, `America/Denver`), NOT UTC** — a Saturday *evening* in
+Mountain time is already Sunday in UTC, so a UTC check would wrongly
+authorize a stop while the window is still open (this exact bug caused a
+false session-end on 2026-05-30; see `brain/DECISIONS.md`). Never decide
+"it's no longer Saturday" by eyeballing a UTC timestamp; only the guard's
+verdict counts, and it uses the work timezone (override via `KENDAMA_TZ`).
+Exit 1 (still Saturday) ⇒ the stop is REFUSED, a
 **P0**: discard it, do not summarize, pull the next queue item. Only
 exit 0 (genuinely not Saturday) authorizes the session-end sequence
 below. The operator may not stop on its own judgment — only the
@@ -156,6 +163,7 @@ triggers the lapse-restore rule above (priority 3).
 | Research-loop refresh of `MARKET_SIGNALS.md` | Every session | PART 4.4 |
 | Re-rank of `IDEA_BACKLOG.md` | Whenever any rank-input changes | PART 3.4 |
 | Spend-cap monthly reset | Calendar month, UTC | `SPEND_CAP.md` |
+| Stop red-team / "still Saturday?" | Evaluated in **Mountain Time (`America/Denver`)**, NOT UTC | `ops/checks/stop-guard.mjs`, CLAUDE.md 5x |
 
 ---
 
