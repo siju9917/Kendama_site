@@ -23,6 +23,33 @@ re-opening review | escalation second-pass.
 
 ---
 
+## 2026-05-31 — Phase K1 — bug-hunt pass 62 (Reliability, 5.7.5)
+
+**Pass type:** bug-hunt — applying pass 61's emission-boundary lesson to
+the OTHER export path (PDF via pdf-lib).
+
+**Critics run:** Reliability #7, Adversarial #2.
+
+**Finding:** none (verified negative). pdf-lib's `StandardFonts.Helvetica`
+uses WinAnsi and *throws* on characters it cannot encode (CJK, emoji, many
+Unicode). Extracted solicitation text and attachment filenames can contain
+those. Probed `exportPdfReport` with CJK/emoji in both change text AND the
+`sourceFileName`s → produced a valid PDF. The existing `toWinAnsiSafe`
+sanitizer (substitutes unencodable code points) already guards it.
+
+**Coverage gap closed:** the existing non-WinAnsi test only exercised change
+*text*, not the header's "Compared: `<file>` vs `<file>`" line — a distinct
+interpolation site and a realistic crash vector (a non-Latin attachment
+name). Extended that test to set exotic `sourceFileName`s, locking the
+verified behavior at both sites. No production change (the guard was already
+correct).
+
+**Convergence:** clean; full gate green (429/429). The two export paths are
+now both hardened against unencodable/illegal characters — PDF via WinAnsi
+substitution, DOCX via XML-illegal-control stripping (pass 61).
+
+---
+
 ## 2026-05-31 — Phase K1 — bug-hunt pass 61 (Reliability, 5.7.5)
 
 **Pass type:** bug-hunt (continuous, not gated to a code change) —
