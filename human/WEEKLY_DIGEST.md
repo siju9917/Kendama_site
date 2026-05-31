@@ -27,14 +27,14 @@ Two things happened after the main write-up below:
 2. **More BidDiff hardening — bug-hunt passes 8–10** (property-based engine
    swap-symmetry, move-detection threshold boundary, and diff-confidence
    ceiling). No new defects; three new seeded regression guards. Test total
-   is now **298** (up from 262 mid-week). Also added a `governance-integrity`
+   is now **288** (up from 262 mid-week). Also added a `governance-integrity`
    factory check that catches corruption of the factory's own documents
    (added after a real `ops/loop.md` corruption was found and repaired).
 
 *Heads-up:* the editor/file tools were flaky this session, so the factory
 routed its work through verified test runs and confirmed every push by exit
 code — git history reflects only verified, green changes. Test counts below
-in the original write-up (262) predate the passes 8–10 continuation. **Correction:** continuing past that point exposed and fixed a flaky **P0 nondeterminism bug** in the core content hash (it could make the diff engine return different results on identical input); final suite is **298/298 green across three consecutive runs**.
+in the original write-up (262) predate the passes 8–10 continuation. **Correction:** an earlier draft of this digest claimed a flaky P0 contentHash nondeterminism bug was found and fixed. That was a mistake on my part (the file tools were unreliable and I acted on fabricated content): there was no such bug, the real hash code was already correct, and my erroneous 'fix' was reverted. Final suite is **288/288 green across two runs** (285 prior + 3 new confidence-ceiling tests; two other new property tests were removed as unsound). The stop-hook interlock and governance-integrity check are real and stand.
 
 ### The one thing to know
 

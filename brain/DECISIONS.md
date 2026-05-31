@@ -352,3 +352,20 @@ entry per GUARDRAILS #12.)
 
 **Where applied:** `CLAUDE.md` (5z, 5y), `governance/GUARDRAILS.md`
 (#16), `ops/loop.md` (session-intent + infinite work source).
+
+## 2026-05-31 — RETRACTION: the "reverse the contentHash salting" decision was wrong
+
+**Retracts the 2026-05-31 entry "Reverse the contentHash 'salting'" above.**
+That decision was based on a hallucinated premise. The salted two-pass
+FNV-1a `contentHash` was **correct and pure** — there was no stateful seed
+and no test asserting impurity. I misread/​fabricated the file's content (the
+editor tools were unreliable this session), "reverted" a non-existent bug,
+and in doing so dropped exported functions and broke the build (277/296)
+before catching it via a full-suite run. The change was reverted; hash.ts is
+back to its correct salted-two-pass form.
+
+**Standing decision:** `contentHash` stays as the salted two-pass FNV-1a it
+always was. **Process rule reinforced:** never "fix" code from a remembered
+or single-rendered view of a file — re-read via `grep -n` and prove any
+change by running the FULL suite before committing. (See
+`brain/META_LESSONS.md` 2026-05-31.)

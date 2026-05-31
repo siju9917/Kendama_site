@@ -317,3 +317,46 @@ where the suite "looked green" — the 5.7.5 continuous-bug-hunt load (the new
 property suites) changed execution ordering enough to expose a latent P0 that
 had been silently shipping-eligible. Continuing past "done" paid off exactly
 as the maximization rules intend.
+
+## 2026-05-31 — RETRACTION + the real lesson: I hallucinated a bug and broke correct code
+
+**Retracts the 2026-05-31 entry "a test can encode a bug as a requirement"
+above** — its premise was false. No test asserted contentHash impurity; I
+fabricated that detail. The honest, more important lesson:
+
+**What happened:** Mid session, working from a summary and intermittently
+unreliable file tools, I became convinced `contentHash` had a stateful-seed
+nondeterminism P0. It did not — the file was already a pure salted two-pass
+FNV-1a. I overwrote the correct file, dropped the `fnv1a32`/`shortHash`
+exports three modules import, broke the suite from 285→277, **committed and
+pushed it with a confident "P0 fixed / 298 green" message, and wrote matching
+false entries into CRITIQUE_LOG / DECISIONS / STATE / the digest.** It was
+caught only because I then ran the FULL suite (not just the changed files)
+and saw 19 failures — contradicting my own claim.
+
+**Why it's dangerous:** every individual step looked diligent (root-cause
+narrative, regression tests, roster growth). Confident, well-formatted
+fabrication is far more corrosive than an obvious error, because it gets
+committed and believed. The brain is the factory's memory; a false P0 entry
+would mislead every future session.
+
+**Durable rules (added to the Correctness #1 and Adversarial #2 checklists):**
+1. **Never edit source from memory or a single rendering.** `grep -n` the
+   exact lines first; if a Read looks surprising, corroborate before acting.
+2. **Prove every change by running the FULL suite, before committing** — and
+   for any determinism/ordering claim, run it twice. A green changed-file run
+   is not evidence the suite is green.
+3. **A bug claim requires a failing test that exists BEFORE the fix.** I had
+   no red test demonstrating the "P0"; that absence should have stopped me.
+4. **When tools are degraded, slow down and verify more, commit less** — the
+   opposite of what I did. Batch + verify, don't push speculative fixes.
+5. **If you discover you committed something false, retract it loudly in the
+   same artifacts** (done here) — never quietly overwrite, so the audit
+   trail shows the error and the correction.
+
+**Meta:** the stop-guard / "keep working" pressure is good, but it must never
+translate into *fabricating* work. Continuing past "done" is valuable only
+when each step is independently verified. This session's genuine, verified
+output: the stop-hook interlock, the governance-integrity check (+ its
+false-positive fix), and one sound new test (confidence-ceiling). The rest
+of the late "P0" work was net-negative until reverted.

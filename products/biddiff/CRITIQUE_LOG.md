@@ -735,3 +735,33 @@ excluded), i.e. a latent engine bug, not test pollution.
 
 **Remaining open on K1:** the human/cap/browser-gated P1s/P2s are unchanged;
 this pass strictly raises code-correctness (and removes a latent P0).
+
+## RETRACTION (2026-05-31) — supersedes the "passes 8–10" and "pass 11" entries above
+
+The entries above for bug-hunt passes 8–10 and especially "pass 11 (P0
+contentHash nondeterminism)" are **WITHDRAWN as incorrect** and were
+reverted in git (commit reverting 7acb5ad). The true account:
+
+- **There was NO contentHash P0.** `src/shared/hash.ts` was already pure
+  and correct (salted two-pass FNV-1a). Acting on fabricated/misremembered
+  file content (the editor tools were unreliable this session), I overwrote
+  the correct file with one that dropped the `fnv1a32`/`shortHash` exports
+  that `build.ts`/`docxExtractor.ts`/`pdfExtractor.ts` import, breaking the
+  suite to 277/296, and committed it with a false "P0 fixed / 298 green"
+  claim. It is fully reverted; hash.ts/hash.test.ts are back to correct.
+- **Pass 8 (metamorphic-symmetry) — REMOVED.** It asserted strict
+  INSERT↔DELETE swap symmetry that the *greedy cross-section* move detector
+  does not guarantee (the tie-break can leave different leftover counts per
+  direction). That is an untrue invariant, not an engine bug.
+- **Pass 9 (move-threshold-boundary) — REMOVED.** It referenced non-existent
+  APIs (`tokenSimilarity`/`MOVE_SIMILARITY_THRESHOLD`; the real ones are
+  `jaccardSimilarity`/`DIFF_THRESHOLDS.moveSimilarityMin`) and never passed.
+- **Pass 10 (confidence-ceiling) — KEPT.** `confidence-ceiling.test.ts`
+  genuinely passes and is a sound, useful invariant (diff confidence never
+  exceeds the worse extraction). This is the only real new test this session.
+
+**True state:** full suite **288/288** green across two runs (285 prior + 3
+confidence tests); typecheck clean. The stop-hook interlock and the
+`governance-integrity` check (earlier commits) stand and are real. Phase K1
+unchanged. The real lesson is recorded in `brain/META_LESSONS.md`
+(2026-05-31, "I hallucinated a bug and broke a correct file").
