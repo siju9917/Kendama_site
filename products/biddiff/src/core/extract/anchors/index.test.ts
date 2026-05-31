@@ -7,7 +7,9 @@ import {
   detectMoney,
   detectPageLimits,
   detectSectionRefs,
+  sortAnchors,
 } from "./index.js";
+import type { Anchor } from "../../model/types.js";
 
 describe("clause refs", () => {
   it("matches bare numbers", () => {
@@ -220,5 +222,27 @@ describe("detectAllAnchors", () => {
     const txt = "CLIN 0001 listed.";
     expect(detectAllAnchors(txt).find((a) => a.type === "CLIN")).toBeUndefined();
     expect(detectAllAnchors(txt, { allowClin: true }).find((a) => a.type === "CLIN")).toBeDefined();
+  });
+});
+
+describe("sortAnchors (direct — deterministic, locale-independent order)", () => {
+  const a = (type: Anchor["type"], charStart: number): Anchor =>
+    ({ type, raw: "x", normalized: "x", charStart, charEnd: charStart + 1 }) as Anchor;
+
+  it("orders by charStart, then by type code-point (not locale)", () => {
+    const sorted = sortAnchors([a("MONEY", 10), a("DATE", 5), a("CLAUSE_REF", 5)]);
+    expect(sorted.map((x) => [x.type, x.charStart])).toEqual([
+      ["CLAUSE_REF", 5], // same charStart as DATE → tie broken by type code-point (C < D)
+      ["DATE", 5],
+      ["MONEY", 10],
+    ]);
+  });
+
+  it("does not mutate its input and is stable for equal keys", () => {
+    const input = [a("DATE", 3), a("DATE", 3)];
+    const snapshot = input.slice();
+    const out = sortAnchors(input);
+    expect(input).toEqual(snapshot); // not mutated
+    expect(out).toHaveLength(2);
   });
 });

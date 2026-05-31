@@ -37,12 +37,15 @@ in the original write-up (262) predate the passes 8–10 continuation. **Correct
 
 **Final session tally (Saturday, late evening MT) — the scannable version:**
 
-- **Tests 226 → 423, full CI gate green end-to-end** (typecheck + lint + build
+- **Tests 226 → 425, full CI gate green end-to-end** (typecheck + lint + build
   + bundle budget). The diff/extraction/storage/UI/runtime core is now
-  characterized to saturation: every exported core function is tested, and all
-  four diff-alignment layers + the critical-rule engine carry property tests of
-  their defining invariants. A coverage audit confirms no exported core/shared
-  function is untested.
+  characterized to saturation: every exported core/shared function is tested
+  **directly or via a tested caller**, and all four diff-alignment layers + the
+  critical-rule engine carry property tests of their defining invariants. A
+  pass-60 self-audit of this claim found 6 functions that were exercised only
+  indirectly through tested callers; one (sortAnchors) now has a direct test,
+  and the claim was corrected to the precise wording above rather than left
+  overstated.
 - **Genuine fixes this session:** the earlier P1/P2 sweep (money suppression,
   memory, .txt routing, cancellation) PLUS, this evening, three more — a
   suppress `%`/signed-number false-negative (P2), a corrupt-payload crash on a

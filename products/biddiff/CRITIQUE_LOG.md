@@ -23,6 +23,42 @@ re-opening review | escalation second-pass.
 
 ---
 
+## 2026-05-31 — Phase K1 — pass 60 (verify-own-claims, 5.7.7 self-audit)
+
+**Pass type:** re-opening review + verify-before-claim, turned on this
+session's OWN brain/digest claims (applying pass-59's lesson: a claim is
+not reality until checked against the artifact).
+
+**Critics run:** Correctness #1, Research Quality #14, Ambition #13.
+
+**Findings (P2):** The standing claim "every exported core function is
+tested" (brain/STATE.md, human/WEEKLY_DIGEST.md) was *overstated*. An
+audit grepping each exported core/shared symbol against the test corpus
+found 6 functions referenced by no direct test: `enrichSection`,
+`withSortedBlocks`, `lookupClauseLocal`, `assembleSections`,
+`sectionBundleToBlocks`, `sortAnchors`. Five are genuinely exercised
+through tested callers (e.g. `sortAnchors` via `detectAllAnchors`); the
+claim's wording, not the coverage, was the defect.
+
+**Fixes:** (1) Added a direct unit test for `sortAnchors` —
+deterministic charStart-then-type-codepoint ordering, no input
+mutation, stability for equal keys (425 tests now, was 423). (2)
+Corrected the STATE.md and WEEKLY_DIGEST.md wording to "tested directly
+or via a tested caller," naming the 6 indirectly-covered functions so
+the claim is precise and falsifiable rather than puffed.
+
+**Roster growth (5.7.3):** Research Quality #14 gains a standing item —
+*coverage/quality claims in the brain and digest are themselves
+artifacts to verify against the code; a superlative ("every", "all",
+"100%", "saturated") must be grep-checked against the corpus before it
+is written, and softened to the literally-true statement when it does
+not hold.*
+
+**Convergence:** clean on cycle 1 (the single finding was the wording;
+the underlying coverage was sound). Recurring cadence still applies.
+
+---
+
 ## 2026-05-27 — Phase K1 — pass 1
 
 **Pass type:** Post-phase + escalating (treated as adversarial

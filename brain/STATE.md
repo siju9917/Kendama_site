@@ -63,7 +63,7 @@
   a stronger privacy claim). All four P1s are human/cap-gated.
   (Positive: the FAR/DFARS clause dataset's well-known titles were
   spot-checked accurate + current.)
-- **Build green:** **423/423 tests** (was 226 at session start; 285 by the
+- **Build green:** **425/425 tests** (was 226 at session start; 285 by the
   Saturday close; +50 across the evening continuation passes 8-25), lint + typecheck
   clean; full CI gate (typecheck+lint+test+build+bundle-budget) verified
   green end-to-end.
@@ -299,10 +299,15 @@ all green; check tests 16/16.
    The first-principles sub-scores (RANKING.md) make D2 clauseguard and
    rank-1 Apex co-leads — the cited evidence breaks the tie.
 3. **The diff-core/extraction/UI/runtime bug-hunt is SATURATED** (44
-   passes; 423/423 tests; every exported core/shared fn tested; all
-   four alignment layers + the critical engine property-tested; full CI
-   green). storage/idb, pdf/reconstruct, sections/assemble + headings
-   were all characterized this evening. Do NOT expect easy product
+   passes; 425/425 tests; every exported core/shared fn tested
+   **directly or via a tested caller** (a pass-60 audit found 6 fns —
+   enrichSection, withSortedBlocks, lookupClauseLocal, assembleSections,
+   sectionBundleToBlocks, sortAnchors — covered only indirectly; a
+   direct sortAnchors test was added, the rest are exercised through
+   tested callers); all four alignment layers + the critical engine
+   property-tested; full CI green). storage/idb, pdf/reconstruct,
+   sections/assemble + headings were all characterized this evening. Do
+   NOT expect easy product
    bugs; if hunting further, stay probe-first (real defects are now
    rare). The 3 extraction coverage-obs are all closed.
 4. BidDiff Accessibility P2 (axe rendering tests) — still browser-gated

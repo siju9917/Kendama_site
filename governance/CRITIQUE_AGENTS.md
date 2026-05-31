@@ -418,6 +418,16 @@ Checklist:
   "Proven" tier requires actual comparables with documented
   revenue. The critic verifies the tier matches what the
   evaluation actually demonstrates.
+- **Claims about our own work are artifacts to verify, not
+  asserted facts** (added pass 60). Coverage/quality claims in
+  the brain, the digest, and PROGRESS are themselves subject to
+  this critic. Any superlative — "every", "all", "100%",
+  "saturated", "no X is untested" — must be grep-checked against
+  the actual corpus before it is written, and softened to the
+  literally-true statement when it does not strictly hold. A
+  superlative defended only by assertion is a finding. (Origin:
+  pass 60 found "every exported core function is tested" was
+  overstated — 6 functions were covered only via tested callers.)
 
 Findings are P1 by default (an idea whose research is too thin
 is not eligible for an approval proposal).
@@ -448,6 +458,7 @@ critic is recorded here with the triggering cause.
 | 2026-05-30 (evening) | Reliability Critic (#7) | Added: every JSON.parse/deserialize of STORED data is a trust boundary — guard it; symmetry with the container parse | getDiff raw-threw a SyntaxError on a corrupt stored payload (pass 40) |
 | 2026-05-30 (evening) | Compliance Critic (#9) | Added: described-but-absent flows include SUPPORT/help + tier copy; every quantitative claim must match the ENFORCED guarantee not a point-in-time measurement; a PII boundary needs a key allow-list + finite-integer bounds, not just "numbers only" | support-macros' server license/billing flow (pass 53); FAQ "100% recall" vs the ≥98% floor (pass 52); telemetry counts schema (pass 45) |
 | 2026-05-30 (evening) | AUDIT NOTE | The above evening rows were logged in `products/biddiff/CRITIQUE_LOG.md` as "roster growth" across passes 12–53 but had NOT actually landed in this file until 2026-05-30 evening (caught by cross-checking the log vs the roster). Lapse fixed; lesson: "roster growth" claimed in a critique log must be verified to land in CRITIQUE_AGENTS.md (5.7.3 + verify-before-claim). | self-audit of the roster-growth claims |
+| 2026-05-31 | Research Quality Critic (#14) | Added: claims about our OWN work (coverage/quality in brain, digest, PROGRESS) are artifacts to verify — a superlative ("every", "all", "100%", "saturated") must be grep-checked against the corpus before writing and softened to the literally-true statement when it does not hold | pass 60 found "every exported core function is tested" overstated — 6 fns covered only via tested callers (`products/biddiff/CRITIQUE_LOG.md` 2026-05-31 pass 60) |
 
 The META loop (PART 11) audits this table every cycle. A month
 with no growth is a warning sign flagged in the weekly digest.
