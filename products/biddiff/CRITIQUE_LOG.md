@@ -886,3 +886,24 @@ letter-dot precedence; UCF letter must be A–M; the A–K limitation, labelled)
 Suite 303 -> 306 green; typecheck + lint clean. Deliberately did not change
 classification logic on a Saturday-evening hunch (2026-05-30 verify-first
 lesson); a section-typing change must be validated against the domain.
+
+
+## Bug-hunt pass 17 (2026-05-30 evening MT) — storage durability under failure/interleaving
+
+Adversarially re-read `src/core/storage/index.ts` (the chrome.storage /
+IndexedDB persistence + the module-level `serialize()` mutation lock that
+substitutes for chrome.storage's missing transactions). The logic is sound:
+the lock advances `mutationQueue` and resolves the next link in a `finally`
+(so a throw can't deadlock the queue); `getDiff`'s inner `serialize` is a
+top-level call, not nested (no self-deadlock); payload writes roll back on
+index-write failure. No defect found.
+
+Two real durability properties were NOT covered by tests, now added:
+- **A rejected mutation must not break the lock for the next one.** New test:
+  first index write throws (rejects the save), a subsequent save still
+  completes and is durably recorded — proving the `finally` released the lock.
+- **Serialized mutations preserve order under interleaving.** New test:
+  concurrent saveDiff + markViewed + saveDiff all land (index not lost).
+
+Suite 306 -> 308 green; typecheck + lint clean. No production change — this
+hardens the test net around the concurrency-critical persistence layer.

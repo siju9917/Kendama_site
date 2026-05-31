@@ -150,6 +150,55 @@ describe("DiffStorage", () => {
     expect(list.length).toBe(10);
   });
 
+  it("a rejected mutation does not break the lock for the next one", async () => {
+    // The serialize() lock resolves its `next` link in a `finally`, so a
+    // throwing mutation must NOT deadlock the queue. Make the FIRST index
+    // write throw, then confirm a subsequent save still completes and is
+    // durably recorded (the lock recovered).
+    const real = new Map<string, unknown>();
+    let failNextIndexWrite = true;
+    const kv = {
+      async get<T>(k: string): Promise<T | null> {
+        return (real.get(k) as T) ?? null;
+      },
+      async set(k: string, v: unknown): Promise<void> {
+        if (k === "biddiff.diffs.index" && failNextIndexWrite) {
+          failNextIndexWrite = false;
+          throw new Error("simulated one-time index write failure");
+        }
+        real.set(k, v);
+      },
+      async remove(k: string): Promise<void> {
+        real.delete(k);
+      },
+    };
+    const s = new DiffStorage(kv);
+    await expect(s.saveDiff(fakeResult("fail1"))).rejects.toThrow();
+    // The lock must have been released despite the rejection.
+    await s.saveDiff(fakeResult("ok1"));
+    const list = await s.listDiffs();
+    expect(list.map((e) => e.id)).toContain("ok1");
+    expect(list.map((e) => e.id)).not.toContain("fail1");
+  });
+
+  it("serialized mutations preserve order under interleaving", async () => {
+    // Concurrent markViewed + saveDiff must not lose the index. Fire a save
+    // and a viewed-touch on an existing entry concurrently; both must land.
+    const s = new DiffStorage();
+    await s.saveDiff(fakeResult("base"));
+    await Promise.all([
+      s.saveDiff(fakeResult("new1")),
+      s.markViewed("base"),
+      s.saveDiff(fakeResult("new2")),
+    ]);
+    const list = await s.listDiffs();
+    const ids = list.map((e) => e.id);
+    expect(ids).toContain("base");
+    expect(ids).toContain("new1");
+    expect(ids).toContain("new2");
+    expect(list.length).toBe(3);
+  });
+
   it("filters out malformed entries", async () => {
     const { makeKv } = await import("./index.js");
     const kv = makeKv();
