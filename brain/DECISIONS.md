@@ -19,6 +19,49 @@
 
 ---
 
+## 2026-06-01 — Founding product strategy locked by the human: zero-opex, zero-touch, zero-labor
+
+**Decision:** Adopt three HARD product filters (new `governance/PRODUCT_CONSTRAINTS.md`),
+set the spend cap to a **$0-committed-external-spend policy** (signups ≤ $5
+pre-approved; `governance/SPEND_CAP.md`), and change the operating priority so a
+**blocked-or-saturated active product yields to starting the next product**
+rather than being polished further.
+
+**Source:** the human's Monday 2026-06-01 check-in directives, verbatim:
+- "It should have felt welcome to start building a new product if BidDiff is
+  fully complete or blocked for human tasks/approvals."
+- "I don't really want to spend money. $5 to sign up here or there is ok, but I
+  don't want operating expenses."
+- "They should be designed to not have any marketing and require me to spend no
+  time talking or selling to anyone. Basically you build, I post the product
+  wherever, then it starts making money."
+
+**Alternatives considered:**
+- *Wait for a dollar spend cap.* Rejected — the human explicitly does not want a
+  budget; the right encoding is a $0-committed policy, not a number. This also
+  unblocks the factory (the old "unset cap blocks research" rule no longer
+  applies — see SPEND_CAP).
+- *Keep BidDiff's domain-validation depending on human outreach.* Rejected by
+  the zero-touch mandate — reframed to factory-self-validation from public
+  sources (`NEED_FROM_HUMAN.md` #4 withdrawn).
+- *Keep over-polishing the saturated active product.* Rejected — it's what the
+  factory wrongly did all of 2026-05-30 (passes 60–77 on an already-saturated
+  BidDiff) instead of starting product #2.
+
+**Reasoning:** these constraints define a portfolio of small, durable
+passive-income products (marketplace tools with built-in discovery + billing,
+zero marginal cost, self-serve) — exactly Kendama's purpose, and a tighter,
+more honest target than VC-style ideas. They are gates applied BEFORE scoring.
+
+**Reversibility:** the human edits `PRODUCT_CONSTRAINTS.md` / `SPEND_CAP.md`;
+loosening them is a human-approval change like any guardrail. Fully reversible.
+
+**Where applied:** `governance/PRODUCT_CONSTRAINTS.md` (new), `governance/SPEND_CAP.md`,
+`human/NEED_FROM_HUMAN.md` (#1 resolved, #4 withdrawn/reframed), `brain/STATE.md`
+(operating priority + next-action = start product #2), `brain/IDEA_BACKLOG.md`
+(filter applied at ideation). The Ambition/Research-Quality/Domain critics gain
+a "still satisfies all 3 filters" check.
+
 ## 2026-05-31 — Reverse the contentHash "salting": a content hash MUST be pure
 
 **Decision:** Revert the prior "salted" `contentHash` (stateful module

@@ -9,43 +9,66 @@ safety valve against an autonomous agent spending unboundedly.
 
 | Field | Value |
 |---|---|
-| Monthly cap (USD) | **NOT SET — human must set** |
+| Monthly cap (USD) | **$0 committed external spend** (policy set by human 2026-06-01) |
+| One-time signup/registration fees | **Pre-approved up to $5 each** (e.g. the Chrome Web Store $5 dev registration) |
 | Period | Calendar month, UTC |
 | Spent this period | $0.00 |
 | Last reset | (none yet) |
 | Last reading taken | (none yet) |
 
-**Human action required:** edit the "Monthly cap (USD)" cell above
-to the desired monthly budget for API and cloud cost. Until set,
-the factory treats the cap as effectively zero and will only do
-work that does not consume budget (planning, brain consolidation,
-critique passes that do not spawn sub-agents). See
-`human/NEED_FROM_HUMAN.md`.
+## Spend policy (set by the human 2026-06-01 — supersedes the old "NOT SET" block)
+
+The human has set the budget as a **policy, not a dollar figure**:
+
+> "I don't really want to spend money. $5 to sign up here or there is
+> ok, but I don't want operating expenses."
+
+This resolves the old "human must set a cap" blocker. The operative rules:
+
+1. **$0 committed monthly/recurring external budget.** The factory must NOT
+   sign the human up for any paid subscription, metered external API, cloud
+   server, or any recurring bill. Ever. Doing so requires a fresh
+   `human/APPROVALS.md` entry.
+2. **One-time signup/registration fees ≤ $5 each are pre-approved** (a
+   marketplace developer registration is the canonical case). Anything above
+   $5, or any recurring fee of any size, needs human approval first.
+3. **The factory is NOT blocked from working.** It operates within the tools
+   **already included in the operator's Claude Code plan** — including web
+   research and sub-agents — because those are covered by the existing
+   subscription, NOT new committed spend. The old "unset cap ⇒ block research /
+   sub-agents" rule no longer applies; the cap is now SET (to this policy).
+   *(Assumption flagged for the human: this treats plan-included usage as
+   "not an operating expense." If your plan is usage-metered and you'd rather
+   the factory minimize even that, say so and it will switch to a
+   no-paid-research, minimal-fan-out mode.)*
+4. **Every PRODUCT the factory builds must be zero-marginal-cost** — see the
+   hard filter in `governance/PRODUCT_CONSTRAINTS.md`. No product may require
+   the human (or end users routed through the human) to pay for servers, APIs,
+   storage, or any per-use cost. On-device / static / client-side only.
+
+This means the spend cap is no longer a bottleneck: the bottleneck is now
+**product DESIGN** (must be zero-opex) and **distribution** (must be
+zero-touch), both encoded in `governance/PRODUCT_CONSTRAINTS.md`.
 
 ---
 
 ## How the cap is enforced
 
-Before any expensive operation — sub-agent spawn, large
-generation, network research — the factory:
+The cap is now SET to the **$0-committed-external-spend policy** above. The
+factory enforces it by:
 
-1. Reads the current cap and spent-this-period values above.
-2. **If the cap reads `NOT SET — human must set`**: the
-   operation is **blocked**, logged against the existing
-   "Set the monthly spend cap" entry in
-   `human/NEED_FROM_HUMAN.md`, and the session continues on
-   all zero-cost work — brain consolidation, critique against
-   already-readable artifacts, code review, planning,
-   documentation, drafting. The session does **not** spawn
-   sub-agents, make large API calls, or trigger network
-   research until the human sets a numeric cap. The session
-   does NOT end on the unset-cap condition alone; it works the
-   zero-cost queue until a real session-ending limit is hit.
-3. Estimates the cost of the operation conservatively.
-4. If estimated cost + already spent exceeds the cap, the
-   operation does not run. The session ends cleanly with a
-   full brain checkpoint and a note in
-   `human/WEEKLY_DIGEST.md` that the cap was the binding limit.
+1. **Using plan-included tools freely** (web research, sub-agents, generation) —
+   these are covered by the operator's existing Claude Code subscription and are
+   NOT committed external spend, so they are NOT blocked.
+2. **Refusing any external committed cost.** Before signing up for, enabling, or
+   depending on any paid external service, the factory checks: is it a one-time
+   fee ≤ $5? If yes, proceed (pre-approved). If it is recurring, or > $5, or a
+   per-use metered cost, the operation is **blocked** and logged to
+   `human/APPROVALS.md` as a new approval request — the factory does NOT incur
+   it and continues with other work.
+3. **Refusing to design products with marginal cost** (see
+   `governance/PRODUCT_CONSTRAINTS.md`) — a product that would need a paid
+   server/API to run is rejected at the idea-filter stage, before any build.
 
 The factory updates the spent-this-period value as accurately as
 possible after each operation, based on observable usage. (Where

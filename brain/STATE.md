@@ -49,6 +49,22 @@
   Verify source via `grep -n` and new tests by *running* them; confirm git
   state from `git log`/push exit codes. Full lesson in `brain/META_LESSONS.md`.
 
+> **★ OPERATING PRIORITY (set by the human 2026-06-01 — read before doing
+> anything) ★** The factory wrongly spent all of 2026-05-30 polishing an
+> already-saturated BidDiff. **New rule: a blocked-or-saturated active product
+> YIELDS to starting the next product.** BidDiff is now human-gated-blocked
+> (positioning + privacy-copy decisions + the store step are the human's;
+> domain validation is reframed to factory-self-research). So the **next
+> session's primary job is to START PRODUCT #2** — generate ideas, apply the
+> three HARD filters in `governance/PRODUCT_CONSTRAINTS.md` (zero-opex,
+> zero-touch distribution, zero-labor), rank the passers
+> (`SCORING_MODEL.md`), and begin building the top one. The spend cap is
+> RESOLVED (policy: $0 committed external spend, signups ≤ $5; `SPEND_CAP.md`)
+> so research/sub-agents within the plan are unblocked. Only fall back to
+> BidDiff for (a) the reframed public-source domain validation, (b) the top
+> POLISH item (list-renumbering noise, PROGRESS obs #8) if genuinely higher
+> value than advancing product #2. Do NOT re-saturate BidDiff.
+
 > **⚠ BRANCH HANDOFF (read this):** all of this session's work is on
 > branch **`claude/saturday-task-kickoff-AfDAa`**, NOT on `main`. The
 > session was constrained to that branch by its task instructions and

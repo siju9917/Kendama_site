@@ -14,27 +14,15 @@ list.
 
 ---
 
-## 1. **[OPEN]** Set the monthly spend cap
+## 1. **[DONE on 2026-06-01 — resolved by policy, no action needed]** Spend cap
 
-**Why:** Without a cap set, the factory cannot run expensive
-operations (sub-agents, large generations, network research). It
-can still do planning, brain consolidation, and code work that
-does not call APIs — but capacity is severely limited.
-
-**Steps (under 1 minute):**
-
-1. Open `governance/SPEND_CAP.md` in this repository.
-2. Find the row `Monthly cap (USD) | **NOT SET — human must set**`.
-3. Replace `**NOT SET — human must set**` with the desired
-   monthly budget in USD (for example, `$200`).
-4. Commit and push the change.
-
-**Suggested starting value:** $100–$300/mo while the factory is
-new. The weekly digest reports actual burn so the value can be
-tuned.
-
-**Effect once done:** The next Saturday session can spend up to
-the cap on building, critiquing, and researching.
+**Resolved by the human's spend policy (2026-06-01):** "$5 to sign up here or
+there is ok, but I don't want operating expenses." This is now encoded in
+`governance/SPEND_CAP.md` as **$0 committed external spend + one-time signups
+≤ $5 pre-approved**, and in `governance/PRODUCT_CONSTRAINTS.md` as the
+zero-marginal-cost product filter. The factory is no longer blocked on a cap —
+it operates within the existing Claude Code plan and only ever asks before
+incurring a recurring or >$5 external cost. **No human action required.**
 
 ---
 
@@ -106,35 +94,22 @@ and continues toward ship.
 
 ---
 
-## 4. **[OPEN]** Source 2-3 federal proposal/capture managers for domain validation
+## 4. **[WITHDRAWN on 2026-06-01 — human declined outreach; reframed for the factory]** Domain validation
 
-**Why:** The Domain-Expert Critic finding on BidDiff says the
-critical-changes ruleset misses several materially critical
-categories real practitioners would flag (source-selection-
-timeline beyond pure dates; responsibility/key-personnel
-updates; compliance certifications like ITAR/EAR/cyber; non-CLIN
-contract-value changes). The factory cannot validate these
-against pattern alone — it needs practitioner input.
+**Withdrawn per the human's zero-touch mandate (2026-06-01):** "they should be
+designed to ... require me to spend no time talking or selling to anyone." The
+human will NOT source domain experts or do outreach. This is now a hard product
+constraint (`governance/PRODUCT_CONSTRAINTS.md` Filter 3: validation must come
+from sources the FACTORY can reach, not human outreach).
 
-**Time needed:** ~30-45 minutes of outreach over a week or
-two; the conversations themselves are short (10 minutes each).
-
-**Steps:**
-
-1. Identify 2-3 people in your network: federal proposal
-   manager, federal capture manager, federal contracts
-   officer, or a consultant who routinely reads federal
-   solicitations.
-2. The factory drafts a short validation questionnaire on the
-   next session (under 10 questions). Forward it to your
-   contacts.
-3. Paste the (anonymized if needed) responses into
-   `products/biddiff/docs/domain-validation/` as
-   `respondent-1.md` etc. The next session ingests them and
-   updates `src/core/diff/critical.ts` accordingly.
-
-**Effect once done:** Unblocks the BidDiff K1 Domain-Expert P1
-finding. The ship gate becomes reachable.
+**Reframed factory task (no human action):** the Domain-Expert P1 on BidDiff's
+critical-changes ruleset must be validated from **public** sources the factory
+can read directly — FAR/DFARS itself, published GovCon/proposal guidance, real
+SAM.gov solicitation+amendment samples, agency source-selection guides — not
+practitioner interviews. The next build session does this within the spend
+policy (free/plan-included web research). If a category genuinely cannot be
+validated from public material, it is documented as a known limitation rather
+than gating the ship. **No human action required.**
 
 ---
 
