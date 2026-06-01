@@ -70,14 +70,12 @@
 > item (list-renumbering noise, PROGRESS obs #8). The rule is "don't get stuck,"
 > NOT "stop polishing."
 
-> **⚠ BRANCH HANDOFF (read this):** all of this session's work is on
-> branch **`claude/saturday-task-kickoff-AfDAa`**, NOT on `main`. The
-> session was constrained to that branch by its task instructions and
-> is not permitted to merge to `main` or open a PR without explicit
-> human permission. **The Routine reads `main`** (per
-> `ops/SCHEDULE_SETUP.md`), so until the human merges this branch into
-> `main`, a fresh Routine session will NOT see this work. Logged as
-> `human/NEED_FROM_HUMAN.md` item 5.
+> **✅ BRANCH/`main` RESOLVED (2026-06-01):** `main` was fast-forwarded to all
+> of this work (271 commits, 0 divergence; `main` == `claude/saturday-task-kickoff-AfDAa`
+> == HEAD at `a7c8ffe`). New STANDING RULE (CLAUDE.md "Every session" #6, human
+> directive): **`main` is the canonical, always-current branch** — keep it
+> up to date, never strand green work on a long-lived branch. The Routine
+> clones `main`, so it now sees everything. (`NEED_FROM_HUMAN.md` #5 closed.)
 
 ## Active product
 

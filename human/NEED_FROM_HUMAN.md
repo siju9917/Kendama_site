@@ -113,7 +113,21 @@ than gating the ship. **No human action required.**
 
 ---
 
-## 5. **[OPEN]** Merge `claude/saturday-task-kickoff-AfDAa` into `main`
+## 5. **[DONE on 2026-06-01 — main brought current; standing rule added]** Keep `main` up to date
+
+**Resolved 2026-06-01 on the human's instruction** ("make sure main is up to
+date and make a rule to always keep main up to date"). `main` was
+fast-forwarded to the full session's work (271 commits, 0 divergence — clean
+FF; `main` now == `claude/saturday-task-kickoff-AfDAa` == HEAD at `a7c8ffe`).
+A **standing rule** was added (CLAUDE.md "Every session" #6): `main` is the
+canonical, always-current branch; completed green work must reach `main` (the
+Routine clones `main`); never leave it stranded on a long-lived branch. **No
+recurring human action required** — the factory keeps `main` current itself.
+The original text of this item is preserved below for the audit trail.
+
+<details><summary>Original item #5 (merge the task branch)</summary>
+
+### (historical) Merge `claude/saturday-task-kickoff-AfDAa` into `main`
 
 **Why:** The 2026-05-30 Saturday session was constrained by its task
 instructions to develop on the branch
@@ -137,6 +151,8 @@ fixes, a closed K1 P2, and the money-magnitude extraction fix).
    or tell the factory in a future session that it may do so.
 
 **Effect once done:** the Saturday Routine picks up this work.
+
+</details>
 
 ---
 
