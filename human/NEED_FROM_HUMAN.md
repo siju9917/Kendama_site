@@ -229,23 +229,28 @@ match reality; unblocks a clean store submission (item 6).
 
 ---
 
-## 8. **[OPEN]** (Optional) Approve the `Stop`-hook interlock in `.claude/settings.json`
+## 8. **[OPEN — RECOMMENDED, do it during Routine setup]** Approve the `Stop`-hook interlock in `.claude/settings.json`
 
-**Why:** This session added a Claude Code `Stop` hook
+**Why:** The repo ships a Claude Code `Stop` hook
 (`.claude/settings.json` → `ops/checks/stop-guard.mjs --hook`) that
 *automatically* blocks the agent from ending a turn while it is still
-Saturday in your timezone — a belt-and-suspenders version of the no-stop
-rule. **Enabling a hook requires your approval**, so it does nothing until
-you approve it.
+Saturday in Mountain Time. **Enabling a hook requires your approval**, so it
+does nothing until you approve it (do this when the Routine / first `Run now`
+prompts you to trust the project hook settings).
 
-**Important — the factory does NOT depend on this.** The no-stop behavior is
-already enforced WITHOUT any approval by (a) the written rule (CLAUDE.md
-5z/5x, GUARDRAILS #16) and (b) the manual red team
-(`node ops/checks/stop-guard.mjs`, run before any contemplated stop). The
-hook is purely an extra automated safety net. So this item is **optional and
-non-blocking** — the factory logged it here and kept working, rather than
-pausing to ask (which would have been the exact "stop and wait on the human"
-failure the rule forbids).
+**Status upgraded 2026-06-01 (your "never stop on Saturday, no matter what"
+directive):** for the **autonomous Saturday Routine this hook is now the
+REQUIRED technical backstop**, not just optional polish. In an autonomous run,
+nothing physically stops the model from wrapping up except this hook —
+prior Saturday runs ended early precisely because it wasn't active. The
+hardened Routine **prompt** (`ops/SCHEDULE_SETUP.md`) + the written rule
+(CLAUDE.md 5z/5x/5x.2) are the primary no-approval drivers; the hook is the
+backstop that catches the model if it tries to stop anyway. **Please approve it
+when you set up the Routine.**
+
+**Still consistent with CLAUDE.md 5x.1:** the *running* agent never pauses
+mid-session to ask you for this — you enable it out-of-band during setup, and
+the factory never blocks waiting on it.
 
 **Steps (under 1 minute):**
 

@@ -19,6 +19,43 @@
 
 ---
 
+## 2026-06-01 — Harden never-stop-on-Saturday + keep `main` always current (human directive)
+
+**Decision:** (1) Harden the never-stop-on-Saturday rule to zero permissible
+voluntary stops (new CLAUDE.md **5x.2**), reclassify the `.claude/settings.json`
+`Stop` hook from "optional" to **REQUIRED for the autonomous Routine**, and ship
+a hardened Routine prompt body (`ops/SCHEDULE_SETUP.md`) that itself forbids
+stopping. (2) Make **`main` the canonical, always-up-to-date branch** (new clause
+in CLAUDE.md "Every session" #6) and bring `main` current now.
+
+**Source:** the human, 2026-06-01: "it should NEVER end working, no matter what,
+on saturdays … there is no excuse that is permissible and you should never stop.
+Definitely encode that into your knowledge rules … harden it." And: "make sure
+main is up to date and make a rule to always keep main up to date."
+
+**Alternatives considered:**
+- *Leave the hook optional (per the old 5x.1 framing).* Rejected for the
+  autonomous Routine — in a headless run nothing but the hook physically stops
+  the model from wrapping up, and prior Saturday runs ended early because it was
+  inactive. Reconciled with 5x.1: the *running agent* still never pauses to ask;
+  the human enables the hook out-of-band during setup. The hook is now the
+  required backstop; the hardened prompt + written rule remain the primary
+  no-approval drivers.
+- *Keep developing on the long-lived task branch.* Rejected — it stranded a full
+  session's work off `main` (the old `NEED_FROM_HUMAN` #5), which the Routine
+  reads. `main` must stay current or the factory silently loses weeks.
+
+**Reasoning:** the two failures the human is correcting are (a) ending a Saturday
+session early and (b) work not reaching the branch the Routine actually runs.
+Both are now closed by rule + mechanism.
+
+**Reversibility:** loosening 5x.2 / removing the hook / changing the `main` rule
+are weakening changes requiring a `human/APPROVALS.md` entry (GUARDRAILS #12).
+
+**Where applied:** `CLAUDE.md` (5x.2 + #6 main rule), `.claude/settings.json`
+($comment), `ops/SCHEDULE_SETUP.md` (hardened prompt + hook step),
+`human/NEED_FROM_HUMAN.md` (#8 upgraded; #5 to be closed on the merge below).
+
 ## 2026-06-01 — Founding product strategy locked by the human: zero-opex, zero-touch, zero-labor
 
 **Decision:** Adopt three HARD product filters (new `governance/PRODUCT_CONSTRAINTS.md`),

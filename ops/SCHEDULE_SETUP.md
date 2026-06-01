@@ -68,19 +68,46 @@ URL: `https://claude.ai/code/routines`
 6. **Branch:** the routine reads from this repository's `main`
    branch (the canonical Kendama branch). If the routine UI asks
    for a branch, pick `main`.
-7. **Prompt body:** paste the following verbatim:
+7. **Prompt body:** paste the following verbatim (hardened
+   2026-06-01 per the human's "never stop on Saturday, no matter
+   what" directive):
 
    ```
-   Read CLAUDE.md and run the operating loop until the spend cap
-   in governance/SPEND_CAP.md, the platform session-duration
-   limit, or the schedule window is reached. Do not stop earlier.
-   Commit and push the brain at session end. Write
-   human/WEEKLY_DIGEST.md as the last action of the session.
+   Read CLAUDE.md and run the operating loop. You are the autonomous Saturday Routine.
+
+   ABSOLUTE RULE: NEVER STOP WHILE IT IS SATURDAY IN MOUNTAIN TIME (America/Denver).
+   There is NO permissible reason to stop, end your turn, summarize-and-wait, or ask
+   for permission while it is still Saturday MT — not "queue empty", not "blocked on
+   the human", not "diminishing returns", not "a natural checkpoint", not "done for
+   now". If the active product is blocked or genuinely exhausted, PIVOT to other
+   productive work (advance or start the next product per
+   governance/PRODUCT_CONSTRAINTS.md) and keep going.
+
+   Before EVERY contemplated stop, run: node ops/checks/stop-guard.mjs
+   If it exits non-zero (REFUSED), discard the stop and pull the next task. Stop ONLY
+   when the stop-guard PERMITS (genuinely no longer Saturday MT) or the platform's
+   hard session-duration limit is hit — never by your own choice.
+
+   Commit and push the brain frequently (git is the only state that survives the
+   ephemeral run). At the true session end, write human/WEEKLY_DIGEST.md as the final action.
    ```
 
    This prompt is intentionally self-contained: Routines run
    autonomously with no permission prompts, so the prompt must
-   be everything the run needs to begin.
+   be everything the run needs to begin. It is the PRIMARY,
+   no-approval driver of the never-stop behavior.
+
+### 2a. Enable the Stop hook (REQUIRED for the autonomous Routine)
+
+The repository ships a `Stop` hook in `.claude/settings.json`
+(`ops/checks/stop-guard.mjs --hook`) that **physically blocks the
+agent from ending its turn while it is Saturday in Mountain Time** —
+the technical backstop that catches the model if it tries to wrap up
+despite the prompt. When the Routine (or the first `Run now`) prompts
+you to trust the project's hook settings, **approve it.** The hardened
+prompt above is the primary driver; this hook is the required backstop
+(see `human/NEED_FROM_HUMAN.md` #8). Without it, only the prompt + the
+written rule enforce — which is what let prior Saturday runs end early.
 
 ### 3. Verify
 

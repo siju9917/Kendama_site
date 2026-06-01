@@ -204,6 +204,29 @@ session" below.
    gated automation is a bonus the human may enable later, on their schedule,
    not a blocker for you now.
 
+5x.2 **(HARDENED 2026-06-01 by direct human directive — "it should NEVER end
+   working, no matter what, on Saturdays; there is no excuse that is
+   permissible and you should never stop.")** On Saturday in Mountain Time the
+   count of permissible *voluntary* stops is exactly **ZERO**. Every turn-end,
+   summarize-and-wait, "natural checkpoint", "blocked on the human", "queue
+   empty", "diminishing returns", "done for now", or permission-question while
+   it is still Saturday MT is a **P0 guardrail violation** (`GUARDRAILS.md`
+   #16) — there is **no qualifying excuse**, and "I judged it reasonable" is
+   itself the violation. The human has stated plainly that *every* prior
+   Saturday stop was impermissible. When you have run out of work on the active
+   product you are **not done** — you **PIVOT** to other genuine work
+   (start/advance the next product per `governance/PRODUCT_CONSTRAINTS.md`); a
+   blocked or exhausted product is a reason to switch work, never to stop. The
+   session ends ONLY when the stop-guard genuinely PERMITS (no longer Saturday
+   MT) or a hard platform/duration limit is hit — never by choice. For the
+   **autonomous Saturday Routine**, the primary no-approval drivers are the
+   hardened Routine prompt (`ops/SCHEDULE_SETUP.md`) + this rule; the
+   `.claude/settings.json` `Stop` hook is the **REQUIRED technical backstop**
+   the human has chosen to enable (it physically blocks a turn-end while it is
+   Saturday MT). This does not relax 5x.1: the running agent still never pauses
+   mid-session to ask for the hook — the human enables it out-of-band; the
+   agent simply never stops.
+
 5a. **Audit yourself continuously, while you build.** Do not wait
    for the formal post-phase critique panel to find issues — the
    panel is the *audit of* your continuous self-critique habit,
@@ -226,10 +249,25 @@ session" below.
    question was asked is a session running below its potential.
    The Ambition Critic looks for exactly this.
 
-6. **Commit and push after every unit of work.** A Routine run gets
-   a fresh clone every Saturday; the brain only carries state if it
-   is committed and pushed. A session that ends without pushing the
-   brain has effectively lost the week. Push frequently.
+6. **Commit and push after every unit of work — and KEEP `main`
+   CURRENT.** A Routine run gets a fresh clone of **`main`** every
+   Saturday; the brain only carries state if it is committed and
+   pushed *to a branch that reaches `main`*. A session that ends
+   without pushing the brain has effectively lost the week. Push
+   frequently.
+   **`main` is the canonical, always-up-to-date Kendama branch
+   (rule added 2026-06-01 by human directive: "always keep main up
+   to date").** Completed, green work must NOT be left stranded on a
+   long-lived feature branch — it must land on `main` so the next
+   Routine (which clones `main`) sees it. Default: work directly on
+   `main`, or on a short-lived branch that you merge to `main` as
+   soon as it is green (fast-forward when possible). The only time
+   work stays off `main` is when a session's own task instructions
+   explicitly constrain it to a named branch AND withhold
+   merge permission — in that case log the pending merge to
+   `human/NEED_FROM_HUMAN.md` and keep working; do not treat the
+   constraint as license to let `main` rot. At minimum, reconcile
+   `main` at session end.
 
 7. **Obey `governance/GUARDRAILS.md` and the spend cap above all
    else.** Guardrails outrank every loop and every queue.
