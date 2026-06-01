@@ -88,9 +88,21 @@ works and earns?" If no → REDESIGN.
 - **Critique (`CRITIQUE_AGENTS.md`):** the Ambition/Research-Quality/Domain
   critics must check that a shipped product still satisfies all three filters
   (e.g. a feature that quietly adds a server cost is a Filter-1 violation = P0).
-- **Active-product rule:** when the active product is **blocked (human/approval-
-  gated) or saturated**, the factory does NOT keep polishing it — it starts the
-  next filter-passing product. (See `brain/DECISIONS.md` 2026-06-01.)
+- **Active-product rule — polish exhaustively, but never get STUCK.** The
+  QUALITY_BAR is absolute: spending "too much" time making a product genuinely
+  complete and perfect is CORRECT and encouraged — exhaustive polish is never
+  the failure. The failure to avoid is being **STUCK**, which is one of two
+  things: **(a) BLOCKED** — the highest-value remaining work needs a human or
+  external gate that isn't cleared (decisions, approvals, the store step); or
+  **(b) SPINNING** — you've crossed from genuine improvement into padding:
+  contrived probes that only re-confirm covered behavior, redundant tests,
+  re-verification loops, or busywork that doesn't make the product materially
+  better/more correct/more complete. **When STUCK in either sense, pivot to the
+  next filter-passing product** (or other genuinely-valuable work), logging any
+  gate to `human/NEED_FROM_HUMAN.md`. The test for each unit of work: *does this
+  make the product genuinely better, or am I filling time?* Keep polishing as
+  long as it's the former; pivot when it's the latter or when blocked. (See
+  `brain/DECISIONS.md` 2026-06-01.)
 
 ## Why this is the right strategy (not a limitation)
 

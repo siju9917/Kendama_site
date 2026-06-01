@@ -23,9 +23,14 @@
 
 **Decision:** Adopt three HARD product filters (new `governance/PRODUCT_CONSTRAINTS.md`),
 set the spend cap to a **$0-committed-external-spend policy** (signups ≤ $5
-pre-approved; `governance/SPEND_CAP.md`), and change the operating priority so a
-**blocked-or-saturated active product yields to starting the next product**
-rather than being polished further.
+pre-approved; `governance/SPEND_CAP.md`), and change the operating priority so that when the active product is **STUCK**
+the factory **pivots to starting the next product** instead of spinning.
+**"Stuck" is precise (clarified by the human same day):** exhaustive polish is
+NOT stuck and is encouraged — the human wants apps "complete and perfect" and
+spending "too much" time on genuine polish is correct. Stuck = (a) BLOCKED on a
+human/external gate, or (b) SPINNING (contrived/marginal busywork that doesn't
+make the product materially better). The remedy for stuck is to pivot to new
+genuine work (the next product), not to keep padding the blocked one.
 
 **Source:** the human's Monday 2026-06-01 check-in directives, verbatim:
 - "It should have felt welcome to start building a new product if BidDiff is
@@ -44,9 +49,13 @@ rather than being polished further.
 - *Keep BidDiff's domain-validation depending on human outreach.* Rejected by
   the zero-touch mandate — reframed to factory-self-validation from public
   sources (`NEED_FROM_HUMAN.md` #4 withdrawn).
-- *Keep over-polishing the saturated active product.* Rejected — it's what the
-  factory wrongly did all of 2026-05-30 (passes 60–77 on an already-saturated
-  BidDiff) instead of starting product #2.
+- *Treat "exhaustive polish" as the problem.* Rejected — the human explicitly
+  wants exhaustive polish ("better if the factory spends too much time
+  polishing"). The genuine BidDiff polish on 2026-05-30 (the real bug, real
+  coverage gaps) was correct. The error was narrower: BidDiff was BLOCKED on
+  human decisions from early on, so the factory should have started product #2
+  in parallel rather than (toward the late stretch) drifting into contrived
+  probes/padding on a product that couldn't ship anyway.
 
 **Reasoning:** these constraints define a portfolio of small, durable
 passive-income products (marketplace tools with built-in discovery + billing,

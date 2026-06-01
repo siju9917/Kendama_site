@@ -50,20 +50,25 @@
   state from `git log`/push exit codes. Full lesson in `brain/META_LESSONS.md`.
 
 > **★ OPERATING PRIORITY (set by the human 2026-06-01 — read before doing
-> anything) ★** The factory wrongly spent all of 2026-05-30 polishing an
-> already-saturated BidDiff. **New rule: a blocked-or-saturated active product
-> YIELDS to starting the next product.** BidDiff is now human-gated-blocked
-> (positioning + privacy-copy decisions + the store step are the human's;
-> domain validation is reframed to factory-self-research). So the **next
-> session's primary job is to START PRODUCT #2** — generate ideas, apply the
-> three HARD filters in `governance/PRODUCT_CONSTRAINTS.md` (zero-opex,
-> zero-touch distribution, zero-labor), rank the passers
-> (`SCORING_MODEL.md`), and begin building the top one. The spend cap is
-> RESOLVED (policy: $0 committed external spend, signups ≤ $5; `SPEND_CAP.md`)
-> so research/sub-agents within the plan are unblocked. Only fall back to
-> BidDiff for (a) the reframed public-source domain validation, (b) the top
-> POLISH item (list-renumbering noise, PROGRESS obs #8) if genuinely higher
-> value than advancing product #2. Do NOT re-saturate BidDiff.
+> anything) ★** Exhaustive polish is GOOD — the human wants every app
+> *complete and perfect*, and spending "too much" time on genuine polish is
+> correct (the QUALITY_BAR is absolute). The failure the human flagged is
+> getting **STUCK**, NOT polishing too much. STUCK = (a) **BLOCKED** on a
+> human/external gate, or (b) **SPINNING** (contrived probes re-confirming
+> covered behavior, redundant tests, re-verification, busywork — what the late
+> 2026-05-30 stretch drifted into). **When stuck in either sense, pivot to
+> starting the next product** rather than spinning on the blocked one.
+> Right now BidDiff is BLOCKED (positioning + privacy-copy decisions + the
+> store step are the human's; domain validation is reframed to factory
+> self-research), so the **next session's primary job is to START PRODUCT #2** —
+> ideate, apply the three HARD filters in `governance/PRODUCT_CONSTRAINTS.md`
+> (zero-opex, zero-touch, zero-labor), rank the passers (`SCORING_MODEL.md`),
+> build the top one to the same exhaustive standard. Spend cap is RESOLVED
+> (policy: $0 committed, signups ≤ $5; `SPEND_CAP.md`) so research/sub-agents
+> within the plan are unblocked. BidDiff still gets genuine work when it adds
+> real value: the reframed public-source domain validation, and the top POLISH
+> item (list-renumbering noise, PROGRESS obs #8). The rule is "don't get stuck,"
+> NOT "stop polishing."
 
 > **⚠ BRANCH HANDOFF (read this):** all of this session's work is on
 > branch **`claude/saturday-task-kickoff-AfDAa`**, NOT on `main`. The
