@@ -117,9 +117,21 @@ test: D1/D2 (regulated-reference tooling) and the unifying
 "critical-change diff as a horizontal capability" framing are
 genuinely non-obvious and not listicle picks.
 
-**Next (when the cap is set):** deep-evaluate D1 and D2 first (highest
-strategic fit + clearest distribution), then D3–D5. Until then they
-stay first-principles-ranked candidates, not approved builds.
+**Next — RE-FILTERED 2026-06-01 against `governance/PRODUCT_CONSTRAINTS.md`
+(spend cap is now resolved by policy, so the cited deep-eval is UNBLOCKED):**
+The hard zero-opex filter **re-orders the D-family.** Lead candidates are now
+the **on-device marketplace tools** that need no server: **D6 (`terraform plan`
+destructive-change classifier, VS Code)** and **D3 (protobuf/gRPC breaking-change,
+JetBrains)** are the front-runners, with **D5 (OpenAPI, VS Code)** and **rank-1
+Apex (JetBrains)** close behind. **D2 (clauseguard) and D4 (Shopify) DROP** for
+now — both require a hosted webhook/server (a Filter-1 zero-opex violation)
+unless redesigned as on-demand/on-device. D1 (`regdiff`) remains infrastructure,
+not a lead product. Billing for the on-device leads: marketplace discovery +
+a merchant-of-record checkout (Gumroad/LemonSqueezy) issuing an offline-validated
+license key — zero server. **First post-2026-06-01 build session: run the cited
+competitor/revenue deep-eval on D6 + D3 (then D5/Apex), pick the winner, build it
+to BidDiff's exhaustive standard.** Until evaluated they remain ranked candidates,
+not approved builds.
 
 #### Exploratory forward concept (2026-05-31, first-principles — NOT a ranked candidate yet)
 
