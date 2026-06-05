@@ -25,44 +25,36 @@ A complete production build + all gates ran clean locally:
 The upload artifact is therefore **mechanically ready**. To regenerate it on any
 machine: `cd products/biddiff && npm ci && bash scripts/package.sh`.
 
-## ⛔ Content/decision gates that must close BEFORE you submit
+## ✅ Resolved this session — Option A executed (free, on-device, no server)
 
-These cannot be auto-resolved — they're human calls (and the existing critique
-panel flagged them). They are the real blockers, not the build.
+The strategy decision (`brain/DECISIONS.md` 2026-06-05): **BidDiff ships FREE and
+fully on-device.** Chrome can't process payments (it removed them in 2020), so a
+paid Chrome extension would force a self-run billing business — which the human
+has refused. Free on Chrome delivers real value with zero business ops; a future
+paid version would move to a merchant-of-record marketplace.
 
-1. **Server-claim copy must match v1 reality — HARD BLOCKER**
-   (`human/NEED_FROM_HUMAN.md` #7). The store listing, privacy policy, options
-   page, help, and support copy currently describe **license-validation,
-   telemetry, and opt-in OCR server flows** plus **three paid tiers** — none of
-   which v1 actually performs (v1 is effectively **fully on-device**, with a
-   local-only trial license). Submitting copy that overstates server
-   interactions is a Web-Store-review + misrepresentation risk.
-   - **Option A (recommended — fastest, most accurate, no infrastructure):**
-     scope all user-facing copy to on-device reality — "BidDiff runs entirely on
-     your device; the only network activity is downloading a SAM.gov attachment
-     you click." Drop the telemetry/OCR/tiered-billing claims. This is both
-     accurate AND a *stronger* privacy story, and it removes every
-     infrastructure blocker below. Say the word and the factory makes these
-     edits across all copy locations (it will not rewrite legal copy unilaterally).
-   - **Option B:** actually deploy the server (license/telemetry/OCR) and wire
-     billing — pulls in the infrastructure blockers in item 3.
+What the factory already did (the former hard blockers, now closed):
 
-2. **Positioning decided** (`human/APPROVALS.md` #1): individual-tool vs
-   capture-team framing for the listing. Auto-default is "reposition" after the
-   7-day window, but settling it sharpens the listing.
+- **Scoped ALL user-facing copy to the on-device, free reality** — removed every
+  license / telemetry / OCR-server / paid-tier claim from: `store-listing.md`,
+  `privacy-policy.md`, `help/getting-started.md`, `help/privacy-and-security.md`,
+  `help/faq.md`, `support-macros.md`, `terms-of-service.md`, `site/index.html`,
+  `store-assets/specs.md`, `security-audit.md`, and the **options page** +
+  **side-panel license chip** in the shipped UI.
+- **Deleted the dead server-calling code** so the privacy claim is literally true
+  in the bundle: removed `src/core/telemetry/`, `src/core/licensing/`, and the
+  unshipped `server/`. **Verified** the rebuilt bundle contains no
+  server/license/telemetry strings and only `sam.gov` as a BidDiff origin.
+- Rebuilt + re-verified green and repackaged the zip.
 
-3. **Monetization/infrastructure — only if you pick Option B above.** A real
-   paid extension needs a merchant-of-record (Paddle/Lemon Squeezy), a deployed
-   serverless backend, a domain + DNS, and the production API origin added to
-   `manifest.config.ts` (`legacy-notes/BLOCKERS.md`). **Note:** this is "running
-   a business," which the human has said they want to avoid — so unless a
-   marketplace fully handles billing, **Option A (on-device, no server) is the
-   path that matches the zero-business-ops preference.**
+## ⛔ What still gates submission (human-only — small)
 
-4. **Real URLs before submission:** a hosted **Privacy Policy URL** (publish
-   `docs/privacy-policy.md` — e.g. GitHub Pages / the marketing site) and a real
-   **Support URL** (the listing currently has the `support@biddiff.example`
-   placeholder).
+1. **Positioning** (`human/APPROVALS.md` #1): individual-tool vs capture-team
+   framing for the listing. Auto-defaults after the window; settling it just
+   sharpens the copy. Not a hard blocker.
+2. **Real URLs:** a hosted **Privacy Policy URL** (publish `docs/privacy-policy.md`
+   — e.g. GitHub Pages) and a real **Support URL** (the listing/help still carry
+   `*@biddiff.example` placeholders). These must be real before submission.
 
 ## 👤 Human-only steps at submission time
 
@@ -71,15 +63,9 @@ panel flagged them). They are the real blockers, not the build.
 2. Open <https://chrome.google.com/webstore/devconsole> and **upload**
    `dist-zips/biddiff-v0.1.0.zip`.
 3. Paste the **listing** and **permission justifications** from
-   `docs/store-listing.md` (after the copy decision in gate #1).
-4. Set the **Privacy Policy URL** (gate #4) and **Support URL**.
-5. **Submit for review.** (Then the staged-rollout plan in
-   `docs/release-runbook.md` applies.)
+   `docs/store-listing.md`.
+4. Set the **Privacy Policy URL** and **Support URL** (real addresses).
+5. **Submit for review.**
 
-## Recommended fastest path to live
-
-Pick **Option A** (on-device, free/trial, no server, no billing) → the factory
-scopes all copy to match v1 → you host the privacy policy, create the $5 dev
-account, upload the already-built zip, and submit. That route has **zero**
-infrastructure/business blockers and is the cleanest match to the
-"no business to run" preference.
+There is **no** billing, server, domain, or merchant-of-record work — the product
+is free and on-device, so those blockers no longer exist.

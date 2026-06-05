@@ -19,6 +19,53 @@
 
 ---
 
+## 2026-06-05 — Zero-ops revenue doctrine + correct the Chrome-Web-Store-bills error; BidDiff ships free
+
+**Decision:** (1) Codify the **zero-ops revenue doctrine**: real revenue with no
+human business comes only from **merchant-of-record marketplaces** (the platform
+charges the user and pays out) — **JetBrains Marketplace, Shopify App Store,
+Atlassian Marketplace, Apple App Store / Google Play, Gumroad / Lemon Squeezy /
+Paddle**. Discovery-only channels (**Chrome Web Store, VS Code Marketplace**)
+give audience but **cannot charge users**, so products there ship **free**. (2)
+**Correct a factual error** in `PRODUCT_CONSTRAINTS.md` Filters 2 & 4b that
+listed the Chrome Web Store as a built-in-payments channel and named BidDiff as
+the "host handles billing" example. (3) **BidDiff ships FREE** (on-device,
+Option A copy), with **no tip ask** under the new B2B credibility carve-out; a
+paid BidDiff would require moving to a merchant-of-record marketplace later.
+
+**Alternatives considered:**
+- *Paid BidDiff Chrome extension with own billing (Paddle/Lemon Squeezy + license
+  server + domain).* Rejected: that IS "starting/operating a business," which the
+  human has explicitly refused (`PRODUCT_CONSTRAINTS.md` mandate). Chrome can't
+  bill, so a paid Chrome extension forces self-run billing.
+- *BidDiff free + Venmo tip (the standalone default).* Rejected for BidDiff
+  specifically: a personal Venmo ask inside a federal procurement/capture tool
+  reads as unprofessional to its enterprise/government audience and would undercut
+  adoption — hence the credibility carve-out. (Consumer tools keep the witty ask.)
+- *Leave the copy claiming server/tier features.* Rejected: misrepresentation +
+  Web-Store-review risk, and untrue to v1 (verified: v1's only network call is
+  fetching a user-clicked SAM.gov file; telemetry targets a non-existent
+  `.example` domain and is off by default; no real paid tiers exist).
+
+**Reasoning:** The human asked directly, "what's the best design to bring value
+and revenue" with no marketing/business/ops. The honest answer: separate
+*discovery* from *billing*. Chrome gives BidDiff discovery and real value to a
+genuine audience, so ship it **free** now (zero ops, builds a user base). For
+deliberate revenue, the factory should aim **future** products at merchant-of-
+record marketplaces, where upload-and-collect is literally the whole job. This
+also fixes a latent strategy bug that would have recurred on every Chrome idea.
+
+**Reversibility:** Fully reversible. If the human later wants BidDiff paid, port
+the same on-device engine to a merchant-of-record channel (JetBrains/Shopify/app
+store) or accept running billing; revert the Filter edits from git history.
+
+**Where applied:** `governance/PRODUCT_CONSTRAINTS.md` (Filters 2 & 4b + the test
++ credibility carve-out), `products/biddiff/docs/SUBMISSION_PREP.md`,
+`human/NEED_FROM_HUMAN.md` #6/#7, and the BidDiff user-facing copy scoping
+(Option A, in progress this session).
+
+---
+
 ## 2026-06-01 — Harden never-stop-on-Saturday + keep `main` always current (human directive)
 
 **Decision:** (1) Harden the never-stop-on-Saturday rule to zero permissible

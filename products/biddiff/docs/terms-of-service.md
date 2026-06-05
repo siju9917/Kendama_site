@@ -18,28 +18,15 @@ team.
 
 - You may install and use BidDiff on devices you own or are authorized
   to use.
-- A "seat" is one user. Tier limits are stated in the pricing page.
-- You may not share license keys outside your purchased seat count.
-- You may not reverse-engineer the license-validation mechanism with
-  intent to bypass it.
 - You may use BidDiff only on documents you have lawful access to. The
   Service is not a means to obtain documents you would not otherwise
   have.
 
-## 3. Subscription, billing, and refunds
+## 3. Price
 
-- Three tiers are offered, all self-serve. Pricing is on the pricing
-  page; the current price at checkout is the price you agree to.
-- All payments are processed by our merchant-of-record. The
-  merchant-of-record's terms also apply to that transaction.
-- A 14-day full-feature trial is available. No card required during the
-  trial period unless you choose to start a paid subscription.
-- After purchase: if BidDiff materially fails to work as described
-  within 30 days, contact support for a refund. Refunds beyond 30 days
-  are at our discretion.
-- Failed-payment dunning is handled by the merchant-of-record. Your
-  history remains intact during dunning; access is restricted until the
-  payment issue is resolved.
+BidDiff is provided **free of charge**. There is no account, license key,
+subscription, or paid tier. Because BidDiff runs entirely on your device, there
+is nothing to meter or bill.
 
 ## 4. Privacy
 
@@ -63,16 +50,14 @@ your bid.
 
 ## 7. Limitation of liability
 
-To the maximum extent permitted by law, our aggregate liability for any
-claim arising out of or relating to BidDiff is limited to the amounts
-you paid us in the twelve months preceding the claim.
+To the maximum extent permitted by law, and given that BidDiff is provided free
+of charge, our aggregate liability for any claim arising out of or relating to
+BidDiff is limited to USD $0.
 
 ## 8. Termination
 
-You may uninstall BidDiff and cancel your subscription at any time. We
-may suspend or terminate access for material breach of these Terms,
-including but not limited to license-sharing or attempts to bypass
-license validation.
+You may stop using BidDiff and uninstall it at any time. We may discontinue or
+change the Service for material breach of these Terms.
 
 ## 9. Changes
 

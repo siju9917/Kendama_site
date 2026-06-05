@@ -35,8 +35,13 @@ No more side-by-side page flipping under deadline pressure. No more team-wide "w
 
 ### Privacy by design
 
-- **Documents stay on your device.** No content is uploaded to any server. The only exception is the explicit, opt-in server OCR path for scanned PDFs that need it — and you confirm per document.
-- **No tracking of document content.** Anonymous usage statistics are aggregated counts and error types only, fully opt-out from the settings page.
+- **Everything runs on your device.** Your documents are parsed, compared, and
+  rendered entirely in your browser. **No document content is ever uploaded to
+  any server** — there is no BidDiff server.
+- **The only network activity** is downloading an attachment from SAM.gov when
+  *you* click "Compare with BidDiff" on an opportunity page — the same file your
+  browser would download anyway. Nothing else leaves your machine.
+- **No accounts, no tracking, no telemetry.** BidDiff does not phone home.
 - **Minimum Chrome permissions.** Storage, side panel, offscreen, and the SAM.gov host — nothing else.
 
 ### Designed for federal procurement reality
@@ -45,7 +50,8 @@ Built on the Uniform Contract Format (UCF) — Sections A through M — with a c
 
 ### Pricing
 
-Three self-serve tiers. Annual prepay discount. 14-day full-feature trial. No "contact sales" tier.
+**Free.** Every feature, no account, no trial clock, no upsell. BidDiff runs
+entirely on your device, so there's nothing to meter — install it and use it.
 
 ---
 
@@ -81,7 +87,7 @@ English (initial). Additional locales in roadmap.
 
 | Permission       | Why                                                                                  |
 | ---------------- | ------------------------------------------------------------------------------------ |
-| `storage`        | Save user settings, license key, and history of diffs done.                          |
+| `storage`        | Save user settings and the local history of diffs done — on your device only.        |
 | `sidePanel`      | Open the main BidDiff workspace as a side panel next to SAM.gov.                     |
 | `offscreen`      | Run heavy PDF/DOCX processing in an offscreen document so the UI stays responsive.   |
 | `host_permissions: https://sam.gov/*`, `https://*.sam.gov/*` | Detect SAM.gov opportunity pages (https only) and offer a contextual affordance. |

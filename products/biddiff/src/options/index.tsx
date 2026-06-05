@@ -1,70 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { makeKv } from "../core/storage/index.js";
 
-const SETTINGS_KEY = "biddiff.settings";
-
-interface Settings {
-  licenseKey: string;
-  allowAnonymousTelemetry: boolean;
-}
-
-const DEFAULTS: Settings = {
-  licenseKey: "",
-  allowAnonymousTelemetry: true,
-};
-
 function Options(): React.ReactElement {
   const kv = useMemo(() => makeKv(), []);
-  const [settings, setSettings] = useState<Settings>(DEFAULTS);
   const [status, setStatus] = useState("");
   const [clearing, setClearing] = useState(false);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    kv.get<Settings>(SETTINGS_KEY)
-      .then((s) => setSettings(s ?? DEFAULTS))
-      .catch(() => setSettings(DEFAULTS));
-  }, [kv]);
-  // Flush any pending save on unmount so a fast close doesn't lose input.
-  // We can't await in a cleanup, but kv.set returns a Promise that the
-  // chrome.storage API queues to disk; firing it before clearing the
-  // timer ensures the latest value is persisted.
-  const pendingSettingsRef = useRef<Settings | null>(null);
-  useEffect(() => {
-    return () => {
-      if (saveTimer.current) {
-        clearTimeout(saveTimer.current);
-        saveTimer.current = null;
-        if (pendingSettingsRef.current) {
-          kv.set(SETTINGS_KEY, pendingSettingsRef.current).catch(() => {});
-        }
-      }
-    };
-  }, [kv]);
-
-  /**
-   * Update state synchronously, then persist to chrome.storage after a
-   * short debounce. Typing into the license key field used to fire one
-   * storage write per character.
-   */
-  const save = (next: Settings, debounceMs = 250): void => {
-    setSettings(next);
-    pendingSettingsRef.current = next;
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      saveTimer.current = null;
-      pendingSettingsRef.current = null;
-      void (async () => {
-        try {
-          await kv.set(SETTINGS_KEY, next);
-          setStatus("Saved.");
-        } catch {
-          setStatus("Save failed — check extension storage permission.");
-        }
-        setTimeout(() => setStatus(""), 2500);
-      })();
-    }, debounceMs);
-  };
 
   const clearHistory = async (): Promise<void> => {
     if (clearing) return;
@@ -98,37 +39,9 @@ function Options(): React.ReactElement {
     <div>
       <h1 style={{ fontSize: 18 }}>BidDiff Settings</h1>
       <p style={{ color: "var(--fg-muted)" }}>
-        BidDiff processes documents on your device. None of your document content is sent
-        to any server except the optional server OCR path, which requires per-document consent.
+        BidDiff is free and runs entirely on your device. There are no accounts,
+        license keys, or telemetry — your documents never leave your machine.
       </p>
-
-      <div className="option">
-        <h2>License key</h2>
-        <input
-          type="text"
-          autoComplete="off"
-          spellCheck={false}
-          aria-label="License key"
-          value={settings.licenseKey}
-          onChange={(e) => save({ ...settings, licenseKey: e.target.value })}
-          placeholder="Paste license key (or leave blank for trial)"
-          style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid var(--border-strong)" }}
-        />
-      </div>
-
-      <div className="option">
-        <h2>Anonymous usage statistics</h2>
-        <label>
-          <input
-            type="checkbox"
-            checked={settings.allowAnonymousTelemetry}
-            onChange={(e) =>
-              save({ ...settings, allowAnonymousTelemetry: e.target.checked }, 0)
-            }
-          />{" "}
-          Send anonymous usage statistics (counts and error types only — never document content)
-        </label>
-      </div>
 
       <div className="option">
         <h2>Clear stored diff history</h2>

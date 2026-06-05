@@ -34,7 +34,7 @@ substitutes for it.
 | # | Phase | Critique panel convergence (cycles) | Closed |
 |--:|---|---|---|
 | K1 | First formal full-panel pass against the migrated codebase. Critics 1–14 of `governance/CRITIQUE_AGENTS.md`, in particular: Ambition Critic (#13) on the product's scope vs. ceiling, Research Quality Critic (#14) on the supporting research, Domain-Expert Critic on the federal-procurement specifics. Iterate to convergence; escalate per 5.7.2. | _pending_ | _no_ |
-| K2 | Ship-gate dry run against `governance/QUALITY_BAR.md`. Defend every item with cited evidence. Address findings. | **Dry run ran 2026-05-30** → `docs/ship-gate-dry-run.md`. Engineering bar defended on every axis. **All 3 unblocked hygiene gaps CLOSED** (security-audit re-confirm + `tar` override 11→7; current CHANGELOG; asserted bundle-size budget). Deep-hardening continuation: **455 tests** (from 226), full CI green; every exported core fn (directly or via a tested caller) + all trust/security boundaries + the corpus-audit harness + all user-facing claims now tested/verified; genuine fixes (suppress %/sign, corrupt-payload, markdown-backtick, telemetry PII, page-limit extraction, 2 doc-accuracy claims). | _no — does NOT pass, but the remaining blockers are all EXTERNAL: the human/cap-gated structural P1s (positioning `APPROVALS.md` #1; domain-expert validation + market research; the privacy/support-license copy A/B `NEED_FROM_HUMAN.md` #7) and the browser-gated a11y-contrast P2. The engineering bar itself is met with evidence. The only non-gated item is the non-shipping Vite/Vitest toolchain bump (maintenance). |
+| K2 | Ship-gate dry run against `governance/QUALITY_BAR.md`. Defend every item with cited evidence. Address findings. | **Dry run ran 2026-05-30** → `docs/ship-gate-dry-run.md`. Engineering bar defended on every axis. **All 3 unblocked hygiene gaps CLOSED** (security-audit re-confirm + `tar` override 11→7; current CHANGELOG; asserted bundle-size budget). Deep-hardening continuation: **455 tests** (from 226), full CI green; every exported core fn (directly or via a tested caller) + all trust/security boundaries + the corpus-audit harness + all user-facing claims now tested/verified; genuine fixes (suppress %/sign, corrupt-payload, markdown-backtick, telemetry PII, page-limit extraction, 2 doc-accuracy claims). | _no — does NOT pass, but the remaining blockers are all EXTERNAL: the human/cap-gated structural P1s (positioning `APPROVALS.md` #1 — now optional; domain-expert validation + market research) and the browser-gated a11y-contrast P2. (The privacy-copy P1, `NEED #7`, was RESOLVED 2026-06-05 — free/on-device, copy scoped, dead server code deleted.) The engineering bar itself is met with evidence. The only non-gated item is the non-shipping Vite/Vitest toolchain bump (maintenance). |
 | K3 | Chrome Web Store submission package — staged for the human submission step (one of the `human/NEED_FROM_HUMAN.md` items, added when K2 closes). | _pending_ | _no_ |
 
 ---
@@ -231,32 +231,27 @@ the gates that must clear, and in what order, BEFORE that package+submit step is
 safe to run — so the cap/human-unblocked session (or the human) ships without
 re-deriving it. F = factory can do autonomously; H = human-gated.
 
-1. **[H] Decide positioning** (`APPROVALS.md` #1; auto-proceeds to "reposition"
-   on 2026-06-03). Gates the listing copy's framing (individual vs team tool).
-2. **[H] Resolve the server-claim copy** (`NEED_FROM_HUMAN.md` #7 — option A
-   on-device-only recommended). Until this is decided, the privacy policy /
-   store listing / **options page** / help / support copy overstate
-   license/telemetry/OCR server flows v1 does not perform — a Web-Store-review +
-   misrepresentation risk. **Hard blocker for submission.**
-3. **[F] Apply the copy decision** across all surfaces once #2 is decided
-   (`NEED #7` lists the exact files incl. `src/options/index.tsx`,
-   `docs/privacy-policy.md`, `docs/store-listing.md`, help docs,
-   `docs/support-macros.md`). The `docs-match-code` + `no-advisory-language`
-   tests then re-confirm accuracy.
-4. **[F] (optional) Wire the redline DOCX export button** after the human
+0. **✅ DONE (2026-06-05) — monetization decided + server-claim copy resolved.**
+   BidDiff ships **free + fully on-device** (`brain/DECISIONS.md`). All copy was
+   scoped to that reality and the dead license/telemetry/OCR/`server/` code was
+   deleted; the rebuilt bundle is verified to have no server/license/telemetry
+   strings. The former **hard blocker** (server-claim copy, `NEED #7`) is closed.
+1. **[H] (optional) Decide positioning** (`APPROVALS.md` #1). Sharpens the
+   listing copy's framing (individual vs team tool). No longer a hard blocker.
+2. **[F] (optional) Wire the redline DOCX export button** after the human
    one-time Word-render check (`NEED #9`) — additive, not a submission blocker.
-5. **[F] Publish the privacy policy** at a public URL (the listing needs the
-   URL) — depends on the human's hosting/domain (a `NEED` item if not yet set).
-6. **[F] Run `scripts/package.sh`** → produces the gate-verified zip. (Bump
-   `manifest.config.ts` version if re-submitting.)
-7. **[H] Submit**: upload the zip to the Web Store dev console, paste the
-   listing + permission justifications from `docs/store-listing.md`, set the
-   privacy-policy URL, submit for review (`NEED_FROM_HUMAN.md` #6).
+3. **[H] Publish the privacy policy** at a public URL + set a real support URL
+   (the listing needs them) — small human hosting step (`NEED #6`).
+4. **[F] Run `scripts/package.sh`** → produces the gate-verified zip. (Bump
+   `manifest.config.ts` version if re-submitting.) Already produced:
+   `dist-zips/biddiff-v0.1.0.zip`.
+5. **[H] Submit**: $5 dev account, upload the zip, paste the listing + permission
+   justifications from `docs/store-listing.md`, set the privacy/support URLs,
+   submit for review (`NEED_FROM_HUMAN.md` #6).
 
-**Critical path = 1 → 2 → 3 → 5 → 6 → 7.** Steps 1, 2, 5, 7 are human-gated;
-everything else the factory does. The single hardest blocker is #2 (the copy
-must match what v1 actually does before a reviewer sees it). Nothing here needs
-the spend cap.
+**Critical path = 3 → 4 → 5.** Steps 3 and 5 are human-gated; everything else the
+factory has done. There is no billing/server/domain work — the product is free
+and on-device. Nothing here needs the spend cap.
 
 ## "Nothing is ever done" review (5.7.4) — 2026-05-30
 

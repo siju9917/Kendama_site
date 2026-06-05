@@ -75,24 +75,6 @@ export interface IStorage {
   pruneToLimit(maxBytes: number): Promise<void>;
 }
 
-export type LicenseTier = "trial" | "solo" | "team" | "enterprise";
-export type LicenseStatus = "active" | "expired" | "lapsed" | "invalid" | "grace";
-
-export interface LicenseState {
-  tier: LicenseTier;
-  status: LicenseStatus;
-  /** null for non-trial states. */
-  trialDaysLeft: number | null;
-  /** Seconds remaining in offline grace period; null if not in grace. */
-  gracePeriodSecondsLeft: number | null;
-  /** ISO-8601 last successful server validation. */
-  lastValidatedAt: string | null;
-}
-
-export interface ILicenseClient {
-  validate(): Promise<LicenseState>;
-}
-
 /** Errors thrown by extraction. UI surfaces `userMessage` directly. */
 export class ExtractionError extends Error {
   readonly code:

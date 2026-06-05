@@ -25,7 +25,8 @@
 2. Side panel with a **critical change card** — clause add, with the
    plain-language note visible.
 3. Side panel with a **MODIFY** card — token-level diff, words highlighted.
-4. Settings page — license key, telemetry toggle, clear history.
+4. Settings page — "free, on-device, no accounts" note, with clear-history,
+   restore-disclaimer, and reset-onboarding controls.
 5. The exported **PDF report** — header, summary, critical section.
 
 ## Demo video script (60 sec)

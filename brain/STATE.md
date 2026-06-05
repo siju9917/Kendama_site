@@ -58,9 +58,10 @@
 > covered behavior, redundant tests, re-verification, busywork — what the late
 > 2026-05-30 stretch drifted into). **When stuck in either sense, pivot to
 > starting the next product** rather than spinning on the blocked one.
-> Right now BidDiff is BLOCKED (positioning + privacy-copy decisions + the
-> store step are the human's; domain validation is reframed to factory
-> self-research), so the **next session's primary job is to START PRODUCT #2** —
+> Right now BidDiff's monetization is DECIDED (free + on-device, 2026-06-05) and
+> the privacy-copy P1 is RESOLVED; only the human store-submission steps + a
+> hosted privacy/support URL remain, plus optional positioning. So the **next
+> session's primary job is to START PRODUCT #2** —
 > ideate, apply the three HARD filters in `governance/PRODUCT_CONSTRAINTS.md`
 > (zero-opex, zero-touch, zero-labor), rank the passers (`SCORING_MODEL.md`),
 > build the top one to the same exhaustive standard. Spend cap is RESOLVED
@@ -80,28 +81,32 @@
 ## Active product
 
 - **Active build:** BidDiff (`products/biddiff/`)
-- **Phase:** Kendama Phase K1, still open. **74 bug-hunt passes** to date
-  (the original 7 + polish + a full-codebase sweep + a fuzz pass, then the
-  2026-05-31 continuation passes 60–74) + 2 verified-negative batches;
-  details in `products/biddiff/CRITIQUE_LOG.md`. NOT
-  converged — now **FOUR P1s** open: the three original (Research
-  Quality, Domain-Expert, Ambition) **plus a new Compliance P1**
-  (bug-hunt pass 7): the privacy policy's entire "sends to its servers"
-  section describes **three** server flows (license validation,
-  telemetry, OCR) — and the v1 client performs **none** of them
-  (LocalLicenseClient is local-only; TelemetryClient is never called;
-  handleOcr is a stub). v1 is effectively **fully on-device** (the only
-  network call is the user-clicked SAM attachment download). A privacy
-  policy that overstates server interactions is a Web-Store-review +
-  misrepresentation risk. Decision routed to `human/NEED_FROM_HUMAN.md`
-  item 7 (recommended: scope copy to on-device-only — more accurate AND
-  a stronger privacy claim). All four P1s are human/cap-gated.
+- **MONETIZATION DECIDED (2026-06-05): FREE + fully on-device** (`brain/
+  DECISIONS.md`). The human asked the factory to choose the best
+  value+revenue design with zero business ops. Key correction: the **Chrome
+  Web Store removed developer payments in 2020** — it gives discovery, not
+  billing — so a paid extension would force a self-run billing business the
+  human refuses. BidDiff ships **free** (real value, zero ops); real revenue
+  is a doctrine for FUTURE products on merchant-of-record marketplaces
+  (JetBrains/Shopify/Atlassian/app stores). Governance corrected:
+  `PRODUCT_CONSTRAINTS.md` Filters 2 & 4b.
+- **Compliance P1 (privacy-copy mismatch) — RESOLVED this session.** Executed
+  Option A: scoped ALL user-facing copy (store listing, privacy policy, help,
+  FAQ, support macros, ToS, marketing site, store-asset specs, options page,
+  side-panel license chip) to the on-device free reality, and **deleted the
+  dead server-calling code** (`src/core/telemetry/`, `src/core/licensing/`,
+  `server/`). The shipped bundle is **verified** to contain no
+  server/license/telemetry strings (only sam.gov as a BidDiff origin), so
+  "there is no BidDiff server" is now literally true.
+- **Phase:** Kendama Phase K1. Remaining open P1s: Research Quality,
+  Domain-Expert, Ambition (market/positioning research — cap-gated). The
+  positioning call (`APPROVALS.md` #1) is now optional polish, not a blocker.
   (Positive: the FAR/DFARS clause dataset's well-known titles were
   spot-checked accurate + current.)
-- **Build green:** **455/455 tests** (was 226 at session start; 285 by the
-  Saturday close; +50 across the evening continuation passes 8-25), lint + typecheck
+- **Build green:** **430/430 tests** (was 455 before removing the
+  license-chip + dead telemetry/licensing/server tests), lint + typecheck
   clean; full CI gate (typecheck+lint+test+build+bundle-budget) verified
-  green end-to-end.
+  green end-to-end; `dist-zips/biddiff-v0.1.0.zip` repackaged.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`
   red-teams every stop against the real clock IN THE HUMAN'S TIMEZONE

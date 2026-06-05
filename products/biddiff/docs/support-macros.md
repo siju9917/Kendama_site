@@ -18,10 +18,11 @@ match the user's specifics; the macros are starting points, not scripts.
 
 > Sorry you hit this. Two common causes:
 >
-> 1. The PDF is scanned (image-only). BidDiff needs the text layer to
->    read it. If you're OK with sending that one document to our OCR
->    endpoint, click the per-document opt-in button and BidDiff will
->    recover the text.
+> 1. The PDF is scanned (image-only). BidDiff reads the text layer and
+>    runs fully on your device, so it can't OCR an image-only PDF. Run the
+>    file through your own OCR first — in Word or Acrobat, use
+>    "make searchable" / export to text — then drop in the resulting
+>    text-layer PDF or .docx.
 > 2. The PDF is password-protected. BidDiff doesn't open encrypted
 >    PDFs — save an unprotected copy and try again.
 >
@@ -40,31 +41,11 @@ match the user's specifics; the macros are starting points, not scripts.
 > We add every reported miss to our regression suite so it can't
 > reappear in a later release.
 
-## #license-not-activating
+## #pricing
 
-> Two things to check:
->
-> 1. The license key is pasted into **Settings → License key** exactly
->    as we sent it (no extra spaces).
-> 2. You're online for the first activation. After that, BidDiff
->    operates offline for up to 7 days; a periodic check happens when
->    you're back online.
->
-> If both look right and it still won't activate, send the first 6
-> characters of the key and we'll cross-check it on our side.
-
-## #billing
-
-> Billing is handled by our merchant-of-record. You can manage your
-> subscription directly through the customer portal — click the link
-> in **Settings → Billing portal**. From there you can update payment
-> method, change tier, or cancel.
-
-## #cancel
-
-> You can cancel from the customer portal at any time. Cancellation
-> takes effect at the end of your current billing period; you keep
-> access until then.
+> BidDiff is free — there's no account, license key, trial, or paid tier.
+> Install it from the Chrome Web Store and every feature is available.
+> Because it runs entirely on your device, there's nothing to meter or bill.
 
 ## #feature-request
 
@@ -75,11 +56,9 @@ match the user's specifics; the macros are starting points, not scripts.
 
 ## #privacy
 
-> Documents stay on your device. The only times anything leaves are:
->
-> - License-key validation (no document content).
-> - Anonymous usage statistics — opt out from Settings.
-> - The per-document opt-in OCR path, where YOU click the consent
->   button for a specific scanned PDF.
+> Your documents stay on your device — BidDiff parses and compares them in
+> your browser, and there is no BidDiff server. The only network activity is
+> downloading an attachment from SAM.gov when you click "Compare with
+> BidDiff" on an opportunity page. No telemetry, no accounts, no tracking.
 >
 > Full policy: <link to privacy policy>

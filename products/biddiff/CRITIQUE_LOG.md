@@ -1051,9 +1051,20 @@ does NOT converge.
   listing, and in-app copy is implemented AND wired end-to-end — not
   stubbed or planned. A described-but-absent data flow is a disclosure
   defect."
+- **✅ RESOLVED 2026-06-05 (Option b, on the human's delegated OK).** The
+  human chose the on-device, free design. All user-facing copy was scoped to
+  v1 reality (privacy policy, store listing, options page, side-panel license
+  chip, help, FAQ, support macros, ToS, marketing site, store-asset specs,
+  security audit). The dead server-calling code was **deleted** —
+  `src/core/telemetry/`, `src/core/licensing/`, and the unshipped `server/` —
+  and the rebuilt bundle was **verified** to contain no server/license/
+  telemetry strings (only sam.gov as a BidDiff origin). The disclosure now
+  matches the artifact exactly: "there is no BidDiff server." Full gate green
+  (430/430). See `brain/DECISIONS.md` 2026-06-05 and `docs/SUBMISSION_PREP.md`.
 
-**Remaining open on K1:** the three pass-1 P1s + this Compliance P1 + the
-two P2s. Phase K1 does NOT converge.
+**Remaining open on K1:** the three pass-1 P1s (Research Quality, Domain-Expert,
+Ambition — market/positioning research, cap-gated) + the two P2s. **The
+Compliance P1 is now closed.**
 
 ---
 

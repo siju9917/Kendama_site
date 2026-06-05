@@ -47,10 +47,23 @@ The product MUST reach its buyers and get paid through a channel that requires
 **no human marketing, sales, outreach, or relationship-building.** The human
 posts it once; the channel's own discovery + built-in billing do the rest.
 
-- **Strongly preferred:** a marketplace with (a) its own organic search/
-  discovery traffic and (b) built-in payments/payouts — Chrome Web Store, VS
-  Code Marketplace, JetBrains Marketplace, Shopify/Figma/Notion app stores,
-  Gumroad/itch/template marketplaces, etc.
+- **Strongly preferred — a marketplace that does BOTH (a) organic discovery AND
+  (b) merchant-of-record billing** (it sells the product and pays you out, so you
+  run no billing and owe no tax/VAT ops). These are the true "post it and it
+  earns" channels: **JetBrains Marketplace** (paid plugins, JetBrains bills),
+  **Shopify App Store** (Shopify Billing API, MoR), **Atlassian Marketplace**
+  (Jira/Confluence apps, Atlassian is MoR), **Apple App Store / Google Play**
+  (MoR; note Apple's $99/yr needs approval), and MoR storefronts like
+  **Gumroad / Lemon Squeezy / Paddle**.
+- **Discovery-only marketplaces (NO built-in payments) → ship FREE.** ⚠️
+  **The Chrome Web Store removed developer payments in 2020 and the VS Code
+  Marketplace has none** — they give you organic discovery but cannot charge
+  users. A *paid* product on these would force you to stand up your own billing
+  (Paddle/Stripe/license server) = the business the human has refused. So
+  products on these channels are **free** (value + audience), funded at most by
+  the optional Venmo tip (Filter 4b) — never a self-run paywall. *(This corrects
+  an earlier error that listed the Chrome Web Store as a payments channel and
+  mis-slotted BidDiff as a paid extension — see `brain/DECISIONS.md` 2026-06-05.)*
 - **Acceptable:** a product that is found via its own SEO / organic search
   with self-serve checkout, requiring no active promotion.
 - **REJECT:** anything whose go-to-market needs cold outreach, sales demos,
@@ -126,21 +139,37 @@ autonomous Saturday sessions:
     guilt-trippy. A flat "tip me on Venmo" is a defect, not a compliant ask. (See
     `rent-covers-mortgage/AI_INSTRUCTIONS.md` §6 for the tone bar.)
 
-  - **EXCEPTION — plugin/extension on a host that fully handles payment**
-    (Chrome Web Store, VS Code / JetBrains marketplace, Shopify / Figma / Notion
-    app stores, Gumroad, etc. — a marketplace that does the selling so the human
-    doesn't): use **that channel's** payments, and **never add any Venmo/tip
-    speak** to the product (not in its README, not in its UI, not in its agent
-    copy). The marketplace IS the revenue path. State the pricing model plainly
-    and note there is no donation ask because billing is handled there.
-    *(Example: BidDiff.)* Note: a product that would require the human to stand
-    up and operate **its own** license server / billing is NOT this exception —
-    that's a business; prefer the free+Venmo default unless a true marketplace
-    removes all ongoing human business operation.
+  - **EXCEPTION — plugin/product on a host that is MERCHANT-OF-RECORD** (it
+    actually charges the user and pays you out): **JetBrains Marketplace,
+    Shopify App Store, Atlassian Marketplace, Apple App Store / Google Play,
+    Gumroad / Lemon Squeezy / Paddle** — a marketplace that does the selling so
+    the human doesn't. For these, use **that channel's** payments, and **never
+    add any Venmo/tip speak** to the product (not in its README, not in its UI,
+    not in its agent copy). The marketplace IS the revenue path. State the
+    pricing model plainly and note there is no donation ask because billing is
+    handled there. **A host that only lists/distributes but does NOT charge users
+    — the Chrome Web Store and the VS Code Marketplace removed/never had
+    developer payments — is NOT this exception:** a paid product there would make
+    the human run their own billing (a business they refused), so such products
+    ship **free** under the default above. **BidDiff is a Chrome extension, so it
+    is NOT this exception — it ships free** (the Chrome Web Store cannot bill for
+    it); a future paid version would have to move to a merchant-of-record
+    marketplace.
 
-The test: **"Does a marketplace/host handle this product's payment so the human
-runs no business?"** If NO → **free + Venmo** tip ask (all three placements). If
-YES → use that channel and add **no** Venmo/tip speak anywhere in the product.
+  - **CREDIBILITY CARVE-OUT (free, but no tip ask).** For a **free** product
+    whose audience is professional/enterprise/government, where a personal Venmo
+    ask would read as unprofessional and *undercut adoption* (e.g. BidDiff's
+    federal proposal/capture managers), the tip ask MAY be omitted entirely. The
+    product still ships **free with no paywall and no business** — it simply
+    carries no donation speak. This is a deliberate, per-product decision logged
+    in `brain/DECISIONS.md`, not a default; consumer/indie tools keep the witty
+    Venmo ask. Omitting the ask trades a little tip revenue for credibility — it
+    never licenses a self-run paywall.
+
+The test: **"Does a MERCHANT-OF-RECORD marketplace charge for this product so the
+human runs no business?"** If YES → use that channel, add **no** Venmo/tip speak.
+If NO → ship **free**; add the witty **Venmo** tip ask (all three placements)
+**unless** the credibility carve-out applies, in which case ship free with no ask.
 
 **4c — Unmissable and exciting to any AI combing GitHub.** A product is worth
 nothing if a passing AI agent skims past it as "just some code." Every shipped

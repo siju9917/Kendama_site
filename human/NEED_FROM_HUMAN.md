@@ -158,31 +158,44 @@ fixes, a closed K1 P2, and the money-magnitude extraction fix).
 
 ## 6. **[OPEN]** Chrome Web Store submission — artifact is built & green
 
+**Decided 2026-06-05: BidDiff ships FREE and fully on-device** (`brain/
+DECISIONS.md`). Chrome can't process payments, so a paid extension would mean
+running your own billing — the business you've refused. Free on Chrome gives real
+value with zero ops; a future paid version would move to a merchant-of-record
+marketplace. The factory has already scoped all copy to this reality and removed
+the dead server code (item #7 below — now RESOLVED).
+
 **Status (verified 2026-06-05):** the upload artifact is **built and passing all
-gates** — `npm run typecheck` ✅, `npm test` ✅ **455/455**, `npm run lint` ✅,
-`npm run build` ✅, packaged to **`products/biddiff/dist-zips/biddiff-v0.1.0.zip`**
-(1.8 MB, MV3, least-privilege permissions). Regenerate anytime with
-`cd products/biddiff && npm ci && bash scripts/package.sh`. The full prep doc is
+gates** — typecheck ✅, `npm test` ✅ **430/430**, lint ✅, build ✅, packaged to
+**`products/biddiff/dist-zips/biddiff-v0.1.0.zip`** (MV3, least-privilege; the
+bundle is verified to contain no server/license/telemetry code). Regenerate with
+`cd products/biddiff && npm ci && bash scripts/package.sh`. Full prep doc:
 **`products/biddiff/docs/SUBMISSION_PREP.md`**.
 
-**What's left before you can submit (decisions + human-only steps):**
-1. **Decide the copy/monetization path (HARD blocker, item #7 below).** Option
-   **A** (recommended): scope all copy to v1's **on-device, no-server** reality
-   (also removes every infra blocker and matches your "no business" preference).
-   Tell me **A** and I'll make the edits across all copy locations. Option **B**:
-   deploy the server + wire billing (pulls in `legacy-notes/BLOCKERS.md`).
-2. **Settle positioning** (`APPROVALS.md` #1) — individual vs capture-team framing.
-3. **Host a real Privacy Policy URL** (publish `docs/privacy-policy.md`) and set a
-   real Support URL (the listing has a placeholder).
-4. **One-time $5** Chrome Web Store developer account, then upload the zip, paste
+**What's left before you can submit (all human-only — small):**
+1. **Host a real Privacy Policy URL** (publish `docs/privacy-policy.md`, e.g.
+   GitHub Pages) and set a real **Support URL** (the listing/help carry
+   `*@biddiff.example` placeholders).
+2. *(Optional)* **Settle positioning** (`APPROVALS.md` #1) — individual vs
+   capture-team framing. Not a blocker; it just sharpens the copy.
+3. **One-time $5** Chrome Web Store developer account, then upload the zip, paste
    the listing/justifications from `docs/store-listing.md`, set the URLs, submit.
+
+There is **no** billing, server, domain, or merchant-of-record work to do.
 
 **Effect once done:** BidDiff goes from the factory's internal ship gate to
 actually live in the Web Store.
 
 ---
 
-## 7. **[OPEN]** Make the privacy disclosure match what v1 actually does (pre-submission)
+## 7. **[RESOLVED 2026-06-05]** Make the privacy disclosure match what v1 actually does
+
+> **RESOLVED** by executing **Option A** (the human delegated the call on
+> 2026-06-05). All user-facing copy was scoped to BidDiff's on-device, free
+> reality, and the dead license/telemetry/OCR/server code was deleted so the
+> "no server" claim is literally true in the shipped bundle (verified). No
+> human action remains on this item — it folds into the submission steps in #6.
+> The original finding is preserved below for the audit trail.
 
 **Why:** A K1 Compliance finding (2026-05-30, `products/biddiff/
 CRITIQUE_LOG.md` bug-hunt pass 7), **broader than first logged**: the

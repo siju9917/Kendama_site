@@ -123,10 +123,10 @@ export async function extractPdfTextItems(
   // Heuristic: if more than half the pages had no text content, treat as scanned.
   const appearsScanned = doc.numPages > 0 && nonEmptyPages / doc.numPages < 0.5;
   if (appearsScanned) {
-    // Reports, does not advise. The user decides whether to use the
-    // opt-in OCR path.
+    // Reports, does not advise. BidDiff runs on-device and does no OCR
+    // itself; the user can OCR the file (e.g. in Word/Acrobat) and re-import.
     warnings.push(
-      "This PDF appears to be a scanned image. Text extraction may be incomplete; OCR is required to read it.",
+      "This PDF appears to be a scanned image with no text layer. Text extraction may be incomplete — run it through OCR (e.g. Word or Acrobat) and re-import to compare it.",
     );
   }
 

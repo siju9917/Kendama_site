@@ -8,14 +8,11 @@
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { DISCLAIMER_TEXT } from "../shared/disclaimer.js";
-import { LocalLicenseClient } from "../core/licensing/client.js";
-import type { LicenseState } from "../core/interfaces.js";
 import { makeKv } from "../core/storage/index.js";
 import { openOptionsPage } from "../shared/chrome-rt.js";
 import { DiffView } from "./DiffView.js";
 import { FilePickerWithSam } from "./FilePickerWithSam.js";
 import { History } from "./History.js";
-import { LicenseChip } from "./LicenseChip.js";
 import { Onboarding } from "./Onboarding.js";
 import { ProgressView } from "./ProgressView.js";
 import { useDiffPipeline } from "./useDiffPipeline.js";
@@ -24,7 +21,6 @@ const DISCLAIMER_DISMISSED_KEY = "biddiff.disclaimer.dismissed";
 
 export function App(): React.ReactElement {
   const { state, storage, run, openSaved, reset, openSample } = useDiffPipeline();
-  const [license, setLicense] = useState<LicenseState | null>(null);
   // null = haven't read storage yet, don't render to avoid a flicker
   // where the disclaimer flashes on every panel open for users who
   // previously dismissed it.
@@ -32,17 +28,11 @@ export function App(): React.ReactElement {
   const kv = useMemo(() => makeKv(), []);
 
   useEffect(() => {
-    const revalidateLicense = (): void => {
-      new LocalLicenseClient().validate().then(setLicense).catch(() => setLicense(null));
-    };
-    revalidateLicense();
     kv.get<boolean>(DISCLAIMER_DISMISSED_KEY)
       .then((v) => setDisclaimerShown(!v))
       .catch(() => setDisclaimerShown(true));
-    // Cross-window sync: pick up disclaimer changes and re-validate
-    // the license if its stored state moves under us (e.g. trial
-    // grace ended in another tab, or the user pasted a key on the
-    // Options page).
+    // Cross-window sync: pick up disclaimer changes if its stored state
+    // moves under us (e.g. dismissed/restored in another tab).
     if (typeof chrome === "undefined" || !chrome.storage?.onChanged?.addListener) {
       return;
     }
@@ -53,7 +43,6 @@ export function App(): React.ReactElement {
       if (area !== "local") return;
       const c = changes[DISCLAIMER_DISMISSED_KEY];
       if (c) setDisclaimerShown(!c.newValue);
-      if ("biddiff.license.state" in changes) revalidateLicense();
     };
     chrome.storage.onChanged.addListener(listener);
     return () => chrome.storage.onChanged.removeListener(listener);
@@ -74,7 +63,6 @@ export function App(): React.ReactElement {
       <header className="app__header">
         <h1 className="app__title">BidDiff</h1>
         <span className="app__subtitle">Federal solicitation amendment diff</span>
-        <LicenseChip license={license} />
         {state.phase !== "EMPTY" && (
           <button className="ghost" onClick={reset} style={{ marginLeft: "auto" }}>
             Start over
@@ -145,7 +133,7 @@ export function App(): React.ReactElement {
         <button
           className="footer__link"
           onClick={openOptionsPage}
-          title="Open BidDiff settings (license, telemetry, clear history)"
+          title="Open BidDiff settings (clear history, disclaimer, onboarding)"
         >
           Settings
         </button>

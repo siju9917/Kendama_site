@@ -66,6 +66,7 @@ buttons.
 
 ## Privacy
 
-Your documents do not leave your device. The only exception is the
-opt-in server OCR path, which you confirm per-document if a scanned PDF
-needs OCR.
+Your documents never leave your device — BidDiff parses and compares them
+entirely in your browser, and there is no BidDiff server. The only network
+activity is downloading an attachment from SAM.gov when you click **Compare with
+BidDiff** on an opportunity page. See the full [privacy policy](../privacy-policy.md).

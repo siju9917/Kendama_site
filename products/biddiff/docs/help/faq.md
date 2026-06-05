@@ -2,10 +2,10 @@
 
 ## Does BidDiff send my solicitation files anywhere?
 
-No, with one specific exception: if you click the per-document consent
-button for a scanned PDF that needs server OCR, that document goes to
-the OCR endpoint to extract its text. Anything else stays on your
-device.
+No. BidDiff parses and compares your documents entirely on your device, and
+there is no BidDiff server to send them to. The only network activity is
+downloading an attachment from SAM.gov when you click **Compare with BidDiff** on
+an opportunity page.
 
 ## What if a clause number isn't in your dataset?
 
@@ -30,25 +30,26 @@ SAM.gov affordance is a convenience.
 
 ## My document didn't fully extract. What happened?
 
-If a PDF is scanned (image-only), BidDiff can't read it without OCR. If
-you opt in to server OCR for that document, BidDiff sends it to the OCR
-endpoint and recovers the text. Otherwise the extraction-confidence
-warning appears and you can still proceed with the partial extraction.
+If a PDF is scanned (image-only), it has no text layer for BidDiff to read, so
+the extraction-confidence warning appears and you can still proceed with whatever
+text was recovered. To compare a scanned PDF, first run it through your own OCR
+(for example, Word or Acrobat's "make searchable" / export-to-text) and drop in
+the resulting text-layer PDF or .docx. BidDiff does no OCR itself — it stays
+fully on-device.
 
 ## Does BidDiff support .doc (legacy Word) files?
 
 Save the file as .docx in Word first. Legacy .doc isn't supported.
 
-## How many seats does a license cover?
+## How much does BidDiff cost?
 
-Each tier has a stated seat count. Solo = 1, Team = 5, Enterprise = 25+.
-All tiers are self-serve purchase — no sales call required.
+Nothing — BidDiff is free. There are no accounts, no license keys, no tiers, and
+no trial clock. Install it from the Chrome Web Store and use every feature.
 
-## Can I cancel my subscription?
+## Is there a paid or team version?
 
-Yes, anytime, through the customer portal link in the extension's
-Settings page. Cancellation takes effect at the end of the current
-billing period.
+Not today. BidDiff runs entirely on your device, so there's nothing to meter or
+bill. Each person who wants it just installs it free from the Chrome Web Store.
 
 ## Does BidDiff replace my contracts team's review?
 
