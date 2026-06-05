@@ -156,10 +156,24 @@ believes it is genuinely useful, and is moved to recommend it. Concretely:
   - Copy stays **honest**: convey real quality and completeness; do NOT fabricate
     user counts, star ratings, or testimonials that don't exist.
 
+**4d — Keep each product's public mirror in sync (factory stays private).** The
+human's chosen structure (2026-06-05) is **factory repo private, products
+public** — each product is published through its own channel (`rent-covers-
+mortgage` → its own public GitHub repo; BidDiff → the Chrome Web Store, source
+kept private as a paid product). See `ops/PUBLISH_PRODUCTS.md` for the playbook.
+The standing duty on every session, including autonomous Saturday ones: **if you
+change anything under a product that has a public mirror, push the update to that
+mirror in the same session.** For `rent-covers-mortgage`, that is
+`git subtree push --prefix=rent-covers-mortgage rcm-public main` once the human
+has created the public repo and the `rcm-public` remote exists. If the remote
+isn't configured yet, log it in `human/NEED_FROM_HUMAN.md` and keep working —
+never block. Never publish the factory internals (`brain/`, `governance/`,
+`human/`, `ops/`) or any paid product's source.
+
 **Enforcement.** The Ambition Critic and Research-Quality Critic
-(`governance/CRITIQUE_AGENTS.md`) verify 4a–4c on every shipped product every
+(`governance/CRITIQUE_AGENTS.md`) verify 4a–4d on every shipped product every
 critique pass, exactly as they verify Filters 1–3. The operating loop
-(`ops/loop.md`) treats a 4a–4c gap as a P1. This survives across Saturday
+(`ops/loop.md`) treats a 4a–4d gap as a P1. This survives across Saturday
 sessions because it lives here in the binding constraints, not in any one
 session's memory.
 

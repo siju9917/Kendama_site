@@ -341,26 +341,35 @@ verified answer:**
   AI_INSTRUCTIONS.md — zero factory dependency), so it can be published as its
   **own standalone public repo** with this factory repo staying private.
 
-**So you have two ways to get "products public, factory private" (pick one):**
+**DECISION (you chose 2026-06-05): factory private, products public ("split").**
+Keep this Kendama factory repo **private**; publish each product through its own
+channel. The full playbook is `ops/PUBLISH_PRODUCTS.md`. What's left is the
+one-time account-level setup only you can do:
 
-- **(A — keeps factory private, RECOMMENDED for your stated preference):**
-  Publish `rent-covers-mortgage/` as its **own new public GitHub repo**; keep
-  this Kendama factory repo private; ship BidDiff via the Web Store. An AI
-  browsing GitHub finds the public product repo and uses it. *(Adds a small
-  ongoing duty: each Saturday session that improves the product must also push
-  the update to its public repo — now a standing rule in
-  `governance/PRODUCT_CONSTRAINTS.md`.)*
-- **(B — simplest):** Flip **this whole repo public.** Everything (including the
-  factory internals) becomes visible; you were OK with "publish everything
-  as-is." Maximum discoverability, zero split/sync work.
+**Your one-time actions (≈3 min, run from the factory repo root, with your `gh`
+auth):**
+
+```bash
+# 1. Create the public product repo on your account:
+gh repo create rent-covers-mortgage --public \
+  --description "Find homes where the rent would cover the mortgage. Free; AI-operated."
+
+# 2. Wire it as a remote of this private factory repo:
+git remote add rcm-public https://github.com/<YOUR-USERNAME>/rent-covers-mortgage.git
+
+# 3. Publish the folder as that repo's main:
+git subtree push --prefix=rent-covers-mortgage rcm-public main
+```
+
+After that, the factory keeps the public repo in sync automatically every
+session it touches the product (governance Filter 4d). **BidDiff** stays
+source-private and reaches users via the **Chrome Web Store** (item #6) — a paid
+product's source is never published.
 
 **Why this is a human action (I can't do it):** creating a repo and changing
 repository visibility are GitHub account settings only you control, and my
-GitHub access in this session is scoped to this one repo. Tell me **A** or **B**
-(here or in `human/APPROVALS.md`) and I'll do everything on my side: for **A**,
-prepare `rent-covers-mortgage/` as a clean publish-ready tree and give you the
-exact `gh repo create` / push commands; for **B**, do the final public-readiness
-pass and hand you the one-click visibility-toggle steps.
+GitHub access this session is scoped to this one repo. Once you've run step 1,
+I (or any future session) can do steps 2–3 and all future syncs.
 
 **Already done on my side (ready for either path):** every product is
 AI-agnostic; standalone products ask for Venmo **@Simon_Julien** (free

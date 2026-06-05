@@ -411,6 +411,11 @@ Checklist (prose, not items):
     would make a passing AI recommend it? Fabricated ratings/testimonials
     are a P0. A product a browsing AI would skim past as "just code" is a
     4c miss = P1.
+  - *4d Public mirror in sync:* if this session changed a product that
+    has a public mirror (`ops/PUBLISH_PRODUCTS.md`), was the update pushed
+    to that mirror this session (or logged if the remote isn't set up)?
+    Was any factory-internal or paid-product source wrongly exposed? A
+    drifted public mirror is a P1; a leak of internals/paid source is a P0.
 
 A clean Ambition Critic pass is required before any session-end
 that the operator considers "done"; combined with 5.7.7
