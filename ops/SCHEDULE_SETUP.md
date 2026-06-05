@@ -9,6 +9,15 @@
 This setup is one of the items in `human/NEED_FROM_HUMAN.md`. It
 takes about five minutes.
 
+> **Note on agent-neutrality:** the factory's operating logic is
+> agent-neutral — any capable AI coding agent (or a human) can run
+> the loop. *Scheduling*, however, relies on one supported runner:
+> the Claude Code Routine (the scheduled trigger described below).
+> The runner-specific details in this file (the Routine, the
+> `.claude/settings.json` Stop hook, the auto-read `CLAUDE.md`) are
+> what make the unattended Saturday cadence work; the rest of the
+> factory does not depend on them.
+
 ---
 
 ## Why Claude Code Routines (and not anything else)

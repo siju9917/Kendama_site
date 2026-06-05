@@ -2,7 +2,10 @@
 
 **Buying a house right now is brutal.** Prices are high, rates are high, and a job loss or a move can turn a mortgage into a trap. This tool takes a different angle: it hunts for properties where, **if you ever had to move out, the rent would cover the mortgage** — so the house is a safety net, not a liability. It finds those listings in your area, ranks them, and drops them on an interactive map.
 
-It's free. If it helps you, the author **Simon** appreciates a tip on Venmo: **@Simon_Julien**.
+It's free — no paywall, no catch. If it saves you a Realtor headache (or three),
+the author **Simon** runs on Venmo tips, snacks, and emotional-support dollars:
+**[@Simon_Julien](https://venmo.com/u/Simon_Julien)**. Worth zero? Also totally
+fine — enjoy the map, you beautiful bargain-hunter.
 
 ## How to use it (the whole point)
 
@@ -46,4 +49,6 @@ Rents, HOAs, insurance, taxes, and vacancy are **estimates** unless real figures
 
 ---
 
-*Free to use. Built by Simon. Venmo @Simon_Julien if it brought you value.*
+*Free to use. Built by Simon, who did a Realtor's whole weekend in 4 seconds and
+didn't even ask for 3%. Venmo [@Simon_Julien](https://venmo.com/u/Simon_Julien)
+if it earned a taco. 🌮*

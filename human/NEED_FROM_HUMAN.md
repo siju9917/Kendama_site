@@ -320,6 +320,63 @@ budget).
 
 ---
 
+## 10. **[OPEN — your decision]** Make the products public (the factory repo can stay private)
+
+**Context (your 2026-06-05 directive):** make all products — and the ability
+for any AI to interface with them — public, AI-agnostic, and (for standalone
+ones) Venmo-tip-funded; otherwise free. You asked whether the repo can stay
+**private** while the products are still publicly usable. **It can — here's the
+verified answer:**
+
+- **GitHub visibility is per-repository, not per-folder.** You cannot make just
+  `rent-covers-mortgage/` public inside this private repo — a repo is wholly
+  public or wholly private.
+- **BidDiff** reaches users through the **Chrome Web Store**; the public listing
+  is installable/usable with this source repo kept **private**. No code exposure
+  needed. (Its monetization is its own Web Store licensing — no Venmo.)
+- **rent-covers-mortgage** has **no server/API** — the code *is* the product, and
+  its distribution model is "open it in an AI agent." For a random AI combing
+  GitHub to discover and use it, the **code must live in a public location.** It
+  is already fully self-contained (own LICENSE, README, AGENTS.md,
+  AI_INSTRUCTIONS.md — zero factory dependency), so it can be published as its
+  **own standalone public repo** with this factory repo staying private.
+
+**So you have two ways to get "products public, factory private" (pick one):**
+
+- **(A — keeps factory private, RECOMMENDED for your stated preference):**
+  Publish `rent-covers-mortgage/` as its **own new public GitHub repo**; keep
+  this Kendama factory repo private; ship BidDiff via the Web Store. An AI
+  browsing GitHub finds the public product repo and uses it. *(Adds a small
+  ongoing duty: each Saturday session that improves the product must also push
+  the update to its public repo — now a standing rule in
+  `governance/PRODUCT_CONSTRAINTS.md`.)*
+- **(B — simplest):** Flip **this whole repo public.** Everything (including the
+  factory internals) becomes visible; you were OK with "publish everything
+  as-is." Maximum discoverability, zero split/sync work.
+
+**Why this is a human action (I can't do it):** creating a repo and changing
+repository visibility are GitHub account settings only you control, and my
+GitHub access in this session is scoped to this one repo. Tell me **A** or **B**
+(here or in `human/APPROVALS.md`) and I'll do everything on my side: for **A**,
+prepare `rent-covers-mortgage/` as a clean publish-ready tree and give you the
+exact `gh repo create` / push commands; for **B**, do the final public-readiness
+pass and hand you the one-click visibility-toggle steps.
+
+**Already done on my side (ready for either path):** every product is
+AI-agnostic; standalone products ask for Venmo **@Simon_Julien** (free
+otherwise) while marketplace/licensed products use their own billing; both
+products are surfaced as unmissable, exciting, accurate entries at the repo top
+level. **Licensing is intentionally kept per-product** — `rent-covers-mortgage`
+ships its own MIT (free) `LICENSE`, and BidDiff stays **commercial** (Web Store
+license + its `terms-of-service.md`). I deliberately did **NOT** add a blanket
+root `LICENSE`, because a repo-wide MIT/free license would wrongly make the paid
+product (BidDiff) free too. If you ever want the *factory itself* to carry a
+license, tell me which one and I'll add it scoped so it doesn't cover the
+paid product. These rules are encoded in `governance/PRODUCT_CONSTRAINTS.md`
+Filter 4 so they hold on every future Saturday session too.
+
+---
+
 ## How items move out of this list
 
 The factory **never deletes** entries here. When an item is done,

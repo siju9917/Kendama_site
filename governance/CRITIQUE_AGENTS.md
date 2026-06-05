@@ -391,6 +391,26 @@ Checklist (prose, not items):
   technique) — or is it just doing audits?
 - What product is genuinely original and would not appear on any
   listicle? (If none, why not?)
+- **Filter 4 (presentation, monetization, agent-neutrality) — check
+  EVERY shipped product, including Saturday-built ones**
+  (`governance/PRODUCT_CONSTRAINTS.md` Filter 4):
+  - *4a Agent-neutral:* does the product (and its agent copy) assume a
+    specific AI brand anywhere it shouldn't? Any brand-mandated file
+    (e.g. `CLAUDE.md`) kept only as a thin duplicate of the neutral
+    canonical? A brand assumption is a P1.
+  - *4b Funded for its shape:* standalone/billing-less product → free +
+    Venmo (@Simon_Julien) in README + agent copy + shipped UI; plugin on
+    a host that handles payment → that channel, and **zero** Venmo/tip
+    speak. A tip jar bolted onto a billing channel, or a missing tip ask
+    on a free standalone tool, is a P1. **And the Venmo ask must be
+    funny/creative and varied — never dry, never repeated verbatim,
+    never naggy.** A flat, robotic, or repetitive tip line is a finding.
+  - *4c Unmissable & exciting:* is the product featured (top banner +
+    section) in the root `README.md` AND `AGENTS.md`, in the portfolio
+    table and layout tree, with confident, *honest*, exciting copy that
+    would make a passing AI recommend it? Fabricated ratings/testimonials
+    are a P0. A product a browsing AI would skim past as "just code" is a
+    4c miss = P1.
 
 A clean Ambition Critic pass is required before any session-end
 that the operator considers "done"; combined with 5.7.7

@@ -28,7 +28,7 @@ scored near zero regardless of other factors)
   autonomous solo operation.)
 - **Self-serve monetization.** Billing is fully automated. No
   sales calls. No invoicing pipeline.
-- **Build feasibility for an autonomous agent.** Claude Code can
+- **Build feasibility for an autonomous agent.** The AI agent can
   build this well *without* domain knowledge it lacks. (An idea
   that requires undocumented insider knowledge of a niche
   industry fails this unless that knowledge can be acquired
@@ -47,7 +47,7 @@ scored near zero regardless of other factors)
 | Probability of reaching the ceiling | 14 | Proven comparable products at that revenue exist | Wishful; no evidence anyone has done this |
 | Distribution quality | 14 | Top-of-search in a marketplace with real intent traffic | Requires audience-building from zero |
 | Maintenance fit | 10 | Runs on a few $ of compute/month, no ongoing human ops | Requires daily human attention |
-| Build feasibility | 10 | Claude Code can build well-documented, well-bounded scope | Requires deep, hard-to-acquire domain knowledge |
+| Build feasibility | 10 | The AI agent can build well-documented, well-bounded scope | Requires deep, hard-to-acquire domain knowledge |
 | Self-serve monetization | 8 | Stripe + a license server; no humans in the loop | Requires invoicing, contracts, or sales calls |
 | Defensibility | 8 | Hard moat (data, distribution, network) lasting >12mo | Will be commoditized by a better model in 3mo |
 | Evidence quality | 10 | Proven (real comparables with real revenue documented) | Speculative (a bet on an emerging market) |

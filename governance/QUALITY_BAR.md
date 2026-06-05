@@ -105,7 +105,7 @@ to the critique log. "Yes" without evidence is "no."
 - [ ] User-facing docs are complete and accurate. The
       Domain-Expert Critic verifies "a professional in the field
       would not be confused."
-- [ ] Developer docs (for future Claude Code sessions) explain
+- [ ] Developer docs (for future agent sessions) explain
       architecture, key decisions, and where to extend.
 - [ ] Every CLI flag, config option, and public API has reference
       documentation.

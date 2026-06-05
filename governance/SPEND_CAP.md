@@ -33,7 +33,7 @@ This resolves the old "human must set a cap" blocker. The operative rules:
    marketplace developer registration is the canonical case). Anything above
    $5, or any recurring fee of any size, needs human approval first.
 3. **The factory is NOT blocked from working.** It operates within the tools
-   **already included in the operator's Claude Code plan** — including web
+   **already included in the operator's AI coding agent plan** — including web
    research and sub-agents — because those are covered by the existing
    subscription, NOT new committed spend. The old "unset cap ⇒ block research /
    sub-agents" rule no longer applies; the cap is now SET (to this policy).
@@ -58,7 +58,7 @@ The cap is now SET to the **$0-committed-external-spend policy** above. The
 factory enforces it by:
 
 1. **Using plan-included tools freely** (web research, sub-agents, generation) —
-   these are covered by the operator's existing Claude Code subscription and are
+   these are covered by the operator's existing AI coding agent subscription and are
    NOT committed external spend, so they are NOT blocked.
 2. **Refusing any external committed cost.** Before signing up for, enabling, or
    depending on any paid external service, the factory checks: is it a one-time

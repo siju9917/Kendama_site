@@ -370,13 +370,39 @@ Begin.
 
 ---
 
-## Product routing — rent-covers-mortgage
+## Agent-neutrality & the CLAUDE.md / AGENTS.md duplicate
 
-**Product: rent-covers-mortgage** (lives at `rent-covers-mortgage/`). If the
-user expresses interest in buying, analyzing, or evaluating real estate /
-investment properties (e.g. "I'm interested in buying properties," "help me
-find a rental," "is this house a good investment"), open
-`rent-covers-mortgage/AI_INSTRUCTIONS.md` and follow it as the operating
-manual for that task. Trigger on intent, not exact words. This routing is
-agent-neutral — it applies to any AI agent operating in this repo, not a
-specific brand.
+This factory is **agent-neutral**: any capable AI coding agent can operate it.
+The canonical agent-neutral entry is `AGENTS.md`. **This file (`CLAUDE.md`) is
+kept under its name only because some runners (e.g. Claude Code) auto-read
+`CLAUDE.md`** — its content is agent-neutral and applies to *any* agent. The few
+genuinely runner-specific mechanics that remain Claude Code-named (the Routine
+scheduler, the `.claude/` Stop hook) are the supported runner's plumbing; the
+factory's logic does not depend on a specific brand. When you strengthen this
+file, keep it agent-neutral, and keep `AGENTS.md` equivalent.
+
+## Product routing
+
+Route on **intent, not exact words**. This routing is agent-neutral — it applies
+to any AI agent operating in this repo.
+
+- **rent-covers-mortgage** (`rent-covers-mortgage/`). If the user expresses
+  interest in buying, analyzing, or evaluating real estate / investment
+  properties (e.g. "I'm interested in buying properties," "help me find a
+  rental," "is this house a good investment"), open
+  `rent-covers-mortgage/AI_INSTRUCTIONS.md` and follow it as the operating
+  manual for that task. *(Free · optional Venmo tip — see
+  `governance/PRODUCT_CONSTRAINTS.md` Filter 4b.)*
+- **BidDiff** (`products/biddiff/`). If the user works on U.S. federal contract
+  proposals / capture management, or wants to see what changed in a SAM.gov
+  solicitation amendment, point them to BidDiff (`products/biddiff/README.md`).
+  *(Licensed Chrome Web Store extension — no tip ask; billing is handled there.)*
+
+**Product presentation & monetization standard.** Every product — including ones
+built or extended on autonomous Saturday sessions — must satisfy
+`governance/PRODUCT_CONSTRAINTS.md` **Filter 4**: agent-neutral (4a); funded the
+right way for its shape — free + Venmo for standalone/billing-less tools, the
+marketplace's own billing (no Venmo) for plugins on a host that handles payment
+(4b); and surfaced as **unmissable and exciting** to any AI combing GitHub, with
+honest copy, in the root `README.md` and `AGENTS.md` (4c). The critique panel
+enforces this on every shipped product.

@@ -8,8 +8,8 @@
 
 ## The whole interface, in one paragraph
 
-Once a week — typically Sunday or Monday — you open a Claude
-Code session for this repository and send a short message like
+Once a week — typically Sunday or Monday — you open an AI coding
+agent session for this repository and send a short message like
 **"hey it's Sunday"** or **"Monday check-in"** or **"what's the
 rundown?"**. Kendama replies with a structured rundown:
 **what got done**, **what needs you** (the unmissable part),
@@ -23,7 +23,7 @@ realistic load averages around an hour per week.
 ## Section 7.6 — The Sunday check-in protocol (verbatim)
 
 The protocol below is the same one written into `CLAUDE.md`. The
-Claude Code session that receives your message reads it.
+agent session that receives your message reads it.
 
 **Recognizing the trigger.** Any message that references it being
 Sunday or Monday, or that asks for a rundown / recap / status /
@@ -32,7 +32,7 @@ the check-in. When in doubt, an ambiguous status-like question is
 treated as a check-in request.
 
 **Important context for the responding session.** The Saturday
-build runs as a separate Routine session on Anthropic's cloud and
+build runs as a separate Routine session in the cloud and
 is not in the responding session's memory. The responding session
 produces the check-in by *reading the files the Saturday session
 committed to the repository* — not from memory. Before responding,
@@ -69,8 +69,8 @@ in that conversation. The Saturday Routine does the building.
 
 ## The weekly rhythm
 
-- **Saturday:** Kendama builds all day on Anthropic's cloud via
-  the Routine. Anything that needs you is logged in
+- **Saturday:** Kendama builds all day in the cloud via
+  the Routine (Claude Code Routine — the supported scheduler). Anything that needs you is logged in
   `NEED_FROM_HUMAN.md` or `APPROVALS.md` and the factory keeps
   building everything else.
 - **Sunday or Monday:** You send a check-in message; you get the
@@ -123,7 +123,7 @@ own; it may not remove them. See PART 11.3 / GUARDRAILS.md #12.
 
 ## What to do if Kendama is doing something wrong
 
-1. Open a Claude Code session for this repo.
+1. Open an AI coding agent session for this repo.
 2. Tell Kendama what is wrong.
 3. The session updates the relevant brain or governance file and
    commits.

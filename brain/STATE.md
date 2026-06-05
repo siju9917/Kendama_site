@@ -228,7 +228,8 @@ externally gated; the zero-cost queue was worked hard this session.
   item 1. **Escalated** in this session's META audit and the digest.
 - **The Saturday Routine does not exist.** `NEED_FROM_HUMAN.md`
   item 2. Until created, sessions only run when the human invokes
-  Claude Code directly (as today).
+  the AI agent's runner directly (as today; the supported runner is
+  Claude Code).
 - **This session's work is on a feature branch, not `main`.** Needs a
   human merge for the Routine to pick it up. `NEED_FROM_HUMAN.md`
   item 5 (new).

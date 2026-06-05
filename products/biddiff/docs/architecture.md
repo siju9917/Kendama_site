@@ -2,7 +2,7 @@
 
 > The current, canonical developer reference (supersedes
 > `legacy-notes/ARCHITECTURE.md`, which is preserved only as history).
-> Written for a future Claude Code session or contributor who needs to
+> Written for a future AI coding agent or contributor who needs to
 > understand the system and safely extend it. Reflects the codebase as
 > of 2026-05-30 after a full two-pass critique.
 

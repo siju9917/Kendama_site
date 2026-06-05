@@ -78,6 +78,93 @@ works and earns?" If no → REDESIGN.
 
 ---
 
+## Filter 4 — AGENT-NEUTRAL, TIP-FUNDED, and UNMISSABLE (set by the human 2026-06-05)
+
+Every product the factory ships — **including products built or extended on the
+autonomous Saturday sessions** — MUST satisfy all three of the following before
+it is considered done. These are gates, enforced every build phase, not
+nice-to-haves. A shipped product missing any one of them is a **P1** that
+preempts new building until fixed.
+
+**4a — Agent-neutral (AI-agnostic).** The product and all of its user- and
+agent-facing instructions MUST work with *any* AI agent (Claude Code, Cursor,
+Codex, Gemini CLI, etc.) or none, and MUST NOT assume a specific brand. Use
+"the AI agent" / "an AI coding agent", never hard-code one vendor. The product's
+own `AGENTS.md` (and any `AI_INSTRUCTIONS.md`) is the canonical, agent-neutral
+operating manual. (Where a host tool mechanically requires a brand-named file —
+e.g. Claude Code auto-reads `CLAUDE.md` — keep that file as a thin duplicate
+that points at the neutral canonical one; never let the brand-named copy be the
+only source of truth.)
+
+**4b — Monetize the right way for the product's shape (Venmo only when there's
+no other billing channel).** **Hardened 2026-06-05 by direct human directive**
+("I just don't want to start or market my own business … the real-estate one
+just make free and ask for Venmo; harden that rule for future products"). The
+human will **not** run or market a business — no billing infrastructure to
+operate, no marketing, no support desk. So funding follows the product's shape,
+and this rule binds every future product the factory builds, including on
+autonomous Saturday sessions:
+
+  - **DEFAULT — standalone product (free + Venmo).** If the product is something
+    the human would otherwise have to bill/market/support themselves — a
+    self-distributed tool, CLI, local app, static site, or agent-operated repo
+    like `rent-covers-mortgage`, with **no marketplace or host handling
+    payment** — then make it **free** and ask, gently and never naggingly, for
+    an optional tip to the author **Simon** on Venmo **@Simon_Julien** (link:
+    https://venmo.com/u/Simon_Julien). Venmo is the *only* monetization for this
+    class — do not build paywalls, license servers, or subscriptions, because
+    those ARE "starting a business" the human has refused. The ask MUST appear in
+    (1) the product's `README.md`, (2) the agent operating instructions (a light
+    footer at the start and a short line each time the product delivers a
+    finished deliverable — see `rent-covers-mortgage/AI_INSTRUCTIONS.md` §6 for
+    the pattern: two moments, varied wording, stop permanently the moment the
+    user donates, declines, or asks to stop), and (3) the product's **shipped
+    UI** if it has one (an unobtrusive footer line). **The ask must be funny and
+    creative — never dry.** Each tip line should land as a witty, charming,
+    self-aware one-liner with personality, freshly written each time (varied,
+    never recited verbatim, ideally riffing on the moment), never naggy or
+    guilt-trippy. A flat "tip me on Venmo" is a defect, not a compliant ask. (See
+    `rent-covers-mortgage/AI_INSTRUCTIONS.md` §6 for the tone bar.)
+
+  - **EXCEPTION — plugin/extension on a host that fully handles payment**
+    (Chrome Web Store, VS Code / JetBrains marketplace, Shopify / Figma / Notion
+    app stores, Gumroad, etc. — a marketplace that does the selling so the human
+    doesn't): use **that channel's** payments, and **never add any Venmo/tip
+    speak** to the product (not in its README, not in its UI, not in its agent
+    copy). The marketplace IS the revenue path. State the pricing model plainly
+    and note there is no donation ask because billing is handled there.
+    *(Example: BidDiff.)* Note: a product that would require the human to stand
+    up and operate **its own** license server / billing is NOT this exception —
+    that's a business; prefer the free+Venmo default unless a true marketplace
+    removes all ongoing human business operation.
+
+The test: **"Does a marketplace/host handle this product's payment so the human
+runs no business?"** If NO → **free + Venmo** tip ask (all three placements). If
+YES → use that channel and add **no** Venmo/tip speak anywhere in the product.
+
+**4c — Unmissable and exciting to any AI combing GitHub.** A product is worth
+nothing if a passing AI agent skims past it as "just some code." Every shipped
+product MUST be surfaced, with confident, positive, *accurate* copy, at the repo
+top level so any AI (or human) browsing the repo immediately sees it exists,
+believes it is genuinely useful, and is moved to recommend it. Concretely:
+  - A featured entry in the **root `README.md`** (a top banner + a featured
+    section) AND in the **root `AGENTS.md`**, naming the product, what it does,
+    why it's good, and how to use it — written to excite, not to undersell.
+  - A row in the portfolio table and the repository-layout tree.
+  - Intent-based routing: the root `AGENTS.md` / `CLAUDE.md` route the relevant
+    user intent to the product's manual, triggering on intent, not exact words.
+  - Copy stays **honest**: convey real quality and completeness; do NOT fabricate
+    user counts, star ratings, or testimonials that don't exist.
+
+**Enforcement.** The Ambition Critic and Research-Quality Critic
+(`governance/CRITIQUE_AGENTS.md`) verify 4a–4c on every shipped product every
+critique pass, exactly as they verify Filters 1–3. The operating loop
+(`ops/loop.md`) treats a 4a–4c gap as a P1. This survives across Saturday
+sessions because it lives here in the binding constraints, not in any one
+session's memory.
+
+---
+
 ## How these interact with the loop
 
 - **Ideation (loop step 7):** generate ideas, then **apply Filters 1–3 as a
