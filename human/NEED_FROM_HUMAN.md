@@ -156,15 +156,29 @@ fixes, a closed K1 P2, and the money-magnitude extraction fix).
 
 ---
 
-## 6. **[OPEN]** (When BidDiff is ship-gate ready) Chrome Web Store submission
+## 6. **[OPEN]** Chrome Web Store submission — artifact is built & green
 
-**Why:** Per PART 7.1 and `governance/GUARDRAILS.md` #5 and #11,
-the human is the one who submits to live marketplaces. BidDiff
-is not yet at the ship gate. When it is, the factory updates
-this row with the exact submission steps and the artifact path.
+**Status (verified 2026-06-05):** the upload artifact is **built and passing all
+gates** — `npm run typecheck` ✅, `npm test` ✅ **455/455**, `npm run lint` ✅,
+`npm run build` ✅, packaged to **`products/biddiff/dist-zips/biddiff-v0.1.0.zip`**
+(1.8 MB, MV3, least-privilege permissions). Regenerate anytime with
+`cd products/biddiff && npm ci && bash scripts/package.sh`. The full prep doc is
+**`products/biddiff/docs/SUBMISSION_PREP.md`**.
 
-**Effect once done:** BidDiff goes from `STATUS: shipped` (the
-factory's internal gate) to actually live in the store.
+**What's left before you can submit (decisions + human-only steps):**
+1. **Decide the copy/monetization path (HARD blocker, item #7 below).** Option
+   **A** (recommended): scope all copy to v1's **on-device, no-server** reality
+   (also removes every infra blocker and matches your "no business" preference).
+   Tell me **A** and I'll make the edits across all copy locations. Option **B**:
+   deploy the server + wire billing (pulls in `legacy-notes/BLOCKERS.md`).
+2. **Settle positioning** (`APPROVALS.md` #1) — individual vs capture-team framing.
+3. **Host a real Privacy Policy URL** (publish `docs/privacy-policy.md`) and set a
+   real Support URL (the listing has a placeholder).
+4. **One-time $5** Chrome Web Store developer account, then upload the zip, paste
+   the listing/justifications from `docs/store-listing.md`, set the URLs, submit.
+
+**Effect once done:** BidDiff goes from the factory's internal ship gate to
+actually live in the Web Store.
 
 ---
 
