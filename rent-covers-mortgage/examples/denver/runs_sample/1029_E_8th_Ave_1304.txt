@@ -1,0 +1,71 @@
+# Denver Property Report — 1029 E 8th Ave #1304
+
+# ▶ MOVE-OUT (YEAR-2) CASH FLOW: $-905/mo — SHORTFALL · NOT self-sustaining
+# ▶ MOST YOU SHOULD PAY (break-even on rent, full $225,000 down): $461,802 — this house at $600,000 sits **$138,198 ABOVE** that ceiling — overpriced for its rent
+
+*Aim at or below **$415,996** to keep a ~$300/mo cushion (not exact break-even). Headline at the recommended financing (full $225,000 down, no points). Rent basis: YOUR COMPS. All long-term figures after-tax, 2026 dollars, 35-year horizon.*
+
+---
+## 1 · Inputs & rent
+- **Price** $600,000 · **Type** condo · **Config** 1 unit(s): unit 1 = 3bd ($2,852)
+- **Gross market rent, fully rented: $2,852/mo** — *YOUR COMPS.* (Rent is the #1 driver; pull comps for THIS address and re-run with `--rent`.)
+  - The schedule is whole-UNIT rent by each unit's bedroom count, summed across units — so this config out-rents a same-bedroom-count single home, as it should.
+- While you live there (Yr 1-2): you occupy the largest unit; revenue = $1,500 roommate = $1,500/mo. *(roommate income is an assumption — override with --cooccupant; it does NOT affect the move-out headline.)*
+- Monthly expenses: property tax $210 (0.42%), insurance $250 (yours), HOA $300 (yours), CapEx $200 (yours). *(insurance/CapEx are price-scaled estimates calibrated to the v6 archetypes — get a real insurance quote.)*
+
+---
+## 2 · Recommended purchase strategy  (priority 1 = cash flow · priority 2 = long-term)
+**⚠ This price does NOT self-sustain even with the full $225,000 down.** At the estimated rent, move-out cash flow is **$-905/mo** (a shortfall). To make it self-sustain you'd need the price near **$461,802**, or rent around **$3,896/mo** (vs the $2,852 assumed), or another unit/bedroom. Recommendation: negotiate the price down or don't count on it paying for itself at this rent.
+
+*How down payment moves the numbers (no points): each +$10k down adds ~$62/mo of cash flow.*
+
+| Down | Loan | P&I/mo | Move-out CF | Live-in CF |
+|---|---|---|---|---|
+| 20% ($120,000) | $480,000 | $2,955 | $-1,492/mo | $-2,415/mo |
+| **Full $225,000 (recommended)** | **$384,678** | **$2,369** | **$-905/mo** | **$-1,829/mo** |
+
+**Optional — buy 2 discount point(s).** Reallocating $7,694 of the down payment to points (at the assumed −0.25%/pt → 5.75%) raises move-out cash flow to **$-826/mo** (+$79/mo), break-even ~8.1 yrs — good on a 35-yr hold. **Confirm the actual point price with your lender first;** points build no equity, so the headline above assumes none.
+
+**INVEST the surplus in the S&P.** Mortgage 6.25% vs expected S&P 7.5% nominal — the S&P clears your rate by more than the ~0.45-pt margin that covers tax + risk. It is close: crossover ≈ 6.7% expected S&P. If you expect S&P below that, or markets look richly valued, or you want certainty, redirect surplus to principal (retires this loan ~year 29).
+
+---
+## 3 · Monthly cash flow detail  (at the recommended full-down)
+- **Move-out (Month 25, after ~2 yrs of rent growth): SHORTFALL $-905/mo.**  Does not cover costs — see options above.
+- Build-up: gross rent $2,996 → after vacancy/bad-debt/PM $2,472; minus P&I $2,369, tax $221, insurance $263, HOA $315, CapEx $210.
+- While you live there (Yr 1–2): $-1,829/mo (out of pocket, funded from income as planned).
+
+---
+## 4 · Long-term outcome  (35 yrs, after-tax, 2026 $; surplus invest)
+- **This house, year 35: $663,180.**  Invest the $225,000 in the S&P + rent instead: $1,351,338.
+- → This house **TRAILS investing by $688,158**.  Cash break-even: beyond 35 yrs.
+- Rank among the modeled options (yr-35 net worth):
+  1. Triplex (3 Units)        $1,645,972
+  2. Traditional Duplex       $1,357,149
+  3. SFH + Detached ADU       $1,344,193
+  4. 4-Bed SFH                $987,029
+  5. 3-Bed SFH                $895,354
+  6. All-Cash Condo           $875,062
+  7. 2-Bed Condo/Townhome     $789,078
+  8. ★ THIS HOUSE             $663,180   ← this house
+
+---
+## 5 · Plots
+- Cash flow: 1029_e_8th_ave_1304_cashflow.png
+- Net worth: 1029_e_8th_ave_1304_networth.png
+Your house is the **bold black** line; archetypes faded; dashed = invest-and-rent.
+
+---
+## 6 · Assumptions used (v6, hard-coded)
+S&P 7.5% nom / ~5% real (fwd fcsts 3–6%/decade, reverting; hist ~9.5%) · home appreciation 3% nom / ~0.5% real (natl 2–4%; Denver 25-yr ~4.5%) · rent growth 2.5% · mortgage 6.25% · property tax 0.42% · vacancy 5% + bad debt 1% · management 12% · LTCG 15% · recapture 25% · selling 6.5% · inflation 2.5% · cash $225,000.
+
+---
+## 7 · Verify before you offer
+- **Rent comps for THIS address** (Rentometer/Zillow) — the single biggest driver; re-run with `--rent`. Comps already bake in the things this estimate can't see: **neighborhood** (the largest factor after bedroom count — Denver rents swing 2–3x across neighborhoods), **bathrooms** (`--baths` gives a rough nudge), **square footage, condition/renovation, parking/garage, in-unit laundry, basement, and outdoor space**.
+- **Real insurance quote** (Colorado hard market) and **actual HOA**; re-run with `--insurance` / `--hoa`.
+- A converted rental needs a **landlord (DP-3) policy + umbrella** (~$50–115/mo more) — not in the base line.
+- S&P line is idealized (no volatility/sequence risk); verdict swings on the S&P return and appreciation — treat as ranges.
+- ADU value holds only if the unit **already exists and is legal**.
+
+[saved] /mnt/user-data/outputs/Denver_Report_1029_e_8th_ave_1304.md
+[saved] /mnt/user-data/outputs/1029_e_8th_ave_1304_cashflow.png
+[saved] /mnt/user-data/outputs/1029_e_8th_ave_1304_networth.png

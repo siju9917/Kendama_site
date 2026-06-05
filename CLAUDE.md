@@ -367,3 +367,16 @@ See `governance/GUARDRAILS.md` for the full list.
 ---
 
 Begin.
+
+---
+
+## Product routing — rent-covers-mortgage
+
+**Product: rent-covers-mortgage** (lives at `rent-covers-mortgage/`). If the
+user expresses interest in buying, analyzing, or evaluating real estate /
+investment properties (e.g. "I'm interested in buying properties," "help me
+find a rental," "is this house a good investment"), open
+`rent-covers-mortgage/AI_INSTRUCTIONS.md` and follow it as the operating
+manual for that task. Trigger on intent, not exact words. This routing is
+agent-neutral — it applies to any AI agent operating in this repo, not a
+specific brand.

@@ -1,0 +1,9 @@
+listings.csv
+# the agent generates these per user; don't commit a specific user's run
+config.json
+properties.json
+series.json
+output/
+runs/*.txt
+__pycache__/
+*.pyc

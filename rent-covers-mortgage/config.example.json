@@ -1,0 +1,11 @@
+{
+  "region_name": "Denver",
+  "snapshot_date": null,
+  "green_cutoff_per_month": -1000,
+  "horizon_years": 35,
+  "price_cap": 950000,
+  "down_payment": 225000,
+  "rate": 0.0625,
+  "moveout_years": 2,
+  "taxrate": 0.0042
+}

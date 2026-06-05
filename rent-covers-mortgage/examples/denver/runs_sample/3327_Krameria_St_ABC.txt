@@ -1,0 +1,74 @@
+# Denver Property Report — 3327 Krameria St #ABC
+
+# ▶ MOVE-OUT (YEAR-2) CASH FLOW: $1,668/mo — SURPLUS · self-sustaining
+# ▶ MOST YOU SHOULD PAY (break-even on rent, full $225,000 down): $954,623 — this house at $699,999 sits **$254,624 BELOW** that ceiling — room to spare
+
+*Aim at or below **$908,817** to keep a ~$300/mo cushion (not exact break-even). Headline at the recommended financing (full $225,000 down, no points). Rent basis: YOUR COMPS. All long-term figures after-tax, 2026 dollars, 35-year horizon.*
+
+---
+## 1 · Inputs & rent
+- **Price** $699,999 · **Type** triplex · **Config** 3 unit(s): unit 1 = 2bd ($2,400), unit 2 = 2bd ($2,400), unit 3 = 2bd ($2,400)
+- **Gross market rent, fully rented: $7,200/mo** — *YOUR COMPS.* (Rent is the #1 driver; pull comps for THIS address and re-run with `--rent`.)
+  - The schedule is whole-UNIT rent by each unit's bedroom count, summed across units — so this config out-rents a same-bedroom-count single home, as it should.
+- While you live there (Yr 1-2): you occupy the largest unit; revenue = $1,500 roommate + $4,800 from the other unit(s) = $6,300/mo. *(roommate income is an assumption — override with --cooccupant; it does NOT affect the move-out headline.)*
+- Monthly expenses: property tax $245 (0.42%), insurance $554 (yours), HOA $0 (yours), CapEx $700 (yours). *(insurance/CapEx are price-scaled estimates calibrated to the v6 archetypes — get a real insurance quote.)*
+
+---
+## 2 · Recommended purchase strategy  (priority 1 = cash flow · priority 2 = long-term)
+**Recommended: put the full $225,000 toward the purchase as down payment — no points.** Cash flow is your #1 priority and you hold separate reserves, so minimizing the loan is the right call. Down **$210,352 (30%)**, loan **$489,647**, P&I **$3,015/mo** → move-out cash flow **$1,668/mo**.
+
+The honest trade-off: **20% down ($140,000)**, investing the other $70,172, gives a far lower move-out cash flow of $1,234/mo but is actually about $24,731 HIGHER on 35-yr net worth (the freed $70,172 compounds at ~7.5%, above your 6.25% rate) ($3,076,236 vs $3,051,506). So full-down wins your #1 priority (cash flow); 20%-down narrowly wins priority #2 (net worth). Per your stated priorities, go **full-down** — choose 20%-down only if you'd rather keep $70,172 liquid and invested.
+
+*How down payment moves the numbers (no points): each +$10k down adds ~$62/mo of cash flow.*
+
+| Down | Loan | P&I/mo | Move-out CF | Live-in CF |
+|---|---|---|---|---|
+| 20% ($140,000) | $559,999 | $3,448 | $1,234/mo | $1,353/mo |
+| Break-even ($0) | $699,999 | $4,310 | $0/mo | $491/mo |
+| **Full $225,000 (recommended)** | **$489,647** | **$3,015** | **$1,668/mo** | **$1,786/mo** |
+
+**Optional — buy 2 discount point(s).** Reallocating $9,793 of the down payment to points (at the assumed −0.25%/pt → 5.75%) raises move-out cash flow to **$1,768/mo** (+$100/mo), break-even ~8.1 yrs — good on a 35-yr hold. **Confirm the actual point price with your lender first;** points build no equity, so the headline above assumes none.
+
+**INVEST the surplus in the S&P.** Mortgage 6.25% vs expected S&P 7.5% nominal — the S&P clears your rate by more than the ~0.45-pt margin that covers tax + risk. It is close: crossover ≈ 6.7% expected S&P. If you expect S&P below that, or markets look richly valued, or you want certainty, redirect surplus to principal (retires this loan ~year 10).
+
+---
+## 3 · Monthly cash flow detail  (at the recommended full-down)
+- **Move-out (Month 25, after ~2 yrs of rent growth): SURPLUS $1,668/mo.**  Self-sustaining.
+- Build-up: gross rent $7,564 → after vacancy/bad-debt/PM $6,257; minus P&I $3,015, tax $257, insurance $582, HOA $0, CapEx $735.
+- While you live there (Yr 1–2): $1,786/mo (income).
+
+---
+## 4 · Long-term outcome  (35 yrs, after-tax, 2026 $; surplus invest)
+- **This house, year 35: $3,051,506.**  Invest the $225,000 in the S&P + rent instead: $1,027,112.
+- → This house **BEATS investing by $2,024,394**.  Cash break-even: year 9.
+- Rank among the modeled options (yr-35 net worth):
+  1. ★ THIS HOUSE             $3,051,506   ← this house
+  2. Triplex (3 Units)        $1,649,378
+  3. Traditional Duplex       $1,359,897
+  4. SFH + Detached ADU       $1,347,001
+  5. 4-Bed SFH                $990,067
+  6. 3-Bed SFH                $897,207
+  7. All-Cash Condo           $877,975
+  8. 2-Bed Condo/Townhome     $790,542
+
+---
+## 5 · Plots
+- Cash flow: 3327_krameria_st_abc_cashflow.png
+- Net worth: 3327_krameria_st_abc_networth.png
+Your house is the **bold black** line; archetypes faded; dashed = invest-and-rent.
+
+---
+## 6 · Assumptions used (v6, hard-coded)
+S&P 7.5% nom / ~5% real (fwd fcsts 3–6%/decade, reverting; hist ~9.5%) · home appreciation 3% nom / ~0.5% real (natl 2–4%; Denver 25-yr ~4.5%) · rent growth 2.5% · mortgage 6.25% · property tax 0.42% · vacancy 5% + bad debt 1% · management 12% · LTCG 15% · recapture 25% · selling 6.5% · inflation 2.5% · cash $225,000.
+
+---
+## 7 · Verify before you offer
+- **Rent comps for THIS address** (Rentometer/Zillow) — the single biggest driver; re-run with `--rent`. Comps already bake in the things this estimate can't see: **neighborhood** (the largest factor after bedroom count — Denver rents swing 2–3x across neighborhoods), **bathrooms** (`--baths` gives a rough nudge), **square footage, condition/renovation, parking/garage, in-unit laundry, basement, and outdoor space**.
+- **Real insurance quote** (Colorado hard market) and **actual HOA**; re-run with `--insurance` / `--hoa`.
+- A converted rental needs a **landlord (DP-3) policy + umbrella** (~$50–115/mo more) — not in the base line.
+- S&P line is idealized (no volatility/sequence risk); verdict swings on the S&P return and appreciation — treat as ranges.
+- ADU value holds only if the unit **already exists and is legal**.
+
+[saved] /mnt/user-data/outputs/Denver_Report_3327_krameria_st_abc.md
+[saved] /mnt/user-data/outputs/3327_krameria_st_abc_cashflow.png
+[saved] /mnt/user-data/outputs/3327_krameria_st_abc_networth.png

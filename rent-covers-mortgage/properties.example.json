@@ -1,0 +1,12 @@
+[
+  {"name":"3327 Krameria St ABC","area":"North Park Hill","type":"triplex","price":699999,
+   "lat":39.7649,"lng":-104.9197,"cf":1668,"y35":2920000,"idx":1027112,
+   "ceiling":760000,"gap":60001,"cushion":690000,"tier":"core",
+   "note":"2bd+2bd+2bd; verify rents"},
+  {"name":"123 Example Condo Unit 4","area":"Capitol Hill","type":"condo","price":315000,
+   "lat":39.7341,"lng":-104.9772,"cf":-420,"y35":690000,"idx":1027112,
+   "ceiling":300000,"gap":-15000,"cushion":280000,"tier":"core",
+   "note":"HOA $300 est."},
+  {"name":"900 Red St","area":"Cherry Creek","type":"sfh","price":1200000,
+   "lat":39.7185,"lng":-104.9536,"cf":-2600,"y35":1500000,"idx":1027112,"tier":"core"}
+]

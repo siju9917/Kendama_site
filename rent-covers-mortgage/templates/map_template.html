@@ -1,0 +1,239 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Denver Green Properties Map</title>
+<style>__LEAFLETCSS__</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1c1a17;--ink2:#5c554c;--paper:#f6f3ec;--panel:#fffdf8;--line:#e3ddd0;
+--light:#5cc46a;--dark:#15662f;--accent:#7c4a2d;--shadow:0 1px 2px rgba(40,30,20,.06),0 6px 22px rgba(40,30,20,.10);}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{font-family:"Hanken Grotesk",-apple-system,system-ui,sans-serif;color:var(--ink);background:var(--paper)}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden}
+header{padding:13px 20px;background:var(--panel);border-bottom:1px solid var(--line);z-index:1200}
+header h1{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:20px;margin:0;letter-spacing:-.01em}
+header h1 .lg{color:#176d32}header h1 .dk{color:#a6c63d}
+header p{margin:3px 0 0;font-size:12px;color:var(--ink2)}
+.main{flex:1;display:flex;min-height:0}
+#sidebar{width:340px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.controls{padding:11px 13px;border-bottom:1px solid var(--line)}
+.controls .row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:7px;align-items:center}
+.chip{font:inherit;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink2);cursor:pointer;user-select:none;display:flex;align-items:center;gap:5px}
+.chip[data-on="1"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.chip svg{width:12px;height:12px}
+.toggle{font-size:12px;color:var(--ink2);display:flex;align-items:center;gap:5px;cursor:pointer}
+.toggle input{accent-color:var(--accent)}
+#search{width:100%;font:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;margin-bottom:8px}
+.count{font-size:11px;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;padding:8px 13px 4px}
+#list{overflow-y:auto;flex:1;padding:0 8px 12px}
+.card{padding:8px 10px;border-radius:10px;border:1px solid transparent;cursor:pointer;display:flex;gap:9px;align-items:flex-start}
+.card:hover{background:#fff;border-color:var(--line);box-shadow:var(--shadow)}
+.rank{font-family:"Fraunces",serif;font-weight:600;font-size:12.5px;color:var(--ink2);min-width:22px;text-align:right;padding-top:1px}
+.card .nm{font-weight:600;font-size:13px;line-height:1.2}
+.card .sub{font-size:11px;color:var(--ink2);margin-top:1px}
+.cf{font-weight:700;font-size:12.5px;white-space:nowrap;text-align:right}
+.badge{display:inline-block;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:1px 6px;border-radius:5px;background:#efe9dd;color:var(--accent);margin-top:3px}
+#map{flex:1;min-height:0}
+.legend{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:11px;box-shadow:var(--shadow);line-height:1.65;max-width:215px}
+.legend b{font-family:"Fraunces",serif;font-weight:600;font-size:11.5px}
+.legend .sw{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+.legend svg{width:13px;height:13px;vertical-align:-2px;margin-right:3px}
+.legend hr{border:none;border-top:1px solid var(--line);margin:6px 0}
+.lp h3{font-family:"Fraunces",serif;font-weight:600;margin:0 0 2px;font-size:15px}
+.lp .area{font-size:11px;color:var(--ink2);margin-bottom:7px}
+.lp .hl{font-weight:700;font-size:15px;margin:6px 0}
+.lp table{border-collapse:collapse;width:100%;font-size:12px}
+.lp td{padding:3px 0;vertical-align:top}.lp td.k{color:var(--ink2);padding-right:10px;white-space:nowrap}
+.lp td.v{text-align:right;font-weight:600}
+.lp .tag{display:inline-block;font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:5px;color:#fff}
+.lp .note{font-size:10.5px;color:var(--ink2);margin-top:7px;border-top:1px dashed var(--line);padding-top:6px}
+.leaflet-popup-content{margin:13px 15px;width:248px!important}.leaflet-popup-content-wrapper{border-radius:12px}
+.links{margin-top:9px;display:flex;flex-direction:column;gap:4px}
+.zbtn{display:inline-block;background:#176d32;color:#fff;text-decoration:none;font-weight:700;font-size:12px;padding:6px 10px;border-radius:7px;text-align:center}
+.zbtn:hover{background:#0f5224}
+.sbtn{color:var(--ink2);text-decoration:none;font-size:10.5px;text-align:center}
+.sbtn:hover{text-decoration:underline}
+.zmini{display:inline-block;margin-top:4px;color:#176d32;text-decoration:none;font-size:10px;font-weight:700;border:1px solid #cfe3d4;border-radius:6px;padding:1px 5px}
+.zmini:hover{background:#eaf3ec}
+#plotModal{position:fixed;inset:0;z-index:3000;background:rgba(20,16,12,.55);display:none;align-items:center;justify-content:center;padding:18px}
+#plotModal.open{display:flex}
+.pm-card{background:var(--panel);border-radius:14px;box-shadow:var(--shadow);max-width:560px;width:100%;max-height:90vh;overflow:auto;padding:16px 20px 20px}
+.pm-card h2{font-family:Fraunces,serif;font-size:17px;margin:2px 0 1px}
+.pm-sub{font-size:12px;color:var(--ink2);margin-bottom:6px}
+.pm-close{float:right;cursor:pointer;border:none;background:#efe9e1;border-radius:8px;font:inherit;font-weight:700;padding:4px 10px;color:var(--ink)}
+.pm-close:hover{background:#e4ddd2}
+.pm-chart{margin-top:12px}
+.pm-chart h3{font-size:12.5px;font-weight:700;margin:0 0 1px}
+.pm-chart .cap{font-size:10px;color:var(--ink2);margin-bottom:2px;line-height:1.35}
+.pm-leg{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:10.5px;color:#5c554c;margin:3px 0 1px}
+.lgi{display:inline-flex;align-items:center;white-space:nowrap}
+.plotlink{display:inline-block;color:#1f6f3f;text-decoration:none;font-size:11px;font-weight:700;cursor:pointer;border:1px solid #cfe3d4;border-radius:6px;padding:2px 7px}
+.plotlink:hover{background:#eaf3ec}
+.leaflet-popup-content .zbtn{color:#fff}
+.leaflet-popup-content .sbtn{color:var(--ink2)}
+.leaflet-popup-content .plotlink{color:#1f6f3f}
+.zmini.cmini{margin-left:5px;color:#1f6f3f}
+.sidebar-toggle{display:none}
+@media(max-width:720px){
+html,body{height:auto}
+#app{height:auto;min-height:100dvh;overflow:visible}
+header{padding:11px 14px;position:sticky;top:0}
+header h1{font-size:17px}
+header p{font-size:11px}
+.main{flex-direction:column;min-height:0}
+#map{height:60vh;height:60dvh;flex:none;order:-1}
+#sidebar{width:100%;flex-shrink:0;border-right:none;border-top:1px solid var(--line)}
+#list{overflow:visible;height:auto;flex:none;padding:0 8px 20px}
+.sidebar-toggle{display:none}
+#plotModal{padding:8px}
+.pm-card{padding:12px 13px 16px;max-height:94vh;max-height:94dvh}
+.legend{font-size:10px;max-width:165px;padding:7px 9px;line-height:1.55}
+}
+</style></head>
+<body><div id="app">
+<header>
+<h1>__TITLE__ &mdash; <span class="lg">&#9679;</span> profitable &nbsp;<span class="dk">&#9679;</span> loses loses &lt;cutofflt;__CUTOFF__</h1>
+<p>__SUBTITLE__</p>
+</header>
+<div class="main">
+<button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776; List</button>
+<aside id="sidebar">
+<div class="controls">
+<input id="search" placeholder="Search address or area&hellip;"/>
+<div class="row" id="cats"></div>
+<div class="row" style="gap:13px">
+<label class="toggle"><input type="checkbox" id="lightOnly"/> Profitable only</label>
+<label class="toggle"><input type="checkbox" id="fringe" checked/> Incl. fringe</label>
+</div>
+</div>
+<div class="count" id="count"></div>
+<div style="font-size:10px;color:var(--ink2);padding:0 13px 4px;line-height:1.4">Ranked by metric = (12×35 × monthly CF) + amount it beats investing by. Highest first.</div>
+<div id="list"></div>
+</aside>
+<div id="map"></div>
+</div></div>
+<div id="plotModal" onclick="if(event.target===this)closePlots()"><div class="pm-card" id="pmCard"></div></div>
+<script>__LEAFLETJS__</script>
+<script>
+const PROPS=__DATA__;
+const SERIES=__SERIES__;
+const CATS=["Single-family","Condo","Multifamily"];
+const SHAPE={"Single-family":'circle',"Condo":'square',"Multifamily":'triangle'};
+const state={cats:new Set(CATS),lightOnly:false,fringe:true,q:""};
+const fmt=n=>n==null?"&mdash;":"$"+Math.round(n).toLocaleString();
+const colorOf=p=>p.cf>=0?"#176d32":"#a6c63d";
+function shapeSVG(shape,color,size,label,lblColor){
+ const s=size||22,c=color,st='#fff',sw=2;let inner='';
+ if(shape==='circle')inner=`<circle cx="12" cy="12" r="9"/>`;
+ else if(shape==='square')inner=`<rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/>`;
+ else if(shape==='triangle')inner=`<polygon points="12,2.5 21.5,20 2.5,20"/>`;
+ else if(shape==='diamond')inner=`<polygon points="12,1.5 22.5,12 12,22.5 1.5,12"/>`;
+ else if(shape==='pentagon')inner=`<polygon points="12,2 22,9.4 18.2,21.5 5.8,21.5 2,9.4"/>`;
+ let txt='';
+ if(label!=null){const fs=String(label).length>=3?8:10.5;const ty=shape==='triangle'?14.8:12;
+  txt=`<text x="12" y="${ty}" text-anchor="middle" dominant-baseline="central" font-family="Hanken Grotesk,Arial,sans-serif" font-weight="700" font-size="${fs}" fill="${lblColor||'#fff'}">${label}</text>`;}
+ return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" style="filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))"><g fill="${c}" stroke="${st}" stroke-width="${sw}" stroke-linejoin="round">${inner}</g>${txt}</svg>`;
+}
+function icon(p){const sz=p.cf>=0?30:26;return L.divIcon({html:shapeSVG(SHAPE[p.cat]||'circle',colorOf(p),sz,p.rank,p.cf>=0?'#fff':'#20300f'),className:'',iconSize:[sz,sz],iconAnchor:[sz/2,sz/2],popupAnchor:[0,-sz/2]});}
+var map=null;
+try{
+  map=L.map('map',{zoomControl:true}).setView([39.74,-104.99],12.5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
+}catch(e){var _mp=document.getElementById('map');if(_mp)_mp.innerHTML='<div style="padding:20px;font:14px -apple-system,system-ui,sans-serif;color:#5c554c;line-height:1.5">The map couldn\u2019t load (it needs an internet connection for the map tiles). The ranked list below still works.</div>';}
+const legend=L.control({position:'bottomright'});
+legend.onAdd=function(){const d=L.DomUtil.create('div','legend');
+ d.innerHTML='<b>Cash flow</b><br><span class="sw" style="background:#176d32"></span>Profitable (&ge;$0/mo)<br>'+
+ '<span class="sw" style="background:#a6c63d"></span>Loses &lt;$1k/mo &mdash; tour &amp; negotiate<hr><b>Type</b><br>'+
+ CATS.map(c=>shapeSVG(SHAPE[c],'#6b6258',15)+c).join('<br>');
+ return d;};
+if(map)legend.addTo(map);
+function _money(k){var v=k*1000,a=Math.abs(v);if(a>=1e6)return (v<0?'\u2212':'')+'$'+(a/1e6).toFixed(2)+'M';if(a>=1e3)return (v<0?'\u2212':'')+'$'+Math.round(a/1e3)+'k';return (v<0?'\u2212':'')+'$'+Math.round(a);}
+function svgChart(lines){
+ var W=496,H=178,LM=54,RM=12,TM=12,BM=28,xs=lines[0].data.length-1,allv=[];
+ lines.forEach(function(s){s.data.forEach(function(v){allv.push(v);});});
+ var mn=Math.min(0,Math.min.apply(null,allv)),mx=Math.max.apply(null,allv);if(mx===mn)mx=mn+1;
+ var px=function(i){return LM+(W-LM-RM)*(i/xs);},py=function(v){return TM+(H-TM-BM)*(1-(v-mn)/(mx-mn));};
+ var g='';
+ [mn,(mn+mx)/2,mx].forEach(function(v){var y=py(v);g+='<line x1="'+LM+'" y1="'+y+'" x2="'+(W-RM)+'" y2="'+y+'" stroke="#efe9e1"/><text x="'+(LM-6)+'" y="'+(y+3)+'" font-size="8.5" fill="#7c7468" text-anchor="end">'+_money(v)+'</text>';});
+ if(mn<0){var zy=py(0);g+='<line x1="'+LM+'" y1="'+zy+'" x2="'+(W-RM)+'" y2="'+zy+'" stroke="#c9c1b6" stroke-width="1.2"/>';}
+ var mxo=px(2);g+='<line x1="'+mxo+'" y1="'+TM+'" x2="'+mxo+'" y2="'+(H-BM)+'" stroke="#cbb9a6" stroke-width="1" stroke-dasharray="3 3"/><text x="'+(mxo+3)+'" y="'+(TM+8)+'" font-size="8" fill="#9a8f80">move out (yr 2)</text>';
+ [0,10,20,30,35].forEach(function(yr){var x=px(yr);g+='<text x="'+x+'" y="'+(H-11)+'" font-size="8.5" fill="#7c7468" text-anchor="middle">'+yr+'</text>';});
+ g+='<text x="'+((LM+W-RM)/2)+'" y="'+(H-1)+'" font-size="8.5" fill="#9a8f80" text-anchor="middle">years from purchase</text>';
+ // comparables first (so the bold "this home" draws on top)
+ lines.slice().reverse().forEach(function(s){var d='';s.data.forEach(function(v,i){d+=(i?'L':'M')+px(i).toFixed(1)+' '+py(v).toFixed(1)+' ';});g+='<path d="'+d+'" fill="none" stroke="'+s.color+'" stroke-width="'+(s.w||2.6)+'"'+(s.dash?' stroke-dasharray="'+s.dash+'"':'')+(s.op?' stroke-opacity="'+s.op+'"':'')+' stroke-linejoin="round"/>';});
+ return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block">'+g+'</svg>';
+}
+function legendHTML(items){return '<div class="pm-leg">'+items.map(function(it){
+  var sw='<svg width="20" height="9" style="vertical-align:-1px"><line x1="0" y1="4.5" x2="20" y2="4.5" stroke="'+it.color+'" stroke-width="'+(it.w&&it.w>2?2.8:2.2)+'"'+(it.dash?' stroke-dasharray="4 3"':'')+(it.op?' stroke-opacity="'+it.op+'"':'')+'/></svg>';
+  return '<span class="lgi">'+sw+'&nbsp;'+it.name+'</span>';}).join('')+'</div>';}
+function openPlots(slug){
+ var p=PROPS.find(function(z){return z.slug===slug;}),s=SERIES[slug];if(!p||!s)return;
+ var N=PROPS.length,byRank=function(r){return PROPS.find(function(z){return z.rank===r;});};
+ var medR=Math.round(N/2);
+ var comps=[{p:byRank(1),lbl:'#1 best'},{p:byRank(medR),lbl:'#'+medR+' median'}]
+   .filter(function(c){return c.p&&c.p.slug!==slug&&SERIES[c.p.slug];});
+ var ccol=['#2f6fb0','#9a8aa8','#c2766b'];
+ comps.forEach(function(c,i){c.color=ccol[i%3];});
+ var here={name:'this home (#'+p.rank+')',color:'#176d32',w:2.9};
+ var sp={name:'invest $225k in S&P 500 &amp; rent 4ever',color:'#9a6b3f',dash:1,w:2.2};
+ var cashLines=[Object.assign({data:s.cash},here)].concat(comps.map(function(c){return {name:c.lbl,color:c.color,data:SERIES[c.p.slug].cash,w:1.4,op:0.85};}));
+ var nwLines=[Object.assign({data:s.nw},here),Object.assign({data:s.inv},sp)].concat(comps.map(function(c){return {name:c.lbl,color:c.color,data:SERIES[c.p.slug].nw,w:1.4,op:0.85};}));
+ document.getElementById('pmCard').innerHTML=
+  '<button class="pm-close" onclick="closePlots()">Close &times;</button>'+
+  '<h2>#'+p.rank+' &middot; '+p.name+'</h2>'+
+  '<div class="pm-sub">'+p.area+' &middot; '+p.type+' &middot; list '+fmt(p.price)+' &middot; '+(p.cf>=0?'+':'\u2212')+'$'+Math.abs(p.cf).toLocaleString()+'/mo &middot; comparables shown faint: #1 best &amp; #'+medR+' median</div>'+
+  '<div class="pm-chart"><h3>Cumulative cash flow &mdash; before resale</h3><div class="cap">Operating cash banked over time (rent minus mortgage, tax, insurance, HOA, CapEx). Excludes sale proceeds. Dashed vertical = you move out and rent the whole place.</div>'+legendHTML(cashLines)+cf_svg(cashLines)+'</div>'+
+  '<div class="pm-chart"><h3>Net worth if sold &mdash; 2026 dollars</h3><div class="cap">After-tax equity if you liquidated each year, vs. investing the $225k down payment in the S&amp;P 500 and renting instead.</div>'+legendHTML(nwLines)+svgChart(nwLines)+'</div>'+
+  '<div class="cap" style="margin-top:8px">Modeled at this property\u2019s neighborhood vacancy &mdash; estimates; verify rent &amp; HOA before offering.</div>';
+ document.getElementById('plotModal').classList.add('open');
+}
+function cf_svg(l){return svgChart(l);}
+function closePlots(){document.getElementById('plotModal').classList.remove('open');}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closePlots();});
+function zlink(p){var city=(p.area==='Edgewater')?'Edgewater':'Denver';var a=p.name.replace(/\([^)]*\)/g,' ').replace(/#/g,' ').replace(/[^0-9A-Za-z ]/g,' ').replace(/\s+/g,' ').trim();return 'https://www.zillow.com/homes/'+a.replace(/ /g,'-')+'-'+city+'-CO_rb/';}
+function slink(p){var city=(p.area==='Edgewater')?'Edgewater':'Denver';var a=p.name.replace(/\([^)]*\)/g,' ').replace(/\s+/g,' ').trim();return 'https://www.google.com/search?q='+encodeURIComponent(a+', '+city+', CO for sale');}
+function popupHTML(p){
+ const sus=p.cf>=0;
+ const tag=sus?'<span class="tag" style="background:#176d32">PROFITABLE</span>':'<span class="tag" style="background:#7a9a24">TOUR &amp; NEGOTIATE</span>';
+ const beats=p.vsidx==null?'':(p.vsidx>=0?'<span style="color:#15803d;font-weight:700">beats investing by '+fmt(Math.abs(p.vsidx))+'</span>':'<span style="color:#c0392b;font-weight:700">trails investing by '+fmt(Math.abs(p.vsidx))+'</span>');
+ const ceil=p.gap>=0?(fmt(p.ceiling)+' <span style="color:#15803d">(under by '+fmt(p.gap)+')</span>'):(fmt(p.ceiling)+' <span style="color:#c0392b">(over by '+fmt(-p.gap)+')</span>');
+ return '<div class="lp"><h3>#'+p.rank+' &middot; '+p.name+'</h3><div class="area">'+p.area+' &middot; '+p.type+'</div>'+
+ '<div class="hl">'+tag+' &nbsp;<span style="color:'+colorOf(p)+'">'+(p.cf>=0?'+':'\u2212')+'$'+Math.abs(p.cf).toLocaleString()+'/mo</span></div>'+
+ '<table><tr><td class="k">List price</td><td class="v">'+fmt(p.price)+'</td></tr>'+
+ '<tr><td class="k">Most you should pay</td><td class="v">'+ceil+'</td></tr>'+
+ (p.cushion?'<tr><td class="k">Target w/ cushion</td><td class="v">'+fmt(p.cushion)+'</td></tr>':'')+
+ '<tr><td class="k">35-yr net worth</td><td class="v">'+fmt(p.y35)+'</td></tr>'+
+ (beats?'<tr><td class="k"></td><td class="v" style="font-weight:400">'+beats+'</td></tr>':'')+
+ '<tr><td class="k">Rank metric</td><td class="v">'+(p.metric>=0?'+':'\u2212')+'$'+Math.abs(Math.round(p.metric)).toLocaleString()+'</td></tr></table>'+
+ '<div class="links"><a class="zbtn" href="'+zlink(p)+'" target="_blank" rel="noopener">View on Zillow &#8599;</a><a class="sbtn" href="'+slink(p)+'" target="_blank" rel="noopener">not on Zillow? search all sites &#8599;</a></div>'+
+ (SERIES[p.slug]?'<div style="margin-top:7px"><a class="plotlink" onclick="openPlots(\''+p.slug+'\')">\ud83d\udcc8 View net-worth &amp; cash-flow plots</a></div>':'')+
+ '<div class="note">'+(p.note?p.note+' &middot; ':'')+'Estimated rent'+(p.cat==='Condo'?' &amp; HOA':'')+' &mdash; verify before offering.</div></div>';
+}
+const markers={};
+var _ph=window.innerWidth<=720;
+var POP=_ph?{maxWidth:Math.min(300,window.innerWidth-28),maxHeight:Math.round(window.innerHeight*0.42),autoPanPaddingTopLeft:L.point(12,14),autoPanPaddingBottomRight:L.point(12,118),keepInView:true}:{maxWidth:280,maxHeight:410,autoPanPaddingTopLeft:L.point(26,90),autoPanPaddingBottomRight:L.point(184,150),keepInView:true};
+PROPS.forEach(p=>{const m=L.marker([p.lat,p.lng],{icon:icon(p)});m.bindPopup(popupHTML(p),POP);m.pd=p;markers[p.slug]=m;});
+function visible(){return PROPS.filter(p=>{if(!state.cats.has(p.cat))return false;if(state.lightOnly&&p.cf<0)return false;if(!state.fringe&&p.tier==='fringe')return false;if(state.q){const s=(p.name+' '+p.area+' '+p.type).toLowerCase();if(!s.includes(state.q))return false;}return true;});}
+function render(){const vis=visible();const set=new Set(vis.map(p=>p.slug));
+ if(map)Object.values(markers).forEach(m=>{if(set.has(m.pd.slug))m.addTo(map);else map.removeLayer(m);});
+ const list=document.getElementById('list');list.innerHTML='';
+ vis.forEach(p=>{const c=document.createElement('div');c.className='card';
+  c.innerHTML='<div class="rank">'+p.rank+'</div><div style="flex:1;min-width:0"><div class="nm">'+p.name+'</div><div class="sub">'+p.area+' &middot; '+fmt(p.price)+'</div><span class="badge">'+p.type+'</span> <a class="zmini" href="'+zlink(p)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">Zillow &#8599;</a>'+(SERIES[p.slug]?'<a class="zmini cmini" onclick="event.stopPropagation();openPlots(\''+p.slug+'\')">\ud83d\udcc8 plots</a>':'')+'</div>'+
+  '<div class="cf" style="color:'+colorOf(p)+'">'+(p.cf>=0?'+':'\u2212')+'$'+Math.abs(p.cf).toLocaleString()+'<div style="font-size:9px;color:#5c554c;font-weight:600">/mo</div><div style="font-size:9.5px;color:#7c4a2d;font-weight:700;margin-top:3px" title="rank metric">m '+(p.metric>=0?'+':'\u2212')+'$'+Math.abs(Math.round(p.metric/1000)).toLocaleString()+'k</div></div>';
+  c.onclick=()=>{if(!map)return;const mk=markers[p.slug];mk.addTo(map);if(window.innerWidth<=720)document.getElementById('map').scrollIntoView({behavior:'smooth',block:'start'});map.flyTo([p.lat,p.lng],16,{duration:.6});map.once('moveend',()=>mk.openPopup());};
+  list.appendChild(c);});
+ document.getElementById('count').textContent=vis.length+' of '+PROPS.length+' green shown';}
+const cw=document.getElementById('cats');
+CATS.forEach(c=>{const b=document.createElement('button');b.className='chip';b.dataset.on='1';b.innerHTML=shapeSVG(SHAPE[c],'#fff',12)+c;
+ b.onclick=()=>{if(state.cats.has(c)){state.cats.delete(c);b.dataset.on='0';}else{state.cats.add(c);b.dataset.on='1';}render();};cw.appendChild(b);});
+document.getElementById('lightOnly').onchange=e=>{state.lightOnly=e.target.checked;render();};
+document.getElementById('fringe').onchange=e=>{state.fringe=e.target.checked;render();};
+document.getElementById('search').oninput=e=>{state.q=e.target.value.toLowerCase().trim();render();};
+render();
+function _fixmap(){if(map){try{map.invalidateSize(true);}catch(e){}}}
+if(map&&Object.keys(markers).length){try{map.invalidateSize(false);const all=L.featureGroup(Object.values(markers));map.fitBounds(all.getBounds().pad(.12));}catch(e){}}
+window.addEventListener('load',function(){setTimeout(_fixmap,150);setTimeout(_fixmap,600);});
+window.addEventListener('orientationchange',function(){setTimeout(_fixmap,300);});
+var _rt;window.addEventListener('resize',function(){clearTimeout(_rt);_rt=setTimeout(_fixmap,200);});
+setTimeout(_fixmap,400);
+</script></body></html>

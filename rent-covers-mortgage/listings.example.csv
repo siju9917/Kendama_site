@@ -1,0 +1,5 @@
+name,area,type,price,beds,rent,lat,lng,hoa,insurance,capex,cooccupant,vacancy,tier,note
+3327 Krameria St ABC,North Park Hill,triplex,699999,"2,2,2","2100,2100,2100",39.7649,-104.9197,0,,,1500,0.05,core,verify rents
+123 Example Condo Unit 4,Capitol Hill,condo,315000,2,2200,39.7341,-104.9772,300,,,1500,0.05,core,HOA from listing
+900 Red St,Cherry Creek,sfh,1200000,4,3800,39.7185,-104.9536,0,,,1500,0.045,core,pricey for rent
+777 No Coords Ave,Baker,duplex,520000,"2,2","2000,2000",,,0,,,1500,0.055,core,missing coords on purpose
