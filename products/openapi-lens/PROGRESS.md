@@ -68,6 +68,17 @@ auto-proceeds (2026-06-13) or earlier if human approves.
     extracted by parser. Now parsed and diffed; both directions = INFO.
   6 new OapiChangeType values + parameter-deprecated-changed = 7 total. 70 new tests.
   **231/231 tests.**
+- [x] **5.7.4 "nothing is ever done" review (2026-06-06)** — adversarial review found:
+  `readOnly`/`writeOnly` schema fields were the most embarrassing Phase 0 gap (standard
+  in real-world specs, completely absent from parser/diff/classify); and 5 known limitations
+  were underdocumented (remote $ref silent behavior, allOf composition ignored, constraints
+  undetected, media-type narrowing invisible). Fixed:
+  - `readOnly`/`writeOnly` added to OapiSchema type, parser, diff, and classify.
+    Response property `writeOnly` false→true = BREAKING; Request property `readOnly`
+    false→true = BREAKING. All other directions = INFO.
+  - Known limitations rewritten to be user-facing: explicit warning that remote $refs
+    silently produce empty schema, allOf members are ignored, constraint fields not diffed.
+  4 new OapiChangeType values, 6 classify rules, 16 new tests. **247/247 tests.**
 
 ### Breaking-change rules implemented (Phase 0)
 
@@ -127,6 +138,14 @@ auto-proceeds (2026-06-13) or earlier if human approves.
 | Request array items became nullable (false→true) | INFO |
 | Parameter deprecated (false→true) | INFO |
 | Parameter un-deprecated (true→false) | INFO |
+| Response property gained readOnly (false→true) | INFO |
+| Response property lost readOnly (true→false) | INFO |
+| Response property became writeOnly (field disappears) | BREAKING |
+| Response property lost writeOnly (field now appears) | INFO |
+| Request property became readOnly (clients can't send) | BREAKING |
+| Request property lost readOnly (clients can now send) | INFO |
+| Request property became writeOnly | INFO |
+| Request property lost writeOnly | INFO |
 
 ---
 
@@ -174,18 +193,29 @@ _Begins when Proposal #3 auto-proceeds (2026-06-13) or human approves._
 
 ## Known limitations (Phase 0)
 
-- **No remote `$ref` resolution.** References to external files or URLs are
-  silently resolved to empty schema `{}`. Only `#/components/schemas/X` and
-  `#/definitions/X` local refs are supported (for schemas). Parameters use
-  `#/components/parameters/X` (OAS 3.x) and `#/parameters/X` (Swagger 2.0)
-  — both now resolved. Remote/file refs still silently ignored. Tested behavior.
+- **No remote `$ref` resolution.** `$ref` pointing to an external file or URL
+  is silently resolved to the empty schema `{}` — the endpoint appears to have
+  no schema. You will see **no diff output** for fields defined in a remote ref,
+  even if they changed. Only `#/components/schemas/X`, `#/definitions/X`,
+  `#/components/parameters/X`, and `#/parameters/X` (local refs) are resolved.
+  Tested behavior.
 - **Circular `$ref` terminates at depth 2.** A self-referential schema (e.g.,
   `Node.properties.next.$ref = "Node"`) is resolved one level deep; the
   second-level back-edge returns `{}`. No stack overflow. Tested behavior.
-- **No `allOf`/`oneOf`/`anyOf` merging.** Composition schemas are stored
-  as-is; their members are not merged into a flat schema for diffing. The
-  top-level `allOf`/`oneOf`/`anyOf` arrays are parsed and stored, but only
-  top-level `type`, `required[]`, and `properties` are diffed. Tested behavior.
-- **Property diff is one level deep only.** `properties.fieldName.type`
-  changes are detected. Nested objects (`user.address.zipCode`) are not
-  recursively diffed. Phase 2 adds full recursive property diffing.
+- **No `allOf`/`oneOf`/`anyOf` schema merging.** If your spec uses composition
+  (`allOf: [{$ref: "#/components/schemas/Base"}, {properties: {...}}]`), only the
+  top-level `type`, `required[]`, and `properties` keys are compared. The composed
+  members are **ignored in the diff**. A breaking change introduced entirely inside
+  an `allOf` member will not be detected. Phase 2 adds composition flattening.
+  Tested behavior.
+- **Property diff is one level deep only.** `properties.fieldName.type` changes
+  are detected. Nested objects (`user.address.zipCode`) are not recursively diffed;
+  the outer property (`user`) is compared but its sub-properties are not. Phase 2
+  adds full recursive property diffing.
+- **Schema constraint fields not yet diffed.** `minimum`, `maximum`, `minLength`,
+  `maxLength`, `pattern`, `minItems`, `maxItems`, `uniqueItems`, `default` are not
+  parsed or compared. A constraint tightening (`minLength: 0 → 5`) that would
+  cause existing client inputs to fail validation is currently invisible. Phase 2.
+- **No media-type coverage.** The engine uses the first `content` entry returned
+  by the YAML parser. An endpoint that dropped `application/xml` support while
+  keeping `application/json` will show no change. Phase 2.
