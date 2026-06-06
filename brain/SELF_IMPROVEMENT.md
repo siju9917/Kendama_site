@@ -307,6 +307,34 @@ proposal approval). The Chrome MV3 playbook (SELF_IMPROVEMENT #5) accelerated
 BidDiff's build; the same pattern applies here. Write the playbook while the
 evaluation findings are fresh, not after the build starts cold.
 
+## 11. OpenAPI engine diff playbook (from D5 Phase 0 experience)
+
+**Type:** playbook
+
+**Expected impact:** speed / quality — when D5 Phase 1 (VS Code extension scaffold) begins
+and when future API-diff products are built, the factory has zero sunk cost rediscovering
+the field-coverage discipline, direction-aware classification polarity, and completeness
+guard technique that Phase 0 required. A playbook captures these findings NOW, while they
+are fresh, so each future API-diff build starts from accumulated knowledge.
+
+**Cost to implement:** ~half a session to draft + critique.
+
+**Strengthens or weakens?** stronger.
+
+**Status:** **done (2026-06-06).** Shipped
+`brain/PLAYBOOKS/openapi-engine-diff.md`. Covers the full Phase 0 arc:
+field-coverage matrix (parser → diff → classify for every OapiSchema field),
+direction-aware classification polarity (request tightening vs response loosening),
+the TYPE_STUBS completeness guard pattern, allOf flattening semantics,
+`?? null` sentinel vs `?? undefined`, MAX_PROPERTY_DEPTH recursion cap,
+and the recurring "parsed-but-never-diffed" audit protocol.
+
+**Reasoning trace:** D5 Phase 0 required 8 adversarial rounds to cover all
+OapiSchema fields. Each round followed a predictable pattern: find a field
+parsed but not diffed → add diff emit → add classify rules → add completeness
+guard entry. Encoding this protocol as a playbook makes the next VS Code
+extension cycle (Phase 1) and D6 (Terraform classifier) dramatically faster.
+
 ## Notes for the META loop
 
 - The META loop pulls the top item from this list each cycle,
