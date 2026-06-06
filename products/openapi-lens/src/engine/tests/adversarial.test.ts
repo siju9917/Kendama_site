@@ -10917,3 +10917,111 @@ paths:
     expect(constChange?.after).toBe(100);
   });
 });
+
+// ─── Round 86: pattern value-change (not null-transition) + minLength/maxLength value changes ─
+// Pattern was only tested for null-transitions (null→pattern and pattern→null) at top-level.
+// A pattern-to-pattern change (e.g. lowercase regex → uppercase regex) exercises the non-null
+// branch of requestConstraintSeverity/responseConstraintSeverity pattern arm.
+// minLength/maxLength value changes (not null-transitions) at top-level body scope: untested.
+
+describe("adversarial round 86 — pattern value-change and minLength/maxLength value-change at top-level (end-to-end)", () => {
+  function makeStringBodySpec86(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /code:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  function makeStringResponseSpec86(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /slug:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+                ${constraintLine}
+`;
+  }
+
+  it("changing request body pattern (^[a-z]+$ → ^[A-Z]+$) is BREAKING — clients sending lowercase strings now fail", () => {
+    // requestConstraintSeverity pattern: after !== null → BREAKING (regardless of before)
+    // Both before and after are non-null patterns, but they differ. Existing lowercase-only
+    // clients will be rejected by the new uppercase-only pattern.
+    const before = makeStringBodySpec86("pattern: '^[a-z]+$'");
+    const after  = makeStringBodySpec86("pattern: '^[A-Z]+$'");
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".pattern"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBe("^[a-z]+$");
+    expect(constChange?.after).toBe("^[A-Z]+$");
+  });
+
+  it("changing response body pattern (^[a-z]+$ → ^[A-Z]+$) is BREAKING — clients validating server responses against old pattern break", () => {
+    // responseConstraintSeverity pattern: before !== null → BREAKING (regardless of after)
+    // Clients that validated server output against the old pattern will now receive values that
+    // fail their local validation (since the new pattern is entirely different).
+    const before = makeStringResponseSpec86("pattern: '^[a-z]+$'");
+    const after  = makeStringResponseSpec86("pattern: '^[A-Z]+$'");
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".pattern"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBe("^[a-z]+$");
+    expect(constChange?.after).toBe("^[A-Z]+$");
+  });
+
+  it("decreasing minLength on request body string (10→3) is INFO — constraint loosened, short strings now accepted too", () => {
+    // requestConstraintSeverity min-sense: after (3) < before (10) → INFO
+    // Clients sending 3-9 char strings that previously failed now pass; ≥10 char clients unaffected.
+    const before = makeStringBodySpec86("minLength: 10");
+    const after  = makeStringBodySpec86("minLength: 3");
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".minLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(10);
+    expect(constChange?.after).toBe(3);
+  });
+
+  it("decreasing maxLength on response body string (100→50) is INFO — server now returns shorter strings at most", () => {
+    // responseConstraintSeverity max-sense: after (50) < before (100) → INFO
+    // Server constraining itself to ≤50 chars is a stronger guarantee for clients relying on bounded length.
+    const before = makeStringResponseSpec86("maxLength: 100");
+    const after  = makeStringResponseSpec86("maxLength: 50");
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".maxLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(100);
+    expect(constChange?.after).toBe(50);
+  });
+});
