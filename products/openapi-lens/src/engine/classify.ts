@@ -103,20 +103,37 @@ const CLASSIFY_RULES: ClassifyRule[] = [
   },
 
   {
-    matches: (c) => c.type === "response-schema-property-type-changed" ? "BREAKING" : null,
+    matches: (c) =>
+      c.type === "response-schema-property-type-changed" && c.before !== null && c.after !== null ? "BREAKING" : null,
     message: (c) => `Response property type changed: ${c.location} (${c.before} → ${c.after}). Clients parsing this property with the old type will fail.`,
+  },
+  {
+    matches: (c) =>
+      c.type === "response-schema-property-type-changed" && c.before !== null && c.after === null ? "BREAKING" : null,
+    message: (c) => `Response property type constraint removed: ${c.location}. Property was ${c.before}; clients relying on this type will receive unspecified values.`,
   },
   {
     matches: (c) => c.type === "response-schema-property-removed" ? "BREAKING" : null,
     message: (c) => `Response property removed: ${c.location}. Clients that access this property will receive undefined/null.`,
   },
   {
-    matches: (c) => c.type === "request-schema-property-type-changed" ? "BREAKING" : null,
-    message: (c) => `Request body property type changed: ${c.location} (${c.before} → ${c.after}). Clients sending the old type will fail validation.`,
+    matches: (c) =>
+      c.type === "request-schema-property-type-changed" && c.after !== null ? "BREAKING" : null,
+    message: (c) => c.before === null
+      ? `Request property type constraint added: ${c.location}. Server now enforces type ${c.after}; clients sending other types will fail validation.`
+      : `Request body property type changed: ${c.location} (${c.before} → ${c.after}). Clients sending the old type will fail validation.`,
   },
   {
     matches: (c) => c.type === "request-schema-property-removed" ? "BREAKING" : null,
     message: (c) => `Request body property removed: ${c.location}. The server no longer accepts this property (silently ignored or rejected).`,
+  },
+  {
+    matches: (c) => c.type === "response-schema-items-format-changed" ? "BREAKING" : null,
+    message: (c) => `Response array element format changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients deserializing array elements with the old format may fail.`,
+  },
+  {
+    matches: (c) => c.type === "request-schema-items-format-changed" ? "BREAKING" : null,
+    message: (c) => `Request array element format changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients sending elements in the old format will fail validation.`,
   },
   {
     matches: (c) => c.type === "response-schema-items-type-changed" && c.before !== null && c.after !== null ? "BREAKING" : null,
@@ -179,6 +196,18 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const removed = before.filter((v) => !after.includes(v));
       return `Response property enum values removed at ${c.location}: [${removed.join(", ")}] no longer returned (non-breaking for clients).`;
     },
+  },
+
+  // ─── INFO for property type direction changes ────────────────────────────
+  {
+    matches: (c) =>
+      c.type === "response-schema-property-type-changed" && c.before === null ? "INFO" : null,
+    message: (c) => `Response property type added: ${c.location}. Server now specifies type ${c.after} for this property (previously unspecified).`,
+  },
+  {
+    matches: (c) =>
+      c.type === "request-schema-property-type-changed" && c.after === null ? "INFO" : null,
+    message: (c) => `Request property type constraint removed: ${c.location}. Server now accepts any type for this property (non-breaking for clients).`,
   },
 
   // ─── INFO for items direction changes ────────────────────────────────────

@@ -135,6 +135,39 @@ describe("classifyChanges — classification rules", () => {
     expect(result[0]?.severity).toBe("BREAKING");
   });
 
+  it("classifies response-schema-property-type-changed (type→null) as BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-property-type-changed", "string", null, "responses[200].properties.id.type")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/removed/i);
+  });
+
+  it("classifies response-schema-property-type-changed (null→type) as INFO", () => {
+    const result = classifyChanges([raw("response-schema-property-type-changed", null, "string", "responses[200].properties.id.type")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies request-schema-property-type-changed (null→type) as BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-property-type-changed", null, "string", "requestBody.properties.name.type")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/added/i);
+  });
+
+  it("classifies request-schema-property-type-changed (type→null) as INFO", () => {
+    const result = classifyChanges([raw("request-schema-property-type-changed", "string", null, "requestBody.properties.name.type")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies response-schema-items-format-changed as BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-items-format-changed", "uuid", "uri", "responses[200].items.format")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/uuid.*uri/i);
+  });
+
+  it("classifies request-schema-items-format-changed as BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-items-format-changed", "date", "date-time", "requestBody.items.format")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+  });
+
   it("classifies response-schema-property-removed as BREAKING", () => {
     const result = classifyChanges([raw("response-schema-property-removed", "string", null, "responses[200].properties.id")]);
     expect(result[0]?.severity).toBe("BREAKING");

@@ -415,6 +415,76 @@ describe("diffSpecs — structural diff", () => {
     expect(rc).toBeDefined();
   });
 
+  it("detects response property type removal (string → undefined)", () => {
+    const baseline = spec(`paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string`);
+    const current = spec(`paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    nullable: true`);
+    const changes = diffSpecs(baseline, current);
+    const tc = changes.find((c) => c.type === "response-schema-property-type-changed")!;
+    expect(tc).toBeDefined();
+    expect(tc.before).toBe("string");
+    expect(tc.after).toBeNull();
+  });
+
+  it("detects request property type addition (undefined → string)", () => {
+    const baseline = spec(`paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                count:
+                  nullable: true
+      responses:
+        "201":
+          description: created`);
+    const current = spec(`paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                count:
+                  type: integer
+      responses:
+        "201":
+          description: created`);
+    const changes = diffSpecs(baseline, current);
+    const tc = changes.find((c) => c.type === "request-schema-property-type-changed")!;
+    expect(tc).toBeDefined();
+    expect(tc.before).toBeNull();
+    expect(tc.after).toBe("integer");
+  });
+
   it("detects request body schema nullable changed (true → false)", () => {
     const baseline = spec(`paths:
   /items:

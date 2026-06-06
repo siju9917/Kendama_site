@@ -147,13 +147,15 @@ function diffSchemaProperties(
       });
       continue;
     }
-    if (bProp.type !== undefined && cProp.type !== undefined && bProp.type !== cProp.type) {
+    const bType = bProp.type ?? null;
+    const cType = cProp.type ?? null;
+    if (bType !== cType) {
       changes.push({
         type: isRequest ? "request-schema-property-type-changed" : "response-schema-property-type-changed",
         path, method,
         location: `${location}.properties.${key}.type`,
-        before: bProp.type,
-        after: cProp.type,
+        before: bType,
+        after: cType,
       });
     }
     if (!deepEqual(bProp.enum, cProp.enum)) {
@@ -215,6 +217,17 @@ function diffSchemaItems(
       location: `${location}.items.type`,
       before: bType,
       after: cType,
+    });
+  }
+  const bFmt = bItems?.format ?? null;
+  const cFmt = cItems?.format ?? null;
+  if (bFmt !== cFmt && (bItems !== undefined || cItems !== undefined)) {
+    changes.push({
+      type: isRequest ? "request-schema-items-format-changed" : "response-schema-items-format-changed",
+      path, method,
+      location: `${location}.items.format`,
+      before: bFmt,
+      after: cFmt,
     });
   }
 }

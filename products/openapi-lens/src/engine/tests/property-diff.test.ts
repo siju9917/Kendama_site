@@ -321,6 +321,51 @@ describe("array items diff — request body", () => {
     expect(changes.filter((c) => c.type === "request-schema-items-type-changed")).toHaveLength(0);
   });
 
+  it("detects BREAKING when response array element format changes (uuid → uri)", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /list:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /list:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: uri
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = breakingOnly(changes);
+    expect(breaking.some((c) => c.type === "response-schema-items-format-changed")).toBe(true);
+    const change = breaking.find((c) => c.type === "response-schema-items-format-changed")!;
+    expect(change.before).toBe("uuid");
+    expect(change.after).toBe("uri");
+  });
+
   it("does not conflate response and request items changes", () => {
     const baseline = makeArraySpec("string", "string");
     const current = makeArraySpec("integer", "boolean");

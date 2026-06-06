@@ -88,7 +88,9 @@ export type OapiChangeType =
   | "operation-deprecated-changed"
   | "response-schema-property-format-changed"
   | "request-schema-property-format-changed"
-  | "request-schema-nullable-changed";
+  | "request-schema-nullable-changed"
+  | "response-schema-items-format-changed"
+  | "request-schema-items-format-changed";
 
 /** A raw structural difference between two specs before classification. */
 export interface OapiRawChange {
