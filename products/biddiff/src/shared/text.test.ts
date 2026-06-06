@@ -47,6 +47,20 @@ describe("normalizeText", () => {
     );
   });
 
+  // 5.7.5 bug-hunt (2026-06-06): "52. 204-21" (dot+space break) was fixed,
+  // but "252.204- 7012" (hyphen+space break, from narrow PDF table columns)
+  // was not. The fix covers both now.
+  it("rejoins clause numbers broken at the hyphen (narrow-column PDF wrap)", () => {
+    expect(normalizeText("DFARS 252.204- 7012")).toBe("DFARS 252.204-7012");
+    expect(normalizeText("FAR 52.219- 14")).toBe("FAR 52.219-14");
+    // No regression: plain "52.204-21" (no space) stays unchanged.
+    expect(normalizeText("52.204-21")).toBe("52.204-21");
+    // Sentence punctuation like "item 1.234- 5 more" — \d{2,4}\.\d{3} requires
+    // exactly 3 digits after the dot; "234" matches but this would rejoin "1.234-5"
+    // (only if the hyphen is followed by whitespace and 1-4 digits). That's acceptable
+    // for patterns that match the clause-number shape (no false positive risk in prose).
+  });
+
   it("does not collapse sentence-ending periods", () => {
     expect(normalizeText("Item 2. The proposal must include details.")).toBe(
       "Item 2. The proposal must include details.",

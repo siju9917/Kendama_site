@@ -48,6 +48,10 @@ export function normalizeText(input: string): string {
   // The trailing portion (\d{3}-\d{1,4}) makes this specific enough to
   // never affect sentence punctuation like "2. The proposal must …".
   s = s.replace(/\b(\d{2,4})\.\s+(\d{3}-\d{1,4})\b/g, "$1.$2");
+  // Rejoin clause numbers broken at the hyphen: "252.204- 7012" -> "252.204-7012".
+  // Covers narrow-column PDF tables where the 1-4 digit suffix wraps to the next line.
+  // The \d{2,4}\.\d{3} prefix keeps this specific to clause-number patterns only.
+  s = s.replace(/\b(\d{2,4}\.\d{3})-\s+(\d{1,4})\b/g, "$1-$2");
   return s;
 }
 
