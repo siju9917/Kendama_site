@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **1052/1052 tests** (BidDiff 586/586 + openapi-lens 466/466).
+- **Build green:** **1059/1059 tests** (BidDiff 586/586 + openapi-lens 473/473).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -208,8 +208,8 @@ Priority order is `ops/loop.md`.
 
 **Unblocked (zero-cost):**
 7. ~~**P2** Vite/Vitest toolchain bump~~ — **DONE 2026-06-06.** Vite 6.4.3 + Vitest 4.1.8.
-8. ~~**D5 Phase 0 engine**~~ — **DONE + hardened 2026-06-06.** `products/openapi-lens/` — 458/458 tests
-   (rounds 5–17: allOf constraint inheritance, top-level body schema constraints/format/enum,
+8. ~~**D5 Phase 0 engine**~~ — **DONE + hardened 2026-06-06.** `products/openapi-lens/` — 473/473 tests
+   (rounds 5–19: allOf constraint inheritance, top-level body schema constraints/format/enum,
    parameter items type/format/enum/nullable/constraints, items.properties recursion,
    Swagger 2.0 path-level body param fix, `diffSchemaType` null-transition gap,
    items readOnly/writeOnly diff, request-body-required direction completeness (round 11),
@@ -218,7 +218,8 @@ Priority order is `ops/loop.md`.
    classify fixes for format/enum (round 14), request-side constraint removal INFO fixes
    for 12 change types (round 15), additionalProperties detection (round 16),
    pattern constraint null-transition fixes at 6 sites (round 17),
-   items-level additionalProperties detection (round 18)). VS Code extension scaffold (Phase 1)
+   items-level additionalProperties detection (round 18),
+   enum order-sensitivity false-positive fix — enumSetsEqual() (round 19)). VS Code extension scaffold (Phase 1)
    begins once Proposal #3 auto-proceeds 2026-06-13.
 9. Recurring: re-critique cadence, "nothing is ever done" reviews,
    ambient ideation, factory self-improvement, META audit.

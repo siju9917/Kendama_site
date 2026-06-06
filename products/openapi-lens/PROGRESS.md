@@ -197,6 +197,23 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   response both directions = INFO — mirrors body-level and property-level semantics). TYPE_STUBS updated
   (+2 entries). +8 tests (2 TYPE_STUBS completeness + 4 classify unit + 2 adversarial integration).
   **466/466 tests.**
+- [x] **5.7.5 round 19 — enum comparison was order-sensitive (false-positive spurious events)** —
+  `deepEqual` uses `JSON.stringify`, which is order-sensitive for arrays: `["a","b"]` ≠ `["b","a"]`
+  even though both represent the same set of allowed values. A spec that merely reorders its enum
+  values (common in auto-generated specs) would emit a spurious INFO event with empty `added=[]` and
+  `removed=[]` lists. The misleading message ("N values added, M values removed: none") was confusing
+  at best and noise-polluting at worst.
+  Fixed: added `enumSetsEqual()` helper in `diff.ts` that compares enum arrays as sets using
+  `JSON.stringify` per element (handles non-string values like numbers/booleans correctly). Replaced
+  all 5 `!deepEqual(x.enum, y.enum)` sites with `!enumSetsEqual(x.enum, y.enum)`:
+  - `diffParameters` L46 — parameter schema enum
+  - `diffParameters` L92 — parameter items enum
+  - `diffSchemaProperties` L232 — property enum
+  - `diffSchemaItems` L382 — items enum
+  - `diffSchemaTopLevelFields` L572 — top-level body enum
+  Genuine enum changes (values added or removed) continue to produce correct events.
+  +7 adversarial integration tests (5 reorder-no-event + 2 genuine-change-still-detected).
+  **473/473 tests.**
 - [x] **5.7.5 round 15 — request-side constraint removal classified as BREAKING instead of INFO** —
   systematic audit of all request-side classify rules found 11 cases where a constraint being REMOVED
   from the server spec (before=value, after=null/undefined) was incorrectly classified as BREAKING.

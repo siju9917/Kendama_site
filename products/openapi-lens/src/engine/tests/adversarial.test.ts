@@ -3698,3 +3698,231 @@ paths:
     expect(apChange?.message).not.toMatch(/^Change detected at/);
   });
 });
+
+// ─── Enum order-insensitivity (5.7.5 round 19) ────────────────────────────
+
+describe("enum order-insensitivity (5.7.5 round 19)", () => {
+  const PREAMBLE = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /v1/items:
+    get:
+`;
+
+  it("reordered top-level request body enum produces NO event", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              enum: ["a", "b", "c"]
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              enum: ["c", "a", "b"]
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const enumChange = changes.find((c) => c.type === "request-schema-enum-changed");
+    expect(enumChange).toBeUndefined();
+  });
+
+  it("reordered response body enum produces NO event", () => {
+    const baseline = `${PREAMBLE}
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+                enum: ["x", "y", "z"]
+`;
+    const current = `${PREAMBLE}
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+                enum: ["z", "x", "y"]
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const enumChange = changes.find((c) => c.type === "response-schema-enum-changed");
+    expect(enumChange).toBeUndefined();
+  });
+
+  it("reordered property enum produces NO event", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: ["active", "inactive", "pending"]
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: ["pending", "active", "inactive"]
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const enumChange = changes.find((c) => c.type === "request-schema-property-enum-changed");
+    expect(enumChange).toBeUndefined();
+  });
+
+  it("reordered parameter enum produces NO event", () => {
+    const baseline = `${PREAMBLE}
+      parameters:
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["asc", "desc"]
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      parameters:
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["desc", "asc"]
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const enumChange = changes.find((c) => c.type === "parameter-enum-changed");
+    expect(enumChange).toBeUndefined();
+  });
+
+  it("reordered items enum produces NO event", () => {
+    const baseline = `${PREAMBLE}
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  enum: ["red", "green", "blue"]
+`;
+    const current = `${PREAMBLE}
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  enum: ["blue", "red", "green"]
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const enumChange = changes.find((c) => c.type === "response-schema-items-enum-changed");
+    expect(enumChange).toBeUndefined();
+  });
+
+  it("genuinely added enum value is still detected (BREAKING for request)", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              enum: ["a", "b"]
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              enum: ["a", "b", "c"]
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const enumChange = changes.find((c) => c.type === "request-schema-enum-changed");
+    expect(enumChange).toBeDefined();
+    expect(enumChange?.severity).toBe("INFO");
+  });
+
+  it("genuinely removed enum value is still detected (BREAKING for request)", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              enum: ["a", "b", "c"]
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              enum: ["a", "b"]
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const enumChange = changes.find((c) => c.type === "request-schema-enum-changed");
+    expect(enumChange).toBeDefined();
+    expect(enumChange?.severity).toBe("BREAKING");
+  });
+});

@@ -17,6 +17,15 @@ function deepEqual(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
+/** Compare two enum arrays as sets (order-insensitive). Reordering enum values is not a change. */
+function enumSetsEqual(a: unknown[] | undefined, b: unknown[] | undefined): boolean {
+  if (a === undefined && b === undefined) return true;
+  if (a === undefined || b === undefined) return false;
+  if (a.length !== b.length) return false;
+  const aSet = new Set(a.map((v) => JSON.stringify(v)));
+  return b.every((v) => aSet.has(JSON.stringify(v)));
+}
+
 /** Compare two parameter lists and emit changes. */
 function diffParameters(
   path: string,
@@ -43,7 +52,7 @@ function diffParameters(
     if (bp.schema.format !== cp.schema.format && (bp.schema.format !== undefined || cp.schema.format !== undefined)) {
       changes.push({ type: "parameter-format-changed", path, method, location: `parameter(${bp.in}:${bp.name}).schema.format`, before: bp.schema.format, after: cp.schema.format });
     }
-    if (!deepEqual(bp.schema.enum, cp.schema.enum)) {
+    if (!enumSetsEqual(bp.schema.enum, cp.schema.enum)) {
       const bEnum = bp.schema.enum;
       const cEnum = cp.schema.enum;
       if (bEnum !== undefined || cEnum !== undefined) {
@@ -89,7 +98,7 @@ function diffParameters(
       if (bFmt !== cFmt) {
         changes.push({ type: "parameter-items-format-changed", path, method, location: `${paramItemsLoc}.format`, before: bFmt, after: cFmt });
       }
-      if (!deepEqual(bItems?.enum, cItems?.enum) && (bItems?.enum !== undefined || cItems?.enum !== undefined)) {
+      if (!enumSetsEqual(bItems?.enum, cItems?.enum) && (bItems?.enum !== undefined || cItems?.enum !== undefined)) {
         changes.push({ type: "parameter-items-enum-changed", path, method, location: `${paramItemsLoc}.enum`, before: bItems?.enum ?? null, after: cItems?.enum ?? null });
       }
       const bNull = bItems?.nullable ?? false;
@@ -229,7 +238,7 @@ function diffSchemaProperties(
         after: cType,
       });
     }
-    if (!deepEqual(bProp.enum, cProp.enum)) {
+    if (!enumSetsEqual(bProp.enum, cProp.enum)) {
       const bEnum = bProp.enum;
       const cEnum = cProp.enum;
       if (bEnum !== undefined || cEnum !== undefined) {
@@ -379,7 +388,7 @@ function diffSchemaItems(
   }
   const bItemsEnum = bItems?.enum;
   const cItemsEnum = cItems?.enum;
-  if (!deepEqual(bItemsEnum, cItemsEnum) && (bItemsEnum !== undefined || cItemsEnum !== undefined)) {
+  if (!enumSetsEqual(bItemsEnum, cItemsEnum) && (bItemsEnum !== undefined || cItemsEnum !== undefined)) {
     changes.push({
       type: isRequest ? "request-schema-items-enum-changed" : "response-schema-items-enum-changed",
       path, method,
@@ -569,7 +578,7 @@ function diffSchemaTopLevelFields(
   }
   const bEnum = baseline?.enum;
   const cEnum = current?.enum;
-  if (!deepEqual(bEnum, cEnum) && (bEnum !== undefined || cEnum !== undefined)) {
+  if (!enumSetsEqual(bEnum, cEnum) && (bEnum !== undefined || cEnum !== undefined)) {
     changes.push({
       type: isRequest ? "request-schema-enum-changed" : "response-schema-enum-changed",
       path, method,
