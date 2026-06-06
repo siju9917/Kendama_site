@@ -1078,6 +1078,63 @@ paths:
     expect(constraint?.location).toMatch(/minLength/);
   });
 
+  it("parameter maximum decrease is BREAKING — clients sending previously valid large numbers fail", () => {
+    const makeSpec = (max: number) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: ${max}
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(makeSpec(100), makeSpec(50));
+    const constraint = changes.find((c) => c.type === "parameter-constraint-changed" && String(c.location).endsWith(".maximum"));
+    expect(constraint).toBeDefined();
+    expect(constraint?.before).toBe(100);
+    expect(constraint?.after).toBe(50);
+    expect(constraint?.severity).toBe("BREAKING");
+  });
+
+  it("response array items minLength loosening is BREAKING — clients get shorter strings than expected", () => {
+    const makeSpec = (minLen: number) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /tags:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  minLength: ${minLen}
+`;
+    const changes = analyzeOpenApiDiff(makeSpec(5), makeSpec(2));
+    const constraint = changes.find((c) => c.type === "response-schema-items-constraint-changed");
+    expect(constraint).toBeDefined();
+    expect(constraint?.before).toBe(5);
+    expect(constraint?.after).toBe(2);
+    expect(constraint?.severity).toBe("BREAKING");
+    expect(constraint?.location).toMatch(/items\.minLength/);
+  });
+
   it("constraint on deeply nested property is detected — recursive diff + constraint diffing cooperate", () => {
     const nested = (minLength: number) => `
 openapi: "3.0.0"

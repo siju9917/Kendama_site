@@ -16,6 +16,14 @@ export interface OapiSchema {
   allOf?: OapiSchema[];
   oneOf?: OapiSchema[];
   anyOf?: OapiSchema[];
+  /** Validation constraint fields (JSON Schema draft-07 / OpenAPI). */
+  minimum?: number;
+  maximum?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  minItems?: number;
+  maxItems?: number;
 }
 
 /** A parameter on an operation (path / query / header / cookie). */
@@ -103,7 +111,12 @@ export type OapiChangeType =
   | "response-schema-property-readonly-changed"
   | "request-schema-property-readonly-changed"
   | "response-schema-property-writeonly-changed"
-  | "request-schema-property-writeonly-changed";
+  | "request-schema-property-writeonly-changed"
+  | "response-schema-property-constraint-changed"
+  | "request-schema-property-constraint-changed"
+  | "parameter-constraint-changed"
+  | "response-schema-items-constraint-changed"
+  | "request-schema-items-constraint-changed";
 
 /** A raw structural difference between two specs before classification. */
 export interface OapiRawChange {

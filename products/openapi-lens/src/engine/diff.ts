@@ -55,6 +55,20 @@ function diffParameters(
     if (bDep !== cDep) {
       changes.push({ type: "parameter-deprecated-changed", path, method, location: `parameter(${bp.in}:${bp.name}).deprecated`, before: bDep, after: cDep });
     }
+    const paramConstraintFields = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems"] as const;
+    for (const cf of paramConstraintFields) {
+      const bVal = bp.schema[cf] ?? null;
+      const cVal = cp.schema[cf] ?? null;
+      if (bVal !== cVal) {
+        changes.push({
+          type: "parameter-constraint-changed",
+          path, method,
+          location: `parameter(${bp.in}:${bp.name}).schema.${cf}`,
+          before: bVal,
+          after: cVal,
+        });
+      }
+    }
   }
 
   for (const [key, cp] of cMap) {
@@ -229,6 +243,22 @@ function diffSchemaProperties(
       });
     }
 
+    // Compare validation constraint fields.
+    const constraintFields: Array<keyof typeof bProp> = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems"];
+    for (const cf of constraintFields) {
+      const bVal = bProp[cf] ?? null;
+      const cVal = cProp[cf] ?? null;
+      if (bVal !== cVal) {
+        changes.push({
+          type: isRequest ? "request-schema-property-constraint-changed" : "response-schema-property-constraint-changed",
+          path, method,
+          location: `${location}.properties.${key}.${cf}`,
+          before: bVal,
+          after: cVal,
+        });
+      }
+    }
+
     // Recurse into nested object properties (both old and new exist — diff them).
     if (bProp.properties || cProp.properties) {
       diffSchemaProperties(
@@ -310,6 +340,20 @@ function diffSchemaItems(
       before: bItemsNull,
       after: cItemsNull,
     });
+  }
+  const itemsConstraintFields = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems"] as const;
+  for (const cf of itemsConstraintFields) {
+    const bVal = bItems?.[cf] ?? null;
+    const cVal = cItems?.[cf] ?? null;
+    if (bVal !== cVal) {
+      changes.push({
+        type: isRequest ? "request-schema-items-constraint-changed" : "response-schema-items-constraint-changed",
+        path, method,
+        location: `${location}.items.${cf}`,
+        before: bVal,
+        after: cVal,
+      });
+    }
   }
 }
 

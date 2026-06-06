@@ -95,6 +95,15 @@ auto-proceeds (2026-06-13) or earlier if human approves.
     BREAKING, tightening = INFO. Pattern changes = always BREAKING for both.
     2 new OapiChangeType values. 13 new classify tests + 5 recursive diff tests + 6 allOf
     parser tests. **275/275 tests.**
+- [x] **5.7.4 continuation — parameter + items constraint diffing** — "nothing is done"
+  review identified two gaps: parameter schema constraints (e.g., `maximum: 100→50` on an
+  integer query parameter) and array items constraints (e.g., `items.minLength: 5→2`) were
+  both invisible despite constraint fields being parsed. Implemented constraint comparison
+  loops in `diffParameters` and `diffSchemaItems`. 3 new OapiChangeType values
+  (`parameter-constraint-changed`, `request-schema-items-constraint-changed`,
+  `response-schema-items-constraint-changed`) with direction-aware classify rules matching
+  the existing property constraint classification logic. 10 new unit tests + 2 adversarial
+  integration tests. **297/297 tests.**
 
 ### Breaking-change rules implemented (Phase 0)
 
@@ -172,6 +181,17 @@ auto-proceeds (2026-06-13) or earlier if human approves.
 | Response property constraint removed (value→null) | BREAKING |
 | Response property constraint added (null→value) | INFO |
 | Response property pattern changed | BREAKING |
+| Parameter constraint tightened (minLength↑, maxLength↓, etc.) | BREAKING |
+| Parameter constraint loosened | INFO |
+| Parameter constraint added (null→value) | BREAKING |
+| Parameter constraint removed (value→null) | INFO |
+| Parameter pattern changed | BREAKING |
+| Request array items constraint tightened | BREAKING |
+| Request array items constraint loosened | INFO |
+| Response array items constraint loosened | BREAKING |
+| Response array items constraint tightened | INFO |
+| Response array items constraint removed | BREAKING |
+| Response array items pattern changed | BREAKING |
 
 ---
 
@@ -245,7 +265,7 @@ _Begins when Proposal #3 auto-proceeds (2026-06-13) or human approves._
   generates a `response-schema-property-type-changed` event with the full dotted
   path in `location`. Cycle-safe: stops at `MAX_PROPERTY_DEPTH = 5` without
   throwing. Tested behavior (5 new tests).
-- **`uniqueItems`, `default`, `exclusiveMinimum`, `exclusiveMaximum` not diffed.**
+- **`uniqueItems`, `default`, `exclusiveMinimum`, `exclusiveMaximum`, `multipleOf` not diffed.**
   JSON Schema / OAS 3.1 draft-07 fields `uniqueItems`, `default`, `exclusiveMinimum`,
   `exclusiveMaximum`, `multipleOf` are not parsed or compared. Phase 2.
 - **No media-type coverage.** The engine uses the first `content` entry returned
