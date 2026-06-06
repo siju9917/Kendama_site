@@ -118,6 +118,14 @@ Checklist:
   fully-explicit form. Added 2026-06-06 (BidDiff N16: `PAGE_LIMIT_RE`
   had `\(?` inside the word-group optional, so bare `"(30) pages"` did
   not produce a PAGE_LIMIT anchor).
+- **Optional groups in regexes with `\b` can produce unexpected partial
+  matches through backtracking.** When a full match fails `\b` (e.g.
+  `$1.5MMM` — triple-M is not a word boundary), the engine backtracks
+  the optional decimal group and succeeds on `$1` (with `\b` between
+  the digit and the `.`). The "partial" result is technically valid but
+  silently drops the value. Characterize this behavior in a test and
+  verify it is acceptable or fix it. Added 2026-06-06 (BidDiff
+  `detectMoney`: `$1.5MMM` returns `$1 = 1.00` not no-match).
 
 ### 3. Security Critic
 
@@ -508,3 +516,4 @@ with no growth is a warning sign flagged in the weekly digest.
 | 2026-06-06 | Domain-Expert Critic (#5) checklist | Added anchor-extension validation gate: new anchor types require (a) a cited public regulatory source and (b) an integration test exercising the full detection→classify→critical chain, not just a unit test on the detector | BD2 public-source resolution cycle — sub-CLIN (DFARS 204.71) and SET_ASIDE (FAR 19.501) anchors added with citations + end-to-end integration tests; the process proved that "it seemed right" is insufficient for critical-rule additions to a compliance product |
 | 2026-06-06 | Correctness Critic (#1) checklist | Added: a sign detector firing before digits must ALSO fire before currency symbols (`$` etc.) — `"-$5,000"` must normalize differently from `"$5,000"`. Probe `[-+]$AMOUNT` explicitly | BidDiff N15: `isLeadingSign` only checked `next === digit`, not `next === "$"`, so a sign-removal on a dollar amount was silently suppressed (`products/biddiff/CRITIQUE_LOG.md` bug-hunt pass, session 2026-06-06) |
 | 2026-06-06 | Adversarial Tester (#2) checklist | Added: a regex optional group wrapping BOTH a word prefix and `\(` makes the paren optional too — test every regex with and without each optional prefix INDEPENDENTLY | BidDiff N16: `PAGE_LIMIT_RE` had `\(?` inside the word-group optional so bare `"(30) pages"` (no word prefix) never produced a PAGE_LIMIT anchor (`products/biddiff/CRITIQUE_LOG.md` bug-hunt, session 2026-06-06) |
+| 2026-06-06 | Adversarial Tester (#2) checklist | Added: optional groups with `\b` can produce unexpected partial matches through backtracking — when the full match fails `\b`, the engine backtracks an optional group and produces a shorter, potentially wrong match. Characterize this behavior in a test. | BidDiff `detectMoney`: `$1.5MMM` returns `$1 = 1.00` (not no-match) because `MM` fails the word boundary but the engine backtracks the optional decimal and matches `$1` with `\b` between the digit and the subsequent `.` |
