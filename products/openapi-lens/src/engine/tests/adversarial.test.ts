@@ -7092,3 +7092,117 @@ paths:
     expect(changes.filter((c) => c.type === "response-schema-nullable-changed")).toHaveLength(0);
   });
 });
+
+// ─── Round 41: body schema minItems/maxItems + items depth limit ──────────────
+
+describe("top-level request body array constraint changes (5.7.5 round 41)", () => {
+  function makeArrayBody(constraints: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+              ${constraints}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("increasing minItems on request array is BREAKING", () => {
+    const changes = analyzeOpenApiDiff(makeArrayBody("minItems: 1"), makeArrayBody("minItems: 5"));
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).includes("minItems"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.before).toBe(1);
+    expect(constChange?.after).toBe(5);
+    expect(constChange?.severity).toBe("BREAKING");
+  });
+
+  it("decreasing maxItems on request array is BREAKING", () => {
+    const changes = analyzeOpenApiDiff(makeArrayBody("maxItems: 100"), makeArrayBody("maxItems: 10"));
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).includes("maxItems"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.before).toBe(100);
+    expect(constChange?.after).toBe(10);
+    expect(constChange?.severity).toBe("BREAKING");
+  });
+
+  it("increasing maxItems on request array is INFO (relaxed constraint)", () => {
+    const changes = analyzeOpenApiDiff(makeArrayBody("maxItems: 10"), makeArrayBody("maxItems: 100"));
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).includes("maxItems"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+  });
+});
+
+describe("response array items depth limit (MAX_ITEMS_DEPTH = 3) (5.7.5 round 41)", () => {
+  it("type change inside 3-level nested array (array<array<array<string>>>) is detected", () => {
+    const makeTripleArray = (innerType: string) => `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: ${innerType}
+`;
+    const changes = analyzeOpenApiDiff(makeTripleArray("string"), makeTripleArray("integer"));
+    const typeChange = changes.find((c) => c.type === "response-schema-items-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+
+  it("type change inside 4-level nested array (beyond MAX_ITEMS_DEPTH=3) is NOT detected — known limit", () => {
+    const makeQuadArray = (innerType: string) => `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        type: ${innerType}
+`;
+    // 4-level deep array items: beyond MAX_ITEMS_DEPTH=3, not detected (false negative by design).
+    const changes = analyzeOpenApiDiff(makeQuadArray("string"), makeQuadArray("integer"));
+    expect(changes.filter((c) => c.type === "response-schema-items-type-changed")).toHaveLength(0);
+  });
+});
