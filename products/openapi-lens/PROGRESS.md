@@ -602,6 +602,21 @@ P3 — diagnosticProvider.ts: `lineText.search(/\S/)` returned -1 for empty line
 
 **Phase 1 gate: CLEARED (2026-06-06, 697/697 tests, typecheck clean).**
 
+**5.7.5 continuous bug-hunt (post-gate, 2026-06-06) — findings and fixes:**
+
+- `parseOutputChanges`: sensitive output only detected boolean `true` — missed object-form
+  `after_sensitive: {fieldName: true}`. Fixed: added `typeof entry["after_sensitive"] === "object"`
+  check. 2 tests added. 715→715 (was 713).
+
+- `parseResponses`: response-level `$ref` (e.g., `$ref: "#/components/responses/SuccessResponse"`)
+  was silently dropped — schema never extracted, changes to shared responses undetected.
+  Fixed: `parseSharedResponses` builds a lookup from `#/components/responses`; `parseResponses`
+  resolves `$ref` entries before extracting schema. 3 adversarial tests added. 718 tests.
+
+- `clearBaseline` command: `config.update(ConfigurationTarget.Workspace)` throws when no
+  workspace folder is open. Fixed: wrapped in try/catch; in-memory baseline now always
+  clears even if workspace setting can't be persisted. `commands.test.ts` added (3 tests). 721 tests.
+
 ### 5.7.4 "Nothing is done" review — D5 Phase 1 extension (2026-06-06)
 
 What would make D5 Phase 1 materially better? What would a top-tier team add?
@@ -612,25 +627,22 @@ What would make D5 Phase 1 materially better? What would a top-tier team add?
   *file path* (not content) to workspace settings so baselines survive reload.
   Phase 2: `config.update("baselineFile", selectedPath, ConfigurationTarget.Workspace)`.
 
-- [ ] **POLISH N2 — Real-time analysis (debounced).** Changes are detected on save
-  (`onDidSaveTextDocument`) only. A Phase 2 improvement: subscribe to
-  `onDidChangeTextDocument` with a 500ms debounce so diagnostics appear as you type,
-  matching TypeScript/ESLint UX. Trade-off: higher CPU for large specs.
+- [x] **POLISH N2 — Real-time analysis (debounced).** DONE (2026-06-06). Subscribed to
+  `onDidChangeTextDocument` with 400ms debounce alongside `onDidSaveTextDocument`.
+  `ReturnType<typeof setTimeout>` used for type safety. ✓
 
 - [ ] **POLISH N3 — Semantic line location for diagnostics.** `findLineForLocation` is
   a text-search heuristic — it finds the first line matching the last path segment as a
   key string. For JSON paths like `parameters[0]`, it falls back to line 0. A Phase 2
   implementation would parse the YAML/JSON AST and walk the path for precise line numbers.
 
-- [ ] **POLISH N4 — "Comparing vs:" in WebView panel header.** The WebView shows changes
-  but doesn't tell the user what baseline is being used (git HEAD? a picked file?
-  workspace config?). A header line "Comparing: git HEAD (abc123) vs current" would make
-  it clear what the diff represents.
+- [x] **POLISH N4 — "Comparing vs:" in WebView panel header.** DONE (2026-06-06).
+  `resolveBaseline` now returns `{content, label}` — label is "git HEAD", "selected file",
+  or "workspace: <filename>". Meta line in WebView shows `· baseline: <label>`. ✓
 
-- [ ] **POLISH N5 — Diagnostic message source prefix.** The Diagnostic message shows raw
-  `change.message` without context (e.g., "Endpoint removed"). TypeScript and ESLint both
-  prefix messages. A Phase 2 improvement: prepend "OpenAPI: " to diagnostic messages for
-  clarity in the Problems panel where all linters appear together.
+- [x] **POLISH N5 — Diagnostic message source prefix.** DONE (existing). `diag.source =
+  "openapi-lens"` is set, which is the correct VS Code convention (source appears in
+  Problems panel next to the message). No code change needed. ✓
 
 ### 5.7.4 "Nothing is done" review — D6 Terraform Lens Phase 1 (2026-06-06)
 
@@ -639,20 +651,17 @@ What would make D5 Phase 1 materially better? What would a top-tier team add?
   IAM policy (fewer permissions = smaller blast radius) should be INFO. Phase 2: compare
   before/after policy documents and classify the direction.
 
-- [ ] **POLISH T2 — `output_changes` and `variable_changes` classification.** The Terraform
-  plan JSON also includes `output_changes` and `variable_changes` keys. These are not
-  infrastructure changes but can affect downstream automation. Phase 2: show them in a
-  separate section of the WebView.
+- [x] **POLISH T2 — `output_changes` classification.** DONE (2026-06-06). Parser extracts
+  `output_changes` map from plan JSON; sensitive detection handles boolean AND object
+  `after_sensitive`; no-op outputs filtered; WebView renders Output Changes section. ✓
 
-- [ ] **POLISH T3 — `create_before_destroy` vs `destroy_before_create` distinction.** Both
-  patterns produce `["create","delete"]` or `["delete","create"]` in the plan. The ordering
-  matters for zero-downtime deployments (`create_before_destroy` is safer). Phase 2:
-  distinguish in the reason message.
+- [x] **POLISH T3 — `create_before_destroy` vs `destroy_before_create` distinction.** DONE
+  (2026-06-06). `replaceOrderDetail()` in classify.ts distinguishes `["create","delete"]`
+  (create_before_destroy, lower downtime risk) from `["delete","create"]` (destroy_before_create,
+  downtime window) from `["replace"]` (single action, Terraform 0.15+). ✓
 
-- [ ] **POLISH T4 — WebView plan context header.** The WebView shows a table of changed
-  resources but not the total number of resources in the plan. "2 CRITICAL out of 47
-  resource changes" is much more useful than just "2 CRITICAL". Add: `${total} resource
-  changes in plan: ${classified counts}`.
+- [x] **POLISH T4 — WebView plan context header.** DONE (2026-06-06). Meta line shows
+  `N resource changes (K CRITICAL · M NORMAL · J NO-OP)` when changes > 0. ✓
 
 ## Phase 2 — Full UI + hardening (PLANNED)
 
