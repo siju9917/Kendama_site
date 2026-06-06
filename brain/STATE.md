@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **686/686 tests** (BidDiff 580/580 + openapi-lens 106/106).
+- **Build green:** **688/688 tests** (BidDiff 582/582 + openapi-lens 106/106).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -98,7 +98,8 @@
   46 DiffView component + 12 SamAttachments + 4 N-A21 filter counter +
   4 NAICS-separator-forms fix + 4 critical-rule MOVE-behavior characterization +
   1 NAICS e2e integration + 4 extractSolicitationId over-capture +
-  1 SF-1449 solicitation/contract/order form).
+  1 SF-1449 solicitation/contract/order form +
+  2 SET_ASIDE+CLIN anchor-recall recall suites).
   OpenAPI-lens: Phase 0 engine 96/96 (critique panel) + 10 more (5.7.5 bug-hunt:
   $ref parameter resolution + double-$ref chain). All typecheck clean; full CI gate verified green.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
@@ -574,6 +575,15 @@ all green; check tests 16/16.
     optional group after "solicitation" in the prefix alternation so the slash form
     matches. With or without a colon delimiter both work. 1 new test (2 assertions:
     plain form + colon form). 580/580 BidDiff. Total suite: **686/686 tests**.
+43. **5.7.5 gap: `anchor-recall.test.ts` had no SET_ASIDE or CLIN recall cases** — the
+    two newest anchor types (both driving CRITICAL classification: SET_ASIDE→rule 7
+    for eligibility; CLIN→rule 5 for pricing structure). The existing unit tests only
+    covered the regex mechanics, not real-world prose phrasings from actual solicitations.
+    Added 2 new recall suites: SET_ASIDE (8 cases: SAM.gov colon "NAICS: 541519",
+    cover-page "NAICS Code:", plain-space "NAICS 541511", set-aside designation,
+    size standard); CLIN (4 cases: standard, sub-CLIN, SubCLIN prefix, leading-zero
+    stripped). All 5 new `it` blocks pass immediately — no bugs found, but the gap
+    is now regression-locked. 582/582 BidDiff. Total suite: **688/688 tests**.
 
 ## Notes for the next session
 
@@ -584,7 +594,7 @@ all green; check tests 16/16.
   This is the last ship blocker besides the store submission itself.
 - This session's work is on branch `claude/intelligent-faraday-FnmJn` per task
   instructions. Must be merged to `main` at session end per CLAUDE.md rule 6.
-- **BidDiff bug-hunt lane is SATURATED** (580 tests, every core fn + all sidepanel
+- **BidDiff bug-hunt lane is SATURATED** (582 tests, every core fn + all sidepanel
   components tested). All unblocked POLISH done. Next session: privacy copy fix
   (NEED #7, when human responds), store submission prep, and D5 VS Code extension
   Phase 1 scaffold (once Proposal #3 auto-proceeds 2026-06-13).
