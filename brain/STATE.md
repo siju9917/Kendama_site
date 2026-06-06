@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **1341/1341 tests** (BidDiff 586/586 + openapi-lens 755/755).
+- **Build green:** **1344/1344 tests** (BidDiff 586/586 + openapi-lens 758/758).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -143,6 +143,11 @@
   exists (mirrors parameter parsing). 1 regression test. Also: response-header-required-changed
   (BREAKING when true→false, INFO when false→true); 1 new OapiChangeType; classify rules
   x2; TYPE_STUBS updated; 3 adversarial tests → 755.
+  5.7.5 bug-hunt round 29 (bug fix): requestBody $ref resolution gap — when requestBody
+  used $ref: "#/components/requestBodies/X", parser didn't resolve it (raw was {$ref: ...},
+  no content field). Added parseSharedRequestBodies + updated parseRequestBody to resolve
+  $ref the same way as parseResponses/$ref. Changes to shared request bodies now propagate
+  correctly. 3 adversarial tests → 758.
   All typecheck clean; full CI gate verified green.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`

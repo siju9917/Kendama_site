@@ -256,11 +256,26 @@ function parseParameters(pathLevelParams: unknown[], opLevelParams: unknown[], s
   return [...merged.values()];
 }
 
-/** Parse a requestBody object (OAS 3.x). */
-function parseRequestBody(raw: unknown, lookup: Record<string, unknown>): OapiRequestBody | null {
+/** Parse #/components/requestBodies into a lookup map for $ref resolution. */
+function parseSharedRequestBodies(raw: Record<string, unknown>): Record<string, unknown> {
+  const components = isObject(raw["components"]) ? raw["components"] : {};
+  return isObject(components["requestBodies"]) ? components["requestBodies"] : {};
+}
+
+/** Parse a requestBody object (OAS 3.x). Resolves $ref to #/components/requestBodies. */
+function parseRequestBody(raw: unknown, lookup: Record<string, unknown>, requestBodyLookup: Record<string, unknown> = {}): OapiRequestBody | null {
   if (!isObject(raw)) return null;
-  const required = asBoolean(raw["required"]) ?? false;
-  const schema = extractContentSchema(raw["content"], lookup);
+  const ref = asString(raw["$ref"]);
+  const effective: Record<string, unknown> = ref
+    ? ((): Record<string, unknown> => {
+        const match = /^#\/components\/requestBodies\/(.+)$/.exec(ref);
+        if (!match || !match[1]) return {};
+        const target = requestBodyLookup[match[1]];
+        return isObject(target) ? target : {};
+      })()
+    : raw;
+  const required = asBoolean(effective["required"]) ?? false;
+  const schema = extractContentSchema(effective["content"], lookup);
   return { required, schema };
 }
 
@@ -382,6 +397,7 @@ function parseOperations(raw: Record<string, unknown>, schemaLookup: Record<stri
   const paramLookup = parseSharedParameters(raw, schemaLookup);
   const responseLookup = parseSharedResponses(raw);
   const headerLookup = parseSharedHeaders(raw);
+  const requestBodyLookup = parseSharedRequestBodies(raw);
   const paths = isObject(raw["paths"]) ? raw["paths"] : {};
   const ops: OapiOperation[] = [];
 
@@ -404,7 +420,7 @@ function parseOperations(raw: Record<string, unknown>, schemaLookup: Record<stri
       const requestBody =
         version === "2.0"
           ? buildSwagger2RequestBody([...opLevelParams, ...pathLevelParams], schemaLookup)
-          : parseRequestBody(opRaw["requestBody"], schemaLookup);
+          : parseRequestBody(opRaw["requestBody"], schemaLookup, requestBodyLookup);
 
       const responses = parseResponses(opRaw["responses"], schemaLookup, responseLookup, headerLookup);
       const deprecated = asBoolean(opRaw["deprecated"]);

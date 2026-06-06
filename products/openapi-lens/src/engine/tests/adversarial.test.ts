@@ -5189,6 +5189,72 @@ paths:
   });
 });
 
+describe("requestBody $ref resolution — changes in #/components/requestBodies propagate (5.7.5 round 29)", () => {
+  const makeSpec = (required: string[], props: Record<string, string>) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+components:
+  requestBodies:
+    CreateItem:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [${required.join(", ")}]
+            properties:
+${Object.entries(props).map(([k, v]) => `              ${k}:\n                type: ${v}`).join("\n")}
+paths:
+  /items:
+    post:
+      requestBody:
+        $ref: "#/components/requestBodies/CreateItem"
+      responses:
+        "201":
+          description: created
+`;
+
+  it("required field added to shared request body $ref is detected as BREAKING", () => {
+    const baseline = makeSpec(["name"], { name: "string" });
+    const current = makeSpec(["name", "price"], { name: "string", price: "number" });
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const reqAdded = changes.find((c) => c.type === "request-schema-field-required-added");
+    expect(reqAdded).toBeDefined();
+    expect(reqAdded?.severity).toBe("BREAKING");
+    expect(reqAdded?.location).toMatch(/price/);
+  });
+
+  it("property removed from shared request body $ref is detected as BREAKING", () => {
+    const baseline = makeSpec(["name", "code"], { name: "string", code: "string" });
+    const current = makeSpec(["name"], { name: "string" });
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const propRemoved = changes.find((c) => c.type === "request-schema-property-removed");
+    expect(propRemoved).toBeDefined();
+    expect(propRemoved?.severity).toBe("BREAKING");
+  });
+
+  it("nonexistent requestBody $ref returns null request body (no crash)", () => {
+    const spec = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      requestBody:
+        $ref: "#/components/requestBodies/NonExistent"
+      responses:
+        "201":
+          description: created
+`;
+    expect(() => analyzeOpenApiDiff(spec, spec)).not.toThrow();
+    expect(analyzeOpenApiDiff(spec, spec)).toHaveLength(0);
+  });
+});
+
 describe("Swagger 2.0 response header type parsing (5.7.5 round 28 bug fix)", () => {
   it("Swagger 2.0 response headers with bare `type` field are parsed and diffed correctly", () => {
     const baseline = JSON.stringify({
