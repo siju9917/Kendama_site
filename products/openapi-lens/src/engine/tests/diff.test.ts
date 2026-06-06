@@ -575,4 +575,36 @@ describe("diffSpecs — structural diff", () => {
                     type: string`);
     expect(diffSpecs(s, s)).toHaveLength(0);
   });
+
+  it("detects parameter deprecated changed (false → true)", () => {
+    const baseline = spec(`paths:
+  /items:
+    get:
+      parameters:
+        - name: filter
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ok`);
+    const current = spec(`paths:
+  /items:
+    get:
+      parameters:
+        - name: filter
+          in: query
+          deprecated: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ok`);
+    const changes = diffSpecs(baseline, current);
+    const depChange = changes.find((c) => c.type === "parameter-deprecated-changed");
+    expect(depChange).toBeDefined();
+    expect(depChange?.before).toBe(false);
+    expect(depChange?.after).toBe(true);
+    expect(depChange?.location).toMatch(/filter/);
+  });
 });

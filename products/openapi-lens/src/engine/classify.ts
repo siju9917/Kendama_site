@@ -390,6 +390,14 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     matches: (c) => c.type === "operation-deprecated-changed" && c.after === false ? "INFO" : null,
     message: (c) => `Operation un-deprecated: ${c.location}. This endpoint is no longer marked for removal.`,
   },
+  {
+    matches: (c) => c.type === "parameter-deprecated-changed" && c.after === true ? "INFO" : null,
+    message: (c) => `Parameter deprecated: ${c.location}. Clients should stop using this parameter; it is scheduled for removal.`,
+  },
+  {
+    matches: (c) => c.type === "parameter-deprecated-changed" && c.after === false ? "INFO" : null,
+    message: (c) => `Parameter un-deprecated: ${c.location}. This parameter is no longer marked for removal.`,
+  },
 ];
 
 /**

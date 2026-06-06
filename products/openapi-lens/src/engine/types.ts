@@ -96,7 +96,8 @@ export type OapiChangeType =
   | "response-schema-items-enum-changed"
   | "request-schema-items-enum-changed"
   | "response-schema-items-nullable-changed"
-  | "request-schema-items-nullable-changed";
+  | "request-schema-items-nullable-changed"
+  | "parameter-deprecated-changed";
 
 /** A raw structural difference between two specs before classification. */
 export interface OapiRawChange {

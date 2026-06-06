@@ -341,6 +341,18 @@ describe("classifyChanges — classification rules", () => {
     expect(result[0]?.severity).toBe("INFO");
   });
 
+  it("classifies parameter-deprecated-changed (false→true) as INFO", () => {
+    const result = classifyChanges([raw("parameter-deprecated-changed", false, true, "parameter(query:limit).deprecated")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/deprecated/i);
+  });
+
+  it("classifies parameter-deprecated-changed (true→false) as INFO", () => {
+    const result = classifyChanges([raw("parameter-deprecated-changed", true, false, "parameter(query:limit).deprecated")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/un-deprecated/i);
+  });
+
   it("handles multiple changes in a single call", () => {
     const changes = classifyChanges([
       raw("endpoint-removed", "get /a", null),
@@ -422,6 +434,7 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "request-schema-items-enum-changed":            [["a", "b"], ["a"]],
     "response-schema-items-nullable-changed":       [false, true],
     "request-schema-items-nullable-changed":        [true, false],
+    "parameter-deprecated-changed":                 [false, true],
   };
 
   it.each(Object.keys(TYPE_STUBS) as OapiChangeType[])(

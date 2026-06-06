@@ -144,7 +144,8 @@ function parseParameter(raw: unknown, schemaLookup: Record<string, unknown>, par
   if (!["path", "query", "header", "cookie"].includes(inVal)) return null;
   const required = asBoolean(raw["required"]) ?? (inVal === "path");
   const schema = normalizeSchema(raw["schema"] ?? raw, schemaLookup);
-  return { name, in: inVal as OapiParameter["in"], required, schema };
+  const deprecated = asBoolean(raw["deprecated"]);
+  return { name, in: inVal as OapiParameter["in"], required, schema, ...(deprecated ? { deprecated } : {}) };
 }
 
 /** Parse components/parameters (OAS 3.x) and top-level parameters (Swagger 2.0) into a lookup map. */

@@ -413,4 +413,34 @@ components:
       expect(op.parameters[0]?.name).toBe("id");
     }
   });
+
+  it("parses parameter deprecated flag", () => {
+    const spec = parseOapiSpec(`
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - name: legacy
+          in: query
+          deprecated: true
+          schema:
+            type: string
+        - name: active
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ok
+`);
+    const params = spec.operations[0]?.parameters ?? [];
+    const legacyParam = params.find((p) => p.name === "legacy");
+    const activeParam = params.find((p) => p.name === "active");
+    expect(legacyParam?.deprecated).toBe(true);
+    expect(activeParam?.deprecated).toBeUndefined();
+  });
 });

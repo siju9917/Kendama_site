@@ -50,6 +50,11 @@ function diffParameters(
         changes.push({ type: "parameter-enum-changed", path, method, location: `parameter(${bp.in}:${bp.name}).schema.enum`, before: bEnum, after: cEnum });
       }
     }
+    const bDep = bp.deprecated ?? false;
+    const cDep = cp.deprecated ?? false;
+    if (bDep !== cDep) {
+      changes.push({ type: "parameter-deprecated-changed", path, method, location: `parameter(${bp.in}:${bp.name}).deprecated`, before: bDep, after: cDep });
+    }
   }
 
   for (const [key, cp] of cMap) {
