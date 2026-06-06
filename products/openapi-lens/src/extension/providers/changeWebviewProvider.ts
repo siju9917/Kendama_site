@@ -27,8 +27,15 @@ function renderChangeRow(c: BreakingChange): string {
  * Generates a self-contained HTML string for the VS Code WebView panel.
  * Uses VS Code's CSS variables for theme compatibility.
  * No external resources — safe for WebView sandbox.
+ *
+ * @param baselineLabel - Human-readable description of the baseline source,
+ *   e.g. "git HEAD", "selected file", or "workspace: baseline.yaml".
+ *   Shown in the meta line so users know what the diff is comparing against.
  */
-export function createChangeWebviewContent(changes: BreakingChange[]): string {
+export function createChangeWebviewContent(
+  changes: BreakingChange[],
+  baselineLabel?: string,
+): string {
   const breaking = changes.filter((c) => c.severity === "BREAKING");
   const info = changes.filter((c) => c.severity === "INFO");
 
@@ -103,7 +110,7 @@ export function createChangeWebviewContent(changes: BreakingChange[]): string {
 </head>
 <body>
 <h1>OpenAPI Breaking-Change Lens</h1>
-<p class="meta">${esc(String(changes.length))} change${changes.length !== 1 ? "s" : ""} detected</p>
+<p class="meta">${esc(String(changes.length))} change${changes.length !== 1 ? "s" : ""} detected${baselineLabel ? ` · baseline: ${esc(baselineLabel)}` : ""}</p>
 <div class="summary">${summaryBar}</div>
 ${tableSection}
 </body>

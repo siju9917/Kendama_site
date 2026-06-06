@@ -114,6 +114,32 @@ describe("createPlanWebviewContent", () => {
     expect(html.toLowerCase()).toContain("phase 1 limitations");
   });
 
+  it("meta line shows count breakdown for non-empty plan", () => {
+    const html = createPlanWebviewContent(
+      makeSummary({
+        changes: [
+          makeClassification("CRITICAL"),
+          makeClassification("CRITICAL"),
+          makeClassification("NORMAL"),
+          makeClassification("NO-OP"),
+        ],
+        critical: 2,
+        normal: 1,
+        noOp: 1,
+      }),
+    );
+    expect(html).toContain("4 resource changes");
+    expect(html).toContain("2 CRITICAL");
+    expect(html).toContain("1 NORMAL");
+    expect(html).toContain("1 NO-OP");
+  });
+
+  it("meta line does not show breakdown for empty plan", () => {
+    const html = createPlanWebviewContent(makeSummary());
+    expect(html).toContain("0 resource changes");
+    expect(html).not.toContain("(0");
+  });
+
   it("renders correct row count for mixed plan", () => {
     const html = createPlanWebviewContent(
       makeSummary({

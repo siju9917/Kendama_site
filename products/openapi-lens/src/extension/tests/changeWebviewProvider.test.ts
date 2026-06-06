@@ -130,4 +130,25 @@ describe("createChangeWebviewContent", () => {
     const trCount = (html.match(/<tr[\s>]/g) ?? []).length;
     expect(trCount).toBe(3);
   });
+
+  it("shows baseline label in meta line when provided", () => {
+    const html = createChangeWebviewContent([makeBreaking()], "git HEAD");
+    expect(html).toContain("baseline: git HEAD");
+  });
+
+  it("shows workspace baseline label in meta line", () => {
+    const html = createChangeWebviewContent([], "workspace: baseline.yaml");
+    expect(html).toContain("baseline: workspace: baseline.yaml");
+  });
+
+  it("omits baseline label from meta line when not provided", () => {
+    const html = createChangeWebviewContent([]);
+    expect(html).not.toContain("baseline:");
+  });
+
+  it("escapes HTML in baseline label", () => {
+    const html = createChangeWebviewContent([], "workspace: <evil>.yaml");
+    expect(html).toContain("&lt;evil&gt;");
+    expect(html).not.toContain("<evil>");
+  });
 });

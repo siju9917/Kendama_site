@@ -58,6 +58,18 @@ export function createPlanWebviewContent(summary: TfPlanSummary): string {
       ? '<p class="empty">No resource changes detected in this plan.</p>'
       : "";
 
+  const total = summary.changes.length;
+  const countSummary =
+    total === 0
+      ? "no resource changes"
+      : [
+          summary.critical > 0 ? `${summary.critical} CRITICAL` : "",
+          summary.normal > 0 ? `${summary.normal} NORMAL` : "",
+          summary.noOp > 0 ? `${summary.noOp} NO-OP` : "",
+        ]
+          .filter(Boolean)
+          .join(" · ");
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -110,7 +122,7 @@ export function createPlanWebviewContent(summary: TfPlanSummary): string {
 </head>
 <body>
 <h1>Terraform Plan Classifier</h1>
-<p class="meta">Terraform ${esc(summary.terraformVersion)} · ${summary.changes.length} resource change${summary.changes.length !== 1 ? "s" : ""}</p>
+<p class="meta">Terraform ${esc(summary.terraformVersion)} · ${total} resource change${total !== 1 ? "s" : ""}${total > 0 ? ` (${countSummary})` : ""}</p>
 <div class="summary">${summaryBar || '<span class="pill noop">No changes</span>'}</div>
 ${noChanges}
 ${
