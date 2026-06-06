@@ -263,15 +263,32 @@ function parseRequestBody(raw: unknown, lookup: Record<string, unknown>): OapiRe
   return { required, schema };
 }
 
+/** Parse #/components/responses into a lookup map for $ref resolution. */
+function parseSharedResponses(raw: Record<string, unknown>): Record<string, unknown> {
+  const components = isObject(raw["components"]) ? raw["components"] : {};
+  return isObject(components["responses"]) ? components["responses"] : {};
+}
+
 /** Parse responses into a status-code-keyed map (OAS 3.x and Swagger 2.0). */
-function parseResponses(raw: unknown, lookup: Record<string, unknown>): Record<string, OapiResponse> {
+function parseResponses(raw: unknown, lookup: Record<string, unknown>, responseLookup: Record<string, unknown> = {}): Record<string, OapiResponse> {
   if (!isObject(raw)) return {};
   const result: Record<string, OapiResponse> = {};
   for (const [statusCode, resp] of Object.entries(raw)) {
     if (!isObject(resp)) continue;
+    // Resolve response-level $ref (e.g. $ref: "#/components/responses/SuccessResponse").
+    const ref = asString(resp["$ref"]);
+    const resolved = ref
+      ? ((): Record<string, unknown> | null => {
+          const match = /^#\/components\/responses\/(.+)$/.exec(ref);
+          if (!match || !match[1]) return null;
+          const target = responseLookup[match[1]];
+          return isObject(target) ? target : null;
+        })()
+      : null;
+    const effective = resolved ?? resp;
     const schema =
-      extractContentSchema(resp["content"], lookup) ??
-      normalizeSchema(resp["schema"], lookup);
+      extractContentSchema(effective["content"], lookup) ??
+      normalizeSchema(effective["schema"], lookup);
     result[statusCode] = { statusCode, schema: schema && Object.keys(schema).length > 0 ? schema : null };
   }
   return result;
@@ -289,6 +306,7 @@ function buildSwagger2RequestBody(parameters: unknown[], lookup: Record<string, 
 /** Parse the paths object into a flat list of operations. */
 function parseOperations(raw: Record<string, unknown>, schemaLookup: Record<string, unknown>, version: OapiSpec["version"]): OapiOperation[] {
   const paramLookup = parseSharedParameters(raw, schemaLookup);
+  const responseLookup = parseSharedResponses(raw);
   const paths = isObject(raw["paths"]) ? raw["paths"] : {};
   const ops: OapiOperation[] = [];
 
@@ -313,7 +331,7 @@ function parseOperations(raw: Record<string, unknown>, schemaLookup: Record<stri
           ? buildSwagger2RequestBody([...opLevelParams, ...pathLevelParams], schemaLookup)
           : parseRequestBody(opRaw["requestBody"], schemaLookup);
 
-      const responses = parseResponses(opRaw["responses"], schemaLookup);
+      const responses = parseResponses(opRaw["responses"], schemaLookup, responseLookup);
       const deprecated = asBoolean(opRaw["deprecated"]);
 
       ops.push({

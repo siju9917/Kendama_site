@@ -4874,3 +4874,151 @@ describe("round 26 — response-schema-nullable-changed direction polarity fix",
     expect(c?.severity).toBe("BREAKING");
   });
 });
+
+// ─── Response-level $ref resolution (5.7.5 round 22) ──────────────────────────
+
+describe("response-level $ref resolution — changes in #/components/responses propagate (5.7.5 round 22)", () => {
+  it("required field added to shared response schema is detected (BREAKING)", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          $ref: "#/components/responses/ItemResponse"
+components:
+  responses:
+    ItemResponse:
+      description: success
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [id]
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          $ref: "#/components/responses/ItemResponse"
+components:
+  responses:
+    ItemResponse:
+      description: success
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [id, name]
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    expect(changes.length).toBe(1);
+    expect(changes[0]?.type).toBe("response-schema-field-required-added");
+    // Adding a required field to a RESPONSE is INFO — server now guarantees the field is present
+    expect(changes[0]?.severity).toBe("INFO");
+  });
+
+  it("property removed from shared response schema is BREAKING, detected for all referencing operations", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          $ref: "#/components/responses/ItemResponse"
+  /other:
+    get:
+      responses:
+        "200":
+          $ref: "#/components/responses/ItemResponse"
+components:
+  responses:
+    ItemResponse:
+      description: success
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+              legacy:
+                type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          $ref: "#/components/responses/ItemResponse"
+  /other:
+    get:
+      responses:
+        "200":
+          $ref: "#/components/responses/ItemResponse"
+components:
+  responses:
+    ItemResponse:
+      description: success
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const removals = changes.filter((c) => c.type === "response-schema-property-removed");
+    expect(removals).toHaveLength(2);
+    const paths = removals.map((c) => c.path).sort();
+    expect(paths).toEqual(["/items", "/other"]);
+    expect(removals.every((c) => c.severity === "BREAKING")).toBe(true);
+  });
+
+  it("response-level $ref with no matching component gracefully returns no schema (null)", () => {
+    const spec = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          $ref: "#/components/responses/NonExistent"
+`;
+    expect(() => analyzeOpenApiDiff(spec, spec)).not.toThrow();
+    expect(analyzeOpenApiDiff(spec, spec)).toHaveLength(0);
+  });
+});
