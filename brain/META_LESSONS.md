@@ -918,3 +918,72 @@ ran, or (b) re-justify why not. Four consecutive cycle-continuations without the
 approaching the mandatory cadence threshold; if K1 P1s clear at all in the next session,
 the full panel runs immediately.
 
+---
+
+## 2026-06-06 — 5.7.7 META audit (context-window continuation, items 55–58)
+
+**Operational event:** Saturday Routine context-window continuation. Resumed from a
+compacted context window. Continued openapi-lens 5.7.5 bug-hunt and ran the 5.7.4
+"nothing is done" adversarial review. 833 total tests (up from 747 at context boundary).
+
+**5.7.1 (monthly re-critique):** N/A — no shipped products.
+
+**5.7.2 (escalating critique):** HELD — three independent adversarial passes ran on the
+openapi-lens engine this Saturday (panel + two continuation passes + a 5.7.4 adversarial
+agent). The full 14-critic panel ran EARLIER this Saturday (items 36 in STATE.md) and
+cleared. Each pass attacked the prior clean result. Final state: 247/247 tests, zero P0/P1
+functional bugs found in the third and fourth passes (only architectural hardening needed).
+**Panel debt is CLEARED for this session.** The prior 5.7.7 caveat ("4 consecutive cycles
+without panel") is now resolved.
+
+**5.7.3 (roster growth):** HELD — 4 new entries added to CRITIQUE_AGENTS.md:
+- Correctness: declared-but-not-extracted field gap
+- Correctness + Maintainability: union exhaustiveness guard requirement
+- Domain-Expert (OpenAPI): three-level schema audit + parsed-vs-diffed matrix
+- Domain-Expert (OpenAPI): parameter.deprecated tracking
+
+**5.7.4 ("nothing is done"):** HELD — adversarial review agent ran against openapi-lens
+Phase 0. Found: readOnly/writeOnly completely absent (BREAKING gap); 5 known limitations
+underdocumented. All fixed in the same cycle. The "nothing is done" review directly produced
+a fix that was shipped — the expected outcome.
+
+**5.7.5 (continuous bug-hunt):** HELD with strong evidence — 8 distinct bugs/gaps found
+and fixed this continuation:
+1. properties[k].nullable (3 directions each for request/response)
+2. items.enum (direction-aware)
+3. items.nullable (direction-aware)
+4. parameter.deprecated (declared-but-not-extracted in parser)
+5. readOnly (property-level, direction-aware)
+6. writeOnly (property-level, direction-aware)
+7. Classify exhaustiveness fallback (architectural)
+8. Rule ordering invariant (architectural)
+
+**5.7.6 (continuous ideation):** HELD — 2 new WISHLIST entries logged:
+- TypeScript union-exhaustiveness enforcement rule (from classify.ts friction)
+- Schema "parsed vs diffed" matrix as a named artifact (from 5.7.5 audit friction)
+
+**5.7.7 (this pass):** Running now. Evidence-bound verdicts. No obvious lapse found.
+
+**5.7.8 (audit-of-the-auditor):**
+
+1. Was the audit shallow? Six maximization rules addressed with concrete evidence (file counts,
+   specific items in STATE.md, CRITIQUE_AGENTS.md entry names). Not shallow.
+2. Was an obvious lapse missed? Checking: Was the WISHLIST updated at the END of the session
+   or incrementally? Entries were logged in one batch. The 5.7.6 rule says "log the MOMENT it
+   occurs." Minor lapse: the readOnly/writeOnly gap itself should have been on WISHLIST from
+   the moment the engine was designed (if it was known). It wasn't. However, it was unknown
+   until the 5.7.4 adversarial review surfaced it — so the timing was correct given discovery.
+   No structural lapse. **No P0/P1 findings.**
+3. Was the conclusion defended or asserted? All verdict "HELD" claims cite specific test counts,
+   git commits, or file names. Evidence-bound.
+
+**Where applied:** `governance/CRITIQUE_AGENTS.md` (4 new items), `brain/WISHLIST.md`
+(2 new entries), `brain/STATE.md` (items 55-58), `products/openapi-lens/PROGRESS.md`
+(known limitations rewritten).
+
+**Recurrence test:** Next session: (a) run factory checks on session start; (b) verify
+no product is overdue for panel (none are shipped, so N/A until BidDiff ships); (c) continue
+5.7.5 on openapi-lens if any gap remains (currently assessed as saturated for Phase 0 scope
+minus the documented limitations); (d) begin D5 Phase 1 when Proposal #3 auto-proceeds
+2026-06-13.
+

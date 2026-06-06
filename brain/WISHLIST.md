@@ -398,3 +398,57 @@ guard, the recursion is straightforward.
 
 **Promoted to backlog?** Not yet — logged as a Phase 2 enhancement for
 openapi-lens. Cross-referenced from `products/openapi-lens/PROGRESS.md` Phase 2.
+
+---
+
+## 2026-06-06 — TypeScript union-exhaustiveness enforcement rule for handler registries
+
+**Friction encountered:** When a discriminated union type (`OapiChangeType`) maps to a
+handler system (classify rules), new values added to the union silently fall through to
+a wrong default (INFO) with no diagnostic. The fix (a `Record<UnionType,...>` completeness
+guard in a test file) had to be written manually and is fragile — it works only because
+TypeScript raises a compile error when a key is missing from a `Record` literal.
+
+**Where it came up:** openapi-lens classify.ts — 5.7.2 third adversarial pass found
+that new OapiChangeType values were silently rated INFO if a classify rule was omitted.
+
+**Proposed tool:** An ESLint / TypeScript plugin rule: `no-unhandled-union-member`.
+Given a switch statement or a const map keyed by a union type, the rule verifies that
+every member of the union has a handler and flags missing cases. Similar to TypeScript's
+`noImplicitReturns` but enforced at the lint level for dictionary/map patterns, not just
+switch statements. Useful to any codebase with a command dispatcher, event bus, or rule
+engine backed by a TypeScript union.
+
+**Initial size estimate:** Small. The AST analysis is narrow: find `Record<SomeUnion,...>`
+or `{[K in SomeUnion]: ...}` type-annotated consts, check that every member of the union
+appears as a literal key. This is already what TypeScript checks — the lint rule makes it
+visible at authoring time with a clearer diagnostic message.
+
+**Promoted to backlog?** Not yet. Log as a potential small open-source dev-tooling product.
+
+---
+
+## 2026-06-06 — Schema field "parsed vs diffed" matrix as a product-level artifact
+
+**Friction encountered:** During the openapi-lens 5.7.5 bug-hunt, the "parsed-but-never-
+diffed" audit was done entirely by hand: enumerate every field in OapiSchema, then check
+each diff function (diffSchemaType, diffSchemaProperties, diffSchemaItems) to see if it
+compares the field. This took multiple passes and still missed gaps (items.enum,
+items.nullable, properties.nullable, readOnly, writeOnly, parameter.deprecated) on the
+first pass.
+
+**Where it came up:** openapi-lens Phase 0 — 5+ rounds of "parsed-but-never-diffed" fixes.
+
+**Proposed tool:** A code-generation or analysis script that, given an interface definition
+(`OapiSchema`) and a set of diff functions, produces a matrix: "field × diff function →
+is compared?". Could be implemented as a TypeScript AST analyzer (parse the diff functions,
+find every `.fieldName` access, cross-reference against the interface). Output is a Markdown
+table checked into the product as `parsed-vs-diffed-matrix.md` and verified by a factory
+check. A missing entry in the matrix = a potential silent gap.
+
+**Initial size estimate:** Small-medium. The AST parsing is well-trodden (ts-morph or the
+TypeScript compiler API). The main complexity is handling nullable fields (`?? false`)
+vs direct comparisons — they're semantically equivalent but syntactically different.
+
+**Promoted to backlog?** Not yet. Useful as a factory self-improvement tool for any
+schema-parsing product. Could also become a standalone dev-tooling library.

@@ -23,6 +23,10 @@ function asBoolean(v: unknown): boolean | undefined {
   return typeof v === "boolean" ? v : undefined;
 }
 
+function asNumber(v: unknown): number | undefined {
+  return typeof v === "number" ? v : undefined;
+}
+
 function asArray(v: unknown): unknown[] {
   return Array.isArray(v) ? v : [];
 }
@@ -134,6 +138,21 @@ function normalizeSchema(raw: unknown, lookup: Record<string, unknown>, visited:
 
   const rawEnum = raw["enum"];
   if (Array.isArray(rawEnum)) schema.enum = rawEnum;
+
+  const minimum = asNumber(raw["minimum"]);
+  if (minimum !== undefined) schema.minimum = minimum;
+  const maximum = asNumber(raw["maximum"]);
+  if (maximum !== undefined) schema.maximum = maximum;
+  const minLength = asNumber(raw["minLength"]);
+  if (minLength !== undefined) schema.minLength = minLength;
+  const maxLength = asNumber(raw["maxLength"]);
+  if (maxLength !== undefined) schema.maxLength = maxLength;
+  const pattern = asString(raw["pattern"]);
+  if (pattern !== undefined) schema.pattern = pattern;
+  const minItems = asNumber(raw["minItems"]);
+  if (minItems !== undefined) schema.minItems = minItems;
+  const maxItems = asNumber(raw["maxItems"]);
+  if (maxItems !== undefined) schema.maxItems = maxItems;
 
   const rawRequired = raw["required"];
   if (Array.isArray(rawRequired)) {
