@@ -6525,7 +6525,7 @@ paths:
     expect(changes.filter((c) => c.type === "response-schema-property-type-changed")).toHaveLength(0);
   });
 
-  it("type: [string, integer] (string first) correctly picks string as primary type", () => {
+  it("type: [string, integer] (string first) correctly picks string as primary type (round 36)", () => {
     const withStringFirst = `
 openapi: "3.1.0"
 info: {title: T, version: "1"}
@@ -6570,5 +6570,167 @@ paths:
     expect(typeChange?.before).toBe("string");
     expect(typeChange?.after).toBe("integer");
     expect(typeChange?.severity).toBe("BREAKING");
+  });
+});
+
+// ─── Round 37: robustness — null/empty/unusual spec structures ────────────────
+
+describe("robustness — null and empty values at spec/operation level (5.7.5 round 37)", () => {
+  it("paths: null produces no operations and no crash", () => {
+    const noPathsSpec = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths: ~
+`;
+    const normalSpec = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+`;
+    // Comparing null paths to real paths should produce endpoint-added, no crash.
+    const changes = analyzeOpenApiDiff(noPathsSpec, normalSpec);
+    const added = changes.find((c) => c.type === "endpoint-added");
+    expect(added).toBeDefined();
+    expect(added?.path).toBe("/items");
+  });
+
+  it("operation with parameters: null produces no parameters — graceful no-crash", () => {
+    const spec = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      parameters: ~
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+`;
+    const changes = analyzeOpenApiDiff(spec, spec);
+    expect(changes).toHaveLength(0);
+  });
+
+  it("operation with responses: {} (empty) produces no response changes vs also-empty", () => {
+    const spec = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses: {}
+`;
+    const changes = analyzeOpenApiDiff(spec, spec);
+    expect(changes).toHaveLength(0);
+  });
+
+  it("required: null in schema is treated as empty required array — no crash", () => {
+    const withNullRequired = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                required: ~
+                properties:
+                  id: {type: string}
+`;
+    const withRequired = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id: {type: string}
+`;
+    // null required treated as [] — adding id to required is INFO for response.
+    const changes = analyzeOpenApiDiff(withNullRequired, withRequired);
+    const reqAdded = changes.find((c) => c.type === "response-schema-field-required-added");
+    expect(reqAdded).toBeDefined();
+    expect(String(reqAdded?.location ?? "")).toContain("id");
+    expect(reqAdded?.severity).toBe("INFO");
+  });
+
+  it("schema with no type and no properties produces no false-positive changes vs itself", () => {
+    const spec = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: {}
+`;
+    const changes = analyzeOpenApiDiff(spec, spec);
+    expect(changes).toHaveLength(0);
+  });
+
+  it("enum with duplicate values compared to deduped enum emits parameter-enum-changed", () => {
+    const withDupes = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, inactive, active]
+      responses:
+        "200":
+          description: ok
+`;
+    const withoutDupes = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, inactive]
+      responses:
+        "200":
+          description: ok
+`;
+    // Different array lengths (3 vs 2) → enum-changed even though sets are equivalent.
+    // This is known behaviour: the engine uses array length equality as a fast-path check.
+    const changes = analyzeOpenApiDiff(withDupes, withoutDupes);
+    expect(changes.find((c) => c.type === "parameter-enum-changed")).toBeDefined();
   });
 });
