@@ -273,8 +273,12 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => `Request array items type constraint removed: ${c.location}. Server now accepts array elements of any type (previously required '${c.before}').`,
   },
   {
-    matches: (c) => c.type === "response-schema-property-format-changed" ? "BREAKING" : null,
+    matches: (c) => c.type === "response-schema-property-format-changed" && c.before !== null ? "BREAKING" : null,
     message: (c) => `Response property format changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients deserializing this field with the old format may fail.`,
+  },
+  {
+    matches: (c) => c.type === "response-schema-property-format-changed" && c.before === null && c.after !== null ? "INFO" : null,
+    message: (c) => `Response property format constraint added: ${c.location}. Server now guarantees this field uses format '${c.after}' (non-breaking for clients).`,
   },
   {
     matches: (c) => c.type === "request-schema-property-format-changed" ? "BREAKING" : null,
@@ -303,20 +307,24 @@ const CLASSIFY_RULES: ClassifyRule[] = [
   {
     matches: (c) => {
       if (c.type !== "response-schema-property-enum-changed") return null;
-      const before = c.before as unknown[] | undefined;
-      const after = c.after as unknown[] | undefined;
+      const before = c.before as unknown[] | undefined | null;
+      const after = c.after as unknown[] | undefined | null;
+      // Enum added to previously unconstrained property: server now promises only these values (INFO).
+      if (!before && after) return "INFO";
+      // Enum removed or null-null edge: BREAKING.
       if (!before || !after) return "BREAKING";
       const added = after.filter((v) => !before.includes(v));
       if (added.length > 0) return "BREAKING";
       return "INFO";
     },
     message: (c) => {
-      const before = c.before as unknown[] | undefined;
-      const after = c.after as unknown[] | undefined;
+      const before = c.before as unknown[] | undefined | null;
+      const after = c.after as unknown[] | undefined | null;
+      if (!before && after) return `Response property enum added: ${c.location}. Server now guarantees this field is one of [${(after as unknown[]).join(", ")}] (non-breaking for clients).`;
       if (!before || !after) return `Response property enum changed at ${c.location}: values may be added.`;
-      const added = after.filter((v) => !before.includes(v));
+      const added = (after as unknown[]).filter((v) => !(before as unknown[]).includes(v));
       if (added.length > 0) return `Response property enum values added at ${c.location}: [${added.join(", ")}]. Clients with exhaustive enum handling (e.g. switch statements without default) will break.`;
-      const removed = before.filter((v) => !after.includes(v));
+      const removed = (before as unknown[]).filter((v) => !(after as unknown[]).includes(v));
       return `Response property enum values removed at ${c.location}: [${removed.join(", ")}] no longer returned (non-breaking for clients).`;
     },
   },
@@ -852,8 +860,12 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => `Request body schema format changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients sending data in the old format may fail validation.`,
   },
   {
-    matches: (c) => c.type === "response-schema-format-changed" ? "BREAKING" : null,
+    matches: (c) => c.type === "response-schema-format-changed" && c.before !== null ? "BREAKING" : null,
     message: (c) => `Response body schema format changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients parsing the response with the old format assumptions will break.`,
+  },
+  {
+    matches: (c) => c.type === "response-schema-format-changed" && c.before === null && c.after !== null ? "INFO" : null,
+    message: (c) => `Response body schema format constraint added: ${c.location}. Server now guarantees the response uses format '${c.after}' (non-breaking for clients).`,
   },
 
   // ─── Top-level body schema enum ───────────────────────────────────────────
@@ -883,7 +895,9 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       if (c.type !== "response-schema-enum-changed") return null;
       const before = c.before as unknown[] | null;
       const after = c.after as unknown[] | null;
-      if (!before || !after) return "BREAKING"; // enum added or removed entirely
+      // Enum added to previously unconstrained body: server now promises only these values (INFO).
+      if (!before && after) return "INFO";
+      if (!before || !after) return "BREAKING"; // enum removed or other null-null edge
       // Values added to response enum = BREAKING (clients expecting exhaustive enums break).
       const added = (after ?? []).filter((v) => !before.includes(v));
       return added.length > 0 ? "BREAKING" : "INFO";
@@ -891,6 +905,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => {
       const before = c.before as unknown[] | null;
       const after = c.after as unknown[] | null;
+      if (!before && after) return `Response body schema enum added: ${c.location}. Server now constrains this value to [${(after ?? []).join(", ")}] (non-breaking for clients).`;
       if (!before) return `Response body schema enum added: ${c.location}. Server now constrains this value to [${(after ?? []).join(", ")}].`;
       if (!after) return `Response body schema enum removed: ${c.location}. Server no longer guarantees a restricted set for this value.`;
       const added = (after ?? []).filter((v) => !(before ?? []).includes(v));

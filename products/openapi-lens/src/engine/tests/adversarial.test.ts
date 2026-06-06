@@ -2621,3 +2621,285 @@ paths:
     expect(typeChange?.message).toMatch(/removed|constraint|any type/i);
   });
 });
+
+describe("response property/body null-transition classify fixes (5.7.5 round 14)", () => {
+  it("response-schema-property-format-changed (null→format) is INFO, not BREAKING", () => {
+    // Adding format to a response property is INFO — server now guarantees format (non-breaking for clients)
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users/{id}:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  createdAt:
+                    type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users/{id}:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  createdAt:
+                    type: string
+                    format: date-time
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const fmtChange = changes.find((c) => c.type === "response-schema-property-format-changed");
+    expect(fmtChange).toBeDefined();
+    expect(fmtChange?.severity).toBe("INFO");
+    expect(fmtChange?.message).not.toMatch(/^Change detected at/);
+  });
+
+  it("response-schema-property-format-changed (format→null) remains BREAKING", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users/{id}:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  createdAt:
+                    type: string
+                    format: date-time
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users/{id}:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  createdAt:
+                    type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const fmtChange = changes.find((c) => c.type === "response-schema-property-format-changed");
+    expect(fmtChange).toBeDefined();
+    expect(fmtChange?.severity).toBe("BREAKING");
+  });
+
+  it("response-schema-property-enum-changed (null→enum) is INFO, not BREAKING", () => {
+    // Adding enum to a response property is INFO — server now guarantees only these values (non-breaking)
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /orders:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /orders:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - pending
+                      - shipped
+                      - delivered
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const enumChange = changes.find((c) => c.type === "response-schema-property-enum-changed");
+    expect(enumChange).toBeDefined();
+    expect(enumChange?.severity).toBe("INFO");
+    expect(enumChange?.message).not.toMatch(/^Change detected at/);
+  });
+
+  it("response-schema-property-enum-changed (enum→null) remains BREAKING", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /orders:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - pending
+                      - shipped
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /orders:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const enumChange = changes.find((c) => c.type === "response-schema-property-enum-changed");
+    expect(enumChange).toBeDefined();
+    expect(enumChange?.severity).toBe("BREAKING");
+  });
+
+  it("response-schema-format-changed (null→format) is INFO at body level", () => {
+    // Adding format to a response body schema is INFO — server now narrows its own promise
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /blob:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /blob:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const fmtChange = changes.find((c) => c.type === "response-schema-format-changed");
+    expect(fmtChange).toBeDefined();
+    expect(fmtChange?.severity).toBe("INFO");
+    expect(fmtChange?.message).not.toMatch(/^Change detected at/);
+  });
+
+  it("response-schema-enum-changed (null→enum) is INFO at body level", () => {
+    // Adding enum to a scalar response body is INFO — server now guarantees only these values
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /version:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            text/plain:
+              schema:
+                type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /version:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - v1
+                  - v2
+                  - v3
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const enumChange = changes.find((c) => c.type === "response-schema-enum-changed");
+    expect(enumChange).toBeDefined();
+    expect(enumChange?.severity).toBe("INFO");
+    expect(enumChange?.message).not.toMatch(/^Change detected at/);
+  });
+});

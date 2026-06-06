@@ -847,3 +847,45 @@ describe("classify — null-transition fixes (5.7.5 round 13)", () => {
     expect(result[0]?.message).toMatch(/removed|constraint|any type/i);
   });
 });
+
+describe("classify — null-transition fixes (5.7.5 round 14)", () => {
+  it("response-schema-property-format-changed (null→format) is INFO", () => {
+    const result = classifyChanges([raw("response-schema-property-format-changed", null, "uuid", "responses[200].content.schema.properties[id].format")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/added|guarantees|non-breaking/i);
+  });
+
+  it("response-schema-property-format-changed (format→null) remains BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-property-format-changed", "date-time", null, "responses[200].content.schema.properties[createdAt].format")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+
+  it("response-schema-property-enum-changed (null→enum) is INFO", () => {
+    const result = classifyChanges([raw("response-schema-property-enum-changed", null, ["active", "inactive"], "responses[200].content.schema.properties[status].enum")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/added|guarantees|non-breaking/i);
+  });
+
+  it("response-schema-property-enum-changed (enum→null) remains BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-property-enum-changed", ["open", "closed"], null, "responses[200].content.schema.properties[state].enum")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+
+  it("response-schema-format-changed (null→format) is INFO at body level", () => {
+    const result = classifyChanges([raw("response-schema-format-changed", null, "binary", "responses[200].content.schema.format")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/added|guarantees|non-breaking/i);
+  });
+
+  it("response-schema-enum-changed (null→enum) is INFO at body level", () => {
+    const result = classifyChanges([raw("response-schema-enum-changed", null, ["v1", "v2"], "responses[200].content.schema.enum")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/added|guarantees|non-breaking/i);
+  });
+});

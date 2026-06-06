@@ -154,6 +154,19 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   Fixed: distinguish `!before && after → INFO` from `before && !after → BREAKING`.
   Also fixed `request-schema-items-type-changed: type→null` (INFO but had generic message).
   +12 tests (6 classify unit + 6 adversarial integration). **389/389 tests.**
+- [x] **5.7.5 round 14 — response property/body null-transition classify gaps** — same systematic
+  bug class as round 13, now at property and body levels. Four classify rules incorrectly treated
+  "constraint newly added" (before=null) as BREAKING:
+  (1) `response-schema-property-format-changed: null→format` — adding format to a response property
+  is INFO (server narrows its guarantee, non-breaking for clients). Fixed: split to
+  `before !== null → BREAKING` and `before === null → INFO`.
+  (2) `response-schema-property-enum-changed: null→enum` — adding enum to a response property is
+  INFO. Fixed: distinguish `!before && after → INFO` from `before && !after → BREAKING`.
+  (3) `response-schema-format-changed: null→format` (body-level) — same fix as (1) at body level.
+  (4) `response-schema-enum-changed: null→enum` (body-level) — same fix as (2) at body level.
+  All four fixes are the mirror of the round-13 items-level fixes, completing the null-transition
+  coverage across all three schema nesting levels (items, property, body). +12 tests
+  (6 classify unit + 6 adversarial integration). **401/401 tests.**
 - [x] **5.7.5 round 11 — `request-body-required` direction completeness** — `diffRequestBody`
   only emitted `request-body-required-changed` for `false→true` (body became required = BREAKING).
   The reverse `true→false` (body became optional = INFO) was never emitted. Also, `false→null`
