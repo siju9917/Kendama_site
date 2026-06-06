@@ -398,6 +398,82 @@ describe("classifyChanges — classification rules", () => {
     expect(severities).toContain("INFO");
   });
 
+  // ─── Constraint classify rules ────────────────────────────────────────────
+  it("classifies request minLength increase as BREAKING (tightening)", () => {
+    const result = classifyChanges([raw("request-schema-property-constraint-changed", 3, 8, "requestBody.properties.name.minLength")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/tightened/i);
+  });
+
+  it("classifies request minLength decrease as INFO (loosening)", () => {
+    const result = classifyChanges([raw("request-schema-property-constraint-changed", 8, 3, "requestBody.properties.name.minLength")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/loosened/i);
+  });
+
+  it("classifies request maxLength decrease as BREAKING (tightening)", () => {
+    const result = classifyChanges([raw("request-schema-property-constraint-changed", 100, 50, "requestBody.properties.name.maxLength")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+  });
+
+  it("classifies request maxLength increase as INFO (loosening)", () => {
+    const result = classifyChanges([raw("request-schema-property-constraint-changed", 50, 100, "requestBody.properties.name.maxLength")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies request pattern change as BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-property-constraint-changed", "^[a-z]+$", "^[A-Z]+$", "requestBody.properties.code.pattern")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/pattern/i);
+  });
+
+  it("classifies request constraint added (minLength null→5) as BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-property-constraint-changed", null, 5, "requestBody.properties.name.minLength")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/added/i);
+  });
+
+  it("classifies request constraint removed (minLength 5→null) as INFO", () => {
+    const result = classifyChanges([raw("request-schema-property-constraint-changed", 5, null, "requestBody.properties.name.minLength")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/removed/i);
+  });
+
+  it("classifies response minLength decrease as BREAKING (loosening)", () => {
+    const result = classifyChanges([raw("response-schema-property-constraint-changed", 5, 2, "responses[200].properties.code.minLength")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/loosened/i);
+  });
+
+  it("classifies response minLength increase as INFO (tightening)", () => {
+    const result = classifyChanges([raw("response-schema-property-constraint-changed", 2, 5, "responses[200].properties.code.minLength")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/tightened/i);
+  });
+
+  it("classifies response maxLength increase as BREAKING (loosening)", () => {
+    const result = classifyChanges([raw("response-schema-property-constraint-changed", 100, 500, "responses[200].properties.bio.maxLength")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+  });
+
+  it("classifies response constraint removed (minLength 5→null) as BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-property-constraint-changed", 5, null, "responses[200].properties.name.minLength")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/removed/i);
+  });
+
+  it("classifies response constraint added (null→5 minLength) as INFO", () => {
+    const result = classifyChanges([raw("response-schema-property-constraint-changed", null, 5, "responses[200].properties.name.minLength")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/added/i);
+  });
+
+  it("classifies response pattern change as BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-property-constraint-changed", "^[a-z]+$", "^[A-Z]+$", "responses[200].properties.code.pattern")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/pattern/i);
+  });
+
   it("returns empty array for empty input", () => {
     expect(classifyChanges([])).toEqual([]);
   });
@@ -472,6 +548,8 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "request-schema-property-readonly-changed":     [false, true],
     "response-schema-property-writeonly-changed":   [false, true],
     "request-schema-property-writeonly-changed":    [false, true],
+    "response-schema-property-constraint-changed":  [10, 5],
+    "request-schema-property-constraint-changed":   [5, 10],
   };
 
   it.each(Object.keys(TYPE_STUBS) as OapiChangeType[])(

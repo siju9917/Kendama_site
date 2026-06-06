@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **845/845 tests** (BidDiff 586/586 + openapi-lens 259/259).
+- **Build green:** **861/861 tests** (BidDiff 586/586 + openapi-lens 275/275).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -103,7 +103,9 @@
   OpenAPI-lens: Phase 0 engine 96/96 (critique panel) + 10 more (5.7.5 bug-hunt:
   $ref parameter resolution + double-$ref chain) + 22 more (array items type diffing,
   property-level enum/format changes, operation deprecated detection, required-body
-  removal classification fix, request-body nullable detection).
+  removal classification fix, request-body nullable detection) + 16 more (readOnly/writeOnly)
+  + 21 more (allOf flattening + recursive property diff) + 28 more (constraint diffing
+  direction-aware classification).
   All typecheck clean; full CI gate verified green.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`
@@ -206,7 +208,7 @@ Priority order is `ops/loop.md`.
 
 **Unblocked (zero-cost):**
 7. ~~**P2** Vite/Vitest toolchain bump~~ — **DONE 2026-06-06.** Vite 6.4.3 + Vitest 4.1.8.
-8. ~~**D5 Phase 0 engine**~~ — **DONE + hardened 2026-06-06.** `products/openapi-lens/` — 231/231 tests.
+8. ~~**D5 Phase 0 engine**~~ — **DONE + hardened 2026-06-06.** `products/openapi-lens/` — 275/275 tests.
    VS Code extension scaffold (Phase 1) begins once Proposal #3 auto-proceeds 2026-06-13.
 9. Recurring: re-critique cadence, "nothing is ever done" reviews,
    ambient ideation, factory self-improvement, META audit.
@@ -643,6 +645,25 @@ all green; check tests 16/16.
     nested addition, request nested type change, depth guard no-throw). Updated PROGRESS.md.
     254→259 openapi-lens. Total: **845/845 tests**.
 
+61. **5.7.4/5.7.5 schema constraint field diffing** — `minimum`, `maximum`, `minLength`,
+    `maxLength`, `pattern`, `minItems`, `maxItems` were parsed by the parser (added in the
+    same session as readOnly/writeOnly) but never emitted as diff events. A `minLength: 0→5`
+    tightening that would reject existing client inputs was completely invisible. Implemented:
+    - 7 constraint fields extracted in `normalizeSchema` (parser.ts) + `asNumber` helper.
+    - Constraint comparison loop in `diffSchemaProperties` (diff.ts): emits
+      `request-schema-property-constraint-changed` or `response-schema-property-constraint-changed`
+      with the constraint field name appended to `location` (e.g., `.minLength`).
+    - 2 new OapiChangeType values added to types.ts.
+    - Direction-aware classify rules (classify.ts): request tightening (lower bound ↑, upper
+      bound ↓) = BREAKING; request loosening = INFO. Response loosening = BREAKING; response
+      tightening = INFO. Pattern changes = BREAKING always (both directions).
+    - TYPE_STUBS completeness guard updated in classify.test.ts (+2 entries).
+    - 13 new classify unit tests covering: minLength tighten/loosen, maxLength tighten/loosen,
+      pattern change, null→value added, value→null removed (both request and response directions).
+    - PROGRESS.md updated: known-limitations table removes constraint limitation; new rules
+      added to rules table.
+    259→275 openapi-lens. Total: **861/861 tests**.
+
 59. **5.7.4 "nothing is done" / allOf composition flattening** — adversarial "nothing is done"
     review identified allOf flattening as the next highest-value Phase 0 improvement: real-world
     OpenAPI specs use `allOf` heavily for schema inheritance, and breaking changes inside `allOf`
@@ -733,7 +754,7 @@ all green; check tests 16/16.
   components tested). All unblocked POLISH done. Next session: privacy copy fix
   (NEED #7, when human responds), store submission prep, and D5 VS Code extension
   Phase 1 scaffold (once Proposal #3 auto-proceeds 2026-06-13).
-- **D5 Phase 0 engine is in `products/openapi-lens/`** — 247 tests, all passing.
+- **D5 Phase 0 engine is in `products/openapi-lens/`** — 275 tests, all passing.
   Phase 1 (VS Code extension scaffold) starts when Proposal #3 auto-proceeds 2026-06-13.
 - Spend cap: plan-included web tools (sub-agents, search) are FREE; $0 committed
   external spend. No cap blocker.

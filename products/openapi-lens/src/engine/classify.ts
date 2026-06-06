@@ -273,6 +273,92 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     },
   },
 
+  // ─── Constraint changes (direction-aware) ────────────────────────────────
+  {
+    matches: (c) => {
+      if (c.type !== "request-schema-property-constraint-changed") return null;
+      const loc = String(c.location);
+      const before = c.before as number | string | null;
+      const after = c.after as number | string | null;
+      if (loc.endsWith(".pattern")) return "BREAKING";
+      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")) {
+        if (after === null) return "INFO";
+        if (before === null) return "BREAKING";
+        return typeof after === "number" && typeof before === "number" && after > before ? "BREAKING" : "INFO";
+      }
+      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems")) {
+        if (after === null) return "INFO";
+        if (before === null) return "BREAKING";
+        return typeof after === "number" && typeof before === "number" && after < before ? "BREAKING" : "INFO";
+      }
+      return "INFO";
+    },
+    message: (c) => {
+      const loc = String(c.location);
+      const constraintName = loc.split(".").pop() ?? loc;
+      if (loc.endsWith(".pattern")) {
+        return `Request property pattern constraint changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients sending values matching the old pattern may fail validation.`;
+      }
+      if (c.after === null) {
+        return `Request property constraint removed: ${c.location}. The ${constraintName} restriction is no longer enforced (non-breaking for clients).`;
+      }
+      if (c.before === null) {
+        return `Request property constraint added: ${c.location}. Server now enforces ${constraintName} = ${c.after}; clients sending out-of-range values will fail validation.`;
+      }
+      const bNum = c.before as number;
+      const aNum = c.after as number;
+      const tightened =
+        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")
+          ? aNum > bNum
+          : aNum < bNum;
+      return tightened
+        ? `Request property constraint tightened: ${c.location} (${c.before} → ${c.after}). Clients sending values that were previously valid may now fail validation.`
+        : `Request property constraint loosened: ${c.location} (${c.before} → ${c.after}). More values are now accepted (non-breaking for clients).`;
+    },
+  },
+  {
+    matches: (c) => {
+      if (c.type !== "response-schema-property-constraint-changed") return null;
+      const loc = String(c.location);
+      const before = c.before as number | string | null;
+      const after = c.after as number | string | null;
+      if (loc.endsWith(".pattern")) return "BREAKING";
+      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")) {
+        if (after === null) return "BREAKING";
+        if (before === null) return "INFO";
+        return typeof after === "number" && typeof before === "number" && after < before ? "BREAKING" : "INFO";
+      }
+      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems")) {
+        if (after === null) return "BREAKING";
+        if (before === null) return "INFO";
+        return typeof after === "number" && typeof before === "number" && after > before ? "BREAKING" : "INFO";
+      }
+      return "INFO";
+    },
+    message: (c) => {
+      const loc = String(c.location);
+      const constraintName = loc.split(".").pop() ?? loc;
+      if (loc.endsWith(".pattern")) {
+        return `Response property pattern constraint changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Server may now return values not matching the old pattern; clients validating this pattern will break.`;
+      }
+      if (c.after === null) {
+        return `Response property constraint removed: ${c.location}. The ${constraintName} restriction is no longer enforced; server may now return values outside the former constraint. Clients relying on this constraint will break.`;
+      }
+      if (c.before === null) {
+        return `Response property constraint added: ${c.location}. Server now guarantees ${constraintName} = ${c.after} (non-breaking for clients).`;
+      }
+      const bNum = c.before as number;
+      const aNum = c.after as number;
+      const loosened =
+        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")
+          ? aNum < bNum
+          : aNum > bNum;
+      return loosened
+        ? `Response property constraint loosened: ${c.location} (${c.before} → ${c.after}). Server may now return values outside the former constraint. Clients relying on it will break.`
+        : `Response property constraint tightened: ${c.location} (${c.before} → ${c.after}). Server now guarantees stricter values (non-breaking for clients).`;
+    },
+  },
+
   // ─── BREAKING for writeOnly/readOnly semantic changes ────────────────────
   {
     matches: (c) =>

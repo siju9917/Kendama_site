@@ -79,6 +79,22 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   - Known limitations rewritten to be user-facing: explicit warning that remote $refs
     silently produce empty schema, allOf members are ignored, constraint fields not diffed.
   4 new OapiChangeType values, 6 classify rules, 16 new tests. **247/247 tests.**
+- [x] **5.7.4 continuation + 5.7.5 round 4 (2026-06-06)** — "parsed-but-never-diffed" audit
+  continued, removing three remaining known limitations:
+  - **allOf composition flattened** (was stored but never merged): parser now calls
+    `flattenAllOf()` post-normalization; required[] unioned, properties merged (parent wins),
+    scalar fields (`type`, `format`, `nullable`, etc.) inherited from members. 6 new parser
+    tests. Breaking changes in allOf base schemas now detected.
+  - **Recursive property diffing** (was 1 level only): `diffSchemaProperties()` now recurses
+    into nested object schemas up to `MAX_PROPERTY_DEPTH = 5`; full dotted path in `location`.
+    Cycle-safe. 5 new tests.
+  - **Schema constraint field diffing**: `minimum`, `maximum`, `minLength`, `maxLength`,
+    `pattern`, `minItems`, `maxItems` parsed (7 constraint fields added to `OapiSchema` + parser)
+    and diffed (constraint comparison loop in `diffSchemaProperties`). Direction-aware
+    classification: request tightening = BREAKING, loosening = INFO; response loosening =
+    BREAKING, tightening = INFO. Pattern changes = always BREAKING for both.
+    2 new OapiChangeType values. 13 new classify tests + 5 recursive diff tests + 6 allOf
+    parser tests. **275/275 tests.**
 
 ### Breaking-change rules implemented (Phase 0)
 
@@ -146,6 +162,16 @@ auto-proceeds (2026-06-13) or earlier if human approves.
 | Request property lost readOnly (clients can now send) | INFO |
 | Request property became writeOnly | INFO |
 | Request property lost writeOnly | INFO |
+| Request property constraint tightened (minLength↑, maxLength↓, etc.) | BREAKING |
+| Request property constraint loosened | INFO |
+| Request property constraint added (null→value) | BREAKING |
+| Request property constraint removed (value→null) | INFO |
+| Request property pattern changed | BREAKING |
+| Response property constraint loosened (minLength↓, maxLength↑, etc.) | BREAKING |
+| Response property constraint tightened | INFO |
+| Response property constraint removed (value→null) | BREAKING |
+| Response property constraint added (null→value) | INFO |
+| Response property pattern changed | BREAKING |
 
 ---
 
@@ -219,10 +245,9 @@ _Begins when Proposal #3 auto-proceeds (2026-06-13) or human approves._
   generates a `response-schema-property-type-changed` event with the full dotted
   path in `location`. Cycle-safe: stops at `MAX_PROPERTY_DEPTH = 5` without
   throwing. Tested behavior (5 new tests).
-- **Schema constraint fields not yet diffed.** `minimum`, `maximum`, `minLength`,
-  `maxLength`, `pattern`, `minItems`, `maxItems`, `uniqueItems`, `default` are not
-  parsed or compared. A constraint tightening (`minLength: 0 → 5`) that would
-  cause existing client inputs to fail validation is currently invisible. Phase 2.
+- **`uniqueItems`, `default`, `exclusiveMinimum`, `exclusiveMaximum` not diffed.**
+  JSON Schema / OAS 3.1 draft-07 fields `uniqueItems`, `default`, `exclusiveMinimum`,
+  `exclusiveMaximum`, `multipleOf` are not parsed or compared. Phase 2.
 - **No media-type coverage.** The engine uses the first `content` entry returned
   by the YAML parser. An endpoint that dropped `application/xml` support while
   keeping `application/json` will show no change. Phase 2.
