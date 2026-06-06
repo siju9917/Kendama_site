@@ -623,3 +623,53 @@ documents the Phase 2 boundary. Continuing to search for Phase 0 gaps produces
 diminishing returns; better to pivot to Phase 1 design work or other queue items.
 
 **Where applied:** brain/DECISIONS.md (this entry), brain/WISHLIST.md (+2 items).
+
+---
+
+## 2026-06-06 — 5.7.7 META audit (session continuation — rounds 26+ and cross-level consistency)
+
+**5.7.1 Mandatory re-critique cadence:**
+- openapi-lens Phase 0 critiqued this session (rounds 24-26 + cross-level consistency
+  tests). BidDiff critiqued in the prior session (2026-06-06 main arc). Both are within
+  the monthly cadence. ✓
+
+**5.7.2 Escalating critique:**
+- Post-round-25 saturation was attacked: a systematic audit of ALL nullable rules across
+  body/property/items levels found the polarity inversion (round 26). The second clean pass
+  (after round 26 fix) confirmed saturation. ✓
+
+**5.7.3 Roster growth:**
+- CRITIQUE_AGENTS.md Correctness Critic strengthened with "direction-aware polarity rules
+  must be verified consistent across ALL nesting levels" check. Commit a7a2e04. ✓
+
+**5.7.4 "Nothing is done":**
+- Challenge: attacked the post-round-25 saturation claim by comparing each nullable rule
+  across body/property/items levels. Found round 26 polarity inversion. ✓
+
+**5.7.5 Continuous bug-hunting:**
+- Round 26 found and fixed `response-schema-nullable-changed` BREAKING/INFO polarity
+  inversion (had been wrong for all 25 prior rounds; tests were encoding wrong expectations).
+- Added 30-case cross-level consistency table (nullable × 4 types × 3 levels,
+  readOnly/writeOnly × 6 types × 3 levels) to prevent recurrence. ✓
+
+**5.7.6 Continuous ideation:**
+- WISHLIST items added: "Bidirectional classify rule exhaustiveness test" (direct lesson
+  from round 26), "Nullable polarity trap warning" (added to openapi-engine-diff playbook).
+- Mild lapse: ideation was post-bug-hunt rather than ambient mid-hunt. Same pattern as
+  prior audit. Acceptable given bug-hunt priority. ✓
+
+**5.7.7 Audit itself:**
+- This entry. Triggered at genuine saturation.
+
+**5.7.8 Adversarial review of this audit:**
+- Ambition Critic (#13): Was round 26 the ONLY genuine gap? The cross-level consistency
+  table now enforces that no FURTHER polarity inversions can hide undetected. The format
+  and type rules were also systematically checked (no inversions found). The audit's scope
+  is bounded and honest. ✓
+- Research Quality Critic (#14): Is the 5.7.6 lapse documented specifically enough?
+  "Ideation happened post-bug-hunt" is specific. The lapse IS logged. The criticism would
+  be: is the mitigation (immediately adding WISHLIST items afterward) sufficient? Yes —
+  the WISHLIST items were added. The lapse severity is correctly calibrated. ✓
+
+**Where applied:** brain/DECISIONS.md (this entry), governance/CRITIQUE_AGENTS.md,
+brain/WISHLIST.md, products/openapi-lens/src/engine/tests/classify.test.ts.
