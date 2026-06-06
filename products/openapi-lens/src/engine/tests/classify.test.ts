@@ -1499,3 +1499,68 @@ describe("additionalProperties direction — cross-level consistency", () => {
     expect(result[0]?.message).not.toMatch(/^Change detected at/);
   });
 });
+
+// ─── Cross-level format direction consistency guard ────────────────────────────
+// Verifies that format-changed polarity is correct and consistent across all
+// levels (body, property, items, header) and sides (request, response, parameter).
+//
+// Direction semantics:
+//   Request / parameter (constraint on what client sends):
+//     format added or changed (after ≠ null) = BREAKING; removed (after = null) = INFO
+//   Response / response-header (guarantee from server to client):
+//     format removed or changed (before ≠ null) = BREAKING; newly added (before = null) = INFO
+
+describe("format direction — cross-level consistency", () => {
+  type FmtCase = {
+    type: OapiChangeType;
+    before: string | null;
+    after: string | null;
+    expected: "BREAKING" | "INFO";
+    label: string;
+  };
+
+  const FMT_CASES: FmtCase[] = [
+    // ── Request body: format added or changed = BREAKING; removed = INFO ───────
+    { type: "request-schema-format-changed",          before: null,     after: "date-time", expected: "BREAKING", label: "request body format added (null→date-time)" },
+    { type: "request-schema-format-changed",          before: "date",   after: "date-time", expected: "BREAKING", label: "request body format changed (date→date-time)" },
+    { type: "request-schema-format-changed",          before: "date",   after: null,        expected: "INFO",     label: "request body format removed (date→null)" },
+    // ── Request property: same semantics ─────────────────────────────────────
+    { type: "request-schema-property-format-changed", before: null,     after: "uuid",      expected: "BREAKING", label: "request property format added (null→uuid)" },
+    { type: "request-schema-property-format-changed", before: "uri",    after: "uuid",      expected: "BREAKING", label: "request property format changed (uri→uuid)" },
+    { type: "request-schema-property-format-changed", before: "uuid",   after: null,        expected: "INFO",     label: "request property format removed (uuid→null)" },
+    // ── Request items: same semantics ─────────────────────────────────────────
+    { type: "request-schema-items-format-changed",    before: null,     after: "date",      expected: "BREAKING", label: "request items format added (null→date)" },
+    { type: "request-schema-items-format-changed",    before: "date",   after: "date-time", expected: "BREAKING", label: "request items format changed (date→date-time)" },
+    { type: "request-schema-items-format-changed",    before: "date",   after: null,        expected: "INFO",     label: "request items format removed (date→null)" },
+    // ── Parameter: same semantics as request ─────────────────────────────────
+    { type: "parameter-format-changed",               before: null,     after: "int32",     expected: "BREAKING", label: "parameter format added (null→int32)" },
+    { type: "parameter-format-changed",               before: "int32",  after: "int64",     expected: "BREAKING", label: "parameter format changed (int32→int64)" },
+    { type: "parameter-format-changed",               before: "int32",  after: null,        expected: "INFO",     label: "parameter format removed (int32→null)" },
+    // ── Parameter items: same semantics as request ────────────────────────────
+    { type: "parameter-items-format-changed",         before: null,     after: "date",      expected: "BREAKING", label: "parameter items format added (null→date)" },
+    { type: "parameter-items-format-changed",         before: "date",   after: "date-time", expected: "BREAKING", label: "parameter items format changed (date→date-time)" },
+    { type: "parameter-items-format-changed",         before: "date",   after: null,        expected: "INFO",     label: "parameter items format removed (date→null)" },
+    // ── Response body: format removed/changed = BREAKING; newly added = INFO ──
+    { type: "response-schema-format-changed",         before: null,     after: "uuid",      expected: "INFO",     label: "response body format added (null→uuid)" },
+    { type: "response-schema-format-changed",         before: "uuid",   after: "uri",       expected: "BREAKING", label: "response body format changed (uuid→uri)" },
+    { type: "response-schema-format-changed",         before: "uuid",   after: null,        expected: "BREAKING", label: "response body format removed (uuid→null)" },
+    // ── Response property: same semantics ─────────────────────────────────────
+    { type: "response-schema-property-format-changed", before: null,    after: "date",      expected: "INFO",     label: "response property format added (null→date)" },
+    { type: "response-schema-property-format-changed", before: "date",  after: "date-time", expected: "BREAKING", label: "response property format changed (date→date-time)" },
+    { type: "response-schema-property-format-changed", before: "date",  after: null,        expected: "BREAKING", label: "response property format removed (date→null)" },
+    // ── Response items: same semantics ────────────────────────────────────────
+    { type: "response-schema-items-format-changed",   before: null,     after: "int32",     expected: "INFO",     label: "response items format added (null→int32)" },
+    { type: "response-schema-items-format-changed",   before: "int32",  after: "int64",     expected: "BREAKING", label: "response items format changed (int32→int64)" },
+    { type: "response-schema-items-format-changed",   before: "int32",  after: null,        expected: "BREAKING", label: "response items format removed (int32→null)" },
+    // ── Response header: same semantics as response body ─────────────────────
+    { type: "response-header-format-changed",         before: null,     after: "uuid",      expected: "INFO",     label: "response header format added (null→uuid)" },
+    { type: "response-header-format-changed",         before: "uuid",   after: "uri",       expected: "BREAKING", label: "response header format changed (uuid→uri)" },
+    { type: "response-header-format-changed",         before: "uuid",   after: null,        expected: "BREAKING", label: "response header format removed (uuid→null)" },
+  ];
+
+  it.each(FMT_CASES)("$label ($type) → $expected", ({ type, before, after, expected }) => {
+    const result = classifyChanges([raw(type, before, after, "test.format")]);
+    expect(result[0]?.severity).toBe(expected);
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+});
