@@ -11630,3 +11630,113 @@ paths:
     expect(constChange?.after).toBeNull();
   });
 });
+
+// ─── Round 92: items constraint value-change (non-null) branches ──────────────
+// Items minLength/maxLength value-change tests: R87/R89 covered null-transitions;
+// R1130/R4241 covered BREAKING value-changes (tightening directions). The INFO
+// (loosening) directions are untested for both request and response at items level.
+// Also testing the BREAKING direction for maxLength on request and on response.
+
+describe("adversarial round 92 — items constraint value-change branches (loosening and max-sense tightening) (end-to-end)", () => {
+  function makeReqArraySpec92(itemsLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                ${itemsLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  function makeResArraySpec92(itemsLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  ${itemsLine}
+`;
+  }
+
+  it("decreasing minLength on request array items (10→3) is INFO — constraint loosened, shorter elements now accepted", () => {
+    // requestConstraintSeverity min-sense: after (3) < before (10) → INFO
+    // Clients sending 3-9 char elements that previously failed now pass.
+    const before = makeReqArraySpec92("minLength: 10");
+    const after  = makeReqArraySpec92("minLength: 3");
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-items-constraint-changed" && String(c.location).endsWith(".minLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(10);
+    expect(constChange?.after).toBe(3);
+  });
+
+  it("increasing minLength on response array items (2→10) is INFO — server now guarantees longer elements", () => {
+    // responseConstraintSeverity min-sense: after (10) > before (2) → INFO
+    // Server strengthening its floor guarantee means clients relying on ≥2 see stronger promise.
+    const before = makeResArraySpec92("minLength: 2");
+    const after  = makeResArraySpec92("minLength: 10");
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-items-constraint-changed" && String(c.location).endsWith(".minLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(2);
+    expect(constChange?.after).toBe(10);
+  });
+
+  it("decreasing maxLength on request array items (100→50) is BREAKING — clients sending 51-100 char elements now fail", () => {
+    // requestConstraintSeverity max-sense: after (50) < before (100) → BREAKING
+    // Previously valid elements with 51-100 chars will now fail validation.
+    const before = makeReqArraySpec92("maxLength: 100");
+    const after  = makeReqArraySpec92("maxLength: 50");
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-items-constraint-changed" && String(c.location).endsWith(".maxLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBe(100);
+    expect(constChange?.after).toBe(50);
+  });
+
+  it("increasing maxLength on response array items (50→100) is BREAKING — server may now return longer elements", () => {
+    // responseConstraintSeverity max-sense: after (100) > before (50) → BREAKING
+    // Clients that relied on elements being ≤50 chars may break when server returns up to 100.
+    const before = makeResArraySpec92("maxLength: 50");
+    const after  = makeResArraySpec92("maxLength: 100");
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-items-constraint-changed" && String(c.location).endsWith(".maxLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBe(50);
+    expect(constChange?.after).toBe(100);
+  });
+});
