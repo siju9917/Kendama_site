@@ -254,6 +254,37 @@ Window elapsed 2026-06-03 with no human response. Factory applied option A
 
 ---
 
+## Direct human approvals (governance / factory-strength changes)
+
+> Distinct from the build proposals above: these record the human
+> directly approving a change to the factory's own guardrails or
+> operating rules — required by CLAUDE.md "Self-improvement" and
+> GUARDRAILS #12 before any *weakening* takes effect.
+
+### 2026-06-06 — Kill-switch to pause the autonomous Saturday Routine — APPROVED by human (live request)
+
+- **What:** A human-controlled kill-switch file
+  (`human/ROUTINE_DISABLED.md`). While present: the stop-guard stands
+  down (stopping permitted regardless of weekday — `ops/checks/stop-guard.mjs`
+  honors it at its CLI boundary), and a kill-switch banner at the top of
+  `CLAUDE.md` instructs every session not to run the build loop and not
+  to auto commit/push.
+- **Why:** The unattended Saturday Routine ran all day and pushed
+  commits continuously; a connected Render service (`appraise-os`)
+  auto-built and failed each push, emailing the human every time. The
+  human repeatedly and explicitly asked for the Routine to stop ("There
+  is a routine that's working all day today. Can make something so the
+  routine stops doing it" / "No more emails please").
+- **Weakening acknowledged:** This suspends the 5x / 5z / 5x.2
+  never-stop-on-Saturday enforcement *while the flag is present*. That
+  is the intended, human-authorized effect. Full enforcement returns the
+  moment the human deletes `human/ROUTINE_DISABLED.md`.
+- **Reversible:** Yes — delete the flag file to re-arm (a human-only
+  action; a session must not delete it itself).
+- **Logged:** `brain/DECISIONS.md` (2026-06-06).
+
+---
+
 ## Working notes
 
 - The factory **does not edit prior proposals' status lines** —
