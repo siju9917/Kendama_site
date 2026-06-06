@@ -82,7 +82,10 @@ export type OapiChangeType =
   | "request-schema-property-removed"
   | "request-schema-property-added"
   | "response-schema-items-type-changed"
-  | "request-schema-items-type-changed";
+  | "request-schema-items-type-changed"
+  | "response-schema-property-enum-changed"
+  | "request-schema-property-enum-changed"
+  | "operation-deprecated-changed";
 
 /** A raw structural difference between two specs before classification. */
 export interface OapiRawChange {

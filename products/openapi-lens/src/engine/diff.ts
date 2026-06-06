@@ -156,6 +156,19 @@ function diffSchemaProperties(
         after: cProp.type,
       });
     }
+    if (!deepEqual(bProp.enum, cProp.enum)) {
+      const bEnum = bProp.enum;
+      const cEnum = cProp.enum;
+      if (bEnum !== undefined || cEnum !== undefined) {
+        changes.push({
+          type: isRequest ? "request-schema-property-enum-changed" : "response-schema-property-enum-changed",
+          path, method,
+          location: `${location}.properties.${key}.enum`,
+          before: bEnum,
+          after: cEnum,
+        });
+      }
+    }
   }
 
   for (const key of cKeys) {
@@ -310,6 +323,18 @@ export function diffSpecs(baseline: OapiSpec, current: OapiSpec): OapiRawChange[
     diffParameters(bOp.path, bOp.method, bOp.parameters, cOp.parameters, changes);
     diffRequestBody(bOp.path, bOp.method, bOp, cOp, changes);
     diffResponses(bOp.path, bOp.method, bOp, cOp, changes);
+    const bDep = bOp.deprecated ?? false;
+    const cDep = cOp.deprecated ?? false;
+    if (bDep !== cDep) {
+      changes.push({
+        type: "operation-deprecated-changed",
+        path: bOp.path,
+        method: bOp.method,
+        location: `${bOp.method.toUpperCase()} ${bOp.path}.deprecated`,
+        before: bDep,
+        after: cDep,
+      });
+    }
   }
 
   for (const [key, cOp] of cMap) {

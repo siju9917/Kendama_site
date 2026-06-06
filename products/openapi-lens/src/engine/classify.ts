@@ -112,6 +112,46 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     matches: (c) => c.type === "request-schema-items-type-changed" ? "BREAKING" : null,
     message: (c) => `Request body array element type changed: ${c.location} (${c.before} → ${c.after}). Clients sending the old element type will fail validation.`,
   },
+  {
+    matches: (c) => {
+      if (c.type !== "request-schema-property-enum-changed") return null;
+      const before = c.before as unknown[] | undefined;
+      const after = c.after as unknown[] | undefined;
+      if (!before || !after) return "BREAKING";
+      const removed = before.filter((v) => !after.includes(v));
+      if (removed.length > 0) return "BREAKING";
+      return "INFO";
+    },
+    message: (c) => {
+      const before = c.before as unknown[] | undefined;
+      const after = c.after as unknown[] | undefined;
+      if (!before || !after) return `Request property enum changed at ${c.location}: values may be removed.`;
+      const removed = before.filter((v) => !after.includes(v));
+      if (removed.length > 0) return `Request property enum values removed at ${c.location}: [${removed.join(", ")}] no longer accepted. Clients sending these values will fail validation.`;
+      const added = after.filter((v) => !before.includes(v));
+      return `Request property enum values added at ${c.location}: [${added.join(", ")}] are now accepted (non-breaking).`;
+    },
+  },
+  {
+    matches: (c) => {
+      if (c.type !== "response-schema-property-enum-changed") return null;
+      const before = c.before as unknown[] | undefined;
+      const after = c.after as unknown[] | undefined;
+      if (!before || !after) return "BREAKING";
+      const added = after.filter((v) => !before.includes(v));
+      if (added.length > 0) return "BREAKING";
+      return "INFO";
+    },
+    message: (c) => {
+      const before = c.before as unknown[] | undefined;
+      const after = c.after as unknown[] | undefined;
+      if (!before || !after) return `Response property enum changed at ${c.location}: values may be added.`;
+      const added = after.filter((v) => !before.includes(v));
+      if (added.length > 0) return `Response property enum values added at ${c.location}: [${added.join(", ")}]. Clients with exhaustive enum handling (e.g. switch statements without default) will break.`;
+      const removed = before.filter((v) => !after.includes(v));
+      return `Response property enum values removed at ${c.location}: [${removed.join(", ")}] no longer returned (non-breaking for clients).`;
+    },
+  },
 
   // ─── SAFE / INFO ────────────────────────────────────────────────────────
   {
@@ -162,6 +202,14 @@ const CLASSIFY_RULES: ClassifyRule[] = [
         ? "INFO"
         : null,
     message: (c) => `Response field can now be null: ${c.location}. Clients should handle null values for this field.`,
+  },
+  {
+    matches: (c) => c.type === "operation-deprecated-changed" && c.after === true ? "INFO" : null,
+    message: (c) => `Operation deprecated: ${c.location}. This endpoint is scheduled for removal; clients should migrate to a replacement.`,
+  },
+  {
+    matches: (c) => c.type === "operation-deprecated-changed" && c.after === false ? "INFO" : null,
+    message: (c) => `Operation un-deprecated: ${c.location}. This endpoint is no longer marked for removal.`,
   },
 ];
 

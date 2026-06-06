@@ -304,3 +304,149 @@ describe("array items diff — request body", () => {
     expect(requestChange.after).toBe("boolean");
   });
 });
+
+// ─── Property-level enum diffing (5.7.5 continuation, 2026-06-06) ──────────
+
+function makeEnumSpec(responseEnumValues: string[], requestEnumValues?: string[]): string {
+  const respEnum = responseEnumValues.map((v) => `                      - ${v}`).join("\n");
+  const reqEnum = requestEnumValues ? requestEnumValues.map((v) => `                      - ${v}`).join("\n") : "";
+  return `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+${respEnum}
+    ${requestEnumValues ? `post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+${reqEnum}
+      responses:
+        "201":
+          description: created` : ""}
+`;
+}
+
+describe("property-level enum diff — request schema", () => {
+  it("detects BREAKING when a request schema property loses an enum value", () => {
+    const baseline = makeEnumSpec(["pending", "active", "inactive"], ["pending", "active", "inactive"]);
+    const current = makeEnumSpec(["pending", "active", "inactive"], ["active", "inactive"]);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = breakingOnly(changes);
+    expect(breaking.some((c) => c.type === "request-schema-property-enum-changed")).toBe(true);
+    const change = breaking.find((c) => c.type === "request-schema-property-enum-changed")!;
+    expect(change.message).toMatch(/pending/);
+    expect(change.message).toMatch(/no longer accepted/);
+  });
+
+  it("detects INFO when a request schema property gains an enum value", () => {
+    const baseline = makeEnumSpec(["active", "inactive"], ["active", "inactive"]);
+    const current = makeEnumSpec(["active", "inactive"], ["active", "inactive", "pending"]);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const info = changes.find((c) => c.type === "request-schema-property-enum-changed");
+    expect(info).toBeDefined();
+    expect(info?.severity).toBe("INFO");
+    expect(info?.message).toMatch(/pending/);
+  });
+
+  it("does not emit enum-changed when request enum is unchanged", () => {
+    const s = makeEnumSpec(["active", "inactive"], ["active", "inactive"]);
+    expect(analyzeOpenApiDiff(s, s).filter((c) => c.type === "request-schema-property-enum-changed")).toHaveLength(0);
+  });
+});
+
+describe("property-level enum diff — response schema", () => {
+  it("detects BREAKING when a response schema property gains an enum value (exhaustive clients break)", () => {
+    const baseline = makeEnumSpec(["active", "inactive"]);
+    const current = makeEnumSpec(["active", "inactive", "pending"]);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = breakingOnly(changes);
+    expect(breaking.some((c) => c.type === "response-schema-property-enum-changed")).toBe(true);
+    const change = breaking.find((c) => c.type === "response-schema-property-enum-changed")!;
+    expect(change.message).toMatch(/pending/);
+    expect(change.message).toMatch(/exhaustive/);
+  });
+
+  it("detects INFO when a response schema property loses an enum value", () => {
+    const baseline = makeEnumSpec(["active", "inactive", "pending"]);
+    const current = makeEnumSpec(["active", "inactive"]);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const info = changes.find((c) => c.type === "response-schema-property-enum-changed");
+    expect(info).toBeDefined();
+    expect(info?.severity).toBe("INFO");
+    expect(info?.message).toMatch(/pending/);
+    expect(info?.message).toMatch(/no longer returned/);
+  });
+
+  it("does not emit enum-changed when response enum is unchanged", () => {
+    const s = makeEnumSpec(["active", "inactive"]);
+    expect(analyzeOpenApiDiff(s, s).filter((c) => c.type === "response-schema-property-enum-changed")).toHaveLength(0);
+  });
+});
+
+// ─── Deprecated operation detection (5.7.5 continuation, 2026-06-06) ───────
+
+const SIMPLE_SPEC = (deprecated: boolean) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      ${deprecated ? "deprecated: true" : ""}
+      responses:
+        "200":
+          description: ok
+`;
+
+describe("operation deprecated detection", () => {
+  it("detects INFO when an operation is deprecated (false → true)", () => {
+    const baseline = SIMPLE_SPEC(false);
+    const current = SIMPLE_SPEC(true);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const dep = changes.find((c) => c.type === "operation-deprecated-changed");
+    expect(dep).toBeDefined();
+    expect(dep?.severity).toBe("INFO");
+    expect(dep?.before).toBe(false);
+    expect(dep?.after).toBe(true);
+    expect(dep?.message).toMatch(/deprecated/i);
+  });
+
+  it("detects INFO when an operation is un-deprecated (true → false)", () => {
+    const baseline = SIMPLE_SPEC(true);
+    const current = SIMPLE_SPEC(false);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const dep = changes.find((c) => c.type === "operation-deprecated-changed");
+    expect(dep).toBeDefined();
+    expect(dep?.severity).toBe("INFO");
+    expect(dep?.before).toBe(true);
+    expect(dep?.after).toBe(false);
+    expect(dep?.message).toMatch(/un-deprecated/i);
+  });
+
+  it("does not emit deprecated-changed when deprecated flag is unchanged", () => {
+    const s = SIMPLE_SPEC(true);
+    expect(analyzeOpenApiDiff(s, s).filter((c) => c.type === "operation-deprecated-changed")).toHaveLength(0);
+  });
+});
