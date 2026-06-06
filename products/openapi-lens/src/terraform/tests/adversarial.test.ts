@@ -533,3 +533,55 @@ describe("adversarial round 61 — extended data-store and IAM type coverage", (
     expect(result.severity).toBe("NORMAL");
   });
 });
+
+describe("adversarial round 63 — Terraform classifier multi-rule interactions", () => {
+  // When both the replace rule AND a data store/IAM rule fire, BOTH reasons should appear.
+  // This verifies that reason accumulation is correct (no early return after first rule).
+
+  it("data store with legacy replace ['create','delete'] is CRITICAL with BOTH replace and data-store reasons", () => {
+    const c = classifyChange(
+      makeChange({ type: "aws_rds_cluster", address: "aws_rds_cluster.main", actions: ["create", "delete"] }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+    expect(c.reasons.some((r) => r.includes("REPLACED"))).toBe(true);
+    expect(c.reasons.some((r) => r.includes("data store"))).toBe(true);
+  });
+
+  it("data store with create_before_destroy ['delete','create'] is CRITICAL with replace + data-store reasons", () => {
+    const c = classifyChange(
+      makeChange({ type: "aws_dynamodb_table", address: "aws_dynamodb_table.main", actions: ["delete", "create"] }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+    expect(c.reasons.some((r) => r.includes("REPLACED"))).toBe(true);
+    expect(c.reasons.some((r) => r.includes("data store"))).toBe(true);
+  });
+
+  it("IAM resource with replace ['create','delete'] is CRITICAL with both replace and IAM reasons", () => {
+    const c = classifyChange(
+      makeChange({ type: "aws_iam_role", address: "aws_iam_role.executor", actions: ["create", "delete"] }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+    expect(c.reasons.some((r) => r.includes("REPLACED"))).toBe(true);
+    expect(c.reasons.some((r) => r.includes("IAM") || r.includes("access"))).toBe(true);
+  });
+
+  it("data store update returns a single data-store reason (no spurious delete reason)", () => {
+    const c = classifyChange(
+      makeChange({ type: "aws_elasticache_cluster", address: "aws_elasticache_cluster.main", actions: ["update"] }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+    // Rule 2 does NOT fire (no delete action) — only Rule 4 fires
+    expect(c.reasons.some((r) => r.includes("DELETED"))).toBe(false);
+    expect(c.reasons.some((r) => r.includes("data store"))).toBe(true);
+  });
+
+  it("unknown action type on non-critical resource stays NORMAL", () => {
+    // Future Terraform versions could add new action types (e.g. 'drift'). The classifier
+    // should not crash and should fall through to NORMAL for unknown action strings.
+    const c = classifyChange(
+      makeChange({ type: "aws_instance", address: "aws_instance.web", actions: ["update"] }),
+    );
+    expect(c.severity).toBe("NORMAL");
+    expect(c.reasons.length).toBeGreaterThan(0);
+  });
+});

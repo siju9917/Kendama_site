@@ -237,4 +237,56 @@ describe("parseTerraformPlan — output_changes", () => {
     const result = parseTerraformPlan(makePlan({ output_changes: null }));
     expect(result.outputChanges).toEqual([]);
   });
+
+  it("round 63: before_sensitive:true marks output sensitive (previous value was sensitive)", () => {
+    const result = parseTerraformPlan(
+      makePlan({
+        output_changes: {
+          old_password: {
+            actions: ["update"],
+            before: null,
+            before_sensitive: true,
+            after: "new-value",
+            after_sensitive: false,
+          },
+        },
+      }),
+    );
+    expect(result.outputChanges[0]!.sensitive).toBe(true);
+  });
+
+  it("round 63: after_sensitive:{} (empty partial-sensitive object) is treated as sensitive (Phase 1 behavior)", () => {
+    // Documents current behavior: any non-null object for after_sensitive is treated as sensitive.
+    // In practice Terraform doesn't emit {} for after_sensitive (would use false), but the
+    // code defensively marks it sensitive rather than risking a false negative.
+    const result = parseTerraformPlan(
+      makePlan({
+        output_changes: {
+          maybe_sensitive: {
+            actions: ["update"],
+            before: "old",
+            after: "new",
+            after_sensitive: {},
+          },
+        },
+      }),
+    );
+    expect(result.outputChanges[0]!.sensitive).toBe(true);
+  });
+
+  it("round 63: after_sensitive:null is NOT sensitive (null is not an object)", () => {
+    const result = parseTerraformPlan(
+      makePlan({
+        output_changes: {
+          not_sensitive: {
+            actions: ["update"],
+            before: "old",
+            after: "new",
+            after_sensitive: null,
+          },
+        },
+      }),
+    );
+    expect(result.outputChanges[0]!.sensitive).toBe(false);
+  });
 });

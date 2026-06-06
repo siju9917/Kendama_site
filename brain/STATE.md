@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **1622/1622 tests** (BidDiff 586/586 + openapi-lens 1036/1036). Rounds 54-60: cross-level matrices + security gap + OAS-3.1 normalization + cross-version comparison. Round 61: 12 new DATA_STORE_TYPES + 5 new IAM_TYPES + 25 tests. Round 62: content-type mismatch Phase-2 limitation documented (4 adversarial tests: JSON↔XML switch, spurious schema events, positive control) + operation-id-changed all-directions matrix + parameter-added required/optional/absent edge cases (6 classify tests) = +10 tests.
+- **Build green:** **1630/1630 tests** (BidDiff 586/586 + openapi-lens 1044/1044). Rounds 54-60: cross-level matrices + security gap + OAS-3.1 normalization + cross-version comparison. Round 61: 12 new DATA_STORE_TYPES + 5 new IAM_TYPES + 25 tests. Round 62: content-type mismatch Phase-2 gap + operation-id all-directions + parameter-added edge cases (+10). Round 63: Terraform multi-rule interactions (data-store+replace, IAM+replace dual reasons, update-only single reason; 5 adversarial) + parser output sensitivity (before_sensitive:true, after_sensitive:{}/null; 3 parser) = +8 tests.
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
