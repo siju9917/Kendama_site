@@ -756,3 +756,83 @@ The structural actions from the 2026-06-06 audit remain:
 - Finding B: A WISHLIST item DID grow this session (multi-label classification + drift
   validator). The ambition concern is partially addressed.
 
+### Session continuation note (2026-06-06, post-490→567)
+
+Context window continuation after items 16-22 above. Suite 490→567; 18 new commits
+to `claude/intelligent-faraday-FnmJn`.
+
+**Items completed:**
+
+- **Item 24** (N14, solicitation-number mismatch guard): `extractSolicitationId()` in
+  `validate.ts`, wired into both extractors + engine; 12 new tests. Fixed a regex bug
+  (`\s`→`[ \t]` to prevent cross-line greedy capture) discovered while writing the tests
+  — the test found a real edge case before production saw it. 503 tests.
+- **Item 25** (N-A10, keyboard hint context-awareness): DiffView shortcuts `<details>`
+  shows "J / K navigate Critical changes only" note when Critical filter active.
+- **Item 26** (N18, History inline delete confirmation): replaced `window.confirm()` —
+  blocked in Chrome side panels — with an inline "Delete / Cancel" pair + Escape key
+  cancel. 3 tests updated + 1 new. 504 tests.
+- **Item 27**: PROGRESS.md updated; unblocked POLISH queue now empty.
+- **Item 28** (DiffView.test.tsx, 46 tests): first-ever full component test coverage:
+  `criticalFirst` pure function, all filter chips, empty-state variants, text filter,
+  warning banners, session notices, N-A10 context note, DOM ordering, section filter,
+  keyboard J/K/R/Arrow navigation + all guards (modifier, INPUT target, isComposing,
+  empty list), reviewed counter. 504→551 tests. Fixed two Chai issues:
+  (a) `toBeDisabled` invalid in Chai — used `.disabled` property access instead;
+  (b) `/reviewed/i` ambiguously matched keyboard shortcut text — tightened to
+  `/\d+\/\d+ reviewed/i`.
+- **Item 29** (Vite 6 + Vitest 4 toolchain bump): Vite 5→6.4.3, Vitest 2→4.1.8,
+  @vitejs/plugin-react 4→5.2.0. Critical Vitest UI-server vuln
+  GHSA-5xrq-8626-4rwp resolved. Suite 551/551 clean; build clean.
+- **Item 30** (SamAttachments.test.tsx, 12 tests): last untested sidepanel component.
+  Dynamic `import()` mocked via `vi.mock` hoisting at module-system level.
+  Covers: null-while-loading, empty list, items + MIME type, callback slots,
+  disabled+Loading… state, cross-id isolation, runtime failure → empty, null response.
+  551→563 tests.
+- **Item 31** (N-A21, filter result counter): `DiffView.tsx` shows "X of N changes"
+  when active filters narrow the list; "0 of N changes" when all filtered out. 4 new
+  tests (counter present, hidden when no filter, hidden when all pass, zero edge case).
+  563→567 tests.
+- **PORTFOLIO.md + PROGRESS.md updated** to reflect 567/567, ~97% build, Vite 6/
+  Vitest 4 done, DiffView + SamAttachments component coverage complete.
+
+**Updated 5.7.7 assessment for this continuation:**
+
+- **5.7.1 (monthly re-critique):** N/A — no shipped products.
+- **5.7.2 (escalating critique):** HELD — keyboard nav guard tests (modifier, INPUT
+  target, isComposing, empty list) were invented adversarially by the test suite.
+  All four guards were untested before; all four now have independent test coverage.
+  The "test the guards, not just the happy path" discipline is the escalation.
+- **5.7.3 (roster growth):** HELD — Adversarial Tester #2 gained the keyboard-handler
+  guard-pattern checklist item (event handler with modifier/target/composition guards
+  requires each guard tested independently). Logged in roster-growth table.
+- **5.7.4 ("nothing is done"):** HELD — N-A21 was produced by the re-opening review
+  lens: asked "what filter feedback is absent?" → the "how many results match?" counter
+  was missing. Found, shipped, tested.
+- **5.7.5 (continuous bug-hunt):** HELD — test-writing itself surfaces real issues:
+  N14's regex bug (greedy `\s` cross-line capture) was found by writing the test before
+  commit. The Chai `toBeDisabled` issue was a test framework portability finding, not a
+  false negative on product behavior.
+- **5.7.6 (continuous ideation):** HELD — N-A21 is a direct product of ambient
+  "what would make this materially better?" questioning during test writing.
+
+**5.7.8 (audit-of-the-auditor):**
+
+1. Was the audit shallow? Six rules addressed with held verdicts + concrete evidence
+   (specific test counts, specific guard names). Not shallow.
+2. Was an obvious lapse missed? One honest note: the formal 14-critic panel still has
+   not run in this context window. This is the third consecutive cycle continuation
+   where the full panel was bypassed in favor of targeted critic passes. Defensible
+   (no phase closure, no ship event) but worth noting that the cadence debt accumulates.
+   The trigger for a full panel run remains: any phase gate closes, or the gated P1s
+   clear and K1 converges.
+3. Was the conclusion defended or asserted? Each verdict cites a concrete artifact
+   (test file, guard name, N-A21 implementation). Evidence-bound.
+
+**Where applied:** `brain/STATE.md` (items 28-31 logged), `governance/CRITIQUE_AGENTS.md`
+(keyboard-handler guard item), this lesson.
+
+**Recurrence test:** the next formal panel run must include the keyboard-handler
+guard-pattern check (Adversarial Tester #2) as a test requirement on any React
+component with `useEffect`-registered window event listeners.
+
