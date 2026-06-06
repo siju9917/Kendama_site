@@ -169,6 +169,15 @@ function diffSchemaProperties(
         });
       }
     }
+    if (bProp.format !== cProp.format && (bProp.format !== undefined || cProp.format !== undefined)) {
+      changes.push({
+        type: isRequest ? "request-schema-property-format-changed" : "response-schema-property-format-changed",
+        path, method,
+        location: `${location}.properties.${key}.format`,
+        before: bProp.format ?? null,
+        after: cProp.format ?? null,
+      });
+    }
   }
 
   for (const key of cKeys) {

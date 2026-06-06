@@ -113,6 +113,14 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => `Request body array element type changed: ${c.location} (${c.before} → ${c.after}). Clients sending the old element type will fail validation.`,
   },
   {
+    matches: (c) => c.type === "response-schema-property-format-changed" ? "BREAKING" : null,
+    message: (c) => `Response property format changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients deserializing this field with the old format may fail.`,
+  },
+  {
+    matches: (c) => c.type === "request-schema-property-format-changed" ? "BREAKING" : null,
+    message: (c) => `Request property format changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients sending data in the old format will fail validation.`,
+  },
+  {
     matches: (c) => {
       if (c.type !== "request-schema-property-enum-changed") return null;
       const before = c.before as unknown[] | undefined;

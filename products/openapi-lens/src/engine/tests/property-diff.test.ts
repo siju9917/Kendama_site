@@ -450,3 +450,84 @@ describe("operation deprecated detection", () => {
     expect(analyzeOpenApiDiff(s, s).filter((c) => c.type === "operation-deprecated-changed")).toHaveLength(0);
   });
 });
+
+// ─── Property-level format diffing (5.7.5 continuation, 2026-06-06) ─────────
+
+function makeFormatSpec(responseFormat: string | null, requestFormat?: string | null): string {
+  const respFmtLine = responseFormat ? `\n                    format: ${responseFormat}` : "";
+  const reqFmtLine = requestFormat ? `\n                  format: ${requestFormat}` : "";
+  return `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  createdAt:
+                    type: string${respFmtLine}
+    ${requestFormat !== undefined ? `post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expiresAt:
+                  type: string${reqFmtLine}
+      responses:
+        "201":
+          description: created` : ""}
+`;
+}
+
+describe("property-level format diff", () => {
+  it("detects BREAKING when a response schema property format changes (date → date-time)", () => {
+    const baseline = makeFormatSpec("date");
+    const current = makeFormatSpec("date-time");
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = breakingOnly(changes);
+    expect(breaking.some((c) => c.type === "response-schema-property-format-changed")).toBe(true);
+    const change = breaking.find((c) => c.type === "response-schema-property-format-changed")!;
+    expect(change.before).toBe("date");
+    expect(change.after).toBe("date-time");
+    expect(change.location).toMatch(/createdAt/);
+  });
+
+  it("detects BREAKING when a request schema property format changes (int32 → int64)", () => {
+    const baseline = makeFormatSpec(null, "int32");
+    const current = makeFormatSpec(null, "int64");
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = breakingOnly(changes);
+    expect(breaking.some((c) => c.type === "request-schema-property-format-changed")).toBe(true);
+    const change = breaking.find((c) => c.type === "request-schema-property-format-changed")!;
+    expect(change.before).toBe("int32");
+    expect(change.after).toBe("int64");
+    expect(change.location).toMatch(/expiresAt/);
+  });
+
+  it("does not emit format-changed when property format is unchanged", () => {
+    const s = makeFormatSpec("date-time");
+    expect(analyzeOpenApiDiff(s, s).filter((c) => c.type === "response-schema-property-format-changed")).toHaveLength(0);
+  });
+
+  it("does not conflate response and request format changes", () => {
+    const baseline = makeFormatSpec("date", "int32");
+    const current = makeFormatSpec("date-time", "int64");
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const responseChange = changes.find((c) => c.type === "response-schema-property-format-changed")!;
+    const requestChange = changes.find((c) => c.type === "request-schema-property-format-changed")!;
+    expect(responseChange).toBeDefined();
+    expect(requestChange).toBeDefined();
+    expect(responseChange.before).toBe("date");
+    expect(requestChange.before).toBe("int32");
+  });
+});
