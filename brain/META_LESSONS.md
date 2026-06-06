@@ -1240,3 +1240,28 @@ detect stale test-count mentions in APPROVALS.md (cross-validate against STATE.m
 checklist additions (VS Code API isolation, WebView injection, diagnostic re-compute) are added
 to CRITIQUE_AGENTS.md before the Phase 1 critique panel runs.
 
+
+## 2026-06-06 (continuation) — 5.7.5 rounds 9-12; 5.7.3 roster growth; 5.7.7 META audit
+
+**Operational event:** Context compaction mid-session. Factory resumed and executed:
+- 5.7.5 rounds 9-12 of continuous bug-hunt on openapi-lens Phase 0 engine
+- 5.7.2 escalating critique (independent Explore-agent adversarial review) — confirmed clean
+- 5.7.3 roster growth — three new entries added to CRITIQUE_AGENTS.md covering round 10 (sub-entity double-reporting guard), round 11 (binary-flag both-directions), round 12 (recursive depth bound)
+
+**Why it happened:**
+
+Round 10 root cause: `diffSchemaItems` compared `items.readOnly` and `items.writeOnly` without guarding on whether `bItems` and `cItems` both existed. Adding a property that had `items` on only the current side caused spurious `items-readonly-changed` events alongside the legitimate `property-added` event.
+
+Round 11 root cause: `diffRequestBody` only emitted the `request-body-required-changed` event for the `false→true` direction (body became required = BREAKING). The reverse `true→false` (body became optional = INFO) was never emitted, and `false→null` (optional body removed) fell through to the cryptic default classification.
+
+Round 12 root cause: `diffSchemaItems` recursed into `items.items` without a depth bound. A schema with deeply-nested array types (5+ levels) would produce infinite recursion and stack overflow.
+
+**Structural fix:**
+- Round 10: `if (bItems && cItems)` guard around all items sub-field comparisons in `diffSchemaItems`
+- Round 11: Added `true→false` emission in `diffRequestBody`; added `false→null` INFO classify rule
+- Round 12: Added `MAX_ITEMS_DEPTH = 3` constant, `depth` parameter to `diffSchemaItems`, early return at depth limit, and recursive call for `items.items`
+
+**Where applied:** `products/openapi-lens/src/engine/diff.ts`, `classify.ts`, `tests/adversarial.test.ts`, `tests/classify.test.ts`; `governance/CRITIQUE_AGENTS.md` (3 new entries); `products/openapi-lens/PROGRESS.md`
+
+**Recurrence test:** (a) 963/963 tests remain green (BidDiff 586 + openapi-lens 377); (b) TYPE_STUBS exhaustiveness guard in `classify.test.ts` ensures any future `OapiChangeType` addition without a classify rule causes a TypeScript compile error; (c) the three new CRITIQUE_AGENTS.md entries will be probed on every openapi-lens sub-product build
+
