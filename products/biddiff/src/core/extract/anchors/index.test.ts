@@ -213,9 +213,10 @@ describe("SET_ASIDE", () => {
     const a = detectSetAside("This acquisition is a Total Small Business Set-Aside.");
     expect(a.some((x) => x.type === "SET_ASIDE")).toBe(true);
   });
-  it("matches 'set aside' keyword (space form)", () => {
-    const a = detectSetAside("Solicitation is set aside for 8(a) concerns.");
-    expect(a.some((x) => x.type === "SET_ASIDE")).toBe(true);
+  it("does NOT match 'set aside' (space form / general verb — would be a false positive)", () => {
+    // "Please set aside 30 minutes" is not a procurement set-aside.
+    // Only the hyphenated form "set-aside" is the procurement term.
+    expect(detectSetAside("Please set aside 30 minutes for the oral presentation.").length).toBe(0);
   });
   it("matches NAICS code with numeric code", () => {
     const a = detectSetAside("NAICS Code 541511 applies to this solicitation.");

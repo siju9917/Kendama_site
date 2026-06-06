@@ -201,6 +201,14 @@ ruleset still needs the human-gated practitioner validation in
   in minutes under deadline pressure — "what changed that affects my
   bid/no-bid, my pricing, or my compliance?" — so critical changes
   must be scannable and correctly prioritized, not buried.
+- **Anchor-extension validation gate (added 2026-06-06 — domain-expert
+  P1 public-source resolution cycle):** When a new anchor type or
+  critical rule is added, the critic must verify: (a) the addition is
+  supported by a specific, cited public source (FAR/DFARS section,
+  DoD pricing guide, etc.) — "it seemed right" is not enough; (b)
+  an integration test exercises the full chain: anchor detection →
+  classify → critical-rule evaluation → engine output. A unit test
+  on the detector alone is necessary but not sufficient.
 
 ### 6. Performance Critic
 
@@ -480,3 +488,5 @@ critic is recorded here with the triggering cause.
 
 The META loop (PART 11) audits this table every cycle. A month
 with no growth is a warning sign flagged in the weekly digest.
+
+| 2026-06-06 | Domain-Expert Critic (#5) checklist | Added anchor-extension validation gate: new anchor types require (a) a cited public regulatory source and (b) an integration test exercising the full detection→classify→critical chain, not just a unit test on the detector | BD2 public-source resolution cycle — sub-CLIN (DFARS 204.71) and SET_ASIDE (FAR 19.501) anchors added with citations + end-to-end integration tests; the process proved that "it seemed right" is insufficient for critical-rule additions to a compliance product |

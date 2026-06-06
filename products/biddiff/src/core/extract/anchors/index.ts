@@ -318,8 +318,11 @@ export function detectClins(text: string): Anchor[] {
 // NAICS codes (4–6 digit), and size-standard phrases are the common indicators
 // in solicitation cover pages and Section H. False-positive risk is low because
 // these terms are distinctive in the federal procurement context.
+// Only the hyphenated "set-aside" form is matched — not the space-separated
+// verb form ("please set aside time for questions"). In federal procurement
+// documents, the designation is always "Set-Aside" or "set-aside" (hyphenated).
 const SET_ASIDE_RE =
-  /\bset[- ]aside\b|\bNAICS\s+(?:code\s*[:–-]?\s*)?\d{4,6}\b|\bsize\s+standard\b/gi;
+  /\bset-aside\b|\bNAICS\s+(?:code\s*[:–-]?\s*)?\d{4,6}\b|\bsize\s+standard\b/gi;
 
 export function detectSetAside(text: string): Anchor[] {
   SET_ASIDE_RE.lastIndex = 0;
