@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **563/563 tests** (was 490 at session start; current context window brought 504→551: +14 N-queue polish +
+- **Build green:** **566/566 tests** (was 490 at session start; current context window brought 504→551: +14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive regression + 1 Domain-Expert critic anchor gate +
   1 obs#7 USD money characterization + 1 sign-before-dollar false-negative fix +
@@ -480,6 +480,9 @@ all green; check tests 16/16.
     551 tests pass; build clean; critical Vitest UI-server vuln (GHSA-5xrq-8626-4rwp) cleared.
     Queue item #6 CLOSED. PROGRESS.md K2 + maintenance entry updated.
 30. **SamAttachments.test.tsx created** (12 tests): last untested sidepanel component —
+31. **N-A21 DONE** (5.7.4): filter result count in DiffView — "X of N changes" counter
+    appears next to reviewed counter when a filter narrows the list. 3 new DiffView tests
+    (counter shows, hidden when no filter, hidden when all changes match). 563 → **566 tests**.
     null-while-loading, empty list, items + MIME type rendered, onChooseCurrent/Prior callbacks,
     disabled+Loading… per slot, cross-id isolation, runtime failure → empty, null response.
     551 → **563 tests** (74 files). Mocks chrome-rt.js dynamic import via vi.mock hoisting.

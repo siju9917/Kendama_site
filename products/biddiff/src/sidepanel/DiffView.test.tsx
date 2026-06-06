@@ -254,6 +254,28 @@ describe("DiffView — text filter", () => {
     fireEvent.click(screen.getByTitle("Clear all filters"));
     expect(screen.getAllByTestId("change-card")).toHaveLength(2);
   });
+
+  it("shows 'X of N changes' counter when text filter narrows the list", () => {
+    render(<DiffView result={fakeResult([fakeChange("c1"), fakeChange("c2"), fakeChange("c3")])} />);
+    fireEvent.change(screen.getByPlaceholderText(/Filter by text/i), {
+      target: { value: "after-c1" },
+    });
+    expect(screen.getByText("1 of 3 changes")).toBeTruthy();
+  });
+
+  it("does not show the counter when no filter is active", () => {
+    render(<DiffView result={fakeResult([fakeChange("c1"), fakeChange("c2")])} />);
+    expect(screen.queryByText(/\d+ of \d+ changes/)).toBeNull();
+  });
+
+  it("does not show the counter when filter matches all changes", () => {
+    render(<DiffView result={fakeResult([fakeChange("c1"), fakeChange("c2")])} />);
+    fireEvent.change(screen.getByPlaceholderText(/Filter by text/i), {
+      target: { value: "after" },
+    });
+    // "after" matches "after-c1" and "after-c2" — all 2 changes match.
+    expect(screen.queryByText(/\d+ of \d+ changes/)).toBeNull();
+  });
 });
 
 // ---------------------------------------------------------------------------

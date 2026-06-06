@@ -278,6 +278,10 @@ product re-review. Implemented immediately (7 tiny/small, no human gate):
 - **N-A13**: Copy Markdown tooltip expanded to name Teams and "any markdown-aware
   app" instead of just Slack/GitHub/Notion.
 - **N-A20**: Onboarding card gains a "Ready?" CTA paragraph pointing to sample diff.
+- **N-A21 (DONE 2026-06-06)**: Filter result count — when any filter is active and
+  narrows the list, shows "X of N changes" next to the reviewed counter. Prevents the
+  "did I filter everything out?" confusion when text or section filter is active. 3 new
+  tests in DiffView.test.tsx (counter shows / hidden when no filter / hidden when all match).
 - **N-A14**: FAQ entry added: "BidDiff flagged something as critical but my team
   doesn't think it matters" — use Mark reviewed; report false positives.
 
@@ -287,7 +291,7 @@ requires OCR implementation), N-A12 (contrast verification — browser), N-A16
 (store listing accuracy — human), N-A19 (section jump mini-nav — optional).
 
 Net: the unblocked items remain zero-cost. **Done:** N1, N2, N6, N8, N9, N10, N11, N14, N15, N16, N17, N18,
-N-A2, N-A4, N-A5, N-A8, N-A9, N-A10, N-A11, N-A13, N-A14, N-A20.
+N-A2, N-A4, N-A5, N-A8, N-A9, N-A10, N-A11, N-A13, N-A14, N-A20, N-A21.
 (+ N10 characterized, two edge cases logged). **Downgraded** (the capability
 already exists or the delta is marginal, verified by self-audit): N12, N13.
 **Queued POLISH:** N3 (generator done; human-gated Word-render verify before

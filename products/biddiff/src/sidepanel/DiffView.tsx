@@ -270,6 +270,11 @@ export function DiffView({ result, sessionNotices }: Props): React.ReactElement 
             {reviewedCount}/{filtered.length} reviewed
           </span>
         )}
+        {hasActiveFilter && filtered.length < result.changes.length && (
+          <span className="section-chip-counts" aria-live="polite">
+            {filtered.length} of {result.changes.length} changes
+          </span>
+        )}
         {hasActiveFilter && (
           <button
             className="ghost"
