@@ -9753,6 +9753,104 @@ paths:
   });
 });
 
+// ─── Round 72: parameter-items-type null→type + top-level body pattern ──────
+
+describe("adversarial round 72 — parameter items type added (null→type) end-to-end", () => {
+  it("parameter-items-type-changed (null→type) is BREAKING — adding type constraint to previously untyped items", () => {
+    // This path (null→type) is tested by classify unit tests but no end-to-end spec
+    // previously exercised the path. The diff engine emits before:null, after:"integer"
+    // when baseline has items:{} (no type) and current has items:{type:integer}.
+    const withoutType = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /bulk:
+    get:
+      parameters:
+        - name: ids
+          in: query
+          schema:
+            type: array
+            items: {}
+      responses:
+        "200":
+          description: ok
+`;
+    const withType = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /bulk:
+    get:
+      parameters:
+        - name: ids
+          in: query
+          schema:
+            type: array
+            items:
+              type: integer
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(withoutType, withType);
+    const typeChange = changes.find((c) => c.type === "parameter-items-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+    expect(typeChange?.before).toBeNull();
+    expect(typeChange?.after).toBe("integer");
+  });
+});
+
+describe("adversarial round 72 — top-level request body pattern constraint (end-to-end)", () => {
+  function makePatternBodySpec(patternLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /tokens:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              ${patternLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("adding pattern constraint to request body string (null→pattern) is BREAKING — tightens validation", () => {
+    // diffSchemaTopLevelConstraints handles pattern at body level; this path
+    // was only tested at property level in prior rounds, never at top-level body.
+    const noPattern = makePatternBodySpec("");
+    const withPattern = makePatternBodySpec("pattern: '^[A-Za-z0-9]+$'");
+    const changes = analyzeOpenApiDiff(noPattern, withPattern);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".pattern"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe("^[A-Za-z0-9]+$");
+  });
+
+  it("removing pattern constraint from request body string (pattern→null) is INFO — loosens validation", () => {
+    const withPattern = makePatternBodySpec("pattern: '^[A-Za-z0-9]+$'");
+    const noPattern = makePatternBodySpec("");
+    const changes = analyzeOpenApiDiff(withPattern, noPattern);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".pattern"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.after).toBeNull();
+  });
+});
+
 // ─── Round 71: response-header-type-changed null transitions ────────────────
 
 describe("adversarial round 71 — response-header-type-changed null-transition paths", () => {
