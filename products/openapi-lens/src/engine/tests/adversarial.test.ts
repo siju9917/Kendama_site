@@ -3926,3 +3926,135 @@ paths:
     expect(enumChange?.severity).toBe("BREAKING");
   });
 });
+
+// ─── items additionalProperties guard (5.7.5 round 20) ────────────────────
+
+describe("items additionalProperties — no spurious event when items are newly added (5.7.5 round 20)", () => {
+  const PREAMBLE = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /v1/items:
+    post:
+`;
+
+  it("newly added response items schema with additionalProperties:false emits NO additionalProperties-changed event (only type-changed)", () => {
+    // Baseline: array of strings (no items schema needed — different scenario)
+    // A response that was previously a plain object becomes an array-of-objects.
+    // The items are NEWLY added. Only items-type-changed should fire, not items-additional-properties-changed.
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: false
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    // Items type changed (null → object) — expected
+    const typeChange = changes.find((c) => c.type === "response-schema-items-type-changed");
+    expect(typeChange).toBeDefined();
+    // No spurious additionalProperties event — items didn't exist before
+    const apChange = changes.find((c) => c.type === "response-schema-items-additional-properties-changed");
+    expect(apChange).toBeUndefined();
+  });
+
+  it("newly added request items schema with additionalProperties:false emits NO additionalProperties-changed event (only type-changed)", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    // Items type changed (null → object) — expected
+    const typeChange = changes.find((c) => c.type === "request-schema-items-type-changed");
+    expect(typeChange).toBeDefined();
+    // No spurious additionalProperties event — items didn't exist before
+    const apChange = changes.find((c) => c.type === "request-schema-items-additional-properties-changed");
+    expect(apChange).toBeUndefined();
+  });
+
+  it("items schema additionalProperties:false REMOVED (true→false→true) emits event when both items exist", () => {
+    // Baseline: items with additionalProperties: false; current: items open (no flag = true)
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    // Both items exist: false→true should be detected (INFO for request: schema opened)
+    const apChange = changes.find((c) => c.type === "request-schema-items-additional-properties-changed");
+    expect(apChange).toBeDefined();
+    expect(apChange?.before).toBe(false);
+    expect(apChange?.after).toBe(true);
+  });
+});

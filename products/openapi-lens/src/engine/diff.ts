@@ -422,11 +422,14 @@ function diffSchemaItems(
       });
     }
   }
-  // Compare additionalProperties on the items schema. Normalize absent/true → true (extras
-  // allowed); the significant transition is true ↔ false (schema closes/opens).
-  {
-    const bAP = bItems?.additionalProperties ?? true;
-    const cAP = cItems?.additionalProperties ?? true;
+  // Compare additionalProperties/readOnly/writeOnly only when both items schemas exist
+  // (avoids double-reporting when items are newly added — that case is already covered
+  // by items-type-changed with before=null).
+  if (bItems && cItems) {
+    // additionalProperties: normalize absent/true → true (extras allowed); the significant
+    // transition is true ↔ false (schema closes/opens).
+    const bAP = bItems.additionalProperties ?? true;
+    const cAP = cItems.additionalProperties ?? true;
     if (bAP !== cAP) {
       changes.push({
         type: isRequest ? "request-schema-items-additional-properties-changed" : "response-schema-items-additional-properties-changed",
@@ -436,11 +439,7 @@ function diffSchemaItems(
         after: cAP,
       });
     }
-  }
 
-  // Compare readOnly/writeOnly only when both items schemas exist (avoids double-reporting
-  // when items are newly added — that case is already covered by items-type-changed).
-  if (bItems && cItems) {
     const bReadOnly = bItems.readOnly ?? false;
     const cReadOnly = cItems.readOnly ?? false;
     if (bReadOnly !== cReadOnly) {

@@ -214,6 +214,19 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   Genuine enum changes (values added or removed) continue to produce correct events.
   +7 adversarial integration tests (5 reorder-no-event + 2 genuine-change-still-detected).
   **473/473 tests.**
+- [x] **5.7.5 round 20 — `diffSchemaItems` additionalProperties fired spuriously for newly-added items** —
+  The `additionalProperties` comparison block in `diffSchemaItems` was outside the `if (bItems && cItems)`
+  guard that protects readOnly/writeOnly comparisons. When items were newly added (bItems=undefined),
+  `bAP = bItems?.additionalProperties ?? true = true` while `cAP = false` (if the new items schema had
+  `additionalProperties: false`) — producing a spurious `items-additional-properties-changed` event
+  alongside the expected `items-type-changed` (null→object) event.
+  Fix: merged the additionalProperties block into the existing `if (bItems && cItems)` guard, consistent
+  with the round 10 fix for readOnly/writeOnly (same rationale: "avoids double-reporting when items are
+  newly added — that case is already covered by items-type-changed with before=null"). The pre-existing
+  round 18 tests for both-items-exist still pass; the new tests confirm no spurious event when items are
+  newly added.
+  +3 adversarial integration tests (2 no-spurious + 1 regression that existing detection still works).
+  **476/476 tests.**
 - [x] **5.7.5 round 15 — request-side constraint removal classified as BREAKING instead of INFO** —
   systematic audit of all request-side classify rules found 11 cases where a constraint being REMOVED
   from the server spec (before=value, after=null/undefined) was incorrectly classified as BREAKING.
