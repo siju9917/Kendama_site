@@ -90,10 +90,11 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **488/488 tests** (was 455 at last session; +33 this session:
+- **Build green:** **490/490 tests** (was 455 at last session; +35 this session:
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive regression + 1 Domain-Expert critic anchor gate +
-  1 obs#7 USD money characterization + 1 sign-before-dollar false-negative fix),
+  1 obs#7 USD money characterization + 1 sign-before-dollar false-negative fix +
+  1 classify precedence pin + 3 bare-paren page-limit fix),
   lint + typecheck clean; full CI gate verified green end-to-end.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`
@@ -430,6 +431,13 @@ all green; check tests 16/16.
 16. **Sign-before-dollar false-negative fix** (`suppress.ts` N15):
     `isLeadingSign` now fires before "$" (not just before digits). Red test first
     → fix → 35/35 suppress tests pass, 488/488 full suite green. PROGRESS N15 DONE.
+17. **Classify precedence pin** (`classify.test.ts`): CLAUSE_REF anchor in
+    EVALUATION_CRITERIA section → category is CLAUSES (rule 1 before rule 2).
+    Severity still CRITICAL via rule 3. Behavior pinned, trade-off documented.
+18. **Page-limit bare-paren fix** (`PAGE_LIMIT_RE` N16): "not to exceed (30) pages"
+    now detects PAGE_LIMIT anchor (bare "(30)" form was missed; only "thirty (30)"
+    and plain "30" worked). `\(?` separated from optional word group. +3 tests;
+    490/490 full suite green. PROGRESS N16 DONE.
 
 ## Notes for the next session
 

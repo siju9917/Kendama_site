@@ -193,6 +193,14 @@ describe("page limits", () => {
     expect(detectPageLimits("not to exceed 30 pages").map((x) => x.normalized)).toEqual(["30"]);
     expect(detectPageLimits("maximum of 40 pages").map((x) => x.normalized)).toEqual(["40"]);
   });
+
+  it("extracts the bare-parenthesized digit '(30) pages' form", () => {
+    // "not to exceed (30) pages" — no spelled-out word, just digits in parens.
+    // Less common but valid. The authoritative count is the digit inside parens.
+    expect(detectPageLimits("not to exceed (30) pages").map((x) => x.normalized)).toEqual(["30"]);
+    expect(detectPageLimits("limited to (50) pages").map((x) => x.normalized)).toEqual(["50"]);
+    expect(detectPageLimits("page limit: (75) pages").map((x) => x.normalized)).toEqual(["75"]);
+  });
 });
 
 describe("CLIN", () => {
