@@ -13023,3 +13023,119 @@ paths:
     expect(c?.severity).toBe("BREAKING");
   });
 });
+
+// ─── Round 100: parameter-items pattern constraint changes ──────────────────
+// A query parameter of type array has items.  The diff engine compares the
+// items schema via diffParameters → bItems / cItems, emitting
+// "parameter-items-constraint-changed" when the items pattern changes.
+// Round 91 covered null-transitions for request/response *body* items and for
+// parameter-level pattern constraints; it did NOT exercise parameter ITEMS
+// (i.e. array parameter items schema) at all — neither null-transitions nor
+// value-change.  This round closes that gap.
+
+describe("adversarial round 100 — parameter array items pattern constraint changes (end-to-end)", () => {
+  function makeSpec(patternLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /search:
+    get:
+      parameters:
+        - name: codes
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              ${patternLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("(R100-1) parameter items pattern null→value: BREAKING (array elements now validated against pattern)", () => {
+    // requestConstraintSeverity pattern: after !== null → BREAKING
+    const before = makeSpec("");
+    const after  = makeSpec("pattern: '^[A-Z]{2}$'");
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "parameter-items-constraint-changed" && String(x.location).endsWith(".pattern"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe("^[A-Z]{2}$");
+    expect(String(c?.message)).toMatch(/added|must now match/i);
+  });
+
+  it("(R100-2) parameter items pattern value→null: INFO (pattern restriction on elements removed)", () => {
+    // requestConstraintSeverity pattern: after === null → INFO
+    const before = makeSpec("pattern: '^[A-Z]{2}$'");
+    const after  = makeSpec("");
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "parameter-items-constraint-changed" && String(x.location).endsWith(".pattern"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe("^[A-Z]{2}$");
+    expect(c?.after).toBeNull();
+    expect(String(c?.message)).toMatch(/removed|no longer enforced/i);
+  });
+
+  it("(R100-3) parameter items pattern value→different value: BREAKING (clients matching old pattern may now fail)", () => {
+    // requestConstraintSeverity pattern: after !== null → BREAKING (both non-null)
+    const before = makeSpec("pattern: '^[A-Z]{2}$'");
+    const after  = makeSpec("pattern: '^[A-Z0-9]{2,4}$'");
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "parameter-items-constraint-changed" && String(x.location).endsWith(".pattern"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe("^[A-Z]{2}$");
+    expect(c?.after).toBe("^[A-Z0-9]{2,4}$");
+    expect(String(c?.message)).toMatch(/changed|old pattern.*fail/i);
+  });
+
+  it("(R100-4) parameter-constraint pattern value→different value: BREAKING (scalar param pattern changed)", () => {
+    // Scalar (non-array) parameter with pattern change — uses parameter-constraint-changed,
+    // not parameter-items-constraint-changed.  Pattern→pattern via requestConstraintSeverity.
+    const makeScalarSpec = (patternLine: string) => `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items/{code}:
+    get:
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            ${patternLine}
+      responses:
+        "200":
+          description: ok
+`;
+    const before = makeScalarSpec("pattern: '^[A-Z]{2}$'");
+    const after  = makeScalarSpec("pattern: '^[A-Z]{3}$'");
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".pattern"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe("^[A-Z]{2}$");
+    expect(c?.after).toBe("^[A-Z]{3}$");
+    expect(String(c?.message)).toMatch(/changed|old pattern.*fail/i);
+  });
+
+  it("(R100-5) parameter items pattern change is isolated: no body or other parameter change emitted", () => {
+    // Only one change emitted; no schema-property or schema-items change leaks out.
+    const before = makeSpec("pattern: '^[A-Z]{2}$'");
+    const after  = makeSpec("pattern: '^[A-Z]{3}$'");
+    const changes = analyzeOpenApiDiff(before, after);
+    const bodyChanges = changes.filter(
+      (x) => x.type === "request-schema-items-constraint-changed" || x.type === "response-schema-items-constraint-changed",
+    );
+    expect(bodyChanges).toHaveLength(0);
+    const paramItemsChanges = changes.filter((x) => x.type === "parameter-items-constraint-changed");
+    expect(paramItemsChanges).toHaveLength(1);
+  });
+});
