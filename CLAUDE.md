@@ -12,6 +12,31 @@ specific files that hold the rest.
 
 ---
 
+## ⛔ KILL-SWITCH — check this before anything else, every session
+
+**If `human/ROUTINE_DISABLED.md` exists, autonomous operation is
+PAUSED by the human.** This check comes before the loop, before the
+brain read, before everything. While that file is present you MUST:
+
+- **NOT** run the operating loop or any build loop;
+- **NOT** commit or push on your own initiative;
+- **NOT** treat the `Stop` hook as a reason to keep working — the
+  stop-guard stands down while the flag is present
+  (`ops/checks/stop-guard.mjs`), so stopping is permitted and the
+  "never stop on Saturday" rules (5x / 5z / 5x.2) are suspended;
+- **Stop**, or do only what the human directly asks in the current
+  conversation.
+
+This switch exists because the unattended Saturday Routine ran all day
+and pushed commits continuously, which a connected Render service
+auto-built and failed — flooding the human with build-failure emails
+they ordered stopped (2026-06-06; `human/APPROVALS.md`,
+`brain/DECISIONS.md`). It is **human-controlled**: only the human
+deletes `human/ROUTINE_DISABLED.md` to re-arm full autonomous
+operation. **Do not delete that file yourself.**
+
+---
+
 ## On your very first run
 
 **This repository is being transformed from an existing project

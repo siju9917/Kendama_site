@@ -145,6 +145,46 @@ a human approval entry** in `human/APPROVALS.md`.
     unset blocks only web research and sub-agent fan-out, never the
     zero-cost queue, which is effectively infinite (CLAUDE.md 5y).
 
+### Outward side effects
+
+17. **No external auto-deploy of this repo; `Kendama_site` is
+    non-deployable, and the factory's pushes must never trigger an
+    outward build or notification.** (Added 2026-06-06 after a
+    **Render** service `appraise-os` was found auto-deploying this
+    repo on every push; because this is a brain/orchestration repo,
+    not a deployable web app, every push produced a "build failed"
+    email — a flood the human hit directly and ordered stopped: *"It
+    will never work and should be outlawed… no more emails."*)
+
+    The rule has three parts, each enforced:
+    - **Never connect this repo to a host's auto-deploy** (Render,
+      Netlify, Vercel, Heroku, Fly, Railway, App Engine, …). If a
+      Kendama *product* is ever deployed, it lives in its own
+      separate, deployable repo — never `Kendama_site` itself. Stray
+      host deploy descriptors at the repo root (`render.yaml`,
+      `Procfile`, `netlify.toml`, `vercel.json`, …) are a smell the
+      `no-external-autodeploy` check surfaces.
+    - **Every commit opts out of host auto-deploy.** A committed
+      `commit-msg` hook (`ops/githooks/commit-msg`) appends host
+      skip-tokens (`[skip render]`, `[skip netlify]`, `[skip ci]`) to
+      every commit message, so even if a service is still connected,
+      the factory's own pushes are skipped at the source. It is
+      activated each session by `ops/checks/install-githooks.mjs`
+      (run first in `ops/loop.md` priority 1) — **no human approval
+      required** (CLAUDE.md 5x.1). The `no-external-autodeploy` check
+      fails P0 if the hook is missing or defanged.
+    - **Disconnecting an already-connected service is the human's
+      dashboard action** — the factory cannot reach into a host's
+      dashboard from Git. That one item is logged in
+      `human/NEED_FROM_HUMAN.md` (#0) as the permanent guarantee; the
+      skip-token interlock is the factory-side belt-and-suspenders
+      that holds in the meantime. Logging that gate and continuing is
+      correct; it is never a reason to stop or wait (CLAUDE.md 5z).
+
+    This is the email-spam class. The factory must never again create
+    a stream of outward notifications (or any outward side effect)
+    from its normal commit/push cadence.
+
 ---
 
 ## How a guardrail is added
@@ -172,3 +212,4 @@ specifically identifying which guardrail and why. The factory
 | Date | Guardrail | Triggering cause |
 |---|---|---|
 | 2026-05-27 | (founding set, 1–16) | Migration / bootstrap |
+| 2026-06-06 | #17 (no external auto-deploy / non-deployable repo) | Render `appraise-os` auto-deploy produced a flood of "build failed" emails on every push; human ordered it outlawed |

@@ -14,6 +14,57 @@ list.
 
 ---
 
+## 0. **[OPEN — URGENT, do first]** Stop the Render `appraise-os` build-failure email spam
+
+**What's happening:** A **Render** service named **`appraise-os`** is connected
+to this repository (`siju9917/Kendama_site`) with **auto-deploy on every push**.
+But this repo is the **Kendama factory** — a brain/orchestration repo, **not a
+deployable web app** — and the factory commits and pushes constantly by design
+(CLAUDE.md "Every session" #6). So **every push triggers a Render build that
+cannot possibly succeed**, and Render emails a "build failed for appraise-os"
+notice each time. The result is a flood of failure emails (observed 2026-06-06:
+several per ~15 minutes). The human flagged this directly: *"Stop whatever is
+doing this. It will never work and should be outlawed."* They are correct — this
+deploy can never succeed and must be turned off at the source.
+
+**The off-switch is in Render, not this repo.** The factory cannot disconnect a
+Render service from inside the Git repo; the connection and auto-deploy toggle
+live in the Render dashboard. Pick ONE (deleting is cleanest):
+
+1. **Delete the service (recommended — "outlaw it"):** Render dashboard →
+   `appraise-os` service → **Settings → Delete Service**. Stops both the builds
+   and the emails permanently.
+2. **Or disable auto-deploy (keep the service):** `appraise-os` → **Settings →
+   Build & Deploy → Auto-Deploy → No**. Pushes stop triggering builds.
+3. **Or silence just the emails:** `appraise-os` → **Settings → Notifications →
+   turn off build-failure emails**. (Leaves the dead service in place — least
+   clean.)
+
+**Time needed:** ~2 minutes.
+
+**Repo-side belt-and-suspenders (now AUTOMATIC, not best-effort):** a committed
+`commit-msg` git hook (`ops/githooks/commit-msg`), activated each session by
+`ops/checks/install-githooks.mjs`, auto-appends **`[skip render]`** (plus
+`[skip netlify]`/`[skip ci]`) to **every** commit message — so the factory no
+longer relies on remembering to type it. Render skips the auto-deploy for any
+commit carrying that token. This takes full effect once it reaches the branch
+Render tracks and does **not** replace the dashboard fix above — please still
+delete/disable the service.
+
+**Recurrence prevention (now codified — 2026-06-06):** locked in as
+**`governance/GUARDRAILS.md` #17** ("no external auto-deploy; `Kendama_site` is
+non-deployable"), enforced three ways with **no human approval required**: (1)
+the auto-skip `commit-msg` hook above, (2) `install-githooks.mjs` activating it
+at every session start (`ops/loop.md` priority 1), and (3) the new
+`no-external-autodeploy` session-start check, which fails **P0** if the interlock
+is ever missing or defanged. The factory's own pushes can no longer trigger a
+host build. If a Kendama *product* is ever deployed, it must be a separate,
+deployable repo/service — never `Kendama_site` itself.
+
+**Effect once done:** the "build failed for appraise-os" emails stop.
+
+---
+
 ## 1. **[DONE on 2026-06-01 — resolved by policy, no action needed]** Spend cap
 
 **Resolved by the human's spend policy (2026-06-01):** "$5 to sign up here or

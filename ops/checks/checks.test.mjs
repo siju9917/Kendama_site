@@ -18,6 +18,8 @@ import { analyze } from './rule-cadence-consistency.mjs';
 import * as ruleCadence from './rule-cadence-consistency.mjs';
 import * as brainIntegrity from './brain-integrity.mjs';
 import * as noGithubActions from './no-github-actions.mjs';
+import * as noExternalAutodeploy from './no-external-autodeploy.mjs';
+import { analyze as analyzeAutodeploy } from './no-external-autodeploy.mjs';
 import * as humanQueue from './human-queue.mjs';
 import { analyze as analyzeQueue } from './human-queue.mjs';
 import * as noForbiddenMarkers from './no-forbidden-markers.mjs';
@@ -482,9 +484,54 @@ test('brain-integrity: flags STATE.md missing a handoff section as P1', () => {
   assert.ok(findings.some((f) => f.level === 'P1' && /Queue snapshot/.test(f.message)));
 });
 
+// --- no-external-autodeploy: synthetic failure paths (GUARDRAILS #17). ---
+
+test('no-external-autodeploy: clean state passes', () => {
+  const findings = analyzeAutodeploy({
+    hookExists: true, hookSkipsRender: true, installerExists: true,
+    hooksPathSet: true, guardrailHasRule: true, presentDescriptors: [],
+  });
+  assert.equal(blocking(findings).length, 0);
+});
+
+test('no-external-autodeploy: missing hook is P0', () => {
+  const findings = analyzeAutodeploy({
+    hookExists: false, hookSkipsRender: false, installerExists: true,
+    hooksPathSet: true, guardrailHasRule: true, presentDescriptors: [],
+  });
+  assert.ok(findings.some((f) => f.level === 'P0' && /MISSING/.test(f.message)));
+});
+
+test('no-external-autodeploy: defanged hook (no skip token) is P0', () => {
+  const findings = analyzeAutodeploy({
+    hookExists: true, hookSkipsRender: false, installerExists: true,
+    hooksPathSet: true, guardrailHasRule: true, presentDescriptors: [],
+  });
+  assert.ok(findings.some((f) => f.level === 'P0' && /defanged|skip-token/.test(f.message)));
+});
+
+test('no-external-autodeploy: missing installer and drifted guardrail are P1', () => {
+  const findings = analyzeAutodeploy({
+    hookExists: true, hookSkipsRender: true, installerExists: false,
+    hooksPathSet: true, guardrailHasRule: false, presentDescriptors: [],
+  });
+  assert.ok(findings.some((f) => f.level === 'P1' && /install-githooks/.test(f.message)));
+  assert.ok(findings.some((f) => f.level === 'P1' && /GUARDRAILS\.md #17/.test(f.message)));
+});
+
+test('no-external-autodeploy: inactive hooksPath and a deploy descriptor are non-blocking', () => {
+  const findings = analyzeAutodeploy({
+    hookExists: true, hookSkipsRender: true, installerExists: true,
+    hooksPathSet: false, guardrailHasRule: true, presentDescriptors: ['render.yaml'],
+  });
+  assert.equal(blocking(findings).length, 0);
+  assert.ok(findings.some((f) => f.level === 'P2' && /core\.hooksPath/.test(f.message)));
+  assert.ok(findings.some((f) => f.level === 'P2' && /render\.yaml/.test(f.message)));
+});
+
 // --- Regression: real repo is currently known-good. ---
 
-for (const check of [brainIntegrity, noGithubActions, ruleCadence, humanQueue, noForbiddenMarkers, governanceIntegrity, stopGuardLogic, checksRegistry, stateCountSanity, approvalsWindow, rankingIntegrity]) {
+for (const check of [brainIntegrity, noGithubActions, noExternalAutodeploy, ruleCadence, humanQueue, noForbiddenMarkers, governanceIntegrity, stopGuardLogic, checksRegistry, stateCountSanity, approvalsWindow, rankingIntegrity]) {
   test(`real repo passes: ${check.name}`, () => {
     const { findings } = check.run();
     const bad = blocking(findings);

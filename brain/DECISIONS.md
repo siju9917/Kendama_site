@@ -19,6 +19,51 @@
 
 ---
 
+## 2026-06-06 — Human kill-switch to pause the autonomous Saturday Routine (human directive)
+
+**Decision:** Add a human-controlled kill-switch file
+(`human/ROUTINE_DISABLED.md`). While it exists: (1) the stop-guard
+stands down — `ops/checks/stop-guard.mjs` permits stopping regardless of
+weekday at its CLI/hook boundary, so the `.claude/settings.json` `Stop`
+hook no longer forces all-day work; (2) a kill-switch banner at the very
+top of `CLAUDE.md` instructs every session not to run the build loop and
+not to auto commit/push. The kill-switch check is deliberately kept out
+of the pure `redTeamStop()`/`hookDecision()` weekday logic so the
+synthetic-instant logic tests are unaffected.
+
+**Alternatives considered:**
+- *Remove the `Stop` hook outright.* Rejected: a blunter, less reversible
+  weakening; the flag-honoring approach keeps full enforcement intact and
+  re-arms cleanly by deleting one file.
+- *Do nothing in-repo, tell the human to delete the Routine in the
+  dashboard.* Rejected as the *sole* response: the human explicitly asked
+  the factory to "make something so the routine stops." The dashboard
+  pause is still required to stop the already-running session and the
+  Render emails, and is documented in the flag file and NEED_FROM_HUMAN.
+
+**Reasoning:** The unattended Saturday Routine ran all day and pushed
+commits continuously; a connected Render service auto-built and failed
+each push, emailing the human on every push. The human repeatedly and
+explicitly ordered it stopped. A human directive to pause the factory
+overrides the autonomous never-stop rules; per GUARDRAILS #12 the
+weakening is recorded as a human approval (`human/APPROVALS.md`,
+2026-06-06).
+
+**Reversibility:** Full — the human deletes `human/ROUTINE_DISABLED.md`
+to re-arm 5x / 5z / 5x.2. A session must not delete it itself.
+
+**Where applied:** `human/ROUTINE_DISABLED.md` (new flag),
+`ops/checks/stop-guard.mjs` (`routineDisabled()` + CLI honoring),
+`CLAUDE.md` (kill-switch banner), `human/APPROVALS.md` (approval entry),
+`human/NEED_FROM_HUMAN.md` (dashboard actions to stop today's run).
+
+**Caveat (effect timing):** Takes effect on the Routine's *next* run
+(it clones `main`, so the change must reach `main`). It cannot stop a
+Routine session already running, nor the Render service — those are the
+human's dashboard actions.
+
+---
+
 ## 2026-06-01 — Harden never-stop-on-Saturday + keep `main` always current (human directive)
 
 **Decision:** (1) Harden the never-stop-on-Saturday rule to zero permissible

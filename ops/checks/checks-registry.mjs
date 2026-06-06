@@ -23,6 +23,10 @@ const NON_CHECKS = new Set([
   // run-all" rule here (stop-guard by design; this meta-check itself too).
   'stop-guard.mjs',
   'checks-registry.mjs',
+  // install-githooks is an idempotent INSTALLER (activates the commit-msg
+  // auto-skip hook, GUARDRAILS #17), run at session start before run-all — not
+  // a run-all check. Its effect is verified by the no-external-autodeploy check.
+  'install-githooks.mjs',
 ]);
 
 export function analyze(checkFiles, runAllSrc, readmeSrc) {

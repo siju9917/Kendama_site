@@ -23,9 +23,28 @@
 //   node ops/checks/stop-guard.mjs            # report current status
 //   node ops/checks/stop-guard.mjs --stopping # assert a stop; red-team it
 
-import { finding } from './lib.mjs';
+import { finding, exists } from './lib.mjs';
 
 export const name = 'stop-guard';
+
+/**
+ * Human kill-switch (added 2026-06-06, human-approved — see
+ * human/APPROVALS.md and brain/DECISIONS.md). If human/ROUTINE_DISABLED.md is
+ * present, the human has PAUSED autonomous Saturday operation: the stop red
+ * team stands down and permits stopping regardless of weekday, so the
+ * `.claude/settings.json` Stop hook no longer forces all-day work. This is the
+ * no-approval, in-repo off-switch for the runaway Routine (it was generating a
+ * flood of Render build-failure emails). Re-arming = the human deletes the
+ * file (a session must not delete it itself).
+ *
+ * Deliberately kept OUT of the pure redTeamStop()/hookDecision() weekday logic
+ * (which the logic tests pin against synthetic instants) and applied only at
+ * the live CLI boundary below, so pausing the Routine never alters the
+ * verified Saturday-vs-Sunday logic.
+ */
+export function routineDisabled() {
+  return exists('human/ROUTINE_DISABLED.md');
+}
 
 /**
  * The schedule window is the HUMAN's local Saturday. The human runs in
@@ -116,6 +135,11 @@ export function hookDecision(now = new Date()) {
 // CLI: --hook (Stop-hook adapter, JSON out) | --stopping (manual red-team).
 if (import.meta.url === `file://${process.argv[1]}`) {
   if (process.argv.includes('--hook')) {
+    // Human kill-switch: if the Routine is disabled, never block a stop.
+    if (routineDisabled()) {
+      process.stdout.write(JSON.stringify({}));
+      process.exit(0);
+    }
     // Drain stdin (the hook payload) but we only need the real clock.
     let buf = '';
     process.stdin.on('data', (d) => (buf += d));
@@ -130,6 +154,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       process.exit(0);
     }, 250);
   } else {
+    if (routineDisabled()) {
+      console.log('info: Autonomous Saturday operation is DISABLED by the human (human/ROUTINE_DISABLED.md present). Stop permitted; the build loop must not run, and no auto commit/push. Delete that file to re-arm Saturday enforcement.');
+      process.exit(0);
+    }
     const stopping = process.argv.includes('--stopping');
     const reasonArg = process.argv.find((a) => a.startsWith('--reason='));
     const reason = reasonArg ? reasonArg.slice('--reason='.length) : '';
