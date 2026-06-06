@@ -640,4 +640,117 @@ paths:
     const paramRemoved = result.find((c) => c.type === "parameter-removed");
     expect(paramRemoved).toBeDefined();
   });
+
+  it("parameter schema via $ref to components/schemas — enum change detected correctly", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/StatusEnum"
+      responses:
+        "200":
+          description: ok
+components:
+  schemas:
+    StatusEnum:
+      type: string
+      enum: [active, inactive, pending]
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/StatusEnum"
+      responses:
+        "200":
+          description: ok
+components:
+  schemas:
+    StatusEnum:
+      type: string
+      enum: [active, inactive]
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const enumChange = changes.find((c) => c.type === "parameter-enum-changed");
+    expect(enumChange).toBeDefined();
+    expect(enumChange?.severity).toBe("BREAKING");
+    expect(enumChange?.message).toMatch(/pending/);
+  });
+
+  it("a $ref parameter whose schema references components/schemas — type change detected", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/idParam"
+      responses:
+        "200":
+          description: ok
+components:
+  parameters:
+    idParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/IdType"
+  schemas:
+    IdType:
+      type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/idParam"
+      responses:
+        "200":
+          description: ok
+components:
+  parameters:
+    idParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/IdType"
+  schemas:
+    IdType:
+      type: integer
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "parameter-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
 });

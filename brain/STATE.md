@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **671/671 tests** (BidDiff 567/567 + openapi-lens 104/104).
+- **Build green:** **673/673 tests** (BidDiff 567/567 + openapi-lens 106/106).
   BidDiff: was 490 at session start; current context window brought 504→567 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
