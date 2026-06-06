@@ -196,6 +196,15 @@ Checklist:
 - Tamper-resistance where applicable (signed receipts, hashes).
 - No action on instructions found inside scraped or third-party
   content (prompt-injection defense).
+- **VS Code WebView content must never inject user-provided or
+  file-derived strings via string templating.** Data is passed
+  via `panel.webview.postMessage()`; if any template generation
+  is used, every variable is HTML-escaped. A hostile file opened
+  by the user (e.g., a terraform plan JSON or an OpenAPI YAML
+  with a `<script>` in a resource address / operation ID) is a
+  live XSS vector if injected raw into the WebView HTML. Added
+  2026-06-06 (D6 terraform-lens Phase 1 pre-design: `webview.ts`
+  generates classification HTML from plan data).
 
 ### 4. Professional-Polish Critic
 
@@ -376,6 +385,19 @@ Checklist:
   text produces a file the consumer rejects as corrupt. Added 2026-05-31
   (BidDiff redline `escapeXml` escaped `< & >` but left control chars,
   which would make Word refuse the .docx, pass 61).
+- **VS Code extension diagnostic state must be cleared on BOTH
+  success AND failure.** `DiagnosticCollection.set(uri, diagnostics)`
+  replaces (does not append), so a successful re-compute clears the
+  old set automatically. But if re-analysis throws (invalid YAML,
+  parse error, no baseline), the extension MUST call
+  `collection.set(doc.uri, [])` in the catch handler to clear
+  stale diagnostics — otherwise the old squiggles stay visible on a
+  file the user has since corrected. Probe: (1) open a valid spec
+  (diagnostics appear); (2) introduce a YAML parse error; diagnostics
+  must CLEAR, not persist. The catch-block `collection.set(uri, [])`
+  must have a test. Added 2026-06-06 (D5 openapi-lens Phase 1
+  pre-design: extension.ts already has the correct pattern; the Phase
+  1 critique panel must verify the catch branch is tested).
 
 ### 8. Accessibility Critic
 
@@ -442,6 +464,15 @@ Checklist:
 - Dependencies are current and justified.
 - A future session can safely extend without re-learning the
   whole product (the developer docs make this true).
+- **VS Code extension products: the diff/classify engine module
+  must NEVER import from `vscode`.** Grep: any `import.*from
+  'vscode'` in `src/engine/` or `src/terraform/` is a P0.
+  The engine is pure TypeScript; the extension module (`src/
+  extension/`) is the only VS Code adapter. Violation prevents
+  Vitest unit testing and contaminates the engine with VS Code
+  host lifecycle. Added 2026-06-06 (D5/D6 Phase 1 pre-designs:
+  this invariant is stated explicitly; Phase 1 critique panel
+  must verify via grep before phase closure).
 
 ### 11. Product-Sense Critic
 
@@ -627,3 +658,6 @@ with no growth is a warning sign flagged in the weekly digest.
 | 2026-06-06 (round 7) | Domain-Expert Critic (#5) / Correctness Critic (#1) | Added: array-type parameters (e.g., `GET /items?ids=1,2,3` with `schema.type=array`) have an `items` sub-schema that must be diffed, not just the parameter-level `type`. The items sub-schema can have its own `type`/`format`/`enum`/`nullable` that are all independently breaking. Probe: change a query parameter from `array<string>` to `array<integer>` — must produce a BREAKING finding. Parameters that accept multi-value arrays are common in REST APIs (Stripe, GitHub both use this pattern). | openapi-lens: `bp.schema.items` was parsed into `OapiParameter.schema.items` but `diffParameters` never compared it. A query parameter `?ids=...` changing from string elements to integer elements was invisible. Fixed: items sub-field comparison for type/format/enum/nullable in `diffParameters`. 4 new types, 8 tests (5.7.5 round 7, 2026-06-06 continuation). |
 | 2026-06-06 (round 6) | Domain-Expert Critic (#5) / Correctness Critic (#1) | Added: the parsed-but-never-diffed audit must distinguish (a) per-property fields (covered by `diffSchemaProperties` loop) from (b) top-level body schema fields (covered by `diffSchemaType`, `diffNullable`, `diffSchemaTopLevelConstraints`, etc.). `format` and `enum` were only compared inside the property loop — a body schema that IS a scalar (string with format/enum, no properties) had those fields silently ignored. Any schema diff engine must have an explicit test for each field at BOTH the body-schema level AND the properties-loop level. | openapi-lens: `format` and `enum` on the request/response body's top-level schema were parsed by `normalizeSchema` but never diffed. POST endpoint accepting `type: string, format: date` → `format: date-time` was completely invisible; GET returning `enum: [active, inactive]` → `[active, inactive, pending]` was invisible. Fixed: `diffSchemaTopLevelFields` helper. 4 new types, 4 classify rules, 6 tests (5.7.5 round 6, 2026-06-06 continuation). |
 | 2026-06-06 (round 5) | Domain-Expert Critic (#5) / Correctness Critic (#1) | Added: the `flattenAllOf` function that merges `allOf` members into a parent schema must be updated WHENEVER new fields are added to the normalized schema type — it is NOT automatically updated by adding fields to the type. Specifically: constraint fields (`minimum`/`maximum`/`minLength`/`maxLength`/`pattern`/`minItems`/`maxItems`) were added to `OapiSchema` but `flattenAllOf` never inherited them from members. A constraint change inside an `allOf` base schema was invisible because the merged schema never carried the constraint value. ALSO: top-level schema constraint comparison must be called at EVERY entry point that compares schemas (requestBody top-level, response schema top-level, properties loop, items) — not only at the properties loop level. | openapi-lens: two gaps found — `flattenAllOf` did not inherit 7 constraint fields (fixed: numeric loop + pattern); `diffRequestBody` and `diffResponses` never called top-level constraint comparison (fixed: `diffSchemaTopLevelConstraints` helper). 6 adversarial tests. 307→313 tests (5.7.5 round 5 + 5.7.2 escalating critique, 2026-06-06 continuation). |
+| 2026-06-06 (Phase 1 pre-design) | Maintainability Critic (#10) / Security Critic (#3) | Added (VS Code extension product family): the diff-engine module (`src/engine/`, `src/terraform/`) MUST NOT import from `vscode`. The extension is a thin adapter; the engine is pure TypeScript. Verify with a grep: any `import ... from 'vscode'` in an engine file is a P0. This boundary enables Vitest unit testing without VS Code and prevents test-electron contamination. | D5/D6 Phase 1 pre-design (openapi-lens-phase1-design.md / terraform-lens-phase1-design.md): both designs make this invariant explicit; the Phase 1 critique panel must verify it before phase closure. |
+| 2026-06-06 (Phase 1 pre-design) | Security Critic (#3) / Reliability Critic (#7) | Added (VS Code extension product family): WebView HTML content must NEVER be constructed by interpolating user-provided or file-derived strings directly. Use `vscode.Uri.file().with({scheme:'vscode-resource'})` for assets; pass data via `panel.webview.postMessage()` not string templating; if template generation is used, ensure every variable is HTML-escaped. A WebView that injects plan-file content directly into an HTML string is an XSS vector (a user opens a hostile plan.json). | D6 terraform-lens Phase 1 pre-design: `webview.ts` generates the classification panel; if plan resource addresses are ever injected into HTML without escaping, a resource address containing `<script>` would execute. Phase 1 critique panel must verify `createPlanWebviewContent` escapes all user-controlled strings. |
+| 2026-06-06 (Phase 1 pre-design) | Reliability Critic (#7) / Correctness Critic (#1) | Added (VS Code extension product family): a `DiagnosticCollection.set(uri, diagnostics)` call clears the old set for that URI and replaces it. The critical invariant is that the old set is cleared even when re-computation FAILS — if the re-analysis throws (invalid YAML, parse error, no baseline), the extension must call `collection.set(doc.uri, [])` to clear stale diagnostics, not leave the old squiggles visible on a file the user has since fixed. An extension that only sets new diagnostics on success leaves false positives after the user corrects a parse error. Probe: (1) open a valid spec (diagnostics appear); (2) break the YAML (parse throws); diagnostics must clear, not persist. | D5 openapi-lens Phase 1 pre-design: `extension.ts` already has `catch { collection.set(doc.uri, []); lensProvider.update(doc.uri, []) }` — the pattern is correct. The Phase 1 critique panel must verify this catch branch has a test, not just the happy path. |

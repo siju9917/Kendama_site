@@ -744,6 +744,18 @@ all green; check tests 16/16.
     oasdiff wrapper; corrected to our own Phase 0 engine API). Fixed Proposal #3 stale
     "91/91 tests" → "345/345 tests" in APPROVALS.md.
 
+73. **5.7.3 roster growth — VS Code extension product family** (D5/D6 Phase 1 pre-design
+    proactive items): Added 3 new checklist items to the critique roster from patterns
+    anticipated in the Phase 1 pre-designs, before the build starts so they are in the
+    roster when the Phase 1 critique panel runs:
+    - Security Critic (#3): VS Code WebView must never inject user-provided strings via
+      string templating; data goes via `postMessage()`; all template variables HTML-escaped.
+    - Maintainability Critic (#10): engine modules (`src/engine/`, `src/terraform/`) must
+      NEVER import from `vscode` — verify with grep before phase closure.
+    - Reliability Critic (#7): `DiagnosticCollection.set()` clears on success but ALSO
+      needs `collection.set(uri, [])` in the catch handler; the catch branch must have a test.
+    Roster growth log table updated with 3 new rows. All factory checks still green (11/11).
+
 72. **SELF_IMPROVEMENT #12 done** (extend state-count-sanity to detect stale APPROVALS.md
     Phase-0-complete counts): Extended `ops/checks/state-count-sanity.mjs` to cross-validate
     the `**NNN/NNN tests** passing (N adversarial hardening rounds` pattern in APPROVALS.md
