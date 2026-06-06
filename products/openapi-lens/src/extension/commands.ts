@@ -16,14 +16,7 @@ export function registerCommands(
       async () => {
         const content = await pickBaselineFile();
         if (content !== null) {
-          const config = vscode.workspace.getConfiguration("openapi-lens");
-          // Persist the choice so it survives reload.
           ctx.onBaselineSelected(content);
-          await config.update(
-            "baselineFile",
-            "",
-            vscode.ConfigurationTarget.Workspace,
-          );
           void vscode.window.showInformationMessage(
             "OpenAPI Lens: Baseline file loaded.",
           );

@@ -70,6 +70,9 @@ function isResourceChange(x: unknown): x is {
 } {
   if (!x || typeof x !== "object" || Array.isArray(x)) return false;
   const r = x as Record<string, unknown>;
+  // Data sources (mode: "data") have "read" actions — they are not infrastructure
+  // changes and must be excluded from classification.
+  if (r["mode"] === "data") return false;
   if (typeof r["address"] !== "string") return false;
   if (typeof r["type"] !== "string") return false;
   if (typeof r["name"] !== "string") return false;

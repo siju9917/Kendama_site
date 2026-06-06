@@ -5,6 +5,8 @@ import type { TfPlanSummary } from "../terraform/types.js";
 
 let statusBarItem: vscode.StatusBarItem | undefined;
 let webviewPanel: vscode.WebviewPanel | undefined;
+let lastKnownSummary: import("../terraform/types.js").TfPlanSummary | undefined;
+let lastKnownPlanUri: vscode.Uri | undefined;
 
 export function activateTerraformSupport(context: vscode.ExtensionContext): void {
   statusBarItem = vscode.window.createStatusBarItem(
@@ -14,6 +16,11 @@ export function activateTerraformSupport(context: vscode.ExtensionContext): void
   context.subscriptions.push(statusBarItem);
 
   context.subscriptions.push(
+    vscode.commands.registerCommand("openapi-lens.showTerraformPanel", () => {
+      if (lastKnownSummary && lastKnownPlanUri) {
+        showWebviewPanel(lastKnownSummary, lastKnownPlanUri);
+      }
+    }),
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       if (editor) void analyzeTerraformDocument(editor.document);
     }),
@@ -29,6 +36,8 @@ export function deactivateTerraformSupport(): void {
   webviewPanel?.dispose();
   statusBarItem = undefined;
   webviewPanel = undefined;
+  lastKnownSummary = undefined;
+  lastKnownPlanUri = undefined;
 }
 
 async function analyzeTerraformDocument(document: vscode.TextDocument): Promise<void> {
@@ -54,6 +63,8 @@ async function analyzeTerraformDocument(document: vscode.TextDocument): Promise<
     return;
   }
 
+  lastKnownSummary = summary;
+  lastKnownPlanUri = document.uri;
   updateStatusBar(summary);
   showWebviewPanel(summary, document.uri);
 }

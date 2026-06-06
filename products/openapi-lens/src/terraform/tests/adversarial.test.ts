@@ -128,6 +128,94 @@ describe("adversarial — plan parsing edge cases", () => {
   });
 });
 
+describe("adversarial — data source filtering (mode: data)", () => {
+  it("data source with read action on a data-store type is excluded from results (not CRITICAL)", () => {
+    // aws_s3_bucket is in DATA_STORE_TYPES. A data source read should not be classified.
+    const plan = JSON.stringify({
+      format_version: "1.0",
+      terraform_version: "1.8.0",
+      resource_changes: [
+        {
+          address: "data.aws_s3_bucket.main",
+          mode: "data",
+          type: "aws_s3_bucket",
+          name: "main",
+          change: { actions: ["read"], before: null, after: { id: "bucket" } },
+        },
+      ],
+    });
+    const result = parseTerraformPlan(plan);
+    expect(result.changes).toHaveLength(0);
+    expect(result.critical).toBe(0);
+  });
+
+  it("data source with read action on an IAM type is excluded from results (not CRITICAL)", () => {
+    const plan = JSON.stringify({
+      format_version: "1.0",
+      terraform_version: "1.8.0",
+      resource_changes: [
+        {
+          address: "data.aws_iam_policy_document.assume",
+          mode: "data",
+          type: "aws_iam_policy_document",
+          name: "assume",
+          change: { actions: ["read"], before: null, after: { json: "{}" } },
+        },
+      ],
+    });
+    const result = parseTerraformPlan(plan);
+    expect(result.changes).toHaveLength(0);
+    expect(result.critical).toBe(0);
+  });
+
+  it("plan with mixed managed and data resources only counts managed resources", () => {
+    const plan = JSON.stringify({
+      format_version: "1.0",
+      terraform_version: "1.8.0",
+      resource_changes: [
+        {
+          address: "aws_instance.web",
+          mode: "managed",
+          type: "aws_instance",
+          name: "web",
+          change: { actions: ["create"], before: null, after: { id: "i-1" } },
+        },
+        {
+          address: "data.aws_s3_bucket.artifacts",
+          mode: "data",
+          type: "aws_s3_bucket",
+          name: "artifacts",
+          change: { actions: ["read"], before: null, after: { id: "my-bucket" } },
+        },
+      ],
+    });
+    const result = parseTerraformPlan(plan);
+    expect(result.changes).toHaveLength(1);
+    expect(result.changes[0]!.change.address).toBe("aws_instance.web");
+    expect(result.critical).toBe(0);
+    expect(result.normal).toBe(1);
+  });
+
+  it("managed resource entry with no mode field is still included", () => {
+    // Some older Terraform versions may omit the mode field on managed resources.
+    const plan = JSON.stringify({
+      format_version: "1.0",
+      terraform_version: "1.5.0",
+      resource_changes: [
+        {
+          address: "aws_db_instance.main",
+          type: "aws_db_instance",
+          name: "main",
+          change: { actions: ["update"], before: { engine: "14" }, after: { engine: "15" } },
+        },
+      ],
+    });
+    const result = parseTerraformPlan(plan);
+    expect(result.changes).toHaveLength(1);
+    expect(result.critical).toBe(1);
+  });
+});
+
 describe("adversarial — isTerraformPlanJson false-positive / false-negative", () => {
   it("does not match a random JSON file that mentions 'resource_changes' in a value", () => {
     const text = '{"description":"this plan uses resource_changes to track state","version":"1"}';

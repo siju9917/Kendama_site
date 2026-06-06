@@ -39,11 +39,12 @@ export function buildDiagnostics(
   return changes.map((change) => {
     const line = findLineForLocation(document, change.location);
     const lineText = document.lineAt(line).text;
+    const startCol = Math.max(0, lineText.search(/\S/));
     const range = new vscode.Range(
       line,
-      lineText.search(/\S/),
+      startCol,
       line,
-      lineText.length,
+      Math.max(startCol, lineText.length),
     );
     const severity =
       change.severity === "BREAKING"
