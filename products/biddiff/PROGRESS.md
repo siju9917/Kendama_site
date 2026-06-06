@@ -196,6 +196,20 @@ session has specifics, not a vague "improve extraction":
 
     580/580 pass, typecheck clean.
 
+12. **U+2212 MINUS SIGN not normalized to hyphen-minus — DONE (FIXED 2026-06-06,
+    5.7.5 bug-hunt).** The mathematical minus character (U+2212), used by equation
+    editors and some PDF producers in financial table cells with negative dollar
+    amounts (e.g., "−$5,000"), was absent from `normalizeText`'s LIGATURES list.
+    U+2212 is classified as Unicode Math Symbol, not Punctuation, so `aggressiveNormalize`
+    also passed it through unchanged — it is not matched by `\p{P}`. Two documents
+    formatted with different minus-character conventions for the same negative amount
+    would therefore produce different `aggressiveNormalize` outputs, triggering a
+    spurious MODIFY for a purely typographic difference.
+    Fix: add U+2212 to the existing dash normalization LIGATURES entry so it converts
+    to ASCII hyphen-minus before any further processing. 2 new tests: `normalizeText`
+    converts U+2212 (text.test.ts); `aggressiveNormalize` treats "−$5,000" (U+2212)
+    equal to "-$5,000" (suppress.test.ts). 584/584 pass, typecheck clean.
+
 **Domain-Expert P1 status (2026-06-06, updated):** The BD2 gate was WITHDRAWN
 (human declined outreach; factory validated from public FAR/DFARS sources instead).
 Obs #4 DONE (A-K subsections), obs #8 DONE (list renumbering), obs #9 DONE (sub-CLINs),

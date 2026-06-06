@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **688/688 tests** (BidDiff 582/582 + openapi-lens 106/106).
+- **Build green:** **690/690 tests** (BidDiff 584/584 + openapi-lens 106/106).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -575,6 +575,16 @@ all green; check tests 16/16.
     optional group after "solicitation" in the prefix alternation so the slash form
     matches. With or without a colon delimiter both work. 1 new test (2 assertions:
     plain form + colon form). 580/580 BidDiff. Total suite: **686/686 tests**.
+44. **5.7.5 bug: U+2212 MINUS SIGN not normalized to hyphen-minus** — the
+    mathematical minus character (used by equation editors + some PDF producers
+    in financial tables with negative dollar amounts) was absent from the LIGATURES
+    normalization list. U+2212 is a Math Symbol, not Unicode Punctuation, so
+    `aggressiveNormalize` also passed it through unchanged. Two documents with
+    different minus-character conventions for the same negative amount (e.g.,
+    "−$5,000" vs "-$5,000") would produce different normalized strings and
+    trigger a spurious MODIFY. Fix: add U+2212 to the dash normalization entry
+    in LIGATURES. 2 new tests (text.test.ts + suppress.test.ts).
+    584/584 BidDiff. Total suite: **690/690 tests**.
 43. **5.7.5 gap: `anchor-recall.test.ts` had no SET_ASIDE or CLIN recall cases** — the
     two newest anchor types (both driving CRITICAL classification: SET_ASIDE→rule 7
     for eligibility; CLIN→rule 5 for pricing structure). The existing unit tests only
@@ -594,7 +604,7 @@ all green; check tests 16/16.
   This is the last ship blocker besides the store submission itself.
 - This session's work is on branch `claude/intelligent-faraday-FnmJn` per task
   instructions. Must be merged to `main` at session end per CLAUDE.md rule 6.
-- **BidDiff bug-hunt lane is SATURATED** (582 tests, every core fn + all sidepanel
+- **BidDiff bug-hunt lane is SATURATED** (584 tests, every core fn + all sidepanel
   components tested). All unblocked POLISH done. Next session: privacy copy fix
   (NEED #7, when human responds), store submission prep, and D5 VS Code extension
   Phase 1 scaffold (once Proposal #3 auto-proceeds 2026-06-13).
