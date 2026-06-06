@@ -260,7 +260,13 @@ function diffSchemaProperties(
     }
 
     // Recurse into nested object properties (both old and new exist — diff them).
-    if (bProp.properties || cProp.properties) {
+    if (bProp.properties || cProp.properties || bProp.required || cProp.required) {
+      diffSchemaRequiredFields(
+        path, method,
+        `${location}.properties.${key}`,
+        bProp, cProp,
+        isRequest, changes,
+      );
       diffSchemaProperties(
         path, method,
         `${location}.properties.${key}`,

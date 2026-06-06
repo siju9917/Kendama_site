@@ -1085,3 +1085,165 @@ paths:
     expect(analyzeOpenApiDiff(deepSpec, deepSpec)).toHaveLength(0);
   });
 });
+
+// ─── Nested required field diffing ────────────────────────────────────────────
+
+describe("nested required field diff", () => {
+  it("detects BREAKING when a required field is added to a nested object schema (request)", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: object
+                  properties:
+                    city: { type: string }
+                    zipCode: { type: string }
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: object
+                  required: [city]
+                  properties:
+                    city: { type: string }
+                    zipCode: { type: string }
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const reqAdded = changes.find((c) => c.type === "request-schema-field-required-added");
+    expect(reqAdded).toBeDefined();
+    expect(reqAdded?.severity).toBe("BREAKING");
+    expect(reqAdded?.location).toMatch(/address.*required.*city/);
+  });
+
+  it("detects INFO when a required field is added to a nested response object schema", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  address:
+                    type: object
+                    properties:
+                      city: { type: string }
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  address:
+                    type: object
+                    required: [city]
+                    properties:
+                      city: { type: string }
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const reqAdded = changes.find((c) => c.type === "response-schema-field-required-added");
+    expect(reqAdded).toBeDefined();
+    expect(reqAdded?.severity).toBe("INFO");
+    expect(reqAdded?.location).toMatch(/address.*required.*city/);
+  });
+
+  it("detects BREAKING when a required field is removed from a nested response object schema", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  address:
+                    type: object
+                    required: [city, zipCode]
+                    properties:
+                      city: { type: string }
+                      zipCode: { type: string }
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  address:
+                    type: object
+                    required: [city]
+                    properties:
+                      city: { type: string }
+                      zipCode: { type: string }
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const reqRemoved = changes.find((c) => c.type === "response-schema-field-required-removed");
+    expect(reqRemoved).toBeDefined();
+    expect(reqRemoved?.severity).toBe("BREAKING");
+    expect(reqRemoved?.location).toMatch(/address.*required.*zipCode/);
+  });
+});

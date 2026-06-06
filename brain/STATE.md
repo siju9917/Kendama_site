@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **883/883 tests** (BidDiff 586/586 + openapi-lens 297/297).
+- **Build green:** **886/886 tests** (BidDiff 586/586 + openapi-lens 300/300).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -208,7 +208,7 @@ Priority order is `ops/loop.md`.
 
 **Unblocked (zero-cost):**
 7. ~~**P2** Vite/Vitest toolchain bump~~ — **DONE 2026-06-06.** Vite 6.4.3 + Vitest 4.1.8.
-8. ~~**D5 Phase 0 engine**~~ — **DONE + hardened 2026-06-06.** `products/openapi-lens/` — 297/297 tests.
+8. ~~**D5 Phase 0 engine**~~ — **DONE + hardened 2026-06-06.** `products/openapi-lens/` — 300/300 tests.
    VS Code extension scaffold (Phase 1) begins once Proposal #3 auto-proceeds 2026-06-13.
 9. Recurring: re-critique cadence, "nothing is ever done" reviews,
    ambient ideation, factory self-improvement, META audit.
@@ -685,6 +685,15 @@ all green; check tests 16/16.
     loosening BREAKING). PROGRESS.md rules table updated.
     283→297 openapi-lens. Total: **883/883 tests**.
 
+63a. **5.7.4 — nested required field diffing** — "nothing is done" review found that
+    `diffSchemaRequiredFields` was only called at the top level. Adding `required: [city]`
+    to a nested `address` object schema was invisible. Fixed by calling
+    `diffSchemaRequiredFields` inside the `diffSchemaProperties` recursive block alongside
+    the existing recursive call, guarded by the same condition. 3 new tests: request
+    nested required-added (BREAKING), response nested required-added (INFO),
+    response nested required-removed (BREAKING). 297→300 openapi-lens.
+    Total: **886/886 tests**.
+
 59. **5.7.4 "nothing is done" / allOf composition flattening** — adversarial "nothing is done"
     review identified allOf flattening as the next highest-value Phase 0 improvement: real-world
     OpenAPI specs use `allOf` heavily for schema inheritance, and breaking changes inside `allOf`
@@ -775,7 +784,7 @@ all green; check tests 16/16.
   components tested). All unblocked POLISH done. Next session: privacy copy fix
   (NEED #7, when human responds), store submission prep, and D5 VS Code extension
   Phase 1 scaffold (once Proposal #3 auto-proceeds 2026-06-13).
-- **D5 Phase 0 engine is in `products/openapi-lens/`** — 297 tests, all passing.
+- **D5 Phase 0 engine is in `products/openapi-lens/`** — 300 tests, all passing.
   Phase 1 (VS Code extension scaffold) starts when Proposal #3 auto-proceeds 2026-06-13.
 - Spend cap: plan-included web tools (sub-agents, search) are FREE; $0 committed
   external spend. No cap blocker.

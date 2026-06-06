@@ -95,6 +95,12 @@ auto-proceeds (2026-06-13) or earlier if human approves.
     BREAKING, tightening = INFO. Pattern changes = always BREAKING for both.
     2 new OapiChangeType values. 13 new classify tests + 5 recursive diff tests + 6 allOf
     parser tests. **275/275 tests.**
+- [x] **5.7.4 continuation — nested required field diffing** — `diffSchemaRequiredFields`
+  was only called at the top level (request body + response schema), not recursively.
+  Adding `required: [city]` to a nested `address` object schema was invisible. Fixed:
+  `diffSchemaRequiredFields` is now called inside the `diffSchemaProperties` recursive
+  block. 3 new tests (request BREAKING, response INFO, response removal BREAKING).
+  **300/300 tests.**
 - [x] **5.7.4 continuation — parameter + items constraint diffing** — "nothing is done"
   review identified two gaps: parameter schema constraints (e.g., `maximum: 100→50` on an
   integer query parameter) and array items constraints (e.g., `items.minLength: 5→2`) were
