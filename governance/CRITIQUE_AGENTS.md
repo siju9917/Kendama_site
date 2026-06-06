@@ -84,6 +84,22 @@ Checklist:
   module for the same treatment** — partial application is the bug
   (header metadata is user-controlled too). Added 2026-05-30 (markdown
   export escaped change text but not filenames, pass 41).
+- **Every field declared in a normalized interface type must be verified
+  to be extracted by the deserializer.** An `optional?: boolean` field
+  satisfies TypeScript even when never populated (the type permits
+  `undefined`), so the compiler will not catch it. For every interface
+  field: (a) confirm the parser actually reads it from the raw input,
+  (b) have a test that verifies it is non-undefined when the input
+  contains it. Added 2026-06-06 (openapi-lens `OapiParameter.deprecated`
+  — declared since inception, never populated by `parseParameter`).
+- **When a discriminated union maps to a handler system, use a compile-time
+  exhaustiveness check** (`Record<UnionType, ...>`) so adding a new union
+  value without a handler causes a TypeScript build error. Back it with a
+  runtime test that each value produces a non-fallback result. Without
+  this, new values silently become the fallback (often INFO/no-op) with
+  no diagnostic. Added 2026-06-06 (openapi-lens `classifyChanges` fallback
+  pattern caught by 5.7.2 third adversarial pass; fixed by TYPE_STUBS
+  exhaustiveness guard in classify.test.ts).
 
 ### 2. Adversarial Tester
 
@@ -288,6 +304,20 @@ API-diff product family; added 2026-06-06 D5 Phase 0):
   when the actual contract has changed. The limitation must be documented
   prominently and a test must verify the exact behavior (drop/error/warn)
   so users know what they're relying on.
+- **Flat field coverage must be checked at ALL three schema levels:**
+  (1) top-level request/response schema (`type`, `format`, `nullable`,
+  `enum`, `required[]`); (2) `properties[k]` sub-fields (same fields);
+  (3) `items` sub-fields (same fields). A field diffed at level 1 but
+  missed at levels 2 or 3 is a gap. Maintain an explicit "parsed vs
+  diffed" matrix as a named artifact. Each gap must have either a test
+  verifying the absence is intentional (documented limitation) or be
+  implemented. Added 2026-06-06 (properties[k].nullable, items.enum,
+  items.nullable were parsed but never compared — found in 5.7.5 round 3).
+- **`parameter.deprecated` is parsed in real-world specs and must be
+  tracked.** When a parameter goes deprecated, consuming clients should
+  be warned to migrate off it; a diff tool that silently ignores
+  `deprecated: true` on parameters misses an important API lifecycle
+  signal. Added 2026-06-06 (openapi-lens declared but never extracted).
 
 ### 6. Performance Critic
 
@@ -588,3 +618,6 @@ with no growth is a warning sign flagged in the weekly digest.
 | 2026-06-06 | Correctness Critic (#1) / Domain-Expert Critic (#5) | Added: when fixing a diff function to use null sentinels for type comparisons, ALSO apply the same fix to all related fields (`format`, `enum`, etc.) within the same schema object — they have the same structural gap. `diffSchemaItems` had `bType ?? null` added but format was still guarded by both-defined. Always audit all parallel fields together. | openapi-lens `diffSchemaItems`: after fixing items type null-sentinel, `items.format` was still completely undetected. A UUID array changing to a URI array was invisible. Added `response/request-schema-items-format-changed` (5.7.2 second adversarial pass, 2026-06-06). |
 | 2026-06-06 | Correctness Critic (#1) checklist | Added: property type comparisons in schema diffs must use `type ?? null` sentinel pattern — `bProp.type !== undefined && cProp.type !== undefined` guards silently drop type-removal (`string→undefined`) and type-addition (`undefined→string`) transitions. Both are significant (type removal = server no longer validates = potentially BREAKING; type addition = server now enforces = BREAKING for request). | openapi-lens `diffSchemaProperties`: `if (bProp.type !== undefined && cProp.type !== undefined && bProp.type !== cProp.type)` silently dropped `string→null` (type removed) and `null→string` (type added). Fixed by null sentinel; direction-aware classify (5.7.2 second adversarial pass, 2026-06-06). |
 | 2026-06-06 | Correctness Critic (#1) / Domain-Expert Critic (#5) | Added: for any diff function with a "both sides must have the field" guard, probe the one-side-present case — `bField !== undefined && cField !== undefined` silently drops the case where one side has the field and the other doesn't. For array items specifically: `before=null, after=type` is direction-dependent (response gains type=INFO; request gains type=BREAKING); `before=type, after=null` is also direction-dependent (response loses type=BREAKING; request loses type=INFO). The guard must be `before !== after` (using null sentinel) not `both defined`. | openapi-lens `diffSchemaItems`: condition `bItems?.type !== undefined && cItems?.type !== undefined` silently dropped `null→string` and `string→null` transitions. Response losing its items type spec was completely invisible (BREAKING: clients can no longer rely on element type). Fixed by `bType ?? null` sentinel comparison with direction-aware classify rules (5.7.5 bug-hunt, 2026-06-06). |
+| 2026-06-06 | Correctness Critic (#1) checklist | Added: a field declared in a normalized interface type (e.g., `optional?: boolean`) but never populated by the deserializer is a "declared-but-not-extracted" gap. The TypeScript compiler accepts it (the type is satisfied without the field), but the value is always `undefined` in practice — any diff or logic that depends on it silently sees the absent-value behavior. Audit every field in every normalized interface: (a) is there a corresponding extraction in the parser/deserializer? (b) does a test verify it is populated when the raw input contains it? | openapi-lens `OapiParameter.deprecated` was declared in the TypeScript type since inception but `parseParameter` never read `raw["deprecated"]`. Parameters with `deprecated: true` in YAML were parsed as `undefined` for that field. The full panel and two adversarial passes missed this because no test ever checked what happened when a parameter had `deprecated: true` in YAML. Fixed by extracting in parser, diffing in `diffParameters`, 5.7.5 bug-hunt (2026-06-06 continuation). |
+| 2026-06-06 | Correctness Critic (#1) + Maintainability Critic (#10) checklist | Added: when a discriminated union type (e.g., `OapiChangeType`) maps to a handler system (e.g., classify rules), new values added to the union must have handlers or the system silently produces a wrong default. Guard this with a compile-time exhaustiveness check: `Record<UnionType, [SampleArgs]>` causes a TypeScript error if any union value is missing. Back it with a runtime test verifying each union value does NOT fall through to the fallback "unhandled" message. | openapi-lens `classifyChanges`: new `OapiChangeType` values added without a classify rule silently became INFO. The completeness guard was added as a `Record<OapiChangeType, [unknown, unknown]>` TYPE_STUBS map in classify.test.ts — TypeScript exhaustiveness checking + runtime test. This pattern applies to every discriminated union → handler mapping in any product (5.7.2 third adversarial pass, 2026-06-06 continuation). |
+| 2026-06-06 | Domain-Expert Critic (#5) / Correctness Critic (#1) | Extended parsed-but-never-diffed audit to property-level sub-fields: after auditing top-level schema fields and `items.*`, audit `properties[k].*` for EVERY field in `OapiSchema`. The following were found parsed but uncompared: `properties[k].nullable` (BREAKING when response property becomes nullable false→true; BREAKING when request property becomes non-nullable true→false); `items.enum` (direction-aware: response gains=BREAKING, request loses=BREAKING); `items.nullable` (direction-aware: response false→true=BREAKING, request true→false=BREAKING). The general rule: once a flat field is in the schema type, its absence from ALL three comparison levels (top-level schema, property-level, items-level) must be explicitly verified. | openapi-lens: three gaps found in systematic audit — `properties[k].nullable`, `items.enum`, `items.nullable`. All three were parsed by `normalizeSchema` into `OapiSchema` but never compared. 6 new types, 12 new classify rules, 31 new tests (5.7.5 bug-hunt round 3, 2026-06-06 continuation). |
