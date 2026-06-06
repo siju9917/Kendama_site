@@ -105,10 +105,56 @@ When Proposal #4 auto-proceeds 2026-06-13, D6 build proceeds with high confidenc
 
 ---
 
-## 2026-06-06 — D5 VS Code OpenAPI Breaking-Change Lens: gap sweep (results pending)
+## 2026-06-06 — D5 VS Code OpenAPI Breaking-Change Lens: gap CONFIRMED + nearest competitor archived
 
-**Source:** VS Code Marketplace research sweep (plan-included sub-agent, 2026-06-06). Results
-incorporated when sweep completes; placeholder below.
+**Source:** VS Code Marketplace research sweep (plan-included sub-agent, 2026-06-06).
+Primary sources: oasdiff.com, GitHub (oasdiff, pb33f/openapi-changes, vscode-spectral,
+42Crunch), Microsoft Learn (Azure API Center), ApiNotes 2026.
 
-_[OpenAPI lens gap analysis to be filled in — see STATE.md for update status]_
+**Signal — complete competitive landscape:**
+
+| Extension | Breaking-change inline diagnostics? | On-device? | Notes |
+|---|---|---|---|
+| **OpenAPI (Swagger) Editor** (42Crunch, ~2M downloads) | No — security linting, not backward-compat diff | Linting yes; security audit requires cloud | Best-in-class security linter; wrong problem |
+| **Spectral** (stoplight) | No — structural linting only, no two-version diff | Yes | Rule-based linter of one spec; cannot do diff |
+| **Swagger Viewer** (Arjun) | No — preview/render only | Yes | — |
+| **openapi-lint** (Mermade) | No — validator only; **last commit Feb 2020** | Yes | Abandoned |
+| **Redocly OpenAPI** | No — validation + preview | Yes | — |
+| **Azure API Center** (Microsoft) | **Partial** — Command Palette invoked, powered by Optic | Requires Azure subscription | See below |
+
+**Critical finding — Optic archived January 2026:** The ONLY VS Code extension that detected
+breaking changes inline was Azure API Center, which used the open-source tool Optic as its
+engine. **Optic was archived in January 2026** (unmaintained). The Azure API Center breaking-
+change feature now runs on abandoned technology. APInotes positioned itself as a replacement
+but has no VS Code extension. **The one partial competitor just got weaker.**
+
+**Best CLI tools with no VS Code wrapper:**
+- **oasdiff** (1.2k GitHub stars, Go, last release June 6 2026 v1.18.4 — actively maintained,
+  450+ breaking-change rules)
+- **pb33f/openapi-changes** (350 stars, Go, May 2026 v0.2.7, "100% offline, no network
+  dependencies")
+
+Neither has a VS Code extension. Our pure TypeScript engine is the right design for a VS Code
+extension: no Go runtime required, bundles as pure JS, activates instantly.
+
+**Gap confirmed:** No VS Code extension provides:
+- Automatic watch-as-you-type inline squiggles for breaking changes
+- Two-version comparison (current vs committed/baseline)
+- 100% on-device with no cloud subscription
+- Actively maintained (Optic-based Azure extension is now effectively abandoned)
+
+**Implication for Kendama:** D5 gap is STRONGER than the deep-eval assumed. The deep-eval
+scored Defensibility at 4/10 citing "Azure API Center" as partial competition — with Optic's
+January 2026 archival, that partial competitor is weakening. The revised defensibility picture
+is closer to 5-6/10 (the incumbent is unmaintained; the best CLI tools have no VS Code wrapper).
+D5 score 636/1000 was conservative; the actual gap may support higher defensibility.
+
+**Action:** D5 deep-eval score is NOT retroactively adjusted (scores are locked at evaluation
+date per `governance/SCORING_MODEL.md`), but the signal is logged here as a positive factor for
+the build decision. When D5 Phase 1 ships, the Marketplace listing can reference "the gap left
+by Optic's archival" as context for first-mover positioning.
+
+**Also notable:** No new VS Code extension specifically for inline breaking-change detection
+was found in the March–June 2026 window. The field is static while our product is moving.
+
 
