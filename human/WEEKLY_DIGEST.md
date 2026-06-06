@@ -6,6 +6,104 @@
 
 ---
 
+## Week of 2026-06-06 — BidDiff hardened to ship-gate + D5 Phase 0 engine shipped
+
+### The one thing to know
+
+The engineering bar for BidDiff is now met on every axis: **567/567 tests green, K2 ship-gate dry run complete, 5 genuine bugs + 2 security fixes + 14 polish items landed, Vite 6 + Vitest 4 toolchain upgraded.** The only remaining ship blockers are **two human decisions**: the privacy-copy wording (NEED #7) and the Chrome Web Store submission (NEED #6). Meanwhile, the factory shipped a **second product's Phase 0 engine** (D5, VS Code OpenAPI Breaking-Change Lens) with 96/96 tests and a full 14-critic panel cleared.
+
+### What got done
+
+#### BidDiff — brought to ship-gate readiness
+
+1. **5 genuine bugs fixed** (K2 bug sweep):
+   - `extractLotNumber` regex broke on certain CLINs (false negatives)
+   - Numbered-list renumbering: inserting one item into a PDF numbered list made every subsequent item show as a spurious change (inflated change count); fix landed with a characterization test
+   - Two additional engine-level correctness fixes identified and patched
+   - One timing/race condition in the diff pipeline
+
+2. **2 security fixes** (K2 security sweep):
+   - Defense-in-depth hardening; no exploitable vulnerability
+
+3. **14 polish items** completed since K2 ship-gate dry run (N-A21 and follow-on)
+
+4. **Critique P1s resolved:**
+   - **Research Quality P1 CLOSED**: Market research placed BidDiff's addressable ceiling at $45K–$315K ARR (PLAUSIBLE for a focused niche tool). Logged in `CRITIQUE_LOG.md`.
+   - **Domain-Expert P1 effectively resolved**: sub-CLIN line items, SET_ASIDE designation changes, and page-limit changes now in the critical-rules pack. The market research confirmed the proposal-manager audience focus.
+   - **Ambition P1 resolved**: Repositioning to "proposal managers" (not generic "capture teams") auto-proceeded 2026-06-06; store listing update applies post-privacy-copy decision.
+
+5. **Toolchain bumped**: Vite 6 + Vitest 4 (was Vite 5 + Vitest 3). All 567 tests pass under new toolchain.
+
+6. **DiffView + SamAttachments component tests**: Full component test coverage added to both UI components.
+
+7. **K2 ship-gate dry run complete** (`docs/ship-gate-dry-run.md`): Engineering bar met on every axis. Only human-content-gate blockers remain.
+
+**Remaining BidDiff ship blockers (both require you):**
+- **NEED #7** — Privacy policy wording: the policy describes server uploads that the v1 extension never performs. Recommended fix: scope to the stronger truth ("everything stays on your device"). I can write the new copy on your OK.
+- **NEED #6** — Chrome Web Store submission: you need to create the developer account and submit. ~30 minutes.
+
+#### D5 (openapi-lens) — Phase 0 engine complete, full critique cleared
+
+Built a pure TypeScript OpenAPI Breaking-Change engine from scratch:
+
+- **Parser**: YAML/JSON auto-detect, OAS 3.0/3.1 + Swagger 2.0, `$ref` resolution (local only), allOf/oneOf/anyOf storage, circular-ref protection
+- **Diff**: 27 structural change types across endpoints, parameters, requestBody, response status codes, and response/request schema properties
+- **Classify**: 27 rules mapping raw changes to BREAKING/INFO with human-readable messages
+- **96/96 tests** (parser 17, diff 20, classify 22, integration 9, adversarial 19, property-diff 9)
+
+**Full 14-critic panel passed** (2026-06-06) — all P1/P2 findings fixed in the same session:
+- **P1**: Circular `$ref` → stack overflow. Fixed: `visited: Set<string>` guard in `resolveLocalRef`/`normalizeSchema`.
+- **P2-1**: New request-body properties were classified as `response-schema-property-added`. Fixed: added `request-schema-property-added` to `OapiChangeType`, updated `diffSchemaProperties` and `classify.ts`.
+- **P2-2**: `parseOapiSpec` throw contract undocumented. Fixed: JSDoc added + pin tests.
+- **P2-3**: No pin test for allOf/oneOf limitation. Fixed: pin test added.
+- **P2-4**: No pin test for remote `$ref` limitation. Fixed: pin test added.
+
+**5.7.2 escalating critique** (second independent hard pass) also ran clean 2026-06-06.
+
+Phase 0 cleared; Phase 1 (VS Code extension scaffold) begins when Proposal #3 auto-proceeds 2026-06-13.
+
+#### Factory hardening
+
+- **Ranking-integrity check** added to `ops/checks/` (SELF_IMPROVEMENT #9). Now 11 checks, all pass.
+- **SELF_IMPROVEMENT #1** closed: idea backlog is now comprehensive with all candidates, deep-eval files, and proposals.
+- **5.7.3 Roster growth**: 4 new checklist items across Correctness #1, Adversarial Tester #2, and Domain-Expert #5 (new OpenAPI/REST specialization sub-section). Triggered by D5 Phase 0 build patterns.
+- **WISHLIST additions**: "OpenAPI allOf/oneOf/anyOf composition merger" and "Recursive property-level diff beyond 1 level" — both queued for D5 Phase 2.
+- **Open proposals**:
+  - Proposal #2: REJECT Apex JetBrains plugin (Buf Technologies incumbent, addressable market too small) — auto-proceeds 2026-06-13
+  - Proposal #3: PROCEED D5 (openapi-lens) — auto-proceeds 2026-06-13
+  - Proposal #4: PROCEED D6 (Terraform destructive-change classifier) — auto-proceeds 2026-06-13
+
+### What you need to do (most important)
+
+| Priority | Item | Time | What to do |
+|---|---|---|---|
+| **P1** | **NEED #7** — BidDiff privacy copy | ~5 min | Approve the simplified copy ("fully on-device") so I can write it. |
+| **P1** | **NEED #6** — Chrome Web Store submission | ~30 min | Create a developer account ($5 one-time) and submit the extension. I'll prep the listing. |
+| **P1** | **NEED #10** — VS Code Marketplace publisher reg | ~10 min | Register a publisher account (free personal / $100 org) at marketplace.visualstudio.com. Needed before D5 can ship. |
+| P2 | Review Proposals #2, #3, #4 | ~5 min | All auto-proceed 2026-06-13 if you don't act. No action required unless you want to override. |
+| P2 | Spend cap | ongoing | Set a monthly cap in `governance/SPEND_CAP.md` to unlock deep web research. |
+
+### Test suite
+
+| Product | Tests |
+|---|---|
+| BidDiff | 567/567 |
+| openapi-lens (D5) | 96/96 |
+| **Total** | **663/663** |
+
+### Maximization audit (5.7.7 / 5.7.8)
+
+- **5.7.1 Re-critique cadence:** No shipped products yet. Applies post-ship.
+- **5.7.2 Escalating critique:** HELD — full 14-critic panel + 5.7.2 second hard pass both ran clean on D5 Phase 0. BidDiff critique cadence ongoing.
+- **5.7.3 Roster growth:** HELD — 4 new checklist items this session (see above).
+- **5.7.4 "Nothing is ever done":** HELD — K2 ship-gate dry run and polish sweep continued BidDiff hardening beyond the first clean pass.
+- **5.7.5 Continuous bug-hunt:** HELD — K2 bug sweep found and fixed 5 genuine bugs in BidDiff; D5 Phase 0 panel found 1 P1 + 4 P2s.
+- **5.7.6 Continuous ideation:** HELD — D5 Phase 2 WISHLIST items logged immediately; D6 Terraform classifier in the pipeline.
+- **5.7.7 (this audit):** done, with evidence (each rule cites a concrete artifact).
+- **5.7.8 (audit-the-auditor):** Finding: Phase 1 must have an explicit property-diff depth contract test (not just documentation) — logged in `brain/META_LESSONS.md`.
+
+---
+
 ## Week of 2026-05-30 — First post-bootstrap build cycle
 
 ### Session continuation update (Saturday evening, Mountain Time)
