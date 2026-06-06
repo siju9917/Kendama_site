@@ -276,6 +276,14 @@ describe("DiffView — text filter", () => {
     // "after" matches "after-c1" and "after-c2" — all 2 changes match.
     expect(screen.queryByText(/\d+ of \d+ changes/)).toBeNull();
   });
+
+  it("shows '0 of N changes' counter when filter eliminates all results", () => {
+    render(<DiffView result={fakeResult([fakeChange("c1"), fakeChange("c2")])} />);
+    fireEvent.change(screen.getByPlaceholderText(/Filter by text/i), {
+      target: { value: "zzznomatch" },
+    });
+    expect(screen.getByText("0 of 2 changes")).toBeTruthy();
+  });
 });
 
 // ---------------------------------------------------------------------------
