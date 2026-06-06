@@ -8325,3 +8325,241 @@ paths:
     expect(depChange?.after).toBe(false);
   });
 });
+
+// ─── Round 53: final coverage sweep — 7 remaining untested types ─────────────
+
+describe("request-schema-items-nullable-changed (5.7.5 round 53)", () => {
+  function makeArrayRequestSpec(itemsNullable: boolean): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /bulk:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                nullable: ${itemsNullable}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("request array items nullable true→false is BREAKING (clients sending null elements get 400)", () => {
+    const changes = analyzeOpenApiDiff(makeArrayRequestSpec(true), makeArrayRequestSpec(false));
+    const nullableChange = changes.find((c) => c.type === "request-schema-items-nullable-changed");
+    expect(nullableChange).toBeDefined();
+    expect(nullableChange?.severity).toBe("BREAKING");
+  });
+
+  it("request array items nullable false→true is INFO (clients may now send null elements)", () => {
+    const changes = analyzeOpenApiDiff(makeArrayRequestSpec(false), makeArrayRequestSpec(true));
+    const nullableChange = changes.find((c) => c.type === "request-schema-items-nullable-changed");
+    expect(nullableChange).toBeDefined();
+    expect(nullableChange?.severity).toBe("INFO");
+  });
+});
+
+describe("response-schema-property-readonly-changed (5.7.5 round 53)", () => {
+  function makeResponseReadOnlySpec(readOnly: boolean): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  createdAt:
+                    type: string
+                    readOnly: ${readOnly}
+`;
+  }
+
+  it("response property readOnly false→true is INFO (advisory annotation only)", () => {
+    const changes = analyzeOpenApiDiff(makeResponseReadOnlySpec(false), makeResponseReadOnlySpec(true));
+    const roChange = changes.find((c) => c.type === "response-schema-property-readonly-changed");
+    expect(roChange).toBeDefined();
+    expect(roChange?.severity).toBe("INFO");
+  });
+
+  it("response property readOnly true→false is INFO (field is no longer annotated read-only)", () => {
+    const changes = analyzeOpenApiDiff(makeResponseReadOnlySpec(true), makeResponseReadOnlySpec(false));
+    const roChange = changes.find((c) => c.type === "response-schema-property-readonly-changed");
+    expect(roChange).toBeDefined();
+    expect(roChange?.severity).toBe("INFO");
+  });
+});
+
+describe("request-schema-property-writeonly-changed (5.7.5 round 53)", () => {
+  function makeRequestWriteOnlySpec(writeOnly: boolean): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                  writeOnly: ${writeOnly}
+      responses:
+        "201":
+          description: created
+`;
+  }
+
+  it("request property writeOnly false→true is INFO (annotation indicates field won't appear in responses)", () => {
+    const changes = analyzeOpenApiDiff(makeRequestWriteOnlySpec(false), makeRequestWriteOnlySpec(true));
+    const woChange = changes.find((c) => c.type === "request-schema-property-writeonly-changed");
+    expect(woChange).toBeDefined();
+    expect(woChange?.severity).toBe("INFO");
+  });
+});
+
+describe("response-schema-property-additional-properties-changed (5.7.5 round 53)", () => {
+  function makeResponseNestedAPSpec(ap: boolean | "omit"): string {
+    const apLine = ap !== "omit" ? `\n                    additionalProperties: ${ap}` : "";
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metadata:
+                    type: object${apLine}
+`;
+  }
+
+  it("response nested property additionalProperties added as false (closed) is INFO", () => {
+    const changes = analyzeOpenApiDiff(makeResponseNestedAPSpec("omit"), makeResponseNestedAPSpec(false));
+    const apChange = changes.find((c) => c.type === "response-schema-property-additional-properties-changed");
+    expect(apChange).toBeDefined();
+    expect(apChange?.severity).toBe("INFO");
+    expect(apChange?.after).toBe(false);
+  });
+
+  it("response nested property additionalProperties false→true (opened) is INFO", () => {
+    const changes = analyzeOpenApiDiff(makeResponseNestedAPSpec(false), makeResponseNestedAPSpec(true));
+    const apChange = changes.find((c) => c.type === "response-schema-property-additional-properties-changed");
+    expect(apChange).toBeDefined();
+    expect(apChange?.severity).toBe("INFO");
+  });
+});
+
+describe("parameter-items-format-changed and parameter-items-nullable-changed (5.7.5 round 53)", () => {
+  function makeArrayParamSpec(format: string | null, nullable: boolean): string {
+    const fmtLine = format !== null ? `\n              format: "${format}"` : "";
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      parameters:
+        - name: ids
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string${fmtLine}
+              nullable: ${nullable}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("parameter array items format added is BREAKING (new format validation on elements)", () => {
+    const changes = analyzeOpenApiDiff(makeArrayParamSpec(null, false), makeArrayParamSpec("uuid", false));
+    const fmtChange = changes.find((c) => c.type === "parameter-items-format-changed");
+    expect(fmtChange).toBeDefined();
+    expect(fmtChange?.severity).toBe("BREAKING");
+  });
+
+  it("parameter array items format removed is INFO (validation relaxed)", () => {
+    const changes = analyzeOpenApiDiff(makeArrayParamSpec("uuid", false), makeArrayParamSpec(null, false));
+    const fmtChange = changes.find((c) => c.type === "parameter-items-format-changed");
+    expect(fmtChange).toBeDefined();
+    expect(fmtChange?.severity).toBe("INFO");
+  });
+
+  it("parameter array items nullable true→false is BREAKING (server rejects null elements)", () => {
+    const changes = analyzeOpenApiDiff(makeArrayParamSpec(null, true), makeArrayParamSpec(null, false));
+    const nullableChange = changes.find((c) => c.type === "parameter-items-nullable-changed");
+    expect(nullableChange).toBeDefined();
+    expect(nullableChange?.severity).toBe("BREAKING");
+  });
+
+  it("parameter array items nullable false→true is INFO (clients may now send null elements)", () => {
+    const changes = analyzeOpenApiDiff(makeArrayParamSpec(null, false), makeArrayParamSpec(null, true));
+    const nullableChange = changes.find((c) => c.type === "parameter-items-nullable-changed");
+    expect(nullableChange).toBeDefined();
+    expect(nullableChange?.severity).toBe("INFO");
+  });
+});
+
+describe("request-schema-items-writeonly-changed (5.7.5 round 53)", () => {
+  function makeRequestItemsWriteOnlySpec(writeOnly: boolean): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /bulk:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                writeOnly: ${writeOnly}
+                properties:
+                  secret: {type: string}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("request array items writeOnly false→true is INFO (annotation only — clients can still send the array)", () => {
+    const changes = analyzeOpenApiDiff(makeRequestItemsWriteOnlySpec(false), makeRequestItemsWriteOnlySpec(true));
+    const woChange = changes.find((c) => c.type === "request-schema-items-writeonly-changed");
+    expect(woChange).toBeDefined();
+    expect(woChange?.severity).toBe("INFO");
+  });
+});
