@@ -688,3 +688,66 @@ describe("adversarial round 66 — isTerraformPlanJson edge cases and classifier
     expect(result.normal).toBe(1);
   });
 });
+
+// ─── Round 78: multi-rule interactions in classifyChange ────────────────────
+
+describe("adversarial round 78 — multi-rule classify interactions (both REPLACED + type-specific reasons)", () => {
+  function makeChange(overrides: Partial<TfChange> = {}): TfChange {
+    return {
+      address: "aws_s3_bucket.data",
+      type: "aws_s3_bucket",
+      name: "data",
+      actions: ["replace"],
+      before: { id: "b-1" },
+      after: { id: "b-1" },
+      ...overrides,
+    };
+  }
+
+  it("data store + replace fires both Rule 3 (REPLACED) and Rule 4 (data store) — two reasons emitted", () => {
+    // Rules 3 and 4 are independent; a data store being replaced accumulates both reasons.
+    const c = classifyChange(makeChange({ type: "aws_s3_bucket", actions: ["replace"] }));
+    expect(c.severity).toBe("CRITICAL");
+    const hasReplaceReason = c.reasons.some((r) => r.includes("REPLACED"));
+    const hasDataStoreReason = c.reasons.some((r) => r.includes("data store"));
+    expect(hasReplaceReason).toBe(true);
+    expect(hasDataStoreReason).toBe(true);
+    expect(c.reasons.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("IAM + replace fires both Rule 3 (REPLACED) and Rule 5 (IAM) — two reasons emitted", () => {
+    // Replacing an IAM resource is doubly flagged: replacement risk AND access-control risk.
+    const c = classifyChange(
+      makeChange({ type: "aws_iam_role", address: "aws_iam_role.exec", actions: ["replace"] }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+    const hasReplaceReason = c.reasons.some((r) => r.includes("REPLACED"));
+    const hasIamReason = c.reasons.some((r) => r.includes("IAM") || r.includes("access"));
+    expect(hasReplaceReason).toBe(true);
+    expect(hasIamReason).toBe(true);
+    expect(c.reasons.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("data store + delete fires both Rule 2 (DELETED) and Rule 4 (data store) — two reasons emitted", () => {
+    // A plain delete of a data store accumulates the permanent-delete AND data-store reasons.
+    const c = classifyChange(
+      makeChange({ type: "aws_db_instance", address: "aws_db_instance.prod", actions: ["delete"], after: null }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+    const hasDeleteReason = c.reasons.some((r) => r.includes("DELETED"));
+    const hasDataStoreReason = c.reasons.some((r) => r.includes("data store"));
+    expect(hasDeleteReason).toBe(true);
+    expect(hasDataStoreReason).toBe(true);
+  });
+
+  it("empty actions array produces NORMAL with 'in-place' reason (characterization — not a real Terraform action set)", () => {
+    // isNoOp([]) returns false (length guard), isCreateOnly([]) returns false.
+    // Rules 2-5 all miss. Default: severity remains NORMAL, in-place reason added.
+    // This locks behavior for degenerate plan JSON that omits the actions array.
+    const c = classifyChange(
+      makeChange({ type: "aws_instance", address: "aws_instance.web", actions: [] }),
+    );
+    expect(c.severity).toBe("NORMAL");
+    expect(c.reasons.some((r) => r.includes("in-place") || r.includes("update"))).toBe(true);
+  });
+});
