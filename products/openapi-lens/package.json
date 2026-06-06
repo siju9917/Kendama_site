@@ -20,6 +20,10 @@
       {
         "command": "openapi-lens.clearBaseline",
         "title": "OpenAPI Lens: Clear baseline"
+      },
+      {
+        "command": "openapi-lens.showTerraformPanel",
+        "title": "OpenAPI Lens: Show Terraform plan classification"
       }
     ],
     "configuration": {

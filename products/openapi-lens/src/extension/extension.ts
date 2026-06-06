@@ -4,6 +4,7 @@ import { buildDiagnostics } from "./providers/diagnosticProvider.js";
 import { OpenApiCodeLensProvider } from "./providers/codeLensProvider.js";
 import { fetchGitHeadContent } from "./baseline/gitBaseline.js";
 import { registerCommands } from "./commands.js";
+import { activateTerraformSupport, deactivateTerraformSupport } from "./terraformExtension.js";
 import { analyzeOpenApiDiff } from "../engine/index.js";
 import type { BreakingChange } from "../engine/types.js";
 
@@ -57,6 +58,9 @@ export function activate(context: vscode.ExtensionContext): void {
       manualBaselineByUri.delete(doc.uri.toString());
     }),
   );
+
+  // Activate D6 terraform plan support alongside D5 OpenAPI support.
+  activateTerraformSupport(context);
 
   // Analyze the currently open document immediately on activation.
   const active = vscode.window.activeTextEditor?.document;
@@ -121,6 +125,7 @@ async function resolveBaseline(document: vscode.TextDocument): Promise<string | 
 export function deactivate(): void {
   diagnosticCollection?.dispose();
   codeLensProvider?.dispose();
+  deactivateTerraformSupport();
   diagnosticCollection = undefined;
   codeLensProvider = undefined;
   manualBaselineByUri.clear();
