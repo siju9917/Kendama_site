@@ -1605,3 +1605,25 @@ describe("classify round 62 — operation-id-changed all directions + edge cases
     expect(result[0]?.message).not.toMatch(/^Change detected at/);
   });
 });
+
+describe("round 80 — constraintKind 'other' dead-code fallback (classify unit test)", () => {
+  it("request-schema-property-constraint-changed with unrecognized constraint field name falls back to INFO", () => {
+    // constraintKind(loc) returns 'other' when the field suffix is not in MIN_SENSE, MAX_SENSE, or 'pattern'.
+    // requestConstraintSeverity: kind === 'other' → return 'INFO'.
+    // This branch is unreachable from engine output (engine only emits the 9 known fields)
+    // but the fallback exists for future extensibility. Locking it as INFO.
+    const result = classifyChanges([
+      raw("request-schema-property-constraint-changed", null, "some-value", "requestBody.content.schema.properties.foo.unknownConstraint"),
+    ]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("response-schema-property-constraint-changed with unrecognized constraint field name falls back to INFO", () => {
+    // responseConstraintSeverity: kind === 'other' → return 'INFO'.
+    // Identical fallback for response path — also dead code from engine output.
+    const result = classifyChanges([
+      raw("response-schema-property-constraint-changed", "old-value", null, "responses[200].content.schema.properties.bar.unknownConstraint"),
+    ]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+});

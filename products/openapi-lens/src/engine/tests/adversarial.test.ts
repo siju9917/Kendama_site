@@ -10184,6 +10184,106 @@ paths:
   });
 });
 
+// ─── Round 80: request body minLength null-transitions + response body maxLength ─
+
+describe("adversarial round 80 — request body top-level minLength null-transitions and response body maxLength (end-to-end)", () => {
+  function makeStringBodySpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /names:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  function makeStringResponseSpec80(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /label:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+                ${constraintLine}
+`;
+  }
+
+  it("adding minLength to request body string (null→5) is BREAKING — previously valid short strings now fail", () => {
+    // requestConstraintSeverity min-sense: before === null → BREAKING
+    // Top-level body minLength tests at line ~1643 only tested value-to-value changes (3→10, 10→3).
+    const noMin   = makeStringBodySpec("");
+    const withMin = makeStringBodySpec("minLength: 5");
+    const changes = analyzeOpenApiDiff(noMin, withMin);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".minLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(5);
+  });
+
+  it("removing minLength from request body string (5→null) is INFO — previously valid strings remain valid", () => {
+    // requestConstraintSeverity min-sense: after === null → INFO
+    const withMin = makeStringBodySpec("minLength: 5");
+    const noMin   = makeStringBodySpec("");
+    const changes = analyzeOpenApiDiff(withMin, noMin);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".minLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(5);
+    expect(constChange?.after).toBeNull();
+  });
+
+  it("adding maxLength to response body string (null→100) is INFO — server now guarantees max length", () => {
+    // responseConstraintSeverity max-sense: before === null → INFO
+    // Response body maxLength completely untested at top-level body scope.
+    const noMax   = makeStringResponseSpec80("");
+    const withMax = makeStringResponseSpec80("maxLength: 100");
+    const changes = analyzeOpenApiDiff(noMax, withMax);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".maxLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(100);
+  });
+
+  it("removing maxLength from response body string (100→null) is BREAKING — server may now return arbitrarily long strings", () => {
+    // responseConstraintSeverity max-sense: after === null → BREAKING
+    const withMax = makeStringResponseSpec80("maxLength: 100");
+    const noMax   = makeStringResponseSpec80("");
+    const changes = analyzeOpenApiDiff(withMax, noMax);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".maxLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBe(100);
+    expect(constChange?.after).toBeNull();
+  });
+});
+
 // ─── Round 77: response body top-level minLength + minItems null-transitions ─
 // minLength property tests at line ~1053 use PROPERTY-level schema (.properties.code.minLength).
 // These tests verify the same semantics at TOP-LEVEL response body schema scope.
