@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **1283/1283 tests** (BidDiff 586/586 + openapi-lens 697/697).
+- **Build green:** **1301/1301 tests** (BidDiff 586/586 + openapi-lens 715/715).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -111,6 +111,9 @@
   (changeWebviewProvider ×17) = 676→693.
   5.7.2 escalating critique: 1×P1 (data-source "read" → false CRITICAL) + 2×P2 +
   1×P3 found and fixed; +4 adversarial tests → 697. D5/D6 Phase 1 gate cleared.
+  POLISH T2/N2/T3/N4/T4: real-time debounce + replace-order detail + output_changes
+  WebView + baseline label + plan breakdown → 713 tests.
+  5.7.5 bug-hunt: sensitive output detection for partial-object after_sensitive → 715.
   All typecheck clean; full CI gate verified green.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`
