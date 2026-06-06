@@ -33,8 +33,8 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   (BREAKING / INFO) and a human-readable `message`
 - [x] **`src/engine/index.ts`**: Public API — `analyzeOpenApiDiff()`,
   `breakingOnly()`, all type exports
-- [x] **152/152 tests** — parser (21), diff (22), classify (45), integration (10),
-  adversarial (19), property-diff (35)
+- [x] **161/161 tests** — parser (21), diff (24), classify (47), integration (10),
+  adversarial (19), property-diff (40)
 - [x] Typecheck clean
 - [x] **Full 14-critic panel passed** (2026-06-06) — P1 circular-ref fix,
   P2 `request-schema-property-added` type gap fixed, P2 pin tests for allOf/remote-$ref.

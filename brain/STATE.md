@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **738/738 tests** (BidDiff 586/586 + openapi-lens 152/152).
+- **Build green:** **747/747 tests** (BidDiff 586/586 + openapi-lens 161/161).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -604,7 +604,15 @@ all green; check tests 16/16.
     stripped). All 5 new `it` blocks pass immediately — no bugs found, but the gap
     is now regression-locked. 582/582 BidDiff. Total suite: **688/688 tests**.
 
-52. **classify.test.ts completeness pass** — added 23 direct unit tests for all new
+54. **5.7.5 fix: property type null transitions + items format detection** — second
+    independent adversarial pass (5.7.2) found 2 more bugs: (1) `diffSchemaProperties`
+    required BOTH types defined; `string→undefined` (type removal) was invisible; fixed
+    with null sentinel + direction-aware classify (response type removed=BREAKING;
+    request type added=BREAKING; reverse=INFO). (2) `diffSchemaItems` ignored
+    `items.format` entirely; added `response/request-schema-items-format-changed` types,
+    BREAKING rules, unit+integration tests. 9 new tests (152→161). Total: **747/747**.
+
+53. **classify.test.ts completeness pass** — added 23 direct unit tests for all new
     classify rules added in this session (property type/remove/add for both directions,
     items type all 3 directions both directions, enum polarity, format, deprecated,
     request nullable, required-body-removed). 129→152 openapi-lens. Total: **738/738**.
@@ -670,7 +678,7 @@ all green; check tests 16/16.
   components tested). All unblocked POLISH done. Next session: privacy copy fix
   (NEED #7, when human responds), store submission prep, and D5 VS Code extension
   Phase 1 scaffold (once Proposal #3 auto-proceeds 2026-06-13).
-- **D5 Phase 0 engine is in `products/openapi-lens/`** — 152 tests, all passing.
+- **D5 Phase 0 engine is in `products/openapi-lens/`** — 161 tests, all passing.
   Phase 1 (VS Code extension scaffold) starts when Proposal #3 auto-proceeds 2026-06-13.
 - Spend cap: plan-included web tools (sub-agents, search) are FREE; $0 committed
   external spend. No cap blocker.
