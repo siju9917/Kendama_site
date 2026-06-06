@@ -87,6 +87,16 @@ For `nullable`:
 - Request nullable `true → false` = BREAKING (client sending null now rejected)
 - Response nullable `false → true` = BREAKING (client assuming non-null now crashes on null)
 
+**nullable polarity trap (round 26):** The above is the CORRECT direction. A previous 25-round
+implementation had it INVERTED at the top-level body schema level while property and items
+levels were correct all along. The trap: "response became non-nullable (true→false) = server
+is tightening the guarantee" sounds alarming ("changed!") but it's SAFE for clients. The
+BREAKING case is the server announcing it MAY return null (false→true) — clients that relied
+on non-null will crash. Apply this sanity check to every nullable rule: "would a well-written
+client break if the server sends null when it previously guaranteed non-null?" If yes = BREAKING.
+"Would a well-written client break if the server stops sending null?" — no, the client's null
+check is now dead code = INFO.
+
 For `pattern`:
 - Always BREAKING in both directions (pattern changes alter what values are valid/invalid)
 
