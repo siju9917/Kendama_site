@@ -100,6 +100,19 @@ Checklist:
   no diagnostic. Added 2026-06-06 (openapi-lens `classifyChanges` fallback
   pattern caught by 5.7.2 third adversarial pass; fixed by TYPE_STUBS
   exhaustiveness guard in classify.test.ts).
+- **Direction-aware polarity rules must be verified consistent across ALL
+  nesting levels.** A system that classifies `X false→true` as BREAKING at
+  the property level MUST classify it BREAKING at the body level and items
+  level too — same direction semantics, same entity. Cross-level polarity
+  inversion (correct at one level, inverted at another) is a silent bug
+  because the tests at each level check independently without comparing
+  across levels. Guard with a parametric cross-level consistency table that
+  asserts both the BREAKING and INFO cases for every direction-aware
+  property across all nesting levels in one test. Added 2026-06-06
+  (openapi-lens round 26: `response-schema-nullable-changed` top-level body
+  was BREAKING for true→false and INFO for false→true — INVERTED vs. the
+  property and items levels which were both correct; fix + 30-case cross-
+  level table added to classify.test.ts).
 
 ### 2. Adversarial Tester
 
