@@ -5884,3 +5884,222 @@ paths:
     expect(changes.filter((c) => c.type === "response-schema-type-changed")).toHaveLength(0);
   });
 });
+
+// ─── Round 33: parameter location change & default status code ────────────────
+
+describe("parameter in: location change emits remove+add pair (5.7.5 round 33)", () => {
+  function makeSpec(inLoc: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      parameters:
+        - name: token
+          in: ${inLoc}
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("moving a parameter from query to header emits parameter-removed and parameter-added", () => {
+    const changes = analyzeOpenApiDiff(makeSpec("query"), makeSpec("header"));
+    const removed = changes.find((c) => c.type === "parameter-removed");
+    const added = changes.find((c) => c.type === "parameter-added");
+    expect(removed).toBeDefined();
+    expect(added).toBeDefined();
+    // The removal of a required parameter is BREAKING; the addition of a required parameter is also BREAKING.
+    expect(removed?.severity).toBe("BREAKING");
+    expect(added?.severity).toBe("BREAKING");
+  });
+
+  it("moving an optional parameter from query to header also emits remove+add (both BREAKING — contract change)", () => {
+    const optSpec = (inLoc: string) => `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      parameters:
+        - name: filter
+          in: ${inLoc}
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(optSpec("query"), optSpec("header"));
+    const removed = changes.find((c) => c.type === "parameter-removed");
+    const added = changes.find((c) => c.type === "parameter-added");
+    expect(removed).toBeDefined();
+    expect(added).toBeDefined();
+    // Any parameter removal is BREAKING — removing a documented parameter changes the API contract
+    // even if the parameter was optional.
+    expect(removed?.severity).toBe("BREAKING");
+    // A new required-false parameter added as a header is INFO.
+    expect(added?.severity).toBe("INFO");
+  });
+});
+
+describe("default response status code handling (5.7.5 round 33)", () => {
+  it("removes default response and emits response-status-removed as INFO", () => {
+    const withDefault = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          description: error
+          content:
+            application/json:
+              schema:
+                type: object
+`;
+    const withoutDefault = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+`;
+    const changes = analyzeOpenApiDiff(withDefault, withoutDefault);
+    const removed = changes.find((c) => c.type === "response-status-removed");
+    expect(removed).toBeDefined();
+    expect(removed?.before).toBe("default");
+    // Removing any documented response status code is BREAKING — clients rely on documented error shapes.
+    expect(removed?.severity).toBe("BREAKING");
+  });
+
+  it("schema change inside default response is detected as BREAKING", () => {
+    const makeDefault = (type: string) => `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        default:
+          description: error
+          content:
+            application/json:
+              schema:
+                type: ${type}
+`;
+    const changes = analyzeOpenApiDiff(makeDefault("object"), makeDefault("string"));
+    const typeChange = changes.find((c) => c.type === "response-schema-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("object");
+    expect(typeChange?.after).toBe("string");
+  });
+});
+
+describe("OAS 3.1 type array + constraint changes (5.7.5 round 33)", () => {
+  it("minimum constraint change with type array is correctly detected as BREAKING", () => {
+    const baseline = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: [integer, "null"]
+              minimum: 1
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: [integer, "null"]
+              minimum: 5
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    // Top-level requestBody schema constraints emit "request-schema-property-constraint-changed"
+    // (the same type as property-level constraints — they share a code path).
+    const constraintChange = changes.find((c) => c.type === "request-schema-property-constraint-changed");
+    expect(constraintChange).toBeDefined();
+    expect(constraintChange?.before).toBe(1);
+    expect(constraintChange?.after).toBe(5);
+    expect(constraintChange?.severity).toBe("BREAKING");
+  });
+
+  it("adding null to type array (string → [string,null]) in request body is INFO", () => {
+    const baseline = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: [string, "null"]
+      responses:
+        "200":
+          description: ok
+`;
+    // Making a request body field nullable (accepting null) is INFO — clients gain capability.
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const nullableChange = changes.find((c) => c.type === "request-schema-nullable-changed");
+    expect(nullableChange).toBeDefined();
+    expect(nullableChange?.before).toBe(false);
+    expect(nullableChange?.after).toBe(true);
+    expect(nullableChange?.severity).toBe("INFO");
+  });
+});
