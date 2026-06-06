@@ -2265,3 +2265,43 @@ critique pass won't catch the class.
 
 No code change. The product suite is unaffected (423/423); this is a
 governance/brain-integrity fix.
+
+
+---
+
+## 2026-06-06 — Phase K1 — Resolution pass 1: Research Quality P1 CLOSED
+
+**Pass type:** Research Quality P1 resolution — market research and competitor teardown completed. Triggered by the auto-proceed of Proposal #1 (REPOSITION applied) and the spend-cap resolution (plan-included web research now free).
+
+**Critics run:** Research Quality #14, Ambition #13.
+
+**P1 CLOSED — Research Quality Critic (#14) — market evidence now provided**
+
+- **File:** `brain/RESEARCH/2026-05-27-biddiff-market-research.md` (FILLED IN, 2026-06-06)
+- **Evidence produced:**
+  - Competitor teardown: zero direct Chrome extension competitors; VisibleThread VT Docs (enterprise-only), GovEagle (Word add-in, YC-backed), CLEATUS ($80/mo), DeepRFP ($75/mo), GovDash (enterprise, $30M raised), Capture2Proposal ($2,640/yr).
+  - Addressable market: APMP ~10,500 members; realistic U.S. TAM 10,000–30,000 individuals.
+  - Comparable benchmarks: Easy Folders $3,700 MRR at 6 months; anonymous Chrome extension $9K MRR (IndieHackers). No Proven comparable in the federal-procurement-specific diff niche.
+  - Conversion math: 3–5% B2B freemium conversion; at 5,000 installs → 150–250 paid users → $3,750–$6,250 MRR at $25/month. Reaching $25K MRR requires ~1,000 paid users.
+- **Evidence tier updated:** PLAUSIBLE (confirmed, not upgraded to Proven — no Proven comparable found)
+- **Revenue ceiling score: 4/10** (realistic 2-year ARR $45K–$315K organic; side-project to micro-SaaS territory, not venture-scale)
+- **Key insight:** Chrome Web Store is likely the **wrong primary distribution channel** — proposal managers discover tools via APMP, GovCon blogs, LinkedIn. This does NOT block shipping; it means community presence is needed post-ship.
+- **New risks surfaced:** contractor base shrinking (DOGE era), AI commoditization accelerating (GovDash/GovEagle both converging on amendment analysis).
+- **Severity:** P1 CLOSED. The evidence is now produced and honest.
+
+**Ambition Critic (#13) review:**
+- Repositioning to "individual proposal-manager amendment triage" (applied 2026-06-06 via auto-proceed) is now supported by the market evidence: the solo/SMB segment IS the realistic addressable market given enterprise pricing of VisibleThread/GovDash.
+- The ambition score: BidDiff is a high-quality micro-SaaS product, not a venture-scale one. This is consistent with the factory's zero-opex/zero-touch/zero-labor constraints. The honest ceiling is $300K ARR at 3 years.
+- Ambition P1 is partially resolved (repositioning applied; scope remains individual-tool, which the evidence supports). Fully resolves upon ship.
+
+**Also this session:**
+- **Compliance P1** (privacy copy overstates server flows): REMAINS OPEN. Human decision on option A/B required (NEED #7). Factory has recommended option A (on-device copy).
+- **Domain-Expert P1** (coverage gaps: source-selection-timeline, key-personnel, compliance-certification, non-CLIN contract value): reframed as factory public-sources validation task. Research underway this session.
+- **Repositioning** applied: store listing, in-app copy updated to "individual proposal managers."
+- **approvals-window check false-negative fixed** (check was matching example response-format lines as a resolved status; regression test added). 
+- **List-renumbering noise suppressed** (PROGRESS coverage-obs #8): `isListOrdinalOnlyChange` in `suppress.ts`; 20 unit tests + 2 integration tests; characterization test updated. 473/473 tests green.
+
+**Remaining open on K1:** Compliance P1 (human-gated) + Domain-Expert P1 (factory public-sources validation). Phase K1 does NOT yet converge.
+
+---
+

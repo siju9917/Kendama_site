@@ -158,29 +158,16 @@ session has specifics, not a vague "improve extraction":
    patterns (BD2), with characterization tests first, not rush it. Logged for
    the post-validation cycle.
 
-8. **List RENUMBERING produces spurious (often CRITICAL) MODIFYs. — OPEN
-   (NOT gated; a real diff-quality / false-positive concern; found bug-hunt
-   pass-76 follow-on, 2026-05-31). The most significant noise finding of the
-   late session.** Probe: a Section-L list `L.1/L.2/L.3` with ONE item inserted
-   at position 2 produced **3 changes** — 1 correct INSERT (the new item) PLUS
-   **2 spurious MODIFYs** (`L.2 Use 12-point font.`→`L.3 Use 12-point font.`,
-   `L.3 …`→`L.4 …`) because the shifted number prefix is value-bearing text the
-   suppressor won't drop. In Section L/M (INSTRUCTIONS) these spurious MODIFYs
-   are even marked CRITICAL. A capture manager would see "3 critical changes"
-   for a 1-item insertion — inflated count, degraded signal-to-noise (the core
-   value prop). **Realism:** REAL for PDF (the primary federal input — pdf.js
-   extracts the rendered number as text) and for manually-typed numbers; NOT a
-   problem for DOCX **auto-numbered** lists (`<w:numPr>` — the number isn't in
-   the run text, confirmed in `docxExtractor.ts`). **NOT fixed this cycle** —
-   the fix is a non-trivial CORE-diff change (detect a "leading list-ordinal is
-   the ONLY difference" between two otherwise-identical blocks, then suppress
-   the renumber or group it as "renumbered, content unchanged"), and core-diff/
-   suppression changes are exactly where this session's bugs hid; it must be
-   designed + validated against REAL solicitations (must NOT hide a real content
-   change that coincides with a renumber) with characterization tests first, not
-   rushed on a Saturday-evening hunch. The DOCX `isList` flag could help for
-   DOCX, but PDF needs a text-level leading-ordinal detector. High-value POLISH
-   for a dedicated cycle.
+8. **List RENUMBERING produces spurious (often CRITICAL) MODIFYs. — DONE
+   (FIXED 2026-06-06 by `isListOrdinalOnlyChange` in `suppress.ts`).** The
+   fix strips the leading list ordinal from both aligned blocks (matching "N. ",
+   "N) ", "L.N ", "(N) " patterns), then compares the non-ordinal content via
+   `aggressiveNormalize`. If ordinals differ but content is identical, the MODIFY
+   is suppressed. Safe-by-design: any real content change prevents suppression.
+   20 unit tests + 2 integration tests added; the prior KNOWN LIMITATION
+   characterization test updated to assert the fixed behavior. 473/473 tests
+   green. The N3/N4/N6/N8 DOCX `isList`-flag note is moot — the text-level
+   ordinal detector handles the PDF case which was the real problem.
 
 9. **Sub-CLINs (letter-suffix line items) not detected. — OPEN (gated;
    low-severity anchor-coverage gap; found 2026-05-31).** `detectClins` catches

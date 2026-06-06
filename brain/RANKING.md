@@ -117,19 +117,22 @@ it explicitly rather than default to "highest EV ships first."
 
 ---
 
-The ranking below is the **provisional** ranking inherited from the
-prior research the human passed in. It will be re-ordered as deep
-evaluations land.
+The ranking below was provisional at bootstrap. **Deep evaluations are now
+landing (2026-06-06) and the ranking is being revised with cited evidence.**
 
-1. **JetBrains / Salesforce Apex plugin** — top, provisional.
-   Reasoning: passes every hard filter (distribution via JetBrains
-   Marketplace, self-serve monetization through JetBrains' own
-   billing, build feasibility for a single autonomous agent —
-   JetBrains plugin SDK is well-documented, scope is narrow). The
-   Apex developer niche has documented pain and budget. Evidence
-   tier: Proven; comparable paid IntelliJ plugins for niche
-   languages exist and earn real revenue. Pending deep evaluation
-   to validate the specific Apex sub-problem to solve.
+1. **JetBrains / Salesforce Apex plugin** — ~~top, provisional~~ **EVALUATE-TO-REJECT (2026-06-06).**
+   Deep evaluation complete: `brain/RESEARCH/2026-05-27-jetbrains-apex-plugin.md`.
+   Full score: **508/1000 (5.08)** — below the 6.0 auto-proceed threshold.
+   Proposal #2 posted to `human/APPROVALS.md` with recommendation to REJECT.
+   Reasons: (a) TAM too small (~5,000–7,000 JetBrains Apex users; ceiling ~$100K ARR net);
+   (b) Build requires Kotlin — new stack for a TypeScript factory, high quality risk;
+   (c) ApexGuru via MCP (2026-04) is already closing the gap;
+   (d) VS Code is winning (75.1% share vs JetBrains 7.1% and declining);
+   (e) Evidence tier downgraded to PLAUSIBLE (no Proven comparable revenue found).
+   Auto-proceeds to REJECT 2026-06-13 if no human response.
+   **The SEQUENCING NOTE (above) was correct in hindsight** — the risk on rank-1
+   was real and materialized exactly as flagged: agent Apex-domain fluency +
+   unknown Kotlin build feasibility were the deciding factors against it.
 
 2. **FAR/DFARS clause-currency MCP server** — second, provisional.
    Reasoning: distribution via the new MCP server registry is real

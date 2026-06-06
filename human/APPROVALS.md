@@ -36,6 +36,47 @@ To respond, edit the proposal's "**Status:**" line:
 
 ## Open proposals
 
+### Proposal #2 — JetBrains Apex plugin: PIVOT recommended (factory recommendation: REJECT)
+
+- **Posted:** 2026-06-06
+- **Auto-proceed window:** 7 days — defaults to **REJECT** if no response by 2026-06-13
+- **Status:** _awaiting human response_
+- **Source:** Deep evaluation completed 2026-06-06. Full research at `brain/RESEARCH/2026-05-27-jetbrains-apex-plugin.md`
+- **Factory recommendation: REJECT this candidate and remove from the active build queue.** Evidence below.
+
+**Evidence summary:**
+
+The deep evaluation (web-cited research, 2026-06-06) revealed the JetBrains Apex plugin is too small and too risky for the factory:
+
+1. **TAM too small:** ~5,000–7,000 JetBrains Apex developers globally. Revenue ceiling ~$100K ARR net even at strong conversion — below the factory's ambition threshold.
+2. **Build stack mismatch:** IntelliJ Platform plugins require **Kotlin or Java** (not TypeScript/Python). This is a genuine feasibility obstacle for an autonomous TypeScript agent. Quality risk is high.
+3. **VS Code is winning:** VS Code has 75.1% of the Salesforce developer market; JetBrains has 7.1% and is not growing. Salesforce invests all first-party tooling (ApexGuru, Code Analyzer) in VS Code.
+4. **ApexGuru via MCP (April 2026) is already closing the gap** via the Salesforce DX MCP Server — the defensibility window is narrowing.
+5. **Evidence tier: PLAUSIBLE** (downgraded from provisional "Proven" — no Proven comparable revenue found in the JetBrains Apex niche).
+
+**Full scoring (SCORING_MODEL):**
+
+| Factor | Weight | Score | Weighted |
+|---|---:|---:|---:|
+| Revenue ceiling | 18 | 4 | 72 |
+| Probability | 14 | 4 | 56 |
+| Distribution | 14 | 7 | 98 |
+| Maintenance fit | 10 | 5 | 50 |
+| Build feasibility | 10 | 4 | 40 |
+| Self-serve monetization | 8 | 9 | 72 |
+| Defensibility | 8 | 4 | 32 |
+| Evidence quality | 10 | 4 | 40 |
+| Strategic fit | 8 | 6 | 48 |
+| **Total** | **100** | | **508/1000 (5.08)** |
+
+**Your options:**
+- `Status: APPROVED on YYYY-MM-DD by human — REJECT` — factory removes from build queue, continues to next candidate (D2 clauseguard or D5/D6 VS Code extensions, all TypeScript-buildable).
+- `Status: REDIRECT on YYYY-MM-DD by human — proceed anyway, accept the Kotlin risk` — factory will build the governor-limit static analyzer MVP per the research.
+
+**Auto-proceed default:** REJECT (factory's recommendation). If no response by 2026-06-13, the factory removes this candidate from the active queue and proceeds to the next candidate.
+
+---
+
 ### Proposal #1 — BidDiff positioning decision
 
 - **Posted:** 2026-05-27
