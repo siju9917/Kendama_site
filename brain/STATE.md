@@ -90,12 +90,14 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **567/567 tests** (was 490 at session start; current context window brought 504→551: +14 N-queue polish +
+- **Build green:** **635/635 tests** (BidDiff 567/567 + openapi-lens 68/68).
+  BidDiff: was 490 at session start; current context window brought 504→567 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
-  1 SET_ASIDE false-positive regression + 1 Domain-Expert critic anchor gate +
-  1 obs#7 USD money characterization + 1 sign-before-dollar false-negative fix +
-  1 classify precedence pin + 3 bare-paren page-limit fix),
-  lint + typecheck clean; full CI gate verified green end-to-end.
+  1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
+  1 sign-before-dollar + 1 classify precedence pin + 3 bare-paren page-limit +
+  46 DiffView component + 12 SamAttachments + 4 N-A21 filter counter).
+  OpenAPI-lens: Phase 0 engine, 68 new tests (parser 17 + diff 20 + classify 22 + integration 9).
+  All typecheck clean; full CI gate verified green end-to-end.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`
   red-teams every stop against the real clock IN THE HUMAN'S TIMEZONE
@@ -172,37 +174,34 @@ ship-related needs the spend cap.
   Actions, and rule/cadence consistency are now auto-checked at
   session start by `node ops/checks/run-all.mjs`.
 
-## Queue snapshot (top of stack first) — refreshed 2026-06-06
+## Queue snapshot (top of stack first) — refreshed 2026-06-06 (updated post-D5-Phase-0)
 
 Priority order is `ops/loop.md`.
 
-**Research in progress (background agent running):**
-- VS Code Breaking-Change Lens deep eval (agent a748776ace89f2877)
-  — will notify on completion.
-
-**Research complete — action needed:**
+**Research complete / proposals pending auto-proceed (2026-06-13):**
 1. **P1** JetBrains Apex: EVALUATE-TO-REJECT proposal in APPROVALS.md #2
    (auto-proceeds REJECT 2026-06-13 if no human response).
-2. **D2 clauseguard**: CONDITIONAL DEFER (556/1000); pain density test
+2. **Proposals #3 and #4** (VS Code Breaking-Change Lens + Terraform Plan Classifier):
+   both auto-proceed PROCEED on 2026-06-13 per factory recommendation.
+3. **D2 clauseguard**: CONDITIONAL DEFER (556/1000); pain density test
    deferred until one marketplace product ships.
 
 **Human-gated:**
-3. **P1** BidDiff Compliance P1: privacy policy server-claim overstating
+4. **P1** BidDiff Compliance P1: privacy policy server-claim overstating
    v1 on-device reality → scope copy to on-device-only (NEED #7, option A).
-4. **P1** Store listing update: apply the REPOSITION copy changes logged
+5. **P1** Store listing update: apply the REPOSITION copy changes logged
    in NEED #3 (done 2026-06-06) to the actual Chrome Web Store listing —
    human must submit the listing update.
 
 **Browser-gated:**
-5. **P2** BidDiff a11y contrast (rendered-component, dark mode) + SAM
+6. **P2** BidDiff a11y contrast (rendered-component, dark mode) + SAM
    e2e — need Chromium.
 
 **Unblocked (zero-cost):**
-6. ~~**P2** Vite/Vitest toolchain bump (Vite 5→6/7 + Vitest 2→3)~~ — **DONE 2026-06-06.**
-   Landed Vite 6.4.3 + Vitest 4.1.8. 551 tests green; critical vuln (GHSA-5xrq-8626-4rwp) resolved.
-7. **P2** PROGRESS obs #7 (USD/spelled-out money) and obs #4
-   (A–K subsection headings) — low severity; characterize first.
-8. Recurring: re-critique cadence, "nothing is ever done" reviews,
+7. ~~**P2** Vite/Vitest toolchain bump~~ — **DONE 2026-06-06.** Vite 6.4.3 + Vitest 4.1.8.
+8. ~~**D5 Phase 0 engine**~~ — **DONE 2026-06-06.** `products/openapi-lens/` — 68/68 tests.
+   VS Code extension scaffold (Phase 1) begins once Proposal #3 auto-proceeds 2026-06-13.
+9. Recurring: re-critique cadence, "nothing is ever done" reviews,
    ambient ideation, factory self-improvement, META audit.
 
 ## Open blockers
@@ -488,6 +487,18 @@ all green; check tests 16/16.
     disabled+Loading… per slot, cross-id isolation, runtime failure → empty, null response.
     551 → **563 tests** (74 files). Mocks chrome-rt.js dynamic import via vi.mock hoisting.
 
+### D5 Phase 0 (2026-06-06, this context window)
+
+32. **OpenAPI Breaking-Change Lens Phase 0 complete** (`products/openapi-lens/`):
+    Pure TypeScript engine, no VS Code dependencies. 68/68 tests:
+    - `parser.ts`: YAML/JSON/Swagger 2.0 parser, $ref resolution, path-level param merge (17 tests)
+    - `diff.ts`: endpoint add/remove, parameter add/remove/required/type/format/enum,
+      request body required, request schema required fields, response status add/remove,
+      response schema required fields + type + nullable (20 tests)
+    - `classify.ts`: 21 BREAKING/INFO rules mapping raw changes to human-readable messages (22 tests)
+    - `engine.test.ts`: integration pipeline parse→diff→classify (9 tests)
+    - Typecheck clean. PROGRESS.md, PORTFOLIO.md updated. NEED_FROM_HUMAN #10 already covers pub reg.
+
 ## Notes for the next session
 
 - Read this file in full; run `ops/checks/run-all.mjs` first; proceed
@@ -497,13 +508,12 @@ all green; check tests 16/16.
   This is the last ship blocker besides the store submission itself.
 - This session's work is on branch `claude/intelligent-faraday-FnmJn` per task
   instructions. Must be merged to `main` at session end per CLAUDE.md rule 6.
-- **VS Code Breaking-Change Lens evaluation** may complete during or after this
-  session. When it lands, read the file, update RANKING.md, and post to APPROVALS.md
-  if warranted.
-- **BidDiff bug-hunt lane is SATURATED** (551 tests, every core fn + DiffView component tested).
-  POLISH queue (N14/N17/N18/N-A10 + DiffView coverage all DONE this context window). Next session should focus on:
-  privacy copy fix (when human responds), store submission prep, and new product
-  deep-evaluation (D5/D6 VS Code extension scaffolding) when approved.
+- **BidDiff bug-hunt lane is SATURATED** (567 tests, every core fn + all sidepanel
+  components tested). All unblocked POLISH done. Next session: privacy copy fix
+  (NEED #7, when human responds), store submission prep, and D5 VS Code extension
+  Phase 1 scaffold (once Proposal #3 auto-proceeds 2026-06-13).
+- **D5 Phase 0 engine is in `products/openapi-lens/`** — 68 tests, all passing.
+  Phase 1 (VS Code extension scaffold) starts when Proposal #3 auto-proceeds.
 - Spend cap: plan-included web tools (sub-agents, search) are FREE; $0 committed
   external spend. No cap blocker.
 
