@@ -1087,3 +1087,85 @@ describe("classify — additionalProperties direction-aware (5.7.5 round 16)", (
     expect(result[0]?.message).not.toMatch(/^Change detected at/);
   });
 });
+
+describe("classify — pattern constraint null-transitions (5.7.5 round 17)", () => {
+  // REQUEST-SIDE: pattern removed (after=null) → INFO (constraint relaxed, more permissive)
+  it("request-schema-property-constraint-changed pattern removed (after=null) is INFO", () => {
+    const result = classifyChanges([raw("request-schema-property-constraint-changed", "^[A-Z]{2}$", null, "requestBody.content.schema.properties.code.pattern")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/removed|no longer/i);
+    expect(result[0]?.message).toMatch(/non-breaking/i);
+  });
+
+  it("request-schema-property-constraint-changed pattern added (before=null) is BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-property-constraint-changed", null, "^[A-Z]{2}$", "requestBody.content.schema.properties.code.pattern")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/added|require/i);
+  });
+
+  it("parameter-constraint-changed pattern removed (after=null) is INFO", () => {
+    const result = classifyChanges([raw("parameter-constraint-changed", "^\\d{5}$", null, "parameter(query:zip).schema.pattern")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/removed|no longer/i);
+    expect(result[0]?.message).toMatch(/non-breaking/i);
+  });
+
+  it("parameter-constraint-changed pattern added (before=null) is BREAKING", () => {
+    const result = classifyChanges([raw("parameter-constraint-changed", null, "^\\d{5}$", "parameter(query:zip).schema.pattern")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/added|require/i);
+  });
+
+  it("request-schema-items-constraint-changed pattern removed (after=null) is INFO", () => {
+    const result = classifyChanges([raw("request-schema-items-constraint-changed", "^[a-z]+$", null, "requestBody.content.schema.items.pattern")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/removed|no longer/i);
+    expect(result[0]?.message).toMatch(/non-breaking/i);
+  });
+
+  it("request-schema-items-constraint-changed pattern added (before=null) is BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-items-constraint-changed", null, "^[a-z]+$", "requestBody.content.schema.items.pattern")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/added|must|match/i);
+  });
+
+  it("parameter-items-constraint-changed pattern removed (after=null) is INFO", () => {
+    const result = classifyChanges([raw("parameter-items-constraint-changed", "^\\w+$", null, "parameter(query:tags).items.pattern")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/removed|no longer/i);
+    expect(result[0]?.message).toMatch(/non-breaking/i);
+  });
+
+  it("parameter-items-constraint-changed pattern added (before=null) is BREAKING", () => {
+    const result = classifyChanges([raw("parameter-items-constraint-changed", null, "^\\w+$", "parameter(query:tags).items.pattern")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/added|must|match/i);
+  });
+
+  // RESPONSE-SIDE: pattern newly added (before=null) → INFO (server narrows own guarantee, non-breaking for clients)
+  it("response-schema-property-constraint-changed pattern added (before=null) is INFO", () => {
+    const result = classifyChanges([raw("response-schema-property-constraint-changed", null, "^[A-Z]{2}$", "responses[200].content.schema.properties.code.pattern")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/added|guarantee/i);
+    expect(result[0]?.message).toMatch(/non-breaking/i);
+  });
+
+  it("response-schema-property-constraint-changed pattern removed (after=null) is BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-property-constraint-changed", "^[A-Z]{2}$", null, "responses[200].content.schema.properties.code.pattern")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/removed|may now return/i);
+  });
+
+  it("response-schema-items-constraint-changed pattern added (before=null) is INFO", () => {
+    const result = classifyChanges([raw("response-schema-items-constraint-changed", null, "^[a-z]+$", "responses[200].content.schema.items.pattern")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/added|guarantee/i);
+    expect(result[0]?.message).toMatch(/non-breaking/i);
+  });
+
+  it("response-schema-items-constraint-changed pattern removed (after=null) is BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-items-constraint-changed", "^[a-z]+$", null, "responses[200].content.schema.items.pattern")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/removed|may now return/i);
+  });
+});

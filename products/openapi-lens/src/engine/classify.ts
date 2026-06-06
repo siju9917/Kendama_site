@@ -396,7 +396,10 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const loc = String(c.location);
       const before = c.before as number | string | null;
       const after = c.after as number | string | null;
-      if (loc.endsWith(".pattern")) return "BREAKING";
+      if (loc.endsWith(".pattern")) {
+        if (after === null) return "INFO"; // pattern removed = constraint relaxed
+        return "BREAKING"; // pattern added or changed
+      }
       if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")) {
         if (after === null) return "INFO";
         if (before === null) return "BREAKING";
@@ -413,7 +416,9 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const loc = String(c.location);
       const constraintName = loc.split(".").pop() ?? loc;
       if (loc.endsWith(".pattern")) {
-        return `Request property pattern constraint changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients sending values matching the old pattern may fail validation.`;
+        if (c.after === null) return `Request property pattern constraint removed: ${c.location}. Pattern '${c.before}' no longer enforced; clients sending any value are now accepted (non-breaking).`;
+        if (c.before === null) return `Request property pattern constraint added: ${c.location}. Server now requires values to match pattern '${c.after}'; clients sending non-matching values will fail validation.`;
+        return `Request property pattern constraint changed: ${c.location} (${c.before} → ${c.after}). Clients sending values matching the old pattern may fail validation.`;
       }
       if (c.after === null) {
         return `Request property constraint removed: ${c.location}. The ${constraintName} restriction is no longer enforced (non-breaking for clients).`;
@@ -438,7 +443,10 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const loc = String(c.location);
       const before = c.before as number | string | null;
       const after = c.after as number | string | null;
-      if (loc.endsWith(".pattern")) return "BREAKING";
+      if (loc.endsWith(".pattern")) {
+        if (before === null) return "INFO"; // pattern newly added = server narrows guarantee (non-breaking for clients)
+        return "BREAKING"; // pattern removed or changed
+      }
       if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")) {
         if (after === null) return "BREAKING";
         if (before === null) return "INFO";
@@ -455,7 +463,9 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const loc = String(c.location);
       const constraintName = loc.split(".").pop() ?? loc;
       if (loc.endsWith(".pattern")) {
-        return `Response property pattern constraint changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Server may now return values not matching the old pattern; clients validating this pattern will break.`;
+        if (c.before === null) return `Response property pattern constraint added: ${c.location}. Server now guarantees values match pattern '${c.after}' (non-breaking for clients).`;
+        if (c.after === null) return `Response property pattern constraint removed: ${c.location}. Server may now return values not matching '${c.before}'; clients validating this pattern will break.`;
+        return `Response property pattern constraint changed: ${c.location} (${c.before} → ${c.after}). Server may now return values not matching the old pattern; clients validating this pattern will break.`;
       }
       if (c.after === null) {
         return `Response property constraint removed: ${c.location}. The ${constraintName} restriction is no longer enforced; server may now return values outside the former constraint. Clients relying on this constraint will break.`;
@@ -481,7 +491,10 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const loc = String(c.location);
       const before = c.before as number | string | null;
       const after = c.after as number | string | null;
-      if (loc.endsWith(".pattern")) return "BREAKING";
+      if (loc.endsWith(".pattern")) {
+        if (after === null) return "INFO"; // pattern removed = constraint relaxed
+        return "BREAKING"; // pattern added or changed
+      }
       if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")) {
         if (after === null) return "INFO";
         if (before === null) return "BREAKING";
@@ -498,7 +511,9 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const loc = String(c.location);
       const constraintName = loc.split(".").pop() ?? loc;
       if (loc.endsWith(".pattern")) {
-        return `Parameter pattern constraint changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients sending values matching the old pattern may fail validation.`;
+        if (c.after === null) return `Parameter pattern constraint removed: ${c.location}. Pattern '${c.before}' no longer enforced; clients sending any value are now accepted (non-breaking).`;
+        if (c.before === null) return `Parameter pattern constraint added: ${c.location}. Server now requires values to match pattern '${c.after}'; clients sending non-matching values will fail validation.`;
+        return `Parameter pattern constraint changed: ${c.location} (${c.before} → ${c.after}). Clients sending values matching the old pattern may fail validation.`;
       }
       if (c.after === null) {
         return `Parameter constraint removed: ${c.location}. The ${constraintName} restriction is no longer enforced (non-breaking for clients).`;
@@ -523,7 +538,10 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const loc = String(c.location);
       const before = c.before as number | string | null;
       const after = c.after as number | string | null;
-      if (loc.endsWith(".pattern")) return "BREAKING";
+      if (loc.endsWith(".pattern")) {
+        if (after === null) return "INFO"; // pattern removed = constraint relaxed
+        return "BREAKING"; // pattern added or changed
+      }
       if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")) {
         if (after === null) return "INFO";
         if (before === null) return "BREAKING";
@@ -540,7 +558,9 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const loc = String(c.location);
       const constraintName = loc.split(".").pop() ?? loc;
       if (loc.endsWith(".pattern")) {
-        return `Request array items pattern constraint changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients sending values matching the old pattern may fail validation.`;
+        if (c.after === null) return `Request array items pattern constraint removed: ${c.location}. Pattern '${c.before}' no longer enforced on array elements (non-breaking).`;
+        if (c.before === null) return `Request array items pattern constraint added: ${c.location}. Array elements must now match pattern '${c.after}'; clients sending non-matching elements will fail validation.`;
+        return `Request array items pattern constraint changed: ${c.location} (${c.before} → ${c.after}). Clients sending values matching the old pattern may fail validation.`;
       }
       if (c.after === null) {
         return `Request array items constraint removed: ${c.location}. The ${constraintName} restriction is no longer enforced (non-breaking for clients).`;
@@ -565,7 +585,10 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const loc = String(c.location);
       const before = c.before as number | string | null;
       const after = c.after as number | string | null;
-      if (loc.endsWith(".pattern")) return "BREAKING";
+      if (loc.endsWith(".pattern")) {
+        if (before === null) return "INFO"; // pattern newly added = server narrows guarantee (non-breaking for clients)
+        return "BREAKING"; // pattern removed or changed
+      }
       if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")) {
         if (after === null) return "BREAKING";
         if (before === null) return "INFO";
@@ -582,7 +605,9 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const loc = String(c.location);
       const constraintName = loc.split(".").pop() ?? loc;
       if (loc.endsWith(".pattern")) {
-        return `Response array items pattern constraint changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Server may now return element values not matching the old pattern; clients validating this pattern will break.`;
+        if (c.before === null) return `Response array items pattern constraint added: ${c.location}. Server now guarantees array elements match pattern '${c.after}' (non-breaking for clients).`;
+        if (c.after === null) return `Response array items pattern constraint removed: ${c.location}. Server may now return elements not matching '${c.before}'; clients validating this pattern will break.`;
+        return `Response array items pattern constraint changed: ${c.location} (${c.before} → ${c.after}). Server may now return element values not matching the old pattern; clients validating this pattern will break.`;
       }
       if (c.after === null) {
         return `Response array items constraint removed: ${c.location}. The ${constraintName} restriction is no longer enforced; server may now return element values outside the former constraint. Clients relying on this constraint will break.`;
@@ -877,7 +902,10 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const loc = String(c.location);
       const before = c.before as number | string | null;
       const after = c.after as number | string | null;
-      if (loc.endsWith(".pattern")) return "BREAKING";
+      if (loc.endsWith(".pattern")) {
+        if (after === null) return "INFO"; // pattern removed = constraint relaxed
+        return "BREAKING"; // pattern added or changed
+      }
       if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")) {
         if (after === null) return "INFO";
         if (before === null) return "BREAKING";
@@ -894,7 +922,9 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const loc = String(c.location);
       const constraintName = loc.split(".").pop() ?? loc;
       if (loc.endsWith(".pattern")) {
-        return `Parameter array element pattern changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients sending elements matching the old pattern may now fail validation.`;
+        if (c.after === null) return `Parameter array element pattern constraint removed: ${c.location}. Pattern '${c.before}' no longer enforced on array elements (non-breaking).`;
+        if (c.before === null) return `Parameter array element pattern constraint added: ${c.location}. Array elements must now match pattern '${c.after}'; clients sending non-matching elements will fail validation.`;
+        return `Parameter array element pattern changed: ${c.location} (${c.before} → ${c.after}). Clients sending elements matching the old pattern may now fail validation.`;
       }
       if (c.after === null) return `Parameter array element constraint removed: ${c.location}. The ${constraintName} restriction on array elements is no longer enforced.`;
       if (c.before === null) return `Parameter array element constraint added: ${c.location}. Elements must now satisfy ${constraintName} = ${c.after}.`;

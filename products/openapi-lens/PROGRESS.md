@@ -169,6 +169,22 @@ auto-proceeds (2026-06-13) or earlier if human approves.
     properties will get 400); `false→true` = INFO; response side: both directions = INFO (annotation
     only, server's guarantee narrows or relaxes)
   +14 tests (4 TYPE_STUBS + 6 classify unit + 4 adversarial integration). **442/442 tests.**
+- [x] **5.7.5 round 17 — pattern constraint null-transitions incorrectly classified** — six classify
+  rules contained `if (loc.endsWith(".pattern")) return "BREAKING"` unconditionally, ignoring whether
+  the pattern was being ADDED (before=null) or REMOVED (after=null). Bug class: same null-transition
+  direction blindness fixed in rounds 13-15 for format/enum/type, now at pattern constraint sites.
+  Correct semantics:
+  - Request-side (property, parameter, items, parameter-items): pattern REMOVED (`after=null`) = INFO
+    (constraint relaxed, clients sending previously-valid values still pass); pattern ADDED or CHANGED = BREAKING.
+  - Response-side (property, items): pattern NEWLY ADDED (`before=null`) = INFO (server narrows own
+    guarantee, clients benefit); pattern REMOVED or CHANGED = BREAKING (server may now return values
+    not matching old pattern; clients validating pattern will break).
+  Fixed 6 sites in classify.ts: `request-schema-property-constraint-changed`,
+  `response-schema-property-constraint-changed`, `parameter-constraint-changed`,
+  `request-schema-items-constraint-changed`, `response-schema-items-constraint-changed`,
+  `parameter-items-constraint-changed`. Also improved message functions at all 6 sites to emit
+  direction-aware messages (removed/added/changed) instead of a single generic "changed" message.
+  +16 tests (12 classify unit + 4 adversarial integration). **458/458 tests.**
 - [x] **5.7.5 round 15 — request-side constraint removal classified as BREAKING instead of INFO** —
   systematic audit of all request-side classify rules found 11 cases where a constraint being REMOVED
   from the server spec (before=value, after=null/undefined) was incorrectly classified as BREAKING.

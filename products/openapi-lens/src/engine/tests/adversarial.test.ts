@@ -3393,3 +3393,199 @@ paths:
     expect(apChange?.message).not.toMatch(/^Change detected at/);
   });
 });
+
+describe("pattern constraint null-transitions (5.7.5 round 17)", () => {
+  it("removing a request property pattern is INFO (constraint relaxed)", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  pattern: "^[A-Z]{2}$"
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const patternChange = changes.find((c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".pattern"));
+    expect(patternChange).toBeDefined();
+    expect(patternChange?.severity).toBe("INFO");
+    expect(patternChange?.message).toMatch(/removed|no longer/i);
+    expect(patternChange?.message).toMatch(/non-breaking/i);
+  });
+
+  it("adding a request property pattern is BREAKING (new constraint)", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  pattern: "^[A-Z]{2}$"
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const patternChange = changes.find((c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".pattern"));
+    expect(patternChange).toBeDefined();
+    expect(patternChange?.severity).toBe("BREAKING");
+    expect(patternChange?.message).toMatch(/added|require/i);
+  });
+
+  it("adding a response property pattern is INFO (server narrows own guarantee)", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    pattern: "^[A-Z]{2}$"
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const patternChange = changes.find((c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".pattern"));
+    expect(patternChange).toBeDefined();
+    expect(patternChange?.severity).toBe("INFO");
+    expect(patternChange?.message).toMatch(/added|guarantee/i);
+    expect(patternChange?.message).toMatch(/non-breaking/i);
+  });
+
+  it("removing a response property pattern is BREAKING (server may now return un-patterned values)", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    pattern: "^[A-Z]{2}$"
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const patternChange = changes.find((c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".pattern"));
+    expect(patternChange).toBeDefined();
+    expect(patternChange?.severity).toBe("BREAKING");
+    expect(patternChange?.message).toMatch(/removed|may now return/i);
+  });
+});
