@@ -46,9 +46,18 @@ export function classifyChange(c: TfChange): TfClassification {
       );
     } else {
       severity = "CRITICAL";
-      const directionNote = iamDirection === "widening" ? " (access appears to be WIDENED)" : "";
+      let directionNote: string;
+      if (iamDirection === "widening") {
+        directionNote = " (access appears to be WIDENED)";
+      } else if (iamDirection === "narrowing") {
+        // Rule 3/4 already set CRITICAL (replacement or deletion); narrowing direction
+        // doesn't override that — but we shouldn't claim access is being widened either.
+        directionNote = " (policy appears more restrictive, but replacement or deletion makes this CRITICAL regardless)";
+      } else {
+        directionNote = " (direction unclear — review manually)";
+      }
       reasons.push(
-        `${c.address} is an IAM or security resource (${c.type}) — changes may widen access permissions${directionNote}.`,
+        `${c.address} is an IAM or security resource (${c.type}) — IAM change is CRITICAL${directionNote}.`,
       );
     }
   }
@@ -156,29 +165,47 @@ function extractIamStatements(state: Record<string, unknown>): unknown[] | null 
   return null;
 }
 
-/** Counts total CIDR entries across all ingress/egress rule arrays. Returns null if not present. */
+/**
+ * Counts total CIDR entries to determine widening/narrowing direction.
+ * Counts top-level cidr_blocks/ipv6_cidr_blocks (aws_security_group_rule) OR
+ * nested cidr_blocks inside ingress/egress blocks (aws_security_group) — not both,
+ * to prevent double-counting when a resource schema happens to have both.
+ * Returns null when no CIDR data is present.
+ */
 function extractCidrCount(state: Record<string, unknown>): number | null {
-  let total = 0;
-  let found = false;
-  for (const field of ["cidr_blocks", "ipv6_cidr_blocks", "ingress", "egress"]) {
+  // Try top-level CIDR arrays first (aws_security_group_rule style).
+  // An empty array counts as "field is present" (0 CIDRs) so the before/after delta is meaningful.
+  let topTotal = 0;
+  let topFound = false;
+  for (const field of ["cidr_blocks", "ipv6_cidr_blocks"]) {
     const val = state[field];
     if (Array.isArray(val)) {
-      // Each element may be a CIDR string or an ingress/egress rule object with cidr_blocks.
-      for (const item of val) {
-        if (typeof item === "string") {
-          total++;
-          found = true;
-        } else if (item && typeof item === "object") {
-          const cidrArr = (item as Record<string, unknown>)["cidr_blocks"];
-          if (Array.isArray(cidrArr)) {
-            total += cidrArr.length;
-            found = true;
+      topTotal += val.filter((x) => typeof x === "string").length;
+      topFound = true;
+    }
+  }
+  if (topFound) return topTotal;
+
+  // Fall back to nested cidr_blocks inside ingress/egress blocks (aws_security_group style).
+  let nestedTotal = 0;
+  let nestedFound = false;
+  for (const field of ["ingress", "egress"]) {
+    const val = state[field];
+    if (Array.isArray(val)) {
+      for (const rule of val) {
+        if (rule && typeof rule === "object") {
+          for (const cidrField of ["cidr_blocks", "ipv6_cidr_blocks"]) {
+            const cidrArr = (rule as Record<string, unknown>)[cidrField];
+            if (Array.isArray(cidrArr)) {
+              nestedTotal += cidrArr.filter((x) => typeof x === "string").length;
+              nestedFound = true;
+            }
           }
         }
       }
     }
   }
-  return found ? total : null;
+  return nestedFound ? nestedTotal : null;
 }
 
 /** Returns true iff all actions are 'no-op' (resource will not change). */

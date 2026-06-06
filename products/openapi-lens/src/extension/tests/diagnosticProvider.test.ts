@@ -173,6 +173,24 @@ describe("findLineForLocation", () => {
     // All segments are numeric after filtering — nothing to search, returns 0
     expect(findLineForLocation(doc, "[0][1][2]")).toBe(0);
   });
+
+  it("(N3-F2-7) returns 0 for empty location string", () => {
+    const doc = makeMockDocument(["openapi: 3.0.0", "paths:"]);
+    // Empty string → no segments → loop doesn't run → lastFoundLine stays 0.
+    expect(findLineForLocation(doc, "")).toBe(0);
+  });
+
+  it("(N3-F2-6) returns last found line when segment is beyond 300-line window (no fallback)", () => {
+    // Build a document with 'info' at line 0 and 'title' at line 350 (beyond the 300-line window).
+    const lines: string[] = ["info:"];
+    for (let i = 1; i <= 349; i++) lines.push(`  line${i}: value`);
+    lines.push("  title: My API"); // line 350
+    const doc = makeMockDocument(lines);
+    // With no full-document fallback, 'title' (beyond the 300-line window starting at line 1)
+    // is not found. The function returns the last successfully-found line: 'info' at line 0.
+    const result = findLineForLocation(doc, "info.title");
+    expect(result).toBe(0); // 'title' not found within window; 'info' at line 0 is the last found
+  });
 });
 
 describe("buildDiagnostics", () => {

@@ -376,5 +376,42 @@ describe("classifyChange — Rule 5 (T1 direction-aware IAM)", () => {
     // Rule 3 sets severity=CRITICAL before Rule 5 runs; T1 narrowing doesn't override that.
     expect(c.severity).toBe("CRITICAL");
     expect(c.reasons.some((r) => r.includes("REPLACED"))).toBe(true);
+    // F3-11: Rule 5 reason must NOT claim access is being widened (the direction is narrowing).
+    const rule5Reason = c.reasons.find((r) => r.includes("IAM change is CRITICAL"));
+    expect(rule5Reason).toBeDefined();
+    expect(rule5Reason).not.toContain("WIDENED");
+    expect(rule5Reason).toContain("restrictive");
+  });
+});
+
+// ─── P2 coverage: CIDR analysis + ipv6 + double-counting guard ───────────────
+
+describe("analyzeIamDirection — P2 coverage", () => {
+  it("returns 'widening' when ipv6_cidr_blocks is added", () => {
+    const before = { ipv6_cidr_blocks: [] as string[] };
+    const after  = { ipv6_cidr_blocks: ["::/0"] };
+    expect(analyzeIamDirection(before, after)).toBe("widening");
+  });
+
+  it("returns 'narrowing' when ipv6_cidr_blocks is removed", () => {
+    const before = { ipv6_cidr_blocks: ["::/0", "2001:db8::/32"] };
+    const after  = { ipv6_cidr_blocks: ["::/0"] };
+    expect(analyzeIamDirection(before, after)).toBe("narrowing");
+  });
+
+  it("does not double-count when both cidr_blocks and ingress.cidr_blocks are present", () => {
+    // When top-level cidr_blocks is present, ingress block CIDRs are NOT counted.
+    // This prevents inflation that would skew the delta comparison.
+    const before = { cidr_blocks: ["10.0.0.0/8"], ingress: [{ cidr_blocks: ["10.0.0.0/8"] }] };
+    const after  = { cidr_blocks: ["10.0.0.0/8", "192.168.0.0/16"], ingress: [{ cidr_blocks: ["10.0.0.0/8"] }] };
+    // Top-level counts: before=1, after=2 → widening (ingress NOT double-counted).
+    expect(analyzeIamDirection(before, after)).toBe("widening");
+  });
+
+  it("counts ingress nested CIDRs when no top-level cidr_blocks field exists", () => {
+    const before = { ingress: [{ cidr_blocks: ["10.0.0.0/8"] }, { ipv6_cidr_blocks: ["::/0"] }] };
+    const after  = { ingress: [{ cidr_blocks: ["10.0.0.0/8"] }] };
+    // Nested: before has 2 CIDRs (1 IPv4 + 1 IPv6), after has 1 → narrowing.
+    expect(analyzeIamDirection(before, after)).toBe("narrowing");
   });
 });
