@@ -1274,6 +1274,173 @@ paths:
   });
 });
 
+// ─── Parameter items constraints + response array object properties ──────────
+
+describe("parameter items constraints and response array of objects", () => {
+  it("query parameter array element minLength tightened is BREAKING", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - name: codes
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              minLength: 3
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - name: codes
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              minLength: 8
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const constraint = changes.find((c) => c.type === "parameter-items-constraint-changed");
+    expect(constraint).toBeDefined();
+    expect(constraint?.severity).toBe("BREAKING");
+    expect(constraint?.before).toBe(3);
+    expect(constraint?.after).toBe(8);
+  });
+
+  it("response array-of-objects property type change is BREAKING", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    count:
+                      type: integer
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    count:
+                      type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) =>
+      c.type === "response-schema-property-type-changed" &&
+      String(c.location).includes("count"),
+    );
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+    expect(typeChange?.before).toBe("integer");
+    expect(typeChange?.after).toBe("string");
+  });
+
+  it("response array-of-objects required field removed is BREAKING", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id, name]
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id]
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const reqRemoved = changes.find((c) =>
+      c.type === "response-schema-field-required-removed" &&
+      String(c.location).includes("name"),
+    );
+    expect(reqRemoved).toBeDefined();
+    expect(reqRemoved?.severity).toBe("BREAKING");
+  });
+});
+
 // ─── Top-level body schema format + enum ─────────────────────────────────────
 
 describe("top-level body schema format and enum diffing — integration", () => {

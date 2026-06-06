@@ -97,6 +97,14 @@ function diffParameters(
       if (bNull !== cNull) {
         changes.push({ type: "parameter-items-nullable-changed", path, method, location: `${paramItemsLoc}.nullable`, before: bNull, after: cNull });
       }
+      const paramItemsConstraints = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems"] as const;
+      for (const cf of paramItemsConstraints) {
+        const bVal = bItems?.[cf] ?? null;
+        const cVal = cItems?.[cf] ?? null;
+        if (bVal !== cVal) {
+          changes.push({ type: "parameter-items-constraint-changed", path, method, location: `${paramItemsLoc}.${cf}`, before: bVal, after: cVal });
+        }
+      }
     }
   }
 
@@ -394,6 +402,11 @@ function diffSchemaItems(
         after: cVal,
       });
     }
+  }
+  // Recurse into items object properties (e.g. array<{id: string, name: string}>).
+  if (bItems?.properties || cItems?.properties || bItems?.required || cItems?.required) {
+    diffSchemaRequiredFields(path, method, `${location}.items`, bItems ?? null, cItems ?? null, isRequest, changes);
+    diffSchemaProperties(path, method, `${location}.items`, bItems ?? null, cItems ?? null, isRequest, changes, 0);
   }
 }
 

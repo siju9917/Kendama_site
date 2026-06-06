@@ -714,6 +714,43 @@ const CLASSIFY_RULES: ClassifyRule[] = [
         ? "INFO" : null,
     message: (c) => `Parameter array element became nullable: ${c.location}. Clients may now send null elements.`,
   },
+  {
+    matches: (c) => {
+      if (c.type !== "parameter-items-constraint-changed") return null;
+      const loc = String(c.location);
+      const before = c.before as number | string | null;
+      const after = c.after as number | string | null;
+      if (loc.endsWith(".pattern")) return "BREAKING";
+      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")) {
+        if (after === null) return "INFO";
+        if (before === null) return "BREAKING";
+        return typeof after === "number" && typeof before === "number" && after > before ? "BREAKING" : "INFO";
+      }
+      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems")) {
+        if (after === null) return "INFO";
+        if (before === null) return "BREAKING";
+        return typeof after === "number" && typeof before === "number" && after < before ? "BREAKING" : "INFO";
+      }
+      return "INFO";
+    },
+    message: (c) => {
+      const loc = String(c.location);
+      const constraintName = loc.split(".").pop() ?? loc;
+      if (loc.endsWith(".pattern")) {
+        return `Parameter array element pattern changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients sending elements matching the old pattern may now fail validation.`;
+      }
+      if (c.after === null) return `Parameter array element constraint removed: ${c.location}. The ${constraintName} restriction on array elements is no longer enforced.`;
+      if (c.before === null) return `Parameter array element constraint added: ${c.location}. Elements must now satisfy ${constraintName} = ${c.after}.`;
+      const bNum = c.before as number;
+      const aNum = c.after as number;
+      const tightened =
+        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")
+          ? aNum > bNum : aNum < bNum;
+      return tightened
+        ? `Parameter array element constraint tightened: ${c.location} (${c.before} → ${c.after}). Clients sending elements that were previously valid may now fail validation.`
+        : `Parameter array element constraint loosened: ${c.location} (${c.before} → ${c.after}). More element values are now accepted.`;
+    },
+  },
 
   // ─── Top-level body schema format ─────────────────────────────────────────
   {

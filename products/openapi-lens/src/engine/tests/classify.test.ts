@@ -572,6 +572,23 @@ describe("classifyChanges — classification rules", () => {
     expect(result[0]?.severity).toBe("INFO");
   });
 
+  it("classifies parameter-items-constraint-changed minLength increase as BREAKING", () => {
+    const result = classifyChanges([raw("parameter-items-constraint-changed", 3, 10, "parameter(query:ids).schema.items.minLength")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/tightened/i);
+  });
+
+  it("classifies parameter-items-constraint-changed pattern change as BREAKING", () => {
+    const result = classifyChanges([raw("parameter-items-constraint-changed", "^[a-z]+$", "^[A-Z]+$", "parameter(query:codes).schema.items.pattern")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/pattern/i);
+  });
+
+  it("classifies parameter-items-constraint-changed minLength decrease as INFO", () => {
+    const result = classifyChanges([raw("parameter-items-constraint-changed", 10, 3, "parameter(query:ids).schema.items.minLength")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
   // ─── Top-level body schema format ─────────────────────────────────────────
   it("classifies request-schema-format-changed as BREAKING", () => {
     const result = classifyChanges([raw("request-schema-format-changed", "date", "date-time", "requestBody.content.schema.format")]);
@@ -698,6 +715,7 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "parameter-items-format-changed":               ["date", "date-time"],
     "parameter-items-enum-changed":                 [["a", "b"], ["a"]],
     "parameter-items-nullable-changed":             [true, false],
+    "parameter-items-constraint-changed":           [3, 10],
   };
 
   it.each(Object.keys(TYPE_STUBS) as OapiChangeType[])(

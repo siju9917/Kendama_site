@@ -544,4 +544,38 @@ components:
     const schema = spec.operations[0]?.responses["200"]?.schema;
     expect(schema?.properties?.["id"]?.type).toBe("integer");
   });
+
+  it("parses items.properties for array-of-objects schemas", () => {
+    const spec = parseOapiSpec(`
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id]
+                  properties:
+                    id:
+                      type: string
+                    count:
+                      type: integer
+components:
+  schemas: {}
+`);
+    const schema = spec.operations[0]?.responses["200"]?.schema;
+    expect(schema?.type).toBe("array");
+    expect(schema?.items?.type).toBe("object");
+    expect(schema?.items?.properties?.["id"]?.type).toBe("string");
+    expect(schema?.items?.properties?.["count"]?.type).toBe("integer");
+    expect(schema?.items?.required).toContain("id");
+  });
 });
