@@ -1376,3 +1376,82 @@ describe("enum direction — cross-level consistency", () => {
     expect(result[0]?.message).not.toMatch(/^Change detected at/);
   });
 });
+
+// ─── Cross-level constraint direction consistency guard ────────────────────────
+// Verifies that numeric/pattern constraint polarity is correct and consistent
+// across all nesting levels (property, items) and locations (request body,
+// response body, parameters).
+//
+// Direction semantics:
+//   Request (tightening constraint = more restrictive for client → BREAKING):
+//     min-sense (minLength, minimum, …): increased = BREAKING; decreased = INFO
+//     max-sense (maxLength, maximum, …): decreased = BREAKING; increased = INFO
+//     pattern: added or changed = BREAKING; removed = INFO
+//   Response (loosening constraint = weaker guarantee → BREAKING):
+//     min-sense: decreased = BREAKING; increased = INFO
+//     max-sense: increased = BREAKING; decreased = INFO
+//     pattern: removed or changed = BREAKING; added = INFO
+//   Parameter (always request-side, same semantics as request):
+//     min-sense: increased = BREAKING; decreased = INFO
+//     max-sense: decreased = BREAKING; increased = INFO
+//     pattern: added/changed = BREAKING; removed = INFO
+
+describe("constraint direction — cross-level consistency", () => {
+  type ConstraintCase = {
+    type: OapiChangeType;
+    before: unknown;
+    after: unknown;
+    location: string;
+    expected: "BREAKING" | "INFO";
+    label: string;
+  };
+
+  const CONSTRAINT_CASES: ConstraintCase[] = [
+    // ── Request property: tightening = BREAKING ────────────────────────────────
+    { type: "request-schema-property-constraint-changed", before: 5,  after: 10, location: "req.prop.minLength",  expected: "BREAKING", label: "request property minLength increased" },
+    { type: "request-schema-property-constraint-changed", before: 100, after: 50, location: "req.prop.maxLength", expected: "BREAKING", label: "request property maxLength decreased" },
+    { type: "request-schema-property-constraint-changed", before: null, after: "^[a-z]+$", location: "req.prop.pattern", expected: "BREAKING", label: "request property pattern added" },
+    // ── Request property: loosening = INFO ────────────────────────────────────
+    { type: "request-schema-property-constraint-changed", before: 10,  after: 5,  location: "req.prop.minLength",  expected: "INFO", label: "request property minLength decreased" },
+    { type: "request-schema-property-constraint-changed", before: 50, after: 100, location: "req.prop.maxLength",  expected: "INFO", label: "request property maxLength increased" },
+    { type: "request-schema-property-constraint-changed", before: "^[a-z]+$", after: null, location: "req.prop.pattern", expected: "INFO", label: "request property pattern removed" },
+    // ── Request items: tightening = BREAKING ──────────────────────────────────
+    { type: "request-schema-items-constraint-changed", before: 5,  after: 10, location: "req.items.minLength",  expected: "BREAKING", label: "request items minLength increased" },
+    { type: "request-schema-items-constraint-changed", before: 100, after: 50, location: "req.items.maxLength", expected: "BREAKING", label: "request items maxLength decreased" },
+    // ── Request items: loosening = INFO ───────────────────────────────────────
+    { type: "request-schema-items-constraint-changed", before: 10,  after: 5,  location: "req.items.minLength",  expected: "INFO", label: "request items minLength decreased" },
+    { type: "request-schema-items-constraint-changed", before: 50, after: 100, location: "req.items.maxLength",  expected: "INFO", label: "request items maxLength increased" },
+    // ── Response property: loosening = BREAKING ───────────────────────────────
+    { type: "response-schema-property-constraint-changed", before: 10, after: 5,  location: "res.prop.minLength", expected: "BREAKING", label: "response property minLength decreased" },
+    { type: "response-schema-property-constraint-changed", before: 50, after: 100, location: "res.prop.maxLength", expected: "BREAKING", label: "response property maxLength increased" },
+    { type: "response-schema-property-constraint-changed", before: "^[a-z]+$", after: null, location: "res.prop.pattern", expected: "BREAKING", label: "response property pattern removed" },
+    // ── Response property: tightening = INFO ──────────────────────────────────
+    { type: "response-schema-property-constraint-changed", before: 5, after: 10, location: "res.prop.minLength",  expected: "INFO", label: "response property minLength increased" },
+    { type: "response-schema-property-constraint-changed", before: 100, after: 50, location: "res.prop.maxLength", expected: "INFO", label: "response property maxLength decreased" },
+    { type: "response-schema-property-constraint-changed", before: null, after: "^[a-z]+$", location: "res.prop.pattern", expected: "INFO", label: "response property pattern added" },
+    // ── Response items: loosening = BREAKING ──────────────────────────────────
+    { type: "response-schema-items-constraint-changed", before: 10, after: 5,  location: "res.items.minLength", expected: "BREAKING", label: "response items minLength decreased" },
+    { type: "response-schema-items-constraint-changed", before: 50, after: 100, location: "res.items.maxLength", expected: "BREAKING", label: "response items maxLength increased" },
+    // ── Response items: tightening = INFO ─────────────────────────────────────
+    { type: "response-schema-items-constraint-changed", before: 5, after: 10, location: "res.items.minLength",  expected: "INFO", label: "response items minLength increased" },
+    { type: "response-schema-items-constraint-changed", before: 100, after: 50, location: "res.items.maxLength", expected: "INFO", label: "response items maxLength decreased" },
+    // ── Parameter (request-side): tightening = BREAKING ───────────────────────
+    { type: "parameter-constraint-changed",      before: 5,  after: 10, location: "param.minLength",       expected: "BREAKING", label: "parameter minLength increased" },
+    { type: "parameter-constraint-changed",      before: 100, after: 50, location: "param.maxLength",      expected: "BREAKING", label: "parameter maxLength decreased" },
+    { type: "parameter-constraint-changed",      before: null, after: "^\\d+$", location: "param.pattern", expected: "BREAKING", label: "parameter pattern added" },
+    { type: "parameter-items-constraint-changed", before: 5, after: 10, location: "param.items.minLength", expected: "BREAKING", label: "parameter items minLength increased" },
+    { type: "parameter-items-constraint-changed", before: 100, after: 50, location: "param.items.maxLength", expected: "BREAKING", label: "parameter items maxLength decreased" },
+    // ── Parameter (request-side): loosening = INFO ───────────────────────────
+    { type: "parameter-constraint-changed",      before: 10, after: 5,  location: "param.minLength",       expected: "INFO", label: "parameter minLength decreased" },
+    { type: "parameter-constraint-changed",      before: 50, after: 100, location: "param.maxLength",      expected: "INFO", label: "parameter maxLength increased" },
+    { type: "parameter-constraint-changed",      before: "^\\d+$", after: null, location: "param.pattern", expected: "INFO", label: "parameter pattern removed" },
+    { type: "parameter-items-constraint-changed", before: 10, after: 5,  location: "param.items.minLength", expected: "INFO", label: "parameter items minLength decreased" },
+    { type: "parameter-items-constraint-changed", before: 50, after: 100, location: "param.items.maxLength", expected: "INFO", label: "parameter items maxLength increased" },
+  ];
+
+  it.each(CONSTRAINT_CASES)("$label ($type) → $expected", ({ type, before, after, location, expected }) => {
+    const result = classifyChanges([raw(type, before, after, location)]);
+    expect(result[0]?.severity).toBe(expected);
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+});
