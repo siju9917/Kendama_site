@@ -124,7 +124,14 @@ function diffSchemaType(
   }
 }
 
-/** Compare properties of two object schemas (one level deep) and emit property-level changes. */
+/** Maximum nesting depth for recursive property diffing. Guards against pathological schemas. */
+const MAX_PROPERTY_DEPTH = 5;
+
+/**
+ * Compare properties of two object schemas, recursing into nested objects up to MAX_PROPERTY_DEPTH.
+ * Detects type changes, removals, and additions at any nesting level; the `location` field carries
+ * the full dotted path (e.g. `requestBody.content.schema.properties.user.properties.address.properties.zipCode`).
+ */
 function diffSchemaProperties(
   path: string,
   method: HttpMethod,
@@ -133,7 +140,10 @@ function diffSchemaProperties(
   current: OapiSchema | null,
   isRequest: boolean,
   changes: OapiRawChange[],
+  depth: number = 0,
 ): void {
+  if (depth >= MAX_PROPERTY_DEPTH) return;
+
   const bProps = baseline?.properties ?? {};
   const cProps = current?.properties ?? {};
   const bKeys = new Set(Object.keys(bProps));
@@ -217,6 +227,17 @@ function diffSchemaProperties(
         before: bWriteOnly,
         after: cWriteOnly,
       });
+    }
+
+    // Recurse into nested object properties (both old and new exist — diff them).
+    if (bProp.properties || cProp.properties) {
+      diffSchemaProperties(
+        path, method,
+        `${location}.properties.${key}`,
+        bProp, cProp,
+        isRequest, changes,
+        depth + 1,
+      );
     }
   }
 

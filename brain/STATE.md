@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **840/840 tests** (BidDiff 586/586 + openapi-lens 254/254).
+- **Build green:** **845/845 tests** (BidDiff 586/586 + openapi-lens 259/259).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -633,6 +633,15 @@ all green; check tests 16/16.
     Parameters with `deprecated: true` were parsed with `undefined.deprecated`. Fix: extract
     in parser, diff in `diffParameters`, new `parameter-deprecated-changed` OapiChangeType,
     two INFO classify rules, parser+diff+classify tests. 5 new tests. 226→231. Total: **817/817**.
+
+60. **5.7.4 "nothing is done" / recursive property diffing** — `diffSchemaProperties`
+    was one level deep. Nested object schemas (`user.address.zipCode`) were invisible.
+    Added `depth` parameter (default 0) with `MAX_PROPERTY_DEPTH = 5` guard. When both
+    old and new property have sub-properties, recurse into them — reuses existing change
+    types (`response-schema-property-type-changed`, etc.) with the full dotted path in
+    `location`. 5 new tests (response nested type change, response nested removal, response
+    nested addition, request nested type change, depth guard no-throw). Updated PROGRESS.md.
+    254→259 openapi-lens. Total: **845/845 tests**.
 
 59. **5.7.4 "nothing is done" / allOf composition flattening** — adversarial "nothing is done"
     review identified allOf flattening as the next highest-value Phase 0 improvement: real-world

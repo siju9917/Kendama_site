@@ -947,3 +947,141 @@ describe("readOnly diff — request", () => {
     expect(info).toHaveLength(1);
   });
 });
+
+// ─── Recursive property diff ────────────────────────────────────────────────
+
+function makeNestedSpec(nestedProps: string, side: "response" | "request" = "response"): string {
+  const outerSchema = `
+                type: object
+                properties:
+                  user:
+                    type: object
+                    properties:
+${nestedProps}`;
+  if (side === "response") {
+    return `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:${outerSchema}
+`;
+  }
+  return `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:${outerSchema}
+      responses:
+        "201":
+          description: created
+`;
+}
+
+describe("recursive property diff — nested object schemas", () => {
+  it("detects BREAKING type change in a nested response property (user.age: integer→string)", () => {
+    const baseline = makeNestedSpec("                      age:\n                        type: integer");
+    const current = makeNestedSpec("                      age:\n                        type: string");
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find(
+      (c) => c.type === "response-schema-property-type-changed" && String(c.location).includes("age"),
+    );
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+    expect(typeChange?.before).toBe("integer");
+    expect(typeChange?.after).toBe("string");
+  });
+
+  it("detects BREAKING removal of a nested response property (user.address removed)", () => {
+    const baseline = makeNestedSpec("                      address:\n                        type: string");
+    const current = makeNestedSpec("                      email:\n                        type: string");
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const removed = changes.find(
+      (c) => c.type === "response-schema-property-removed" && String(c.location).includes("address"),
+    );
+    expect(removed).toBeDefined();
+    expect(removed?.severity).toBe("BREAKING");
+  });
+
+  it("detects INFO addition of a nested response property (user.nickname added)", () => {
+    const baseline = makeNestedSpec("                      id:\n                        type: string");
+    const current = makeNestedSpec("                      id:\n                        type: string\n                      nickname:\n                        type: string");
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const added = changes.find(
+      (c) => c.type === "response-schema-property-added" && String(c.location).includes("nickname"),
+    );
+    expect(added).toBeDefined();
+    expect(added?.severity).toBe("INFO");
+  });
+
+  it("detects BREAKING type change in a nested REQUEST property (user.age: string→integer)", () => {
+    const baseline = makeNestedSpec("                      age:\n                        type: string", "request");
+    const current = makeNestedSpec("                      age:\n                        type: integer", "request");
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find(
+      (c) => c.type === "request-schema-property-type-changed" && String(c.location).includes("age"),
+    );
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+
+  it("depth guard: stops recursing at MAX_PROPERTY_DEPTH without throwing", () => {
+    // Build a 7-level deep schema; the diff should complete without error
+    const build = (depth: number): string => {
+      if (depth === 0) return "type: string";
+      return `type: object\n${"                        ".repeat(depth)}properties:\n${"                          ".repeat(depth)}nested:\n${"                            ".repeat(depth)}${build(depth - 1)}`;
+    };
+    const deepSpec = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  level1:
+                    type: object
+                    properties:
+                      level2:
+                        type: object
+                        properties:
+                          level3:
+                            type: object
+                            properties:
+                              level4:
+                                type: object
+                                properties:
+                                  level5:
+                                    type: object
+                                    properties:
+                                      level6:
+                                        type: string
+`;
+    // Should complete without throw and should not report a type change at level 6
+    // (both specs are identical — no diff)
+    expect(() => analyzeOpenApiDiff(deepSpec, deepSpec)).not.toThrow();
+    expect(analyzeOpenApiDiff(deepSpec, deepSpec)).toHaveLength(0);
+  });
+});

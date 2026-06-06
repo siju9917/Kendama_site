@@ -214,10 +214,11 @@ _Begins when Proposal #3 auto-proceeds (2026-06-13) or human approves._
   that analysis is genuinely complex. `oneOf`/`anyOf` members remain stored but not
   flattened. A breaking change inside only one `oneOf` variant will not be detected.
   Phase 2. Tested behavior.
-- **Property diff is one level deep only.** `properties.fieldName.type` changes
-  are detected. Nested objects (`user.address.zipCode`) are not recursively diffed;
-  the outer property (`user`) is compared but its sub-properties are not. Phase 2
-  adds full recursive property diffing.
+- **Property diff is recursive to 5 levels deep (Phase 0, 2026-06-06).** Nested
+  object schemas are recursively compared: a type change in `user.address.zipCode`
+  generates a `response-schema-property-type-changed` event with the full dotted
+  path in `location`. Cycle-safe: stops at `MAX_PROPERTY_DEPTH = 5` without
+  throwing. Tested behavior (5 new tests).
 - **Schema constraint fields not yet diffed.** `minimum`, `maximum`, `minLength`,
   `maxLength`, `pattern`, `minItems`, `maxItems`, `uniqueItems`, `default` are not
   parsed or compared. A constraint tightening (`minLength: 0 → 5`) that would
