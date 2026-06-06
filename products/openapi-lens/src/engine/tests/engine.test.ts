@@ -314,4 +314,192 @@ paths:
       expect(c.message).toBeTruthy();
     }
   });
+
+  it("detects BREAKING when a shared $ref parameter becomes required (components/parameters)", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/limitParam"
+      responses:
+        "200":
+          description: ok
+components:
+  parameters:
+    limitParam:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/limitParam"
+      responses:
+        "200":
+          description: ok
+components:
+  parameters:
+    limitParam:
+      name: limit
+      in: query
+      required: true
+      schema:
+        type: integer
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = breakingOnly(changes);
+    expect(breaking).toHaveLength(1);
+    expect(breaking[0]?.type).toBe("parameter-required-changed");
+    expect(breaking[0]?.before).toBe(false);
+    expect(breaking[0]?.after).toBe(true);
+  });
+
+  it("detects BREAKING when a shared parameter is removed from components/parameters (inline replace)", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/apiKeyParam"
+      responses:
+        "200":
+          description: ok
+components:
+  parameters:
+    apiKeyParam:
+      name: X-API-Key
+      in: header
+      required: true
+      schema:
+        type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = breakingOnly(changes);
+    expect(breaking.some((c) => c.type === "parameter-removed")).toBe(true);
+    const removed = breaking.find((c) => c.type === "parameter-removed")!;
+    expect(removed.location).toMatch(/X-API-Key/);
+  });
+
+  it("detects INFO when a new shared $ref parameter is added (optional)", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/cursorParam"
+      responses:
+        "200":
+          description: ok
+components:
+  parameters:
+    cursorParam:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const added = changes.find((c) => c.type === "parameter-added")!;
+    expect(added).toBeDefined();
+    expect(added.severity).toBe("INFO");
+  });
+
+  it("cursor→page_token pagination migration: BREAKING removal + INFO addition", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/cursorParam"
+      responses:
+        "200":
+          description: ok
+components:
+  parameters:
+    cursorParam:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/pageTokenParam"
+      responses:
+        "200":
+          description: ok
+components:
+  parameters:
+    pageTokenParam:
+      name: page_token
+      in: query
+      required: false
+      schema:
+        type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = breakingOnly(changes);
+    const info = changes.filter((c) => c.severity === "INFO");
+    expect(breaking.some((c) => c.type === "parameter-removed")).toBe(true);
+    expect(info.some((c) => c.type === "parameter-added")).toBe(true);
+  });
 });
