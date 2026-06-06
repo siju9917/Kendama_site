@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **1159/1159 tests** (BidDiff 586/586 + openapi-lens 573/573).
+- **Build green:** **1262/1262 tests** (BidDiff 586/586 + openapi-lens 676/676).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -209,12 +209,12 @@ Priority order is `ops/loop.md`.
 **Unblocked (zero-cost):**
 7. ~~**P2** Vite/Vitest toolchain bump~~ — **DONE 2026-06-06.** Vite 6.4.3 + Vitest 4.1.8.
 8. ~~**D5 Phase 0 engine**~~ — **DONE + hardened 2026-06-06.** 551/551 tests, 26 bug-hunt rounds.
-   ~~**D5 Phase 1 VS Code extension scaffold**~~ — **DONE 2026-06-06** (ahead of 2026-06-13
-   auto-proceed). 7 extension source files + 2 unit test files (openApiDetector + diagnosticProvider
-   with vi.mock("vscode")); tsconfig.extension.json for CJS build; package.json manifest fields.
-   573/573 tests; typecheck clean; build:ext clean. Critique-panel P1 fixed (SAFE changes filtered).
-   P2 design notes (no-baseline UX, per-doc baseline state) logged to PROGRESS.md Phase 2.
-   **Next: D5 Phase 2 (WebView panel + @vscode/test-electron e2e) or D6 Terraform Lens Phase 1.**
+   ~~**D5 Phase 1 VS Code extension scaffold**~~ — **DONE 2026-06-06.** 573 tests; critique P1/P2 fixed.
+   ~~**D6 Terraform Lens Phase 1**~~ — **DONE 2026-06-06.** 94 new tests; terraform engine in
+   `src/terraform/`: parser, classify (5 rules), resources.ts data tables, webview.ts HTML.
+   VS Code wiring in `terraformExtension.ts`. 676/676 tests; typecheck clean; build:ext clean.
+   Two format classifiers now live in one extension (OpenAPI + Terraform).
+   **Next: D5/D6 Phase 2, or BidDiff 5.7.4/5.7.5 continuation.**
 9. Recurring: re-critique cadence, "nothing is ever done" reviews,
    ambient ideation, factory self-improvement, META audit.
 

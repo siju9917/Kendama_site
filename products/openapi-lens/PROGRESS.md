@@ -626,11 +626,32 @@ P2 — Design: `manualBaselineContent` in `extension.ts` is global — selecting
 - [ ] Free tier (50 analyses/day) vs Pro (unlimited + multi-branch + team)
 - [ ] Marketplace listing: animated GIF demo, keywords, categories
 
-## Phase 4 — Terraform pack (PLANNED)
+## Phase 4 — Terraform pack (COMPLETE — 2026-06-06 as D6 Phase 1)
 
-- [ ] `terraform show -json` plan parser
-- [ ] Destructive-change classifier (replace/destroy/IAM-widening = CRITICAL)
-- [ ] Extension re-labeled "Breaking-Change Lens" with format picker
+Built as D6 alongside D5 (same extension, two format classifiers):
+
+- [x] `terraform show -json` plan parser (`src/terraform/parser.ts`)
+- [x] Destructive-change classifier (`src/terraform/classify.ts`):
+  - Rule 1: no-op → NO-OP
+  - Rule 2: delete (without replace) → CRITICAL with "DELETED" message
+  - Rule 3: replace (Terraform 0.15+ `replace` or `['delete','create']` or
+    `['create','delete']` for create_before_destroy) → CRITICAL with "REPLACED" message
+  - Rule 4: data store modification → CRITICAL (data tables in `resources.ts`)
+  - Rule 5: IAM/security-group change (Phase 1 conservative — any change flagged)
+  - Rule 6: pure create → NORMAL; in-place update → NORMAL
+- [x] `resources.ts`: DATA_STORE_TYPES + IAM_TYPES data-driven tables with prefix matching
+- [x] `webview.ts`: self-contained HTML WebView with CSP, VS Code CSS vars, HTML escaping
+- [x] `terraformExtension.ts`: VS Code wiring — status bar "TF: X CRITICAL · Y NORMAL",
+  WebView panel auto-opens beside editor, reuses on subsequent activations
+- [x] 94 tests (classify + resources + parser + adversarial + webview)
+- [x] Extension re-labeled "Breaking-Change Lens" with both formats active
+- [x] 14-critic panel: no P0/P1 found. 5.7.2 second hard pass also clean.
+
+**Phase 4 Phase 2 backlog (planned):**
+- [ ] Before/after IAM policy document diff (move beyond conservative "any change flagged")
+- [ ] `output_changes` and `variable_changes` classification
+- [ ] Provider-specific heuristics (RDS parameter group replacement, SG ingress direction)
+- [ ] `create_before_destroy` vs `destroy_before_create` distinction (both currently CRITICAL)
 
 ---
 
