@@ -776,13 +776,24 @@ Built as D6 alongside D5 (same extension, two format classifiers):
 - **`uniqueItems`, `default`, `exclusiveMinimum`, `exclusiveMaximum`, `multipleOf` not diffed.**
   JSON Schema / OAS 3.1 draft-07 fields `uniqueItems`, `default`, `exclusiveMinimum`,
   `exclusiveMaximum`, `multipleOf` are not parsed or compared. Phase 2.
-- **No media-type coverage.** The engine uses the first `content` entry returned
-  by the YAML parser. An endpoint that dropped `application/xml` support while
-  keeping `application/json` will show no change. Phase 2.
-- **Response `headers` not diffed.** Response headers (`X-Rate-Limit`, `Location`,
-  etc.) are part of the API contract but not yet parsed or compared. Phase 2.
-- **Security scheme / scope changes not detected.** Operation-level `security:`
-  changes (new required scope, removed auth scheme) are invisible. Phase 2.
-- **`servers` array not compared.** Base URL changes are not detected. Phase 2.
-- **`operationId` changes not detected.** SDK-generator method-name renames are
-  invisible; high impact for typed-client consumers. Phase 2.
+- **Media-type tracking implemented (5.7.5 round 34, 2026-06-06).** `response-media-type-removed`
+  and `response-media-type-added` (and request equivalents) are emitted when the set of
+  content types changes. Per-media-type schema comparison still uses the primary content
+  type (`application/json` preferred) — schema changes in secondary media types (XML, etc.)
+  are a Phase 2 item.
+- **Response `headers` fully diffed (5.7.5 rounds 24, 28, 31, 43, 2026-06-06).** Response
+  headers (`X-Rate-Limit`, `Location`, etc.) are parsed and compared. Detected changes:
+  `response-header-removed` (BREAKING), `response-header-added` (INFO),
+  `response-header-type-changed`, `response-header-format-changed`,
+  `response-header-enum-changed`, `response-header-nullable-changed`,
+  `response-header-required-changed`. Swagger 2.0 bare-type headers supported.
+  `$ref: "#/components/headers/Name"` resolution supported.
+- **Security scheme / scope diffing implemented (5.7.5 round 27, 2026-06-06).** Operation-level
+  `security:` changes emit `operation-security-scheme-removed` (BREAKING),
+  `operation-security-scheme-added` (INFO), `operation-security-scope-added` (BREAKING),
+  `operation-security-scope-removed` (INFO).
+- **`servers` array diffing implemented (5.7.5 round 26, 2026-06-06).** `server-removed`
+  (BREAKING) and `server-added` (INFO) are emitted when the spec-level servers array changes.
+- **`operationId` diffing implemented (5.7.5 round 25, 2026-06-06).** `operation-id-changed`
+  (INFO) is emitted for operationId adds, removes, and renames. Message explains SDK
+  regeneration impact.
