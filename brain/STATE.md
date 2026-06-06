@@ -198,8 +198,8 @@ Priority order is `ops/loop.md`.
    e2e — need Chromium.
 
 **Unblocked (zero-cost):**
-6. **P2** Vite/Vitest toolchain bump (Vite 5→6/7 + Vitest 2→3) — breaking;
-   dedicated verified cycle needed.
+6. ~~**P2** Vite/Vitest toolchain bump (Vite 5→6/7 + Vitest 2→3)~~ — **DONE 2026-06-06.**
+   Landed Vite 6.4.3 + Vitest 4.1.8. 551 tests green; critical vuln (GHSA-5xrq-8626-4rwp) resolved.
 7. **P2** PROGRESS obs #7 (USD/spelled-out money) and obs #4
    (A–K subsection headings) — low severity; characterize first.
 8. Recurring: re-critique cadence, "nothing is ever done" reviews,
@@ -471,12 +471,14 @@ all green; check tests 16/16.
     blocked in Chrome side panels — with an inline "Delete / Cancel" button pair on the
     history row. Escape key cancels. 3 updated + 1 new test. 504 tests.
 27. **PROGRESS.md updated**: N14, N17, N18, N-A10 marked DONE; unblocked POLISH queue now empty.
-28. **DiffView.test.tsx created** (42 tests): first-ever test coverage for the DiffView component —
-    `criticalFirst` pure-function (5 cases), filter chips counts + disabled state, CRITICAL filter
-    on/off, 4 empty-state variants, text filter, warning banners, session notices, N-A10 keyboard
-    context note (3 cases), criticalFirst rendering order in DOM, section filter (4 cases), keyboard
-    nav J/K/ArrowDown/ArrowUp/R + modifier-key guard + INPUT guard + empty-list guard (9 cases),
-    reviewed counter toggle. 509 → **551 tests** (73 test files). All green.
+28. **DiffView.test.tsx created** (42 tests): first-ever full component coverage —
+    `criticalFirst` pure-function (5), filter chips + disabled state, CRITICAL filter on/off,
+    4 empty-state variants, text filter, warning banners, session notices, N-A10 keyboard context
+    note (3), criticalFirst DOM order, section filter (4), keyboard J/K/R/Arrow + guards (9),
+    reviewed counter toggle. 509 → **551 tests** (73 files).
+29. **Toolchain bump DONE**: Vite 5→6.4.3, Vitest 2→4.1.8, @vitejs/plugin-react 4→5.2.0.
+    551 tests pass; build clean; critical Vitest UI-server vuln (GHSA-5xrq-8626-4rwp) cleared.
+    Queue item #6 CLOSED. PROGRESS.md K2 + maintenance entry updated.
 
 ## Notes for the next session
 

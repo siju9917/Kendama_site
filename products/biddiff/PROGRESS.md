@@ -34,7 +34,7 @@ substitutes for it.
 | # | Phase | Critique panel convergence (cycles) | Closed |
 |--:|---|---|---|
 | K1 | First formal full-panel pass against the migrated codebase. Critics 1–14 of `governance/CRITIQUE_AGENTS.md`, in particular: Ambition Critic (#13) on the product's scope vs. ceiling, Research Quality Critic (#14) on the supporting research, Domain-Expert Critic on the federal-procurement specifics. Iterate to convergence; escalate per 5.7.2. | _pending_ | _no_ |
-| K2 | Ship-gate dry run against `governance/QUALITY_BAR.md`. Defend every item with cited evidence. Address findings. | **Dry run ran 2026-05-30** → `docs/ship-gate-dry-run.md`. Engineering bar defended on every axis. **All 3 unblocked hygiene gaps CLOSED** (security-audit re-confirm + `tar` override 11→7; current CHANGELOG; asserted bundle-size budget). Deep-hardening continuation: **455 tests** (from 226), full CI green; every exported core fn (directly or via a tested caller) + all trust/security boundaries + the corpus-audit harness + all user-facing claims now tested/verified; genuine fixes (suppress %/sign, corrupt-payload, markdown-backtick, telemetry PII, page-limit extraction, 2 doc-accuracy claims). | _no — does NOT pass, but the remaining blockers are all EXTERNAL: the human/cap-gated structural P1s (positioning `APPROVALS.md` #1; domain-expert validation + market research; the privacy/support-license copy A/B `NEED_FROM_HUMAN.md` #7) and the browser-gated a11y-contrast P2. The engineering bar itself is met with evidence. The only non-gated item is the non-shipping Vite/Vitest toolchain bump (maintenance). |
+| K2 | Ship-gate dry run against `governance/QUALITY_BAR.md`. Defend every item with cited evidence. Address findings. | **Dry run ran 2026-05-30** → `docs/ship-gate-dry-run.md`. Engineering bar defended on every axis. **All 3 unblocked hygiene gaps CLOSED** (security-audit re-confirm + `tar` override 11→7; current CHANGELOG; asserted bundle-size budget). Deep-hardening continuation: **455 tests** (from 226), full CI green; every exported core fn (directly or via a tested caller) + all trust/security boundaries + the corpus-audit harness + all user-facing claims now tested/verified; genuine fixes (suppress %/sign, corrupt-payload, markdown-backtick, telemetry PII, page-limit extraction, 2 doc-accuracy claims). | _no — does NOT pass, but the remaining blockers are all EXTERNAL: the human/cap-gated structural P1s (positioning `APPROVALS.md` #1; domain-expert validation + market research; the privacy/support-license copy A/B `NEED_FROM_HUMAN.md` #7) and the browser-gated a11y-contrast P2. The engineering bar itself is met with evidence. All non-gated maintenance items (toolchain bump, DiffView coverage) are now DONE. |
 | K3 | Chrome Web Store submission package — staged for the human submission step (one of the `human/NEED_FROM_HUMAN.md` items, added when K2 closes). | _pending_ | _no_ |
 
 ---
@@ -189,10 +189,14 @@ gaps addressed or documented with public-source reasoning; no human outreach req
   that is stubbed + unwired. Before the store submission, EITHER scope
   the copy to on-device-only (recommended, stronger privacy claim) OR
   implement+wire OCR. Routed to `human/NEED_FROM_HUMAN.md` item 7.
-- **[OPEN, maintenance]** Bump the Vite 5→6/7 + Vitest 2→3 toolchain
-  to clear the 7 dev-only `npm audit` advisories. Breaking; needs full
-  re-verification (config + plugin compat + suite). Not a shipped-risk
-  item (those advisories don't ship). Do it in a dedicated cycle.
+- **[DONE 2026-06-06, maintenance]** Bump the Vite 5→6/7 + Vitest 2→3 toolchain:
+  landed **Vite 6.4.3 + Vitest 4.1.8 + @vitejs/plugin-react 5.2.0**.
+  551/551 tests green; build 399.6 kB gz (budget); typecheck + lint clean.
+  Resolved 5 of 7 audit advisories (including the critical Vitest UI-server
+  arbitrary-file-exec, GHSA-5xrq-8626-4rwp). 2 remaining (rollup path traversal
+  in @crxjs build tool) cannot be fixed without downgrading @crxjs below Vite 6
+  compatibility; not a shipped risk. @crxjs compat risk was a false alarm —
+  2.4.0 (installed) explicitly lists Vite ^6 in peerDeps.
 
 ## Ship sequence (the critical path) — consolidated 2026-05-31
 
