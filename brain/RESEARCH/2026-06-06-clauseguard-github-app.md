@@ -1,3 +1,22 @@
+---
+product: clauseguard GitHub Marketplace app
+candidate_id: D2
+date: 2026-06-06
+evidence_tier: Plausible
+recommendation: CONDITIONAL_DEFER
+total_score: 556
+factors:
+  revenue_ceiling: {weight: 18, score: 4, weighted: 72}
+  probability: {weight: 14, score: 3, weighted: 42}
+  distribution: {weight: 14, score: 7, weighted: 98}
+  maintenance_fit: {weight: 10, score: 5, weighted: 50}
+  build_feasibility: {weight: 10, score: 7, weighted: 70}
+  self_serve_monetization: {weight: 8, score: 8, weighted: 64}
+  defensibility: {weight: 8, score: 6, weighted: 48}
+  evidence_quality: {weight: 10, score: 4, weighted: 40}
+  strategic_fit: {weight: 8, score: 9, weighted: 72}
+---
+
 # Deep evaluation — `clauseguard` GitHub Marketplace app
 
 **Status:** COMPLETE. All seven required sections filled with cited research.

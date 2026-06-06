@@ -1,3 +1,22 @@
+---
+product: VS Code OpenAPI Breaking-Change Lens
+candidate_id: D5
+date: 2026-06-06
+evidence_tier: Plausible
+recommendation: CONDITIONAL_PROCEED
+total_score: 636
+factors:
+  revenue_ceiling: {weight: 18, score: 5, weighted: 90}
+  probability: {weight: 14, score: 4, weighted: 56}
+  distribution: {weight: 14, score: 9, weighted: 126}
+  maintenance_fit: {weight: 10, score: 9, weighted: 90}
+  build_feasibility: {weight: 10, score: 8, weighted: 80}
+  self_serve_monetization: {weight: 8, score: 6, weighted: 48}
+  defensibility: {weight: 8, score: 4, weighted: 32}
+  evidence_quality: {weight: 10, score: 5, weighted: 50}
+  strategic_fit: {weight: 8, score: 8, weighted: 64}
+---
+
 # Deep Evaluation — VS Code Breaking-Change Lens
 
 **Product concept:** A VS Code extension that detects breaking changes in structured data

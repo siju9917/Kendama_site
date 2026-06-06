@@ -1,3 +1,23 @@
+---
+product: VS Code Terraform Plan Destructive-Change Classifier
+candidate_id: D6
+date: 2026-06-06
+evidence_tier: Plausible
+recommendation: CONDITIONAL_PROCEED
+total_score: 641
+score_note: "Risk-adjusted midpoint of 612-670 range. Raw weighted sum is 670; self-serve monetization gated on v1 pricing validation so score reflects conservative midpoint."
+factors:
+  revenue_ceiling: {weight: 18, score: 6, weighted: 108}
+  probability: {weight: 14, score: 5, weighted: 70}
+  distribution: {weight: 14, score: 8, weighted: 112}
+  maintenance_fit: {weight: 10, score: 9, weighted: 90}
+  build_feasibility: {weight: 10, score: 8, weighted: 80}
+  self_serve_monetization: {weight: 8, score: 5, weighted: 40}
+  defensibility: {weight: 8, score: 6, weighted: 48}
+  evidence_quality: {weight: 10, score: 5, weighted: 50}
+  strategic_fit: {weight: 8, score: 9, weighted: 72}
+---
+
 # Deep Evaluation (Cited) — VS Code Terraform Plan Destructive-Change Classifier (D6)
 
 **Evaluation date:** 2026-06-06  

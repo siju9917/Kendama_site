@@ -1,3 +1,22 @@
+---
+product: JetBrains Salesforce Apex Governor-Limit Static Analyzer
+candidate_id: Apex
+date: 2026-06-06
+evidence_tier: Plausible
+recommendation: EVALUATE_TO_REJECT
+total_score: 508
+factors:
+  revenue_ceiling: {weight: 18, score: 4, weighted: 72}
+  probability: {weight: 14, score: 4, weighted: 56}
+  distribution: {weight: 14, score: 7, weighted: 98}
+  maintenance_fit: {weight: 10, score: 5, weighted: 50}
+  build_feasibility: {weight: 10, score: 4, weighted: 40}
+  self_serve_monetization: {weight: 8, score: 9, weighted: 72}
+  defensibility: {weight: 8, score: 4, weighted: 32}
+  evidence_quality: {weight: 10, score: 4, weighted: 40}
+  strategic_fit: {weight: 8, score: 6, weighted: 48}
+---
+
 # Deep evaluation — JetBrains / Salesforce Apex plugin
 
 **Status:** **COMPLETE** — Full deep evaluation with cited research.

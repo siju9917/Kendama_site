@@ -1,3 +1,22 @@
+---
+product: Protobuf/gRPC Breaking-Change Diff (JetBrains Plugin)
+candidate_id: D3
+date: 2026-06-06
+evidence_tier: Plausible
+recommendation: CONDITIONAL_DEFER
+total_score: 580
+factors:
+  revenue_ceiling: {weight: 18, score: 5, weighted: 90}
+  probability: {weight: 14, score: 4, weighted: 56}
+  distribution: {weight: 14, score: 7, weighted: 98}
+  maintenance_fit: {weight: 10, score: 9, weighted: 90}
+  build_feasibility: {weight: 10, score: 6, weighted: 60}
+  self_serve_monetization: {weight: 8, score: 8, weighted: 64}
+  defensibility: {weight: 8, score: 3, weighted: 24}
+  evidence_quality: {weight: 10, score: 5, weighted: 50}
+  strategic_fit: {weight: 8, score: 6, weighted: 48}
+---
+
 # Deep Evaluation — D3: Protobuf/gRPC Breaking-Change Diff (JetBrains Plugin)
 
 **Status:** DECISION-READY. Full cited evaluation.
