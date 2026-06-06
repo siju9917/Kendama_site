@@ -3,6 +3,7 @@ import type {
   OapiOperation,
   OapiParameter,
   OapiRawChange,
+  OapiResponseHeader,
   OapiSchema,
   OapiSpec,
 } from "./types.js";
@@ -687,6 +688,59 @@ function diffRequestBody(
   }
 }
 
+/** Compare response header maps for a single status code. */
+function diffResponseHeaders(
+  path: string,
+  method: HttpMethod,
+  statusCode: string,
+  baseline: Record<string, OapiResponseHeader>,
+  current: Record<string, OapiResponseHeader>,
+  changes: OapiRawChange[],
+): void {
+  const bKeys = new Set(Object.keys(baseline));
+  const cKeys = new Set(Object.keys(current));
+
+  for (const name of bKeys) {
+    const bHdr = baseline[name]!;
+    const cHdr = current[name];
+    const loc = `responses[${statusCode}].headers.${name}`;
+    if (!cHdr) {
+      changes.push({
+        type: "response-header-removed",
+        path, method,
+        location: loc,
+        before: bHdr.schema?.type ?? null,
+        after: null,
+      });
+      continue;
+    }
+    const bType = bHdr.schema?.type ?? null;
+    const cType = cHdr.schema?.type ?? null;
+    if (bType !== cType) {
+      changes.push({
+        type: "response-header-type-changed",
+        path, method,
+        location: `${loc}.schema.type`,
+        before: bType,
+        after: cType,
+      });
+    }
+  }
+
+  for (const name of cKeys) {
+    if (!bKeys.has(name)) {
+      const cHdr = current[name]!;
+      changes.push({
+        type: "response-header-added",
+        path, method,
+        location: `responses[${statusCode}].headers.${name}`,
+        before: null,
+        after: cHdr.schema?.type ?? null,
+      });
+    }
+  }
+}
+
 /** Compare responses maps. */
 function diffResponses(
   path: string,
@@ -714,6 +768,7 @@ function diffResponses(
     diffSchemaTopLevelFields(path, method, loc, br.schema, cr.schema, false, changes);
     diffAdditionalProperties(path, method, loc, br.schema, cr.schema, false, changes);
     diffSchemaTopLevelReadOnlyWriteOnly(path, method, loc, br.schema, cr.schema, false, changes);
+    diffResponseHeaders(path, method, code, br.headers, cr.headers, changes);
   }
 
   for (const code of Object.keys(cMap)) {

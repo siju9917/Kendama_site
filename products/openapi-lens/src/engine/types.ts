@@ -50,10 +50,18 @@ export interface OapiRequestBody {
   schema: OapiSchema | null;
 }
 
+/** A single documented response header. */
+export interface OapiResponseHeader {
+  name: string;
+  required: boolean;
+  schema: OapiSchema | null;
+}
+
 /** A single response by status code. */
 export interface OapiResponse {
   statusCode: string;
   schema: OapiSchema | null;
+  headers: Record<string, OapiResponseHeader>;
 }
 
 /** One HTTP operation: a path + method + its inputs/outputs. */
@@ -149,7 +157,10 @@ export type OapiChangeType =
   | "request-schema-readonly-changed"
   | "response-schema-readonly-changed"
   | "request-schema-writeonly-changed"
-  | "response-schema-writeonly-changed";
+  | "response-schema-writeonly-changed"
+  | "response-header-removed"
+  | "response-header-added"
+  | "response-header-type-changed";
 
 /** A raw structural difference between two specs before classification. */
 export interface OapiRawChange {

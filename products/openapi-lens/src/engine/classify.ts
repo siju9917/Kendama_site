@@ -761,6 +761,29 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => `Response array items schema opened: ${c.location}. Server may now return array elements with extra properties beyond what is documented. Clients should handle unknown fields in elements gracefully.`,
   },
 
+  // ─── Response headers ────────────────────────────────────────────────────
+  {
+    matches: (c) => c.type === "response-header-removed" ? "BREAKING" : null,
+    message: (c) => `Response header removed: ${c.location}. Clients that read this header will no longer receive it.`,
+  },
+  // response-header-type-changed: direction-aware.
+  // before non-null: type changed or removed → BREAKING (clients parsing old type will fail).
+  {
+    matches: (c) => c.type === "response-header-type-changed" && c.before !== null ? "BREAKING" : null,
+    message: (c) => c.after === null
+      ? `Response header type constraint removed: ${c.location}. Clients parsing this header as ${c.before} will receive unspecified values.`
+      : `Response header type changed: ${c.location} (${c.before} → ${c.after}). Clients parsing this header with the old type will fail.`,
+  },
+  // before null: type added → INFO (server now documents the type, non-breaking for clients).
+  {
+    matches: (c) => c.type === "response-header-type-changed" && c.before === null ? "INFO" : null,
+    message: (c) => `Response header type documented: ${c.location}. Server now specifies type '${c.after}' for this header (non-breaking for clients).`,
+  },
+  {
+    matches: (c) => c.type === "response-header-added" ? "INFO" : null,
+    message: (c) => `Response header added: ${c.location}. Clients that understand this header may use it; others are unaffected.`,
+  },
+
   // ─── SAFE / INFO ────────────────────────────────────────────────────────
   {
     matches: (c) => c.type === "endpoint-added" ? "INFO" : null,

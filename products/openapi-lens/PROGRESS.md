@@ -673,12 +673,12 @@ What would make D5 Phase 1 materially better? What would a top-tier team add?
 
 ### Phase 2 engine additions (identified in "nothing is done" review 2026-06-06)
 
-- [ ] **Response `headers` diff** — response headers (e.g., `X-Rate-Limit`, `Location`,
-  `Retry-After`) are part of the API contract but completely absent from the Phase 0 engine.
-  Removing a documented response header is BREAKING for clients that parse it; adding a
-  required response header is BREAKING for clients that must handle it. Requires parsing
-  `responses[status].headers` and diffing per-header (name removed = BREAKING, schema
-  type changed = BREAKING).
+- [x] **Response `headers` diff** — DONE (2026-06-06). Parser parses
+  `responses[code].headers` with `$ref→#/components/headers` resolution. Diff engine
+  emits `response-header-removed` (BREAKING), `response-header-added` (INFO),
+  `response-header-type-changed` (BREAKING when before≠null, INFO when before=null).
+  3 new `OapiChangeType` values; classify rules + TYPE_STUBS exhaustiveness test
+  updated; 5 adversarial tests. ✓
 
 - [ ] **Security scheme / scope changes** — `security:` changes on individual operations
   are invisible. Adding a new required OAuth scope to an endpoint breaks clients that

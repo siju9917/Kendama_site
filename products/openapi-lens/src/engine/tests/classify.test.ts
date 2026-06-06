@@ -809,6 +809,9 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "response-schema-readonly-changed":                      [false, true],
     "request-schema-writeonly-changed":                      [false, true],
     "response-schema-writeonly-changed":                     [false, true],
+    "response-header-removed":                               ["string", null],
+    "response-header-added":                                 [null, "string"],
+    "response-header-type-changed":                          ["string", "integer"],
   };
 
   it.each(Object.keys(TYPE_STUBS) as OapiChangeType[])(

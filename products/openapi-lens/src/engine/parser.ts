@@ -5,6 +5,7 @@ import type {
   OapiParameter,
   OapiRequestBody,
   OapiResponse,
+  OapiResponseHeader,
   OapiSchema,
   OapiSpec,
 } from "./types.js";
@@ -269,8 +270,50 @@ function parseSharedResponses(raw: Record<string, unknown>): Record<string, unkn
   return isObject(components["responses"]) ? components["responses"] : {};
 }
 
+/** Parse #/components/headers into a lookup map for $ref resolution. */
+function parseSharedHeaders(raw: Record<string, unknown>): Record<string, unknown> {
+  const components = isObject(raw["components"]) ? raw["components"] : {};
+  return isObject(components["headers"]) ? components["headers"] : {};
+}
+
+/** Parse a response headers map (OAS 3.x `responses[code].headers`). */
+function parseResponseHeaders(
+  raw: unknown,
+  schemaLookup: Record<string, unknown>,
+  headerLookup: Record<string, unknown>,
+): Record<string, OapiResponseHeader> {
+  if (!isObject(raw)) return {};
+  const result: Record<string, OapiResponseHeader> = {};
+  for (const [name, hdr] of Object.entries(raw)) {
+    if (!isObject(hdr)) continue;
+    const ref = asString(hdr["$ref"]);
+    const effective: Record<string, unknown> = ref
+      ? ((): Record<string, unknown> => {
+          const match = /^#\/components\/headers\/(.+)$/.exec(ref);
+          if (!match || !match[1]) return {};
+          const target = headerLookup[match[1]];
+          return isObject(target) ? target : {};
+        })()
+      : hdr;
+    const required = asBoolean(effective["required"]) ?? false;
+    const schema = normalizeSchema(effective["schema"], schemaLookup);
+    const resolved: OapiResponseHeader = {
+      name,
+      required,
+      schema: Object.keys(schema).length > 0 ? schema : null,
+    };
+    result[name] = resolved;
+  }
+  return result;
+}
+
 /** Parse responses into a status-code-keyed map (OAS 3.x and Swagger 2.0). */
-function parseResponses(raw: unknown, lookup: Record<string, unknown>, responseLookup: Record<string, unknown> = {}): Record<string, OapiResponse> {
+function parseResponses(
+  raw: unknown,
+  lookup: Record<string, unknown>,
+  responseLookup: Record<string, unknown> = {},
+  headerLookup: Record<string, unknown> = {},
+): Record<string, OapiResponse> {
   if (!isObject(raw)) return {};
   const result: Record<string, OapiResponse> = {};
   for (const [statusCode, resp] of Object.entries(raw)) {
@@ -289,7 +332,12 @@ function parseResponses(raw: unknown, lookup: Record<string, unknown>, responseL
     const schema =
       extractContentSchema(effective["content"], lookup) ??
       normalizeSchema(effective["schema"], lookup);
-    result[statusCode] = { statusCode, schema: schema && Object.keys(schema).length > 0 ? schema : null };
+    const headers = parseResponseHeaders(effective["headers"], lookup, headerLookup);
+    result[statusCode] = {
+      statusCode,
+      schema: schema && Object.keys(schema).length > 0 ? schema : null,
+      headers,
+    };
   }
   return result;
 }
@@ -307,6 +355,7 @@ function buildSwagger2RequestBody(parameters: unknown[], lookup: Record<string, 
 function parseOperations(raw: Record<string, unknown>, schemaLookup: Record<string, unknown>, version: OapiSpec["version"]): OapiOperation[] {
   const paramLookup = parseSharedParameters(raw, schemaLookup);
   const responseLookup = parseSharedResponses(raw);
+  const headerLookup = parseSharedHeaders(raw);
   const paths = isObject(raw["paths"]) ? raw["paths"] : {};
   const ops: OapiOperation[] = [];
 
@@ -331,7 +380,7 @@ function parseOperations(raw: Record<string, unknown>, schemaLookup: Record<stri
           ? buildSwagger2RequestBody([...opLevelParams, ...pathLevelParams], schemaLookup)
           : parseRequestBody(opRaw["requestBody"], schemaLookup);
 
-      const responses = parseResponses(opRaw["responses"], schemaLookup, responseLookup);
+      const responses = parseResponses(opRaw["responses"], schemaLookup, responseLookup, headerLookup);
       const deprecated = asBoolean(opRaw["deprecated"]);
 
       ops.push({

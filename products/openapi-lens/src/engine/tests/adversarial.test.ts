@@ -5022,3 +5022,169 @@ paths:
     expect(analyzeOpenApiDiff(spec, spec)).toHaveLength(0);
   });
 });
+
+describe("response headers diffing — parse and classify (5.7.5 round 24)", () => {
+  const BASE = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: success
+          headers:
+            X-Rate-Limit:
+              required: false
+              schema:
+                type: integer
+            X-Request-Id:
+              required: false
+              schema:
+                type: string
+`;
+
+  it("removing a documented response header is BREAKING", () => {
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: success
+          headers:
+            X-Request-Id:
+              required: false
+              schema:
+                type: string
+`;
+    const changes = analyzeOpenApiDiff(BASE, current);
+    const removal = changes.find((c) => c.type === "response-header-removed");
+    expect(removal).toBeDefined();
+    expect(removal?.severity).toBe("BREAKING");
+    expect(removal?.location).toMatch(/X-Rate-Limit/);
+  });
+
+  it("adding a response header is INFO", () => {
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: success
+          headers:
+            X-Rate-Limit:
+              schema:
+                type: integer
+            X-Request-Id:
+              schema:
+                type: string
+            Retry-After:
+              schema:
+                type: integer
+`;
+    const changes = analyzeOpenApiDiff(BASE, current);
+    const addition = changes.find((c) => c.type === "response-header-added");
+    expect(addition).toBeDefined();
+    expect(addition?.severity).toBe("INFO");
+    expect(addition?.location).toMatch(/Retry-After/);
+  });
+
+  it("response header type change (string→integer) is BREAKING", () => {
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: success
+          headers:
+            X-Rate-Limit:
+              schema:
+                type: integer
+            X-Request-Id:
+              schema:
+                type: integer
+`;
+    const changes = analyzeOpenApiDiff(BASE, current);
+    const typeChange = changes.find((c) => c.type === "response-header-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+  });
+
+  it("response header via $ref to #/components/headers is resolved correctly", () => {
+    const baselineWithRef = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+components:
+  headers:
+    RateLimitHeader:
+      schema:
+        type: integer
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: success
+          headers:
+            X-Rate-Limit:
+              $ref: "#/components/headers/RateLimitHeader"
+`;
+    const currentWithRef = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+components:
+  headers:
+    RateLimitHeader:
+      schema:
+        type: string
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: success
+          headers:
+            X-Rate-Limit:
+              $ref: "#/components/headers/RateLimitHeader"
+`;
+    const changes = analyzeOpenApiDiff(baselineWithRef, currentWithRef);
+    const typeChange = changes.find((c) => c.type === "response-header-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+    expect(typeChange?.before).toBe("integer");
+    expect(typeChange?.after).toBe("string");
+  });
+
+  it("unchanged headers produce no changes", () => {
+    const changes = analyzeOpenApiDiff(BASE, BASE);
+    const headerChanges = changes.filter((c) =>
+      c.type === "response-header-removed" ||
+      c.type === "response-header-added" ||
+      c.type === "response-header-type-changed"
+    );
+    expect(headerChanges).toHaveLength(0);
+  });
+});
