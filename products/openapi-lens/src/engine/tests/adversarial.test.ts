@@ -10796,3 +10796,124 @@ paths:
     expect(constChange?.after).toBeNull();
   });
 });
+
+// ─── Round 85: top-level body constraint value-change (non-null) branches ───────
+// Round 33 tested request body minimum increase (1→5=BREAKING). The DECREASE branch
+// (e.g. 5→1=INFO) and all request/response maximum value-change branches are untested
+// at top-level body scope. These exercises the `after>before`/`after<before` comparison
+// arms of requestConstraintSeverity / responseConstraintSeverity (not the null arms).
+
+describe("adversarial round 85 — top-level body constraint value-change branches (end-to-end)", () => {
+  function makeIntBodySpec85(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /score:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: integer
+              ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  function makeIntResponseSpec85(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /value:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: integer
+                ${constraintLine}
+`;
+  }
+
+  it("decreasing minimum on request body integer (5→1) is INFO — constraint loosened, all prior valid values still valid", () => {
+    // requestConstraintSeverity min-sense: after (1) < before (5) → INFO
+    // Clients that sent values ≥5 still pass; clients that sent 1-4 now also pass.
+    const before = makeIntBodySpec85("minimum: 5");
+    const after  = makeIntBodySpec85("minimum: 1");
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".minimum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(5);
+    expect(constChange?.after).toBe(1);
+  });
+
+  it("decreasing maximum on request body integer (100→50) is BREAKING — clients sending values 51-100 now fail", () => {
+    // requestConstraintSeverity max-sense: after (50) < before (100) → BREAKING
+    // Lowering the max tightens the ceiling — clients who were valid now fail.
+    const before = makeIntBodySpec85("maximum: 100");
+    const after  = makeIntBodySpec85("maximum: 50");
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".maximum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBe(100);
+    expect(constChange?.after).toBe(50);
+  });
+
+  it("increasing maximum on request body integer (50→100) is INFO — constraint loosened, more values now accepted", () => {
+    // requestConstraintSeverity max-sense: after (100) > before (50) → INFO
+    // Raising the max means clients who sent values 51-100 now pass where before they failed.
+    const before = makeIntBodySpec85("maximum: 50");
+    const after  = makeIntBodySpec85("maximum: 100");
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".maximum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(50);
+    expect(constChange?.after).toBe(100);
+  });
+
+  it("increasing minimum on response body integer (2→10) is INFO — server now guarantees a higher floor", () => {
+    // responseConstraintSeverity min-sense: after (10) > before (2) → INFO
+    // Server now guarantees returning ≥10; clients that relied on ≥2 see a stronger promise.
+    const before = makeIntResponseSpec85("minimum: 2");
+    const after  = makeIntResponseSpec85("minimum: 10");
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".minimum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(2);
+    expect(constChange?.after).toBe(10);
+  });
+
+  it("decreasing maximum on response body integer (200→100) is INFO — server narrows its own output range", () => {
+    // responseConstraintSeverity max-sense: after (100) < before (200) → INFO
+    // Server lowering its own maximum means clients get a stronger guarantee on the upper bound.
+    const before = makeIntResponseSpec85("maximum: 200");
+    const after  = makeIntResponseSpec85("maximum: 100");
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".maximum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(200);
+    expect(constChange?.after).toBe(100);
+  });
+});
