@@ -12719,3 +12719,307 @@ paths:
     expect(locs.some((l) => l.includes("phone"))).toBe(true);
   });
 });
+
+// ─── Round 99: pattern→pattern (non-null to non-null) changes ───────────────
+// The requestConstraintSeverity / responseConstraintSeverity functions handle
+// three pattern transitions:
+//   null → pattern  : INFO (request = BREAKING)
+//   pattern → null  : BREAKING (response = BREAKING)
+//   pattern → pattern (both non-null): BREAKING for BOTH directions
+// Rounds 17 / 72 / 73 / 96 covered the null-transition paths.  This round
+// specifically exercises the non-null→non-null (changed pattern) branch that
+// had no end-to-end test guard.
+
+describe("adversarial round 99 — pattern value change (non-null→non-null) is BREAKING (end-to-end)", () => {
+  it("(R99-1) request property pattern changed to different regex → BREAKING (validates against new rule, old-valid values may now fail)", () => {
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /orders:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  pattern: '^[A-Z]{2}$'
+      responses:
+        "201":
+          description: created
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /orders:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  pattern: '^[A-Z0-9]{3,6}$'
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "request-schema-property-constraint-changed" && String(x.location).endsWith(".pattern"));
+    expect(c).toBeDefined();
+    // requestConstraintSeverity: pattern, after !== null → BREAKING
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe("^[A-Z]{2}$");
+    expect(c?.after).toBe("^[A-Z0-9]{3,6}$");
+    expect(String(c?.message)).toMatch(/changed|pattern/i);
+  });
+
+  it("(R99-2) response property pattern changed to different regex → BREAKING (server may return values matching old but not new pattern)", () => {
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /orders:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    pattern: '^(active|inactive)$'
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /orders:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    pattern: '^(active|pending|inactive)$'
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-schema-property-constraint-changed" && String(x.location).endsWith(".pattern"));
+    expect(c).toBeDefined();
+    // responseConstraintSeverity: pattern, before !== null → BREAKING
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe("^(active|inactive)$");
+    expect(c?.after).toBe("^(active|pending|inactive)$");
+    expect(String(c?.message)).toMatch(/changed|pattern/i);
+  });
+
+  it("(R99-3) response header pattern changed → BREAKING (same responseConstraintSeverity path)", () => {
+    const makeSpec = (pattern: string) => `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                pattern: '${pattern}'
+`;
+    const changes = analyzeOpenApiDiff(
+      makeSpec("^[a-f0-9]{8}$"),
+      makeSpec("^[a-f0-9]{8}-[a-f0-9]{4}$"),
+    );
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".pattern"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(String(c?.before)).toBe("^[a-f0-9]{8}$");
+    expect(String(c?.after)).toBe("^[a-f0-9]{8}-[a-f0-9]{4}$");
+  });
+
+  it("(R99-4) top-level request body pattern changed → BREAKING (diffSchemaTopLevelConstraints path)", () => {
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /codes:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              pattern: '^[A-Z]{2}$'
+      responses:
+        "200":
+          description: ok
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /codes:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              pattern: '^[A-Z]{3}$'
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    // diffSchemaTopLevelConstraints emits request-schema-property-constraint-changed
+    const c = changes.find((x) => x.type === "request-schema-property-constraint-changed" && String(x.location).endsWith(".pattern"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("(R99-5) top-level response body pattern changed → BREAKING (diffSchemaTopLevelConstraints response path)", () => {
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /codes:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+                pattern: '^[A-Z]{2}$'
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /codes:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+                pattern: '^[A-Z]{3}$'
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-schema-property-constraint-changed" && String(x.location).endsWith(".pattern"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("(R99-6) request items pattern changed → BREAKING (diffSchemaItems path)", () => {
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /batch:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                pattern: '^[0-9]{4}$'
+      responses:
+        "200":
+          description: ok
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /batch:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                pattern: '^[0-9]{6}$'
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "request-schema-items-constraint-changed" && String(x.location).endsWith(".pattern"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe("^[0-9]{4}$");
+    expect(c?.after).toBe("^[0-9]{6}$");
+  });
+
+  it("(R99-7) response items pattern changed → BREAKING (diffSchemaItems response path)", () => {
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /codes:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  pattern: '^[A-Z]{2}$'
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /codes:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  pattern: '^[A-Z0-9]{2,4}$'
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-schema-items-constraint-changed" && String(x.location).endsWith(".pattern"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+  });
+});
