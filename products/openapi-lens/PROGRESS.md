@@ -494,9 +494,10 @@ auto-proceeds (2026-06-13) or earlier if human approves.
 
 ---
 
-## Phase 1 — VS Code extension scaffold (PLANNED)
+## Phase 1 — VS Code extension scaffold (COMPLETE — 2026-06-06)
 
-_Begins when Proposal #3 auto-proceeds (2026-06-13) or human approves._
+_Built 2026-06-06, ahead of the Proposal #3 auto-proceed date (2026-06-13). All Phase 1
+checklist items complete; 573 tests passing; typecheck clean; build:ext clean._
 
 ### Architecture (designed 2026-06-06, before build window)
 
@@ -553,19 +554,34 @@ use `js-yaml` with `onMark` or `yaml-ast-parser` to build an AST node map during
 then look up the nearest ancestor key whose path matches the location prefix.
 
 **Checklist:**
-- [ ] VS Code extension manifest (`package.json` extensions fields: `main`, `activationEvents`,
+- [x] VS Code extension manifest (`package.json` extensions fields: `main`, `activationEvents`,
   `contributes.commands`, `contributes.configuration`, `engines.vscode`)
-- [ ] Activation on YAML/JSON file open (`onLanguage:yaml`, `onLanguage:json`)
-- [ ] `openApiDetector.ts`: check for `openapi:` or `swagger:` top-level key in document text
-- [ ] `diagnosticProvider.ts`: `BreakingChange[]` → `vscode.Diagnostic[]` with Range lookup
-- [ ] `codeLensProvider.ts`: "X BREAKING, Y INFO" CodeLens at line 0; "No changes" if clean
-- [ ] `gitBaseline.ts`: git extension API → `git show HEAD:<path>` → baseline string
-- [ ] `fileBaseline.ts`: `vscode.window.showOpenDialog` → read file → baseline string
-- [ ] `commands.ts`: register `openapi-lens.selectBaseline` and `openapi-lens.clearBaseline`
-- [ ] `extension.ts`: wire all providers; dispose on deactivate
-- [ ] Vitest unit tests for diagnosticProvider (BreakingChange → Diagnostic mapping)
-- [ ] Vitest unit tests for openApiDetector (YAML/JSON with and without openapi: key)
-- [ ] VS Code extension test (`@vscode/test-electron`) for end-to-end activation
+- [x] Activation on YAML/JSON file open (`onLanguage:yaml`, `onLanguage:json`)
+- [x] `openApiDetector.ts`: check for `openapi:` or `swagger:` top-level key in document text
+- [x] `diagnosticProvider.ts`: `BreakingChange[]` → `vscode.Diagnostic[]` with Range lookup
+- [x] `codeLensProvider.ts`: "X BREAKING, Y INFO" CodeLens at line 0; "No changes" if clean
+- [x] `gitBaseline.ts`: git extension API → `git show HEAD:<path>` → baseline string
+- [x] `fileBaseline.ts`: `vscode.window.showOpenDialog` → read file → baseline string
+- [x] `commands.ts`: register `openapi-lens.selectBaseline` and `openapi-lens.clearBaseline`
+- [x] `extension.ts`: wire all providers; dispose on deactivate; filter SAFE changes before
+  passing to providers (P1 critique fix: SAFE changes must not appear as diagnostics)
+- [x] Vitest unit tests for diagnosticProvider (BreakingChange → Diagnostic mapping, 11 cases)
+- [x] Vitest unit tests for openApiDetector (YAML/JSON with and without openapi: key, 10 cases)
+- [ ] VS Code extension test (`@vscode/test-electron`) for end-to-end activation → Phase 2
+
+**Critique-panel findings (post-Phase-1, 2026-06-06):**
+
+P1 — Correctness: SAFE changes mapped to Information diagnostics. Fixed: `extension.ts`
+  now filters `c.severity !== "SAFE"` before passing to providers.
+
+P2 — UX: When no baseline is available (git HEAD returns null, no configured file), the
+  CodeLens shows "No changes detected" — misleading. Should show "Set baseline to enable
+  diff". Track for Phase 2: add a `hasBaseline` state to `OpenApiCodeLensProvider` and
+  surface a "Set baseline" CodeLens with the `openapi-lens.selectBaseline` command.
+
+P2 — Design: `manualBaselineContent` in `extension.ts` is global — selecting a baseline
+  applies to all open OpenAPI specs simultaneously. Phase 2: make baseline state per-document
+  (keyed by `document.uri.toString()`).
 
 ## Phase 2 — Full UI + hardening (PLANNED)
 
