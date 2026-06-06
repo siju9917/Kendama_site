@@ -88,10 +88,31 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => `Response field became non-nullable: ${c.location}. Clients handling null values will need to be updated.`,
   },
 
+  {
+    matches: (c) => c.type === "response-schema-property-type-changed" ? "BREAKING" : null,
+    message: (c) => `Response property type changed: ${c.location} (${c.before} → ${c.after}). Clients parsing this property with the old type will fail.`,
+  },
+  {
+    matches: (c) => c.type === "response-schema-property-removed" ? "BREAKING" : null,
+    message: (c) => `Response property removed: ${c.location}. Clients that access this property will receive undefined/null.`,
+  },
+  {
+    matches: (c) => c.type === "request-schema-property-type-changed" ? "BREAKING" : null,
+    message: (c) => `Request body property type changed: ${c.location} (${c.before} → ${c.after}). Clients sending the old type will fail validation.`,
+  },
+  {
+    matches: (c) => c.type === "request-schema-property-removed" ? "BREAKING" : null,
+    message: (c) => `Request body property removed: ${c.location}. The server no longer accepts this property (silently ignored or rejected).`,
+  },
+
   // ─── SAFE / INFO ────────────────────────────────────────────────────────
   {
     matches: (c) => c.type === "endpoint-added" ? "INFO" : null,
     message: (c) => `New endpoint added: ${c.location}. Existing clients are unaffected.`,
+  },
+  {
+    matches: (c) => c.type === "response-schema-property-added" ? "INFO" : null,
+    message: (c) => `New response property added: ${c.location}. Existing clients can ignore or use the new field.`,
   },
   {
     matches: (c) =>

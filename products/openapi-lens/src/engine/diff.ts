@@ -119,6 +119,58 @@ function diffSchemaType(
   }
 }
 
+/** Compare properties of two object schemas (one level deep) and emit property-level changes. */
+function diffSchemaProperties(
+  path: string,
+  method: HttpMethod,
+  location: string,
+  baseline: OapiSchema | null,
+  current: OapiSchema | null,
+  isRequest: boolean,
+  changes: OapiRawChange[],
+): void {
+  const bProps = baseline?.properties ?? {};
+  const cProps = current?.properties ?? {};
+  const bKeys = new Set(Object.keys(bProps));
+  const cKeys = new Set(Object.keys(cProps));
+
+  for (const key of bKeys) {
+    const bProp = bProps[key]!;
+    const cProp = cProps[key];
+    if (!cProp) {
+      changes.push({
+        type: isRequest ? "request-schema-property-removed" : "response-schema-property-removed",
+        path, method,
+        location: `${location}.properties.${key}`,
+        before: bProp.type ?? "(object)",
+        after: null,
+      });
+      continue;
+    }
+    if (bProp.type !== undefined && cProp.type !== undefined && bProp.type !== cProp.type) {
+      changes.push({
+        type: isRequest ? "request-schema-property-type-changed" : "response-schema-property-type-changed",
+        path, method,
+        location: `${location}.properties.${key}.type`,
+        before: bProp.type,
+        after: cProp.type,
+      });
+    }
+  }
+
+  for (const key of cKeys) {
+    if (!bKeys.has(key)) {
+      changes.push({
+        type: "response-schema-property-added",
+        path, method,
+        location: `${location}.properties.${key}`,
+        before: null,
+        after: cProps[key]?.type ?? "(object)",
+      });
+    }
+  }
+}
+
 /** Compare nullable in a response schema. */
 function diffResponseNullable(
   path: string,
@@ -171,6 +223,7 @@ function diffRequestBody(
     }
     diffSchemaType(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffSchemaRequiredFields(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
+    diffSchemaProperties(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
   }
 }
 
@@ -195,6 +248,7 @@ function diffResponses(
     diffSchemaType(path, method, loc, br.schema, cr.schema, false, changes);
     diffSchemaRequiredFields(path, method, loc, br.schema, cr.schema, false, changes);
     diffResponseNullable(path, method, loc, br.schema, cr.schema, changes);
+    diffSchemaProperties(path, method, loc, br.schema, cr.schema, false, changes);
   }
 
   for (const code of Object.keys(cMap)) {

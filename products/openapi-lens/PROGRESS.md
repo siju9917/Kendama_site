@@ -33,7 +33,8 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   (BREAKING / INFO) and a human-readable `message`
 - [x] **`src/engine/index.ts`**: Public API — `analyzeOpenApiDiff()`,
   `breakingOnly()`, all type exports
-- [x] **68/68 tests** — parser (17), diff (20), classify (22), integration (9)
+- [x] **91/91 tests** — parser (17), diff (20), classify (22), integration (9),
+  adversarial (15), property-diff (8)
 - [x] Typecheck clean
 
 ### Breaking-change rules implemented (Phase 0)
@@ -61,6 +62,11 @@ auto-proceeds (2026-06-13) or earlier if human approves.
 | Response status code added | INFO |
 | Response field guaranteed as required | INFO |
 | Response field nullable: false→true | INFO |
+| Response property type changed | BREAKING |
+| Response property removed | BREAKING |
+| Request property type changed | BREAKING |
+| Request property removed | BREAKING |
+| Response property added | INFO |
 
 ---
 

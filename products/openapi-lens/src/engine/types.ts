@@ -74,7 +74,12 @@ export type OapiChangeType =
   | "response-schema-field-required-added"
   | "response-schema-field-required-removed"
   | "response-schema-type-changed"
-  | "response-schema-nullable-changed";
+  | "response-schema-nullable-changed"
+  | "response-schema-property-type-changed"
+  | "response-schema-property-removed"
+  | "response-schema-property-added"
+  | "request-schema-property-type-changed"
+  | "request-schema-property-removed";
 
 /** A raw structural difference between two specs before classification. */
 export interface OapiRawChange {
