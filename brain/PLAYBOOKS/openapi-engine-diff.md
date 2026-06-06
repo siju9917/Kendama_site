@@ -200,14 +200,19 @@ Before closing Phase 0, verify every cell is covered at every level:
 | required[] | ✓ | ✓ (nested) | ✓ (via recursion) | n/a | n/a |
 | properties | ✓ | ✓ (recursive) | ✓ (via recursion) | n/a | n/a |
 | items | ✓ | ✓ | ✓ (recursive) | ✓ | ✓ |
-| constraints | ✓ | ✓ | ✓ | ✓ | ✓ |
-| readOnly | — | ✓ | Phase 2 | Phase 2 | Phase 2 |
-| writeOnly | — | ✓ | Phase 2 | Phase 2 | Phase 2 |
+| minimum/maximum | ✓ | ✓ | ✓ | ✓ | ✓ |
+| minLength/maxLength | ✓ | ✓ | ✓ | ✓ | ✓ |
+| minItems/maxItems | ✓ | ✓ | ✓ | ✓ | ✓ |
+| minProperties/maxProperties | ✓ | ✓ | ✓ | ✓ | ✓ |
+| pattern | ✓ | ✓ | ✓ | ✓ | ✓ |
+| readOnly | ✓ (round 24) | ✓ | ✓ | n/a | n/a |
+| writeOnly | ✓ (round 24) | ✓ | ✓ | n/a | n/a |
+| additionalProperties | ✓ | ✓ | ✓ | Phase 2 | Phase 2 |
 | deprecated | n/a | n/a | n/a | ✓ | n/a |
 
-Phase 2 gaps (explicitly out of scope for Phase 0): oneOf/anyOf/anyOf
-composition, remote $ref, uniqueItems, default, exclusiveMinimum/Maximum,
-multipleOf, media-type coverage, additionalProperties.
+Phase 2 gaps (explicitly out of scope for Phase 0): oneOf/anyOf composition,
+remote $ref, uniqueItems, default, exclusiveMinimum/Maximum, multipleOf,
+media-type coverage, response headers, security scheme changes, servers array.
 
 ---
 
@@ -251,3 +256,143 @@ Rules are evaluated in order; the first match wins. Convention:
 
 Always add new rules above the fallback. Document the ordering invariant
 in a comment so future editors don't break it silently.
+
+---
+
+## Enum comparison must be order-insensitive (round 19)
+
+`deepEqual` uses `JSON.stringify`, which is order-sensitive for arrays:
+`["a","b"] ≠ ["b","a"]` even though both represent the same set of allowed
+values. Use `enumSetsEqual()`:
+
+```typescript
+function enumSetsEqual(a: unknown[] | undefined, b: unknown[] | undefined): boolean {
+  if (a === undefined && b === undefined) return true;
+  if (a === undefined || b === undefined) return false;
+  if (a.length !== b.length) return false;
+  const aSet = new Set(a.map((v) => JSON.stringify(v)));
+  return b.every((v) => aSet.has(JSON.stringify(v)));
+}
+```
+
+Apply at all 5 enum comparison sites: parameter schema, parameter items,
+property-level, items-level, top-level body.
+
+A spec that merely reorders its enum values (common in auto-generated specs)
+should produce zero diff events.
+
+---
+
+## The sub-schema entity guard pattern (rounds 20-22)
+
+When comparing sub-fields of a nested entity (e.g., `items.format`,
+`items.enum`), guard ALL scalar field comparisons with
+`if (bEntity && cEntity)`. Without this, a newly-added entity
+(`baseline=undefined, current={...}`) emits spurious field-changed events
+alongside the entity-type-changed event.
+
+**Correct structure for diffSchemaItems:**
+
+```typescript
+// type comparison STAYS OUTSIDE (primary detection for newly-added/removed items):
+const bType = bItems?.type ?? null;
+const cType = cItems?.type ?? null;
+if (bType !== cType) { /* emit type-changed */ }
+
+// ALL scalar field comparisons INSIDE the guard:
+if (bItems && cItems) {
+  // format, enum, nullable, constraints, additionalProperties, readOnly, writeOnly
+  if (bFmt !== cFmt) { /* emit format-changed */ }
+  // ... etc
+}
+
+// Recursion into nested schemas stays outside (nested changes are independent):
+if (bItems?.properties || cItems?.properties) {
+  diffSchemaProperties(...);
+}
+```
+
+The type comparison is the "primary detector" for the entity's existence/non-existence.
+The scalar comparisons are "detail events" that only make sense when both entities exist.
+
+**Apply this pattern to every sub-schema entity**: items, parameter.schema.items,
+property.items. Every diff function with a "sub-entity" block needs this guard.
+
+---
+
+## Constraint direction lookup table (self-improvement #13B)
+
+The classify.ts constraint rules used to repeat `loc.endsWith(".minimum") || ...`
+across 6 rules. This is fragile when adding new constraint fields. Use the lookup table:
+
+```typescript
+const MIN_SENSE_FIELDS = new Set(["minimum", "minLength", "minItems", "minProperties"]);
+const MAX_SENSE_FIELDS = new Set(["maximum", "maxLength", "maxItems", "maxProperties"]);
+
+type ConstraintKind = "min-sense" | "max-sense" | "pattern" | "other";
+
+function constraintKind(loc: string): ConstraintKind {
+  const field = loc.split(".").pop() ?? "";
+  if (field === "pattern") return "pattern";
+  if (MIN_SENSE_FIELDS.has(field)) return "min-sense";
+  if (MAX_SENSE_FIELDS.has(field)) return "max-sense";
+  return "other";
+}
+```
+
+**Direction semantics**:
+- `min-sense`: higher value = tighter constraint; request tightening = BREAKING
+- `max-sense`: lower value = tighter constraint; request tightening = BREAKING
+- `pattern`: any change = BREAKING for request; removal = INFO for request; addition = INFO for response
+- `other`: unknown field — default INFO
+
+Adding a new constraint field (e.g., `uniqueItems`) requires only:
+1. Adding the field to `OapiSchema`
+2. Adding it to `MIN_SENSE_FIELDS` or `MAX_SENSE_FIELDS` (or add "boolean-sense" logic)
+3. Adding the field to all constraint field arrays in diff.ts
+4. Adding the parser extraction
+5. Adding to flattenAllOf's numeric constraint loop
+
+The classify rules themselves need no changes.
+
+---
+
+## Kitchen-sink field coverage test (self-improvement #13A)
+
+After Phase 0 found readOnly/writeOnly (round 24) and minProperties/maxProperties
+(round 25) missing from the diff functions despite being in OapiSchema, add a
+parametric field-coverage test in diff.test.ts:
+
+```typescript
+const FIELD_CASES = [
+  { field: "type",    baseline: "type: string", current: "type: integer" },
+  { field: "format",  baseline: "type: string\nformat: date", current: "type: string\nformat: date-time" },
+  { field: "readOnly", baseline: "type: object\nreadOnly: false", current: "type: object\nreadOnly: true" },
+  // ... one entry per OapiSchema body-level field
+];
+
+it.each(FIELD_CASES)("body schema field '$field' produces at least one change event", ({ ... }) => {
+  const changes = diffSpecs(parseOapiSpec(makeSpec(baseline)), parseOapiSpec(makeSpec(current)));
+  expect(changes.length).toBeGreaterThan(0);
+});
+```
+
+Adding a new OapiSchema field requires adding to this list (CI fails if the field
+is in OapiSchema but produces no change events). This catches "parsed-but-never-diffed"
+gaps automatically.
+
+---
+
+## Test count trajectory (updated through Phase 0 rounds 1-25)
+
+Phase 0 started at 68 tests and reached 517 (+449). Each major gap required:
+- 0–4 new OapiChangeType values (shared constraint types need no new types)
+- 2–8 new classify rules
+- 0–4 new TYPE_STUBS entries
+- 3–16 new tests (unit + integration + adversarial)
+
+Notable rounds: round 16 (additionalProperties, +14 tests), round 17 (pattern
+null-transitions, +16 tests), round 15 (request constraint removal, +27 tests),
+round 3 (completeness guard + 6 new types, +70 tests). The 5.7.2 escalating
+critique pattern continues to find 1–3 architectural gaps per round. Budget
+3–5 adversarial rounds per major feature, not 1.
