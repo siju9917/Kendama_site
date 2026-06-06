@@ -710,6 +710,15 @@ all green; check tests 16/16.
     response nested required-removed (BREAKING). 297→300 openapi-lens.
     Total: **886/886 tests**.
 
+67. **5.7.5 round 8 — parameter items constraints + items.properties recursion** — two
+    more gaps: parameter.items constraints (minLength/maxLength/pattern etc. silently ignored
+    on array parameter elements) and diffSchemaItems not recursing into items object
+    properties (array<{id: string, count: integer}> having count change was invisible).
+    Fixed: constraint loop for parameter items (1 new OapiChangeType + classify rule + 3
+    unit tests); diffSchemaItems calls diffSchemaProperties(depth=0) + diffSchemaRequiredFields
+    on bItems/cItems (3 integration tests + 1 parser test). 337→345 openapi-lens.
+    Total: **931/931 tests**.
+
 66. **5.7.5 round 7 — array parameter items diffing** — `items` on array-type parameters
     (e.g., `GET /items?ids=1,2,3` with `schema.type=array`) was parsed but never diffed.
     A query parameter changing from `array<string>` to `array<integer>` was invisible.

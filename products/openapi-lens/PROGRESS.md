@@ -121,6 +121,17 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   `response-schema-items-constraint-changed`) with direction-aware classify rules matching
   the existing property constraint classification logic. 10 new unit tests + 2 adversarial
   integration tests. **297/297 tests.**
+- [x] **5.7.5 round 8 — parameter items constraints + items.properties recursion** —
+  two more gaps: (1) `parameter.schema.items` had type/format/enum/nullable added in
+  round 7 but constraint fields were still not compared. A query parameter `?codes` with
+  `items.minLength: 3→8` was invisible. Added constraint loop for parameter items.
+  1 new OapiChangeType `parameter-items-constraint-changed`, direction-aware classify rule,
+  3 unit tests. (2) `diffSchemaItems` did not recurse into items object properties. A
+  response `array<{id: string, count: integer}>` having `count` change to `string` was
+  invisible. Fixed: `diffSchemaItems` now calls `diffSchemaRequiredFields` and
+  `diffSchemaProperties` on items schemas when `properties`/`required` are present.
+  Reuses existing change types with location including `.items.properties.X`. 3 adversarial
+  integration tests + 1 parser test. **345/345 tests.**
 - [x] **5.7.5 round 7 — array parameter items diffing** — parsed-but-never-diffed audit
   found that `items` on array-type parameters (e.g., `GET /items?ids=1,2,3` with
   `schema: {type: array, items: {type: string}}`) was completely ignored. A parameter
