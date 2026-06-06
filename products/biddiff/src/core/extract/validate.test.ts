@@ -106,6 +106,11 @@ describe("extractSolicitationId", () => {
     const prefix = "A".repeat(2001);
     expect(extractSolicitationId(`${prefix} Solicitation No. W912TP-26-R-9999`)).toBeNull();
   });
+  it("stops at a newline — inline text after the ID does not extend the match", () => {
+    // The char class uses [ \t] not \s, so \n terminates the match.
+    // The ID is on its own line (as in real federal PDFs), followed by newline text.
+    expect(extractSolicitationId("Solicitation No. W912TP-26-R-0001\nfor IT Services")).toBe("W912TP-26-R-0001");
+  });
 });
 
 describe("isPdfEncrypted", () => {
