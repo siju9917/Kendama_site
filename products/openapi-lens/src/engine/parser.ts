@@ -284,8 +284,10 @@ function parseRequestBody(raw: unknown, lookup: Record<string, unknown>, request
       })()
     : raw;
   const required = asBoolean(effective["required"]) ?? false;
+  const content = isObject(effective["content"]) ? effective["content"] : {};
+  const contentTypes = Object.keys(content);
   const schema = extractContentSchema(effective["content"], lookup);
-  return { required, schema };
+  return { required, schema, contentTypes };
 }
 
 /** Parse #/components/responses into a lookup map for $ref resolution. */
@@ -358,10 +360,13 @@ function parseResponses(
       extractContentSchema(effective["content"], lookup) ??
       normalizeSchema(effective["schema"], lookup);
     const headers = parseResponseHeaders(effective["headers"], lookup, headerLookup);
+    const responseContent = isObject(effective["content"]) ? effective["content"] : {};
+    const contentTypes = Object.keys(responseContent);
     result[statusCode] = {
       statusCode,
       schema: schema && Object.keys(schema).length > 0 ? schema : null,
       headers,
+      contentTypes,
     };
   }
   return result;
@@ -373,7 +378,7 @@ function buildSwagger2RequestBody(parameters: unknown[], lookup: Record<string, 
   if (!isObject(bodyParam)) return null;
   const required = asBoolean(bodyParam["required"]) ?? false;
   const schema = normalizeSchema(bodyParam["schema"], lookup);
-  return { required, schema: Object.keys(schema).length > 0 ? schema : null };
+  return { required, schema: Object.keys(schema).length > 0 ? schema : null, contentTypes: [] };
 }
 
 /**
