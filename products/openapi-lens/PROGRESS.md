@@ -569,19 +569,90 @@ then look up the nearest ancestor key whose path matches the location prefix.
 - [x] Vitest unit tests for openApiDetector (YAML/JSON with and without openapi: key, 10 cases)
 - [ ] VS Code extension test (`@vscode/test-electron`) for end-to-end activation → Phase 2
 
-**Critique-panel findings (post-Phase-1, 2026-06-06):**
+**Critique-panel findings (post-Phase-1, 2026-06-06) — ALL FIXED:**
 
 P1 — Correctness: SAFE changes mapped to Information diagnostics. Fixed: `extension.ts`
-  now filters `c.severity !== "SAFE"` before passing to providers.
+  now filters `c.severity !== "SAFE"` before passing to providers. ✓
 
-P2 — UX: When no baseline is available (git HEAD returns null, no configured file), the
-  CodeLens shows "No changes detected" — misleading. Should show "Set baseline to enable
-  diff". Track for Phase 2: add a `hasBaseline` state to `OpenApiCodeLensProvider` and
-  surface a "Set baseline" CodeLens with the `openapi-lens.selectBaseline` command.
+P2 — UX: When no baseline is available, CodeLens showed "No changes detected" (misleading).
+  Fixed: `OpenApiCodeLensProvider` now uses a discriminated union with `no-baseline | clean |
+  changes` states. No-baseline state shows "Set baseline to enable diff" with `selectBaseline`
+  command; clean state shows "No breaking changes"; changes state shows counts. ✓
 
-P2 — Design: `manualBaselineContent` in `extension.ts` is global — selecting a baseline
-  applies to all open OpenAPI specs simultaneously. Phase 2: make baseline state per-document
-  (keyed by `document.uri.toString()`).
+P2 — Design: `manualBaselineContent` was a global variable. Fixed: replaced with
+  `Map<string, string>` keyed by `document.uri.toString()` (per-document baseline). ✓
+
+P2 — Interface: `onBaselineSelected` had unused `label` parameter. Removed. ✓
+
+**5.7.2 escalating critique findings (2026-06-06) — ALL FIXED:**
+
+P1 — Terraform: data source entries (mode:"data", actions:["read"]) were misclassified as
+  CRITICAL for data store types like `aws_s3_bucket`. Fixed: `isResourceChange` now filters
+  `mode === "data"` entries. +4 adversarial tests. ✓
+
+P2 — commands.ts: `selectBaseline` cleared the `baselineFile` workspace setting. Fixed:
+  removed the incorrect `config.update` call. ✓
+
+P2 — terraformExtension.ts: `openapi-lens.showTerraformPanel` command was referenced in
+  the status bar but never registered. Fixed: registered in `activateTerraformSupport`
+  with `lastKnownSummary`/`lastKnownPlanUri`; cleared in `deactivateTerraformSupport`. ✓
+
+P3 — diagnosticProvider.ts: `lineText.search(/\S/)` returned -1 for empty lines, producing
+  negative Range column. Fixed: `Math.max(0, ...)` clamp. ✓
+
+**Phase 1 gate: CLEARED (2026-06-06, 697/697 tests, typecheck clean).**
+
+### 5.7.4 "Nothing is done" review — D5 Phase 1 extension (2026-06-06)
+
+What would make D5 Phase 1 materially better? What would a top-tier team add?
+
+- [ ] **POLISH N1 — Baseline persistence across reload.** The in-memory
+  `manualBaselineByUri` map is cleared on VS Code reload. Selecting a baseline via
+  the picker sets it for the session only. A robust implementation persists the
+  *file path* (not content) to workspace settings so baselines survive reload.
+  Phase 2: `config.update("baselineFile", selectedPath, ConfigurationTarget.Workspace)`.
+
+- [ ] **POLISH N2 — Real-time analysis (debounced).** Changes are detected on save
+  (`onDidSaveTextDocument`) only. A Phase 2 improvement: subscribe to
+  `onDidChangeTextDocument` with a 500ms debounce so diagnostics appear as you type,
+  matching TypeScript/ESLint UX. Trade-off: higher CPU for large specs.
+
+- [ ] **POLISH N3 — Semantic line location for diagnostics.** `findLineForLocation` is
+  a text-search heuristic — it finds the first line matching the last path segment as a
+  key string. For JSON paths like `parameters[0]`, it falls back to line 0. A Phase 2
+  implementation would parse the YAML/JSON AST and walk the path for precise line numbers.
+
+- [ ] **POLISH N4 — "Comparing vs:" in WebView panel header.** The WebView shows changes
+  but doesn't tell the user what baseline is being used (git HEAD? a picked file?
+  workspace config?). A header line "Comparing: git HEAD (abc123) vs current" would make
+  it clear what the diff represents.
+
+- [ ] **POLISH N5 — Diagnostic message source prefix.** The Diagnostic message shows raw
+  `change.message` without context (e.g., "Endpoint removed"). TypeScript and ESLint both
+  prefix messages. A Phase 2 improvement: prepend "OpenAPI: " to diagnostic messages for
+  clarity in the Problems panel where all linters appear together.
+
+### 5.7.4 "Nothing is done" review — D6 Terraform Lens Phase 1 (2026-06-06)
+
+- [ ] **POLISH T1 — Direction-aware IAM policy diff (Phase 2 known limitation).** All
+  IAM/security-group changes are conservatively flagged CRITICAL. Adding a more restrictive
+  IAM policy (fewer permissions = smaller blast radius) should be INFO. Phase 2: compare
+  before/after policy documents and classify the direction.
+
+- [ ] **POLISH T2 — `output_changes` and `variable_changes` classification.** The Terraform
+  plan JSON also includes `output_changes` and `variable_changes` keys. These are not
+  infrastructure changes but can affect downstream automation. Phase 2: show them in a
+  separate section of the WebView.
+
+- [ ] **POLISH T3 — `create_before_destroy` vs `destroy_before_create` distinction.** Both
+  patterns produce `["create","delete"]` or `["delete","create"]` in the plan. The ordering
+  matters for zero-downtime deployments (`create_before_destroy` is safer). Phase 2:
+  distinguish in the reason message.
+
+- [ ] **POLISH T4 — WebView plan context header.** The WebView shows a table of changed
+  resources but not the total number of resources in the plan. "2 CRITICAL out of 47
+  resource changes" is much more useful than just "2 CRITICAL". Add: `${total} resource
+  changes in plan: ${classified counts}`.
 
 ## Phase 2 — Full UI + hardening (PLANNED)
 
@@ -645,7 +716,10 @@ Built as D6 alongside D5 (same extension, two format classifiers):
   WebView panel auto-opens beside editor, reuses on subsequent activations
 - [x] 94 tests (classify + resources + parser + adversarial + webview)
 - [x] Extension re-labeled "Breaking-Change Lens" with both formats active
-- [x] 14-critic panel: no P0/P1 found. 5.7.2 second hard pass also clean.
+- [x] 14-critic panel (first pass) — 0 P0 found
+- [x] 5.7.2 escalating critique — found P1 (data source "read" → false CRITICAL) + P2
+  (showTerraformPanel command unregistered); both fixed; +4 adversarial tests → 97 tf tests
+- [x] Phase 4 gate: CLEARED (2026-06-06)
 
 **Phase 4 Phase 2 backlog (planned):**
 - [ ] Before/after IAM policy document diff (move beyond conservative "any change flagged")
