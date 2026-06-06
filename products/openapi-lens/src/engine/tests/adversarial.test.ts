@@ -9908,3 +9908,124 @@ paths:
     expect(typeChange?.after).toBe("string");
   });
 });
+
+// ─── Round 73: response body top-level pattern (mirror of Round 72 with inverted severity) ──
+
+describe("adversarial round 73 — top-level response body pattern constraint (end-to-end)", () => {
+  function makePatternResponseSpec(patternLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /tokens:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+                ${patternLine}
+`;
+  }
+
+  it("adding pattern to response body string (null→pattern) is INFO — server adds guarantee, non-breaking for clients", () => {
+    // responseConstraintSeverity line 40: before === null → INFO
+    // Opposite of request: server adding a pattern tightens what it promises to
+    // return, which is beneficial to clients that relied on no constraint.
+    const noPattern   = makePatternResponseSpec("");
+    const withPattern = makePatternResponseSpec("pattern: '^[A-Za-z0-9]+$'");
+    const changes = analyzeOpenApiDiff(noPattern, withPattern);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".pattern"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe("^[A-Za-z0-9]+$");
+  });
+
+  it("removing pattern from response body string (pattern→null) is BREAKING — clients that validated the server's guarantee will break", () => {
+    // responseConstraintSeverity line 40: before !== null → BREAKING
+    // Server drops its promise to return values matching the pattern; clients
+    // that parse/validate the pattern against the response will encounter failures.
+    const withPattern = makePatternResponseSpec("pattern: '^[A-Za-z0-9]+$'");
+    const noPattern   = makePatternResponseSpec("");
+    const changes = analyzeOpenApiDiff(withPattern, noPattern);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".pattern"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBe("^[A-Za-z0-9]+$");
+    expect(constChange?.after).toBeNull();
+  });
+});
+
+// ─── Round 74: response body top-level numeric constraint (min-sense) ──────
+
+describe("adversarial round 74 — top-level response body minimum constraint (end-to-end)", () => {
+  function makeMinResponseSpec(minLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /count:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: integer
+                ${minLine}
+`;
+  }
+
+  it("adding minimum to response body integer (null→5) is INFO — server narrows its own promise, non-breaking for clients", () => {
+    // responseConstraintSeverity min-sense, before === null → INFO
+    // Server now guarantees it returns at least 5; clients already handling any integer are unaffected.
+    const noMin   = makeMinResponseSpec("");
+    const withMin = makeMinResponseSpec("minimum: 5");
+    const changes = analyzeOpenApiDiff(noMin, withMin);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".minimum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(5);
+  });
+
+  it("decreasing minimum on response body integer (10→2) is BREAKING — server may now return smaller values clients didn't expect", () => {
+    // responseConstraintSeverity min-sense: after (2) < before (10) → BREAKING
+    // Clients relying on the server's minimum=10 guarantee may not handle values in [2,9].
+    const withMin10 = makeMinResponseSpec("minimum: 10");
+    const withMin2  = makeMinResponseSpec("minimum: 2");
+    const changes = analyzeOpenApiDiff(withMin10, withMin2);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".minimum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBe(10);
+    expect(constChange?.after).toBe(2);
+  });
+
+  it("removing minimum from response body integer (5→null) is BREAKING — server may now return values below the former floor", () => {
+    // responseConstraintSeverity min-sense: after === null → BREAKING
+    // Clients that relied on minimum=5 may receive values they cannot handle.
+    const withMin = makeMinResponseSpec("minimum: 5");
+    const noMin   = makeMinResponseSpec("");
+    const changes = analyzeOpenApiDiff(withMin, noMin);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".minimum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBe(5);
+    expect(constChange?.after).toBeNull();
+  });
+});
