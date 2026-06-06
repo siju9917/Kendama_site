@@ -11740,3 +11740,148 @@ paths:
     expect(constChange?.after).toBe(100);
   });
 });
+
+// ─── Round 93: PUT method + header parameter constraint changes ────────────────
+// All previous request body constraint tests used POST operations. The diff engine
+// routes all methods through the same diffRequestBody function, but PUT/PATCH routing
+// was never exercised for constraint changes in an end-to-end spec test.
+// Header parameters (`in: header`) with constraint changes are also untested at the
+// constraint level (only location-change tests existed for header parameters).
+
+describe("adversarial round 93 — PUT method body constraint and header parameter constraint (end-to-end)", () => {
+  it("adding minimum constraint to PUT request body integer (null→1) is BREAKING", () => {
+    // Verifies that diffPathsAndMethods correctly routes PUT operations through diffRequestBody,
+    // and that diffSchemaTopLevelConstraints fires for PUT just as for POST.
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /resources/{id}:
+    put:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: integer
+      responses:
+        "200":
+          description: ok
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /resources/{id}:
+    put:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: integer
+              minimum: 1
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".minimum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(1);
+  });
+
+  it("adding maxLength constraint to header parameter string (null→20) is BREAKING", () => {
+    // Header parameters (`in: header`) had never been tested for constraint changes.
+    // Verifies that diffParameters correctly picks up minLength/maxLength on header schemas.
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /data:
+    get:
+      parameters:
+        - name: X-Correlation-Id
+          in: header
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /data:
+    get:
+      parameters:
+        - name: X-Correlation-Id
+          in: header
+          schema:
+            type: string
+            maxLength: 20
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "parameter-constraint-changed" && String(c.location).endsWith(".maxLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(20);
+  });
+
+  it("removing minLength constraint from path parameter string (3→null) is INFO", () => {
+    // Path parameters (`in: path`) also untested for constraint changes (always required = true).
+    // Verifies diffParameters routes path parameter schema constraints correctly.
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /resources/{code}:
+    get:
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 3
+      responses:
+        "200":
+          description: ok
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /resources/{code}:
+    get:
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "parameter-constraint-changed" && String(c.location).endsWith(".minLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(3);
+    expect(constChange?.after).toBeNull();
+  });
+});
