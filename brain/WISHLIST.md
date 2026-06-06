@@ -461,3 +461,74 @@ vs direct comparisons — they're semantically equivalent but syntactically diff
 
 **Promoted to backlog?** Not yet. Useful as a factory self-improvement tool for any
 schema-parsing product. Could also become a standalone dev-tooling library.
+
+---
+
+## 2026-06-06 — "Parsed-vs-diffed" automated unit test (simpler than AST analysis)
+
+**Friction encountered:** Rounds 24 and 25 both found fields that were in `OapiSchema`
+and correctly parsed by `normalizeSchema` but missing from one or more diff function's
+field comparison loops. `readOnly`/`writeOnly` were added to the schema type in round
+5.7.4 but never wired into `diffRequestBody`/`diffResponses` top-level comparison.
+`minProperties`/`maxProperties` were simply never in OapiSchema at all. Both were found
+only via manual systematic audit, not automated detection.
+
+**Where it came up:** openapi-lens 5.7.5 rounds 24 and 25 — the previous WISHLIST item
+for an AST-based "parsed-vs-diffed matrix" would have caught these, but it hasn't been
+built yet.
+
+**Proposed tool (simpler version):** A hardcoded field-coverage unit test in
+`diff.test.ts` that uses a "kitchen sink" OapiSchema fixture (all fields set to non-null
+values) as both baseline and current, asserts that a second fixture with EVERY field
+changed by one unit produces a non-empty change list, and then asserts that SPECIFIC
+types of changes are emitted. This is O(n) test lines for n schema fields; adding a new
+field to OapiSchema requires adding a test line or the test fails. Simpler than AST
+analysis; no new build tooling needed.
+
+**Initial size estimate:** Very small. ~20 lines of test code, ~10 minutes to write.
+Catches field-coverage gaps immediately when OapiSchema is extended.
+
+**Promoted to backlog?** Strong candidate for next openapi-lens session (write the
+kitchen-sink test before any Phase 1 VS Code work — it's a regression guard for the
+engine as schema evolves).
+
+---
+
+## 2026-06-06 — Constraint direction lookup table (factory self-improvement)
+
+**Friction encountered:** Six classify rules repeat the same direction-aware severity
+logic: `loc.endsWith(".minimum") || loc.endsWith(".minLength") || ...` → higher = tighter;
+`loc.endsWith(".maximum") || ... ` → lower = tighter. Each round that adds a new
+constraint field (e.g., minProperties/maxProperties in round 25) requires updating all
+6 rules manually. The pattern is mechanical but the duplication creates a maintenance
+hazard (missing one of the 6 = a silent severity error on the new field).
+
+**Where it came up:** openapi-lens 5.7.5 round 25 — added `minProperties`/`maxProperties`
+to 6 different `loc.endsWith` chains using replace_all. The replace_all worked because
+the pattern was syntactically identical; but future additions with different semantics
+(e.g., `exclusiveMinimum` — boolean, not numeric; direction is "true = tighter") would
+require case-by-case analysis.
+
+**Proposed refactor (openapi-lens internal):** Replace the 6 `loc.endsWith` chains with a
+single lookup table:
+```typescript
+const MIN_SENSE_FIELDS = new Set(["minimum", "minLength", "minItems", "minProperties"]);
+const MAX_SENSE_FIELDS = new Set(["maximum", "maxLength", "maxItems", "maxProperties"]);
+
+function constraintDirection(loc: string): "min-sense" | "max-sense" | "pattern" | "boolean" | "unknown" {
+  const field = loc.split(".").pop() ?? "";
+  if (field === "pattern") return "pattern";
+  if (MIN_SENSE_FIELDS.has(field)) return "min-sense";
+  if (MAX_SENSE_FIELDS.has(field)) return "max-sense";
+  // boolean fields (uniqueItems, exclusiveMinimum, exclusiveMaximum): return "boolean"
+  return "unknown";
+}
+```
+
+Then all 6 rules call `constraintDirection(loc)` — adding a new field requires updating
+only the Sets, not all 6 rules. New field categories (boolean) can be added once.
+
+**Initial size estimate:** Small-medium refactor. Risk: the sets are the new single source
+of truth; missing a field from a set is the new failure mode. Need a matching test.
+
+**Promoted to backlog?** Not yet. Log as openapi-lens Phase 1 internal refactor candidate.

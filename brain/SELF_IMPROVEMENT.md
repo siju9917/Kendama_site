@@ -368,6 +368,33 @@ real repo passes; the detection pattern correctly fires on "91/91 tests" and pas
 was deliberately narrow (STATE.md headline only) to avoid a slow-suite trap; extending scope
 to APPROVALS.md is safe because it is a string search, not a suite run.
 
+## 13. OapiSchema field coverage test + constraint direction lookup table (from rounds 24-25)
+
+**Type:** engine hardening + refactor
+
+**Expected impact:** rigor — rounds 24-25 found `readOnly`/`writeOnly` at body level and
+`minProperties`/`maxProperties` as gaps that were in OapiSchema but missing from diff
+functions. Both were found only via manual systematic audit. A test that enumerates all
+OapiSchema fields and asserts each appears in diff output would have caught both gaps
+automatically when the field was added to the type.
+
+Also: six classify rules all repeat the same `loc.endsWith(".minimum") || ...` chains.
+A constraint direction lookup table (`MIN_SENSE_FIELDS`, `MAX_SENSE_FIELDS`) would
+eliminate the 6x duplication and make adding new constraint types (e.g., `exclusiveMinimum`,
+`uniqueItems`) safe.
+
+**Cost to implement:**
+- Kitchen-sink field coverage test: very small — ~30 lines in `diff.test.ts` or new file.
+- Constraint direction refactor: small-medium — extract the Sets, update 6 classify rules.
+
+**Strengthens or weakens?** stronger — catches future field coverage gaps automatically.
+
+**Status:** pending — add to the Phase 1 session as the first task (before VS Code scaffold).
+The kitchen-sink test is a regression guard for the engine as Phase 2 fields are added.
+
+**Reasoning trace:** 5.7.7 META audit 2026-06-06 (DECISIONS.md "rounds 19-25" entry).
+5.7.6 ideation: logged immediately at session end; items in WISHLIST.md 2026-06-06.
+
 ## Notes for the META loop
 
 - The META loop pulls the top item from this list each cycle,

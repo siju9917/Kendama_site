@@ -608,3 +608,64 @@ describe("diffSpecs — structural diff", () => {
     expect(depChange?.location).toMatch(/filter/);
   });
 });
+
+// ─── Kitchen-sink: OapiSchema field coverage regression test ─────────────────
+// PURPOSE: Assert every field in OapiSchema produces at least one change event when
+// it changes between baseline and current request body schema. Adding a field to OapiSchema
+// and forgetting to wire it into a diff function will cause that field's test case to fail.
+// This guard was created after rounds 24-25 found body-level readOnly/writeOnly and
+// minProperties/maxProperties were missing despite being in the type and parser.
+//
+// SCHEMA FIELD CHECKLIST (OapiSchema fields that belong at body-schema level):
+//   type, format, nullable, readOnly, writeOnly, enum,
+//   minimum, maximum, minLength, maxLength, pattern, minItems, maxItems,
+//   minProperties, maxProperties, additionalProperties
+//   (required and properties are tested in property-diff.test.ts)
+describe("OapiSchema body-schema field coverage — every field produces a change event", () => {
+  function makeSpec(schemaYaml: string): string {
+    return `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /x:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+${schemaYaml.split("\n").map((l) => `              ${l}`).join("\n")}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  const FIELD_CASES: Array<{ field: string; baseline: string; current: string }> = [
+    { field: "type",                 baseline: "type: string",                        current: "type: integer" },
+    { field: "format",               baseline: "type: string\nformat: date",          current: "type: string\nformat: date-time" },
+    { field: "nullable",             baseline: "type: string\nnullable: false",       current: "type: string\nnullable: true" },
+    { field: "readOnly",             baseline: "type: object\nreadOnly: false",       current: "type: object\nreadOnly: true" },
+    { field: "writeOnly",            baseline: "type: object\nwriteOnly: false",      current: "type: object\nwriteOnly: true" },
+    { field: "enum",                 baseline: "type: string\nenum: [a, b]",          current: "type: string\nenum: [a, b, c]" },
+    { field: "minimum",              baseline: "type: number\nminimum: 0",            current: "type: number\nminimum: 5" },
+    { field: "maximum",              baseline: "type: number\nmaximum: 100",          current: "type: number\nmaximum: 50" },
+    { field: "minLength",            baseline: "type: string\nminLength: 1",          current: "type: string\nminLength: 5" },
+    { field: "maxLength",            baseline: "type: string\nmaxLength: 100",        current: "type: string\nmaxLength: 20" },
+    { field: "pattern",              baseline: "type: string\npattern: '^[a-z]+'",   current: "type: string\npattern: '^[A-Z]+'" },
+    { field: "minItems",             baseline: "type: array\nminItems: 0",            current: "type: array\nminItems: 1" },
+    { field: "maxItems",             baseline: "type: array\nmaxItems: 10",           current: "type: array\nmaxItems: 5" },
+    { field: "minProperties",        baseline: "type: object\nminProperties: 0",      current: "type: object\nminProperties: 2" },
+    { field: "maxProperties",        baseline: "type: object\nmaxProperties: 10",     current: "type: object\nmaxProperties: 5" },
+    { field: "additionalProperties", baseline: "type: object",                        current: "type: object\nadditionalProperties: false" },
+  ];
+
+  it.each(FIELD_CASES)("body schema field '$field' produces at least one change event", ({ field, baseline, current }) => {
+    const b = parseOapiSpec(makeSpec(baseline));
+    const c = parseOapiSpec(makeSpec(current));
+    const changes = diffSpecs(b, c);
+    expect(changes.length, `No change events for field '${field}' — it may be missing from a diff function`).toBeGreaterThan(0);
+  });
+});
