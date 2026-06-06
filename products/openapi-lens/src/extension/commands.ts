@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { pickBaselineFile } from "./baseline/fileBaseline.js";
 
 export interface CommandContext {
-  onBaselineSelected(content: string, label: string): void;
+  onBaselineSelected(content: string): void;
   onBaselineCleared(): void;
 }
 
@@ -18,7 +18,7 @@ export function registerCommands(
         if (content !== null) {
           const config = vscode.workspace.getConfiguration("openapi-lens");
           // Persist the choice so it survives reload.
-          ctx.onBaselineSelected(content, "file");
+          ctx.onBaselineSelected(content);
           await config.update(
             "baselineFile",
             "",
