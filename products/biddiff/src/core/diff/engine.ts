@@ -31,7 +31,7 @@ import {
 import { tokenDiff } from "./tokens.js";
 import { classifyChange } from "./classify.js";
 import { evaluateCriticality } from "./critical.js";
-import { isReformattingOnly } from "./suppress.js";
+import { isReformattingOnly, isListOrdinalOnlyChange } from "./suppress.js";
 
 interface PendingChange {
   changeType: ChangeType;
@@ -88,6 +88,7 @@ export class DiffEngine implements IDiffEngine {
         if (item.kind === "EQUAL") continue;
         if (item.kind === "MODIFY") {
           if (isReformattingOnly(item.prior, item.current)) continue;
+          if (isListOrdinalOnlyChange(item.prior, item.current)) continue;
           pending.push({
             changeType: "MODIFY",
             section,

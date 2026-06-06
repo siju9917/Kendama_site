@@ -356,14 +356,11 @@ describe("Hand-crafted adversarial cases", () => {
     expect(move!.beforeText).not.toEqual(move!.afterText);
   });
 
-  it("KNOWN LIMITATION (PROGRESS coverage-obs #8): list renumbering makes shifted items spurious MODIFYs", () => {
-    // Characterization (NOT desired behavior): when one item is inserted into a
-    // numbered list whose numbers live in the text (real for PDF), every
-    // SUBSEQUENT item shows as a MODIFY because only its leading ordinal
-    // shifted. A capture manager sees an inflated change count. This pins the
-    // CURRENT behavior so the future leading-ordinal-only-change detector
-    // (coverage-obs #8) has a clear before/after; UPDATE this test when that
-    // fix lands (it should then become 1 INSERT + 0 spurious MODIFYs).
+  it("list renumbering: inserting an item produces 1 INSERT and 0 spurious MODIFYs for shifted items (PROGRESS coverage-obs #8 — FIXED)", () => {
+    // Fixed by isListOrdinalOnlyChange in suppress.ts (2026-06-06).
+    // When one item is inserted into a numbered list whose ordinals live in the
+    // text (real for PDF), every subsequent item's ordinal shifts but its content
+    // is unchanged — the engine now correctly suppresses those MODIFY changes.
     const list = (items: string[]): StructuredDocument => ({
       metadata: meta(items.join("|")),
       sections: [
@@ -375,20 +372,14 @@ describe("Hand-crafted adversarial cases", () => {
     const current = list([
       "L.1 Submit one electronic copy.",
       "L.2 Include a cover letter.", // inserted
-      "L.3 Use 12-point font.", // was L.2 — only the ordinal shifted
-      "L.4 Page limit is 30 pages.", // was L.3 — only the ordinal shifted
+      "L.3 Use 12-point font.", // was L.2 — only the ordinal shifted, content same
+      "L.4 Page limit is 30 pages.", // was L.3 — only the ordinal shifted, content same
     ]);
     const result = diff(current, prior);
     const inserts = result.changes.filter((c) => c.changeType === "INSERT");
     const modifies = result.changes.filter((c) => c.changeType === "MODIFY");
     expect(inserts).toHaveLength(1); // the genuinely new item
-    // CURRENT (noisy) behavior: the two renumbered items are spurious MODIFYs
-    // whose content (minus the ordinal) is unchanged. The fix will drive this
-    // to 0.
-    expect(modifies.length).toBe(2);
-    for (const m of modifies) {
-      const stripOrdinal = (s: string | null) => (s ?? "").replace(/^L\.\d+\s*/, "");
-      expect(stripOrdinal(m.beforeText)).toBe(stripOrdinal(m.afterText)); // only the ordinal differs
-    }
+    expect(modifies).toHaveLength(0); // the shifted items are suppressed (ordinal-only change)
+    expect(result.changes).toHaveLength(1); // total: 1 real change, 0 noise
   });
 });

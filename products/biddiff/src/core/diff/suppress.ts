@@ -4,6 +4,11 @@
  * Pre-emptively drop block-level diffs that are reformatting-only or pure
  * pagination/line-break reflow. We do this at the *aligner* level by
  * normalizing aggressively before comparison; this module is a final guard.
+ *
+ * Also suppresses list-renumbering noise: when a numbered list item shifts its
+ * ordinal prefix (e.g. "2. " → "3. ") because another item was inserted before
+ * it, the engine would otherwise surface a MODIFY — often CRITICAL in Section
+ * L/M — for an item whose actual content is unchanged.
  */
 import type { Block } from "../model/types.js";
 import { normalizeText } from "../../shared/text.js";
@@ -28,6 +33,46 @@ export function isReformattingOnly(prior: Block, current: Block): boolean {
   const p = aggressiveNormalize(prior.text);
   const c = aggressiveNormalize(current.text);
   return p === c;
+}
+
+/**
+ * Matches a leading list-ordinal prefix — a positional marker that shifts
+ * when items are inserted/removed elsewhere in the list.  Conservative:
+ * excludes bare alphabetic ordinals ("a. ") which can be clause-reference
+ * headings, and compound section numbers ("1.1.") which can be
+ * value-bearing structural identifiers.
+ *
+ * Matched forms (all must be followed by at least one space):
+ *   "1. "  "12. "  "1) "  "12) "         — plain Arabic with . or )
+ *   "L.1 " "L.12 " "L.3. "               — UCF sub-items  (letter.digit[.] space)
+ *   "(1) " "(a) " "(iv) " "(AA) "         — parenthesised ordinals
+ */
+const LIST_ORDINAL_RE = /^(?:\d+[.)]\s+|[A-Za-z]\.\d+\.?\s+|\([A-Za-z0-9]+\)\s+)/;
+
+function stripLeadingOrdinal(text: string): { ordinal: string; content: string } | null {
+  const m = text.match(LIST_ORDINAL_RE);
+  if (!m) return null;
+  return { ordinal: m[0], content: text.slice(m[0].length) };
+}
+
+/**
+ * True if two aligned blocks differ ONLY in their leading list ordinal
+ * (e.g. "2. Use 12-point font." vs "3. Use 12-point font.").
+ *
+ * This fires when a new item is inserted in a numbered list and every
+ * subsequent item's ordinal shifts by one — producing spurious MODIFYs
+ * (often CRITICAL in Section L/M) for items whose CONTENT is unchanged.
+ *
+ * Safe-by-design: the non-ordinal content is compared with aggressiveNormalize
+ * (same tolerance as isReformattingOnly), so any real content change — even a
+ * changed page-limit number — prevents suppression.
+ */
+export function isListOrdinalOnlyChange(prior: Block, current: Block): boolean {
+  const p = stripLeadingOrdinal(prior.text);
+  const c = stripLeadingOrdinal(current.text);
+  if (!p || !c) return false;
+  if (p.ordinal === c.ordinal) return false; // same ordinal → EQUAL, not our concern
+  return aggressiveNormalize(p.content) === aggressiveNormalize(c.content);
 }
 
 export function aggressiveNormalize(s: string): string {
