@@ -14454,3 +14454,148 @@ paths:
     expect(c?.after).toBe(false);
   });
 });
+
+// ─── Round 114: symmetric reverse directions for items readonly/writeonly ─────
+// and response-schema-items-additional-properties true→INFO (untested direction).
+// Also adds missing severity assertion for request-items-AP true→INFO direction.
+
+const R114_PREAMBLE = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:`;
+
+describe("Round 114 — symmetric reverse directions and additional-properties true→INFO", () => {
+  it("(R114-1) request items readOnly true→false is INFO — server now accepts the field in requests", () => {
+    function makeReqItemsReadOnly(ro: boolean): string {
+      return `${R114_PREAMBLE}
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                readOnly: ${ro}
+                properties:
+                  id: {type: string}
+      responses:
+        "201":
+          description: created
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeReqItemsReadOnly(true), makeReqItemsReadOnly(false));
+    const c = changes.find((x) => x.type === "request-schema-items-readonly-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(true);
+    expect(c?.after).toBe(false);
+  });
+
+  it("(R114-2) response items writeOnly true→false is INFO — items now appear in responses", () => {
+    function makeRespItemsWriteOnly(wo: boolean): string {
+      return `${R114_PREAMBLE}
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  writeOnly: ${wo}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeRespItemsWriteOnly(true), makeRespItemsWriteOnly(false));
+    const c = changes.find((x) => x.type === "response-schema-items-writeonly-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(true);
+    expect(c?.after).toBe(false);
+  });
+
+  it("(R114-3) response items readOnly true→false is INFO — annotation removed (both directions are INFO)", () => {
+    function makeRespItemsReadOnly(ro: boolean): string {
+      return `${R114_PREAMBLE}
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  readOnly: ${ro}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeRespItemsReadOnly(true), makeRespItemsReadOnly(false));
+    const c = changes.find((x) => x.type === "response-schema-items-readonly-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(true);
+    expect(c?.after).toBe(false);
+  });
+
+  it("(R114-4) response items additionalProperties false→true is INFO — schema opens up (less restrictive)", () => {
+    function makeRespItemsAP(ap: boolean): string {
+      return `${R114_PREAMBLE}
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: ${ap}
+                  properties:
+                    id: {type: string}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeRespItemsAP(false), makeRespItemsAP(true));
+    const c = changes.find((x) => x.type === "response-schema-items-additional-properties-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(false);
+    expect(c?.after).toBe(true);
+  });
+
+  it("(R114-5) request items additionalProperties false→true severity is INFO — schema opens up (less restrictive for server)", () => {
+    // The test at line ~4055 checks event/before/after but not severity — this asserts it.
+    function makeReqItemsAP(ap: boolean): string {
+      return `${R114_PREAMBLE}
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                additionalProperties: ${ap}
+                properties:
+                  name: {type: string}
+      responses:
+        "200":
+          description: ok
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeReqItemsAP(false), makeReqItemsAP(true));
+    const c = changes.find((x) => x.type === "request-schema-items-additional-properties-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(false);
+    expect(c?.after).toBe(true);
+  });
+});
