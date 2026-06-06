@@ -14749,3 +14749,172 @@ paths:
     expect(c?.after).toBe(true);
   });
 });
+
+// ─── Round 116: untested reverse/value-change directions ──────────────────────
+// 1. response-schema-property-format-changed format→format → BREAKING (only null→format and
+//    format→null were tested; format→format uses the same `before !== null` rule branch).
+// 2. response-schema-items-nullable-changed true→false → INFO (only false→true BREAKING tested).
+// 3. response-schema-readonly-changed true→false → INFO (only false→true tested at round 23).
+// 4. request-schema-writeonly-changed true→false → INFO (only false→true tested at round 23).
+// 5. response-schema-items-format-changed format→null → BREAKING (only null→format INFO and
+//    format→format BREAKING tested; format→null uses the same `before !== null` rule branch).
+
+describe("Round 116 — reverse and value-change directions for format/nullable/readonly/writeonly", () => {
+  it("(R116-1) response property format changed (date→date-time) is BREAKING — clients deserializing old format fail", () => {
+    function makeRespPropFmtSpec(format: string | null): string {
+      const fmtLine = format ? `\n                    format: "${format}"` : "";
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /events:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  createdAt:
+                    type: string${fmtLine}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeRespPropFmtSpec("date"), makeRespPropFmtSpec("date-time"));
+    const c = changes.find((x) => x.type === "response-schema-property-format-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe("date");
+    expect(c?.after).toBe("date-time");
+  });
+
+  it("(R116-2) response array items nullable true→false is INFO — server stops returning null elements (clients benefit)", () => {
+    const NULLABLE_PREAMBLE_R116 = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /list:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:`;
+    const withNull = `${NULLABLE_PREAMBLE_R116}
+              schema:
+                type: array
+                items:
+                  type: string
+                  nullable: true`;
+    const withoutNull = `${NULLABLE_PREAMBLE_R116}
+              schema:
+                type: array
+                items:
+                  type: string
+                  nullable: false`;
+    const changes = analyzeOpenApiDiff(withNull, withoutNull);
+    const c = changes.find((x) => x.type === "response-schema-items-nullable-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(true);
+    expect(c?.after).toBe(false);
+  });
+
+  it("(R116-3) response body readOnly true→false is INFO — field is no longer annotated read-only (response-schema-readonly-changed)", () => {
+    const preamble = `
+openapi: "3.0.0"
+info: {title: T, version: "1"}
+paths:
+  /data:
+    get:`;
+    const baseline = `${preamble}
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                readOnly: true`;
+    const current = `${preamble}
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const c = changes.find((x) => x.type === "response-schema-readonly-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(true);
+    expect(c?.after).toBe(false);
+  });
+
+  it("(R116-4) request body writeOnly true→false is INFO — field is no longer annotated write-only (request-schema-writeonly-changed)", () => {
+    const preamble = `
+openapi: "3.0.0"
+info: {title: T, version: "1"}
+paths:
+  /data:
+    post:`;
+    const baseline = `${preamble}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              writeOnly: true
+      responses:
+        "201":
+          description: created`;
+    const current = `${preamble}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: created`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const c = changes.find((x) => x.type === "request-schema-writeonly-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(true);
+    expect(c?.after).toBe(false);
+  });
+
+  it("(R116-5) response array items format removed (uuid→null) is BREAKING — clients relying on UUID format guarantee may break", () => {
+    function makeRespItemsFmtSpec(format: string | null): string {
+      const fmtLine = format ? `\n                  format: "${format}"` : "";
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /ids:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string${fmtLine}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeRespItemsFmtSpec("uuid"), makeRespItemsFmtSpec(null));
+    const c = changes.find((x) => x.type === "response-schema-items-format-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe("uuid");
+    expect(c?.after).toBeNull();
+  });
+});
