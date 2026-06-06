@@ -202,6 +202,12 @@ describe("isListOrdinalOnlyChange — must NOT suppress (content changed)", () =
     // "52.204-21" (no space before the content part) does not match.
     expect(ordinalOnly("52.204-21 applies.", "52.204-25 applies.")).toBe(false);
   });
+
+  it("minus sign removed before dollar amount alongside renumber", () => {
+    // "-$5,000" and "$5,000" must NOT normalize equal: the minus sign changes
+    // the value. A renumber that also drops the sign is a real content change.
+    expect(ordinalOnly("2. Adjustment: -$5,000.", "3. Adjustment: $5,000.")).toBe(false);
+  });
 });
 
 describe("isListOrdinalOnlyChange — does NOT fire for FAR clause text changes", () => {

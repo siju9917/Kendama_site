@@ -110,7 +110,7 @@ export function aggressiveNormalize(s: string): string {
       const isLeadingSign =
         (ch === "-" || ch === "+") &&
         next !== undefined &&
-        /\d/.test(next) &&
+        (/\d/.test(next) || next === "$") &&
         (prev === undefined || !/[\p{L}\p{N}]/u.test(prev));
       if (!flankedByDigits && !isTrailingPercent && !isLeadingSign) continue;
     }
