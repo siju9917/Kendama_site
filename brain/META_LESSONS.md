@@ -614,3 +614,104 @@ wrong conclusion from an unverified premise. The fix both times is to nail the
 premise (here: read back via the EXACT constant the code uses) before writing
 a single line of "fix" or a brain entry. The discipline caught it; no false
 bug was committed.
+
+---
+
+## 2026-06-06 — Maximization audit (5.7.7) + audit-of-the-auditor (5.7.8)
+
+Mandatory cadence audit of whether 5.7.1–5.7.6 actually held this session
+(spend cap confirmed resolved per policy; plan-included sub-agent research
+used; ~30 new commits to `claude/intelligent-faraday-FnmJn`; suite 455→486).
+
+**5.7.7 — did the maximization rules hold?**
+
+- **5.7.1 Re-critique cadence:** N/A — BidDiff has not shipped. Vacuously met.
+- **5.7.2 Escalating critique:** HELD with caveat. The SET_ASIDE feature was
+  attacked immediately after writing: the "set aside 30 minutes" adversarial
+  input exposed a real false-positive bug (the `\bset[- ]aside\b` space form
+  matched a general English verb). Found, fixed, regression-tested before
+  commit. The sub-CLIN feature was probed with parent+sub-CLINs-together and
+  the SubCLIN keyword — both edge cases confirmed clean. The integration tests
+  drove through the full chain (detect → classify → critical → engine output).
+  **Caveat (same as prior cycles):** the formal 14-critic panel did not re-run
+  this cycle; targeted critics ran per sub-feature. Defensible in a mid-K1
+  pass (no phase closure), but the next post-phase gate must run the full
+  escalating panel.
+- **5.7.3 Roster growth:** HELD — Domain-Expert Critic (#5) gained the
+  anchor-extension validation gate (a new checklist item requiring a cited
+  public regulatory source + a full-chain integration test for any new anchor
+  type). Logged in the roster-growth table with the triggering cause.
+- **5.7.4 "Nothing is ever done":** PARTIALLY HELD. The domain-expert P1
+  lens functioned as a re-opening review: obs #5 (TIME anchor) was
+  re-examined, the "nothing is done" question asked, and the honest answer
+  was "V1 is fine — Section L already catches this." That decision is positive
+  (avoiding premature complexity). Obs #9 (sub-CLINs) was similarly re-opened
+  and correctly found to need fixing. However, no explicit "nothing is ever
+  done" re-opening review was written for BidDiff as a whole-product
+  interrogation (the obs-by-obs examination substituted for it). A future
+  cycle should run the formal re-opening review explicitly.
+- **5.7.5 Continuous bug-hunt:** HELD — the SET_ASIDE false positive was
+  found through a probe-first adversarial input ("set aside 30 minutes")
+  AFTER the feature was written. This is the continuous-bug-hunt rule working
+  exactly as intended: the new code was attacked with inputs the spec did not
+  anticipate, and a real defect was found and fixed before commit.
+- **5.7.6 Continuous ideation:** PARTIALLY HELD. The VS Code Breaking-Change
+  Lens deep eval was a genuine ideation advance (636/1000, first candidate to
+  clear the auto-proceed threshold, gap confirmed: no free-standing VS Code
+  extension for OpenAPI breaking changes). The clauseguard eval ran (556/1000,
+  CONDITIONAL DEFER). HOWEVER: no new WISHLIST entries were written this
+  cycle, and D4 (Shopify theme-risk) and the rank-2 FAR/DFARS MCP remain
+  unevaluated — the pipeline is advancing but ambient "scratch-your-own-itch"
+  ideation was thin. This is a real, if mild, lapse.
+
+**5.7.8 — audit-of-the-auditor (Ambition #13 + Research Quality #14):**
+
+1. **Was the audit shallow?** Six rules addressed with held/lapsed/partial
+   verdicts and concrete evidence. Not shallow; the caveat on 5.7.4 and the
+   partial on 5.7.6 are honest calls that a shallow audit would have papered
+   over.
+
+2. **Was an obvious lapse missed / conclusion asserted not defended?**
+   Two findings from this adversarial re-read:
+
+   **Finding A (Research Quality):** D4 (Shopify theme-risk) and rank-2
+   FAR/DFARS MCP have NOT been evaluated. The current proposal to PROCEED with
+   the VS Code lens is defensible on its absolute score (636/1000), but the
+   evaluation is not exhaustive — the lens might still be outscored by D4 when
+   that's researched. The 5.7.6 lapse compounds this: the product pipeline
+   report says "next = VS Code lens" but that conclusion rests on incomplete
+   scoring of the candidate set. **Action:** the D4/rank-2 evaluations should
+   run before the VS Code lens begins Phase 0, or at least run in parallel.
+   Logged here as an honest gap; the proposal's 7-day auto-proceed window gives
+   room.
+
+   **Finding B (Ambition):** the session was defensively good but not
+   bold — the BidDiff work (sub-CLINs, SET_ASIDE, false-positive fix) and the
+   pipeline work (clauseguard + lens evals) are all correct but reactive (fix
+   the known P1, evaluate the seeded candidates). The WISHLIST has four
+   genuinely novel items (PDF WASM extractor, amendment monitoring, rules
+   curation DSL, TDD-guard for agents) none of which received any attention
+   this cycle. The Ambition Critic's "what is the boldest idea this cycle
+   considered?" answer is "the VS Code lens" — which clears the bar but is
+   more "fill the known gap" than "invent something unexpected." Noted; the
+   genuine creative work is properly gated on cap (which is now RESOLVED, so
+   this excuse is weaker than it was).
+
+3. **Was the conclusion defended or just asserted?** Every verdict above cites
+   a concrete artifact (the false-positive test, the roster-growth row, the
+   proposal score), not a bare claim.
+
+**Structural action from Finding A:** The next sub-agent queue should
+evaluate D4 (Shopify theme-risk app) before or concurrently with Phase 0 of
+the VS Code lens build. No rule change; just a sequencing note.
+
+**Structural action from Finding B:** The next session should log at least
+one NEW WISHLIST item from active friction before it ends. If no friction
+arose, that itself is a finding to record.
+
+**Where applied:** `brain/STATE.md` (this session's cycle recorded), this
+lesson.
+
+**Recurrence test:** next session's META audit verifies (a) a WISHLIST item
+grew or the absence is itself explained, and (b) D4/rank-2 evaluations ran or
+are explicitly gated on a reason.

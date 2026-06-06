@@ -90,8 +90,9 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **484/484 tests** (was 455 at last session; +29 this session:
-  20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 + others),
+- **Build green:** **486/486 tests** (was 455 at last session; +31 this session:
+  20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
+  1 SET_ASIDE false-positive regression + 1 Domain-Expert critic anchor gate),
   lint + typecheck clean; full CI gate verified green end-to-end.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`
@@ -409,6 +410,12 @@ all green; check tests 16/16.
 9. **RANKING.md updated**: rank-1 Apex EVALUATE-TO-REJECT, D2 clauseguard CONDITIONAL DEFER,
    VS Code Breaking-Change Lens (D5/D6) is next to evaluate.
 10. **455 → 484 tests** (+29); typecheck clean.
+11. **SET_ASIDE false-positive fix**: `\bset[- ]aside\b` → `\bset-aside\b`;
+    space form "set aside 30 minutes" no longer matches. +2 tests. 484→486.
+12. **5.7.7 META audit written** (`brain/META_LESSONS.md` 2026-06-06 entry):
+    5.7.1–5.7.6 holdings verified; 5.7.8 raised two findings (D4 eval gap;
+    WISHLIST thinness). Domain-Expert Critic (#5) anchor-extension gate
+    committed to `CRITIQUE_AGENTS.md`.
 
 ## Notes for the next session
 
