@@ -14,9 +14,16 @@ export function registerCommands(
     vscode.commands.registerCommand(
       "openapi-lens.selectBaseline",
       async () => {
-        const content = await pickBaselineFile();
-        if (content !== null) {
-          ctx.onBaselineSelected(content);
+        const picked = await pickBaselineFile();
+        if (picked !== null) {
+          // Persist the file path so the baseline survives VS Code reloads.
+          try {
+            const config = vscode.workspace.getConfiguration("openapi-lens");
+            await config.update("baselineFile", picked.path, vscode.ConfigurationTarget.Workspace);
+          } catch {
+            // No workspace open — path can't be persisted, but in-memory state still works.
+          }
+          ctx.onBaselineSelected(picked.content);
           void vscode.window.showInformationMessage(
             "OpenAPI Lens: Baseline file loaded.",
           );
