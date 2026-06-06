@@ -90,7 +90,7 @@ export function extractSolicitationId(text: string): string | null {
   // Scan only the first 2000 characters — the ID is on the cover page.
   const head = text.slice(0, 2000);
   const m = head.match(
-    /(?:solicitation\s*(?:no\.?|number)\s*[:.]?\s*|rfp\s*(?:no\.?|number)\s*[:.]?\s*|rfq\s*(?:no\.?|number)\s*[:.]?\s*)([A-Z0-9][A-Z0-9 \t-]{3,18}\d)/i,
+    /(?:solicitation(?:\/[a-z\/]+)?\s*(?:no\.?|number)\s*[:.]?\s*|rfp\s*(?:no\.?|number)\s*[:.]?\s*|rfq\s*(?:no\.?|number)\s*[:.]?\s*)([A-Z0-9][A-Z0-9 \t-]{3,18}\d)/i,
   );
   if (!m) return null;
   // Normalize: uppercase, collapse internal whitespace, trim

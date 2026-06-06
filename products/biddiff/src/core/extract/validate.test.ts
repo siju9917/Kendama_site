@@ -112,6 +112,21 @@ describe("extractSolicitationId", () => {
     expect(extractSolicitationId("Solicitation No. W912TP-26-R-0001\nfor IT Services")).toBe("W912TP-26-R-0001");
   });
 
+  // 5.7.5 gap (2026-06-06): SF-1449 "Solicitation/Contract/Order Number" form field.
+  // This is one of the most common federal solicitation form headers (commercial
+  // acquisitions use SF-1449 and SF-33 which both use this exact label). The previous
+  // regex required "Solicitation No." or "Solicitation Number" — the slash variant
+  // "Solicitation/Contract/Order Number" wasn't matched, so documents using this form
+  // never got a solicitation number extracted and could not produce a mismatch warning.
+  it("extracts solicitation number from SF-1449 'Solicitation/Contract/Order Number' header", () => {
+    expect(extractSolicitationId("Solicitation/Contract/Order Number W912TP-26-R-0001")).toBe(
+      "W912TP-26-R-0001",
+    );
+    expect(extractSolicitationId("Solicitation/Contract/Order Number: FA8701-25-R-0042")).toBe(
+      "FA8701-25-R-0042",
+    );
+  });
+
   // 5.7.5 bug-hunt (2026-06-06): greedy middle char-class `[A-Z0-9 \t-]{3,18}` plus
   // `[A-Z0-9]` last-char previously over-captured trailing words that appear on the
   // same line after a space (e.g. "W912TP-26-R-0001 Amendment" → "W912TP-26-R-0001AME").
