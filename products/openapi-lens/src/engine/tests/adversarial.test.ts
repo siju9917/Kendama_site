@@ -14918,3 +14918,138 @@ paths:
     expect(c?.after).toBeNull();
   });
 });
+
+// ─── Round 117: parameter-items constraint null-transitions and format→format ─
+// Prior coverage:
+//   parameter-items-constraint-changed: only value→value tightening (3→8 BREAKING) and
+//   pattern null-transitions (Round 100) were tested. Three min/max-sense paths untested:
+//     (a) null→minLength: adding a constraint → BREAKING (requestConstraintSeverity min-sense)
+//     (b) minLength→null: removing constraint → INFO
+//     (c) minLength loosening 8→3 → INFO (request min-sense: after < before → INFO)
+//   parameter-items-format-changed: only null→format (BREAKING) and format→null (INFO) tested.
+//     format→format (both non-null) uses the same `after !== null → BREAKING` branch — untested.
+//   response-schema-items-constraint-changed: maxLength tightening (100→50) → INFO not tested.
+//     (response max-sense: after < before → INFO: server now guarantees shorter elements)
+
+describe("Round 117 — parameter-items constraint null-transitions, format change, and response items max tightening", () => {
+  function makeArrayParamSpec117(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /tags:
+    get:
+      parameters:
+        - name: codes
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("(R117-1) parameter items format changed (date→date-time) is BREAKING — both non-null, same rule branch as null→format", () => {
+    function makeParamItemsFmtSpec(format: string | null): string {
+      const fmtLine = format ? `\n              format: "${format}"` : "";
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /events:
+    get:
+      parameters:
+        - name: since
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string${fmtLine}
+      responses:
+        "200":
+          description: ok
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeParamItemsFmtSpec("date"), makeParamItemsFmtSpec("date-time"));
+    const c = changes.find((x) => x.type === "parameter-items-format-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe("date");
+    expect(c?.after).toBe("date-time");
+  });
+
+  it("(R117-2) parameter items minLength added (null→5) is BREAKING — server now validates element minimum length", () => {
+    // requestConstraintSeverity min-sense: before === null → BREAKING
+    // Elements shorter than 5 chars that previously passed will now fail validation.
+    const noMin   = makeArrayParamSpec117("");
+    const withMin = makeArrayParamSpec117("minLength: 5");
+    const changes = analyzeOpenApiDiff(noMin, withMin);
+    const c = changes.find((x) => x.type === "parameter-items-constraint-changed" && String(x.location).endsWith(".minLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(5);
+  });
+
+  it("(R117-3) parameter items minLength removed (5→null) is INFO — constraint relaxed, any length accepted", () => {
+    // requestConstraintSeverity min-sense: after === null → INFO
+    // Clients sending elements shorter than 5 chars now pass; existing valid clients unaffected.
+    const withMin = makeArrayParamSpec117("minLength: 5");
+    const noMin   = makeArrayParamSpec117("");
+    const changes = analyzeOpenApiDiff(withMin, noMin);
+    const c = changes.find((x) => x.type === "parameter-items-constraint-changed" && String(x.location).endsWith(".minLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(5);
+    expect(c?.after).toBeNull();
+  });
+
+  it("(R117-4) parameter items minLength loosened (8→3) is INFO — server accepts shorter elements, wider range for clients", () => {
+    // requestConstraintSeverity min-sense: after (3) < before (8) → INFO
+    // Elements with 3-7 chars that previously failed now pass; existing valid elements still pass.
+    const before = makeArrayParamSpec117("minLength: 8");
+    const after  = makeArrayParamSpec117("minLength: 3");
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "parameter-items-constraint-changed" && String(x.location).endsWith(".minLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(8);
+    expect(c?.after).toBe(3);
+  });
+
+  it("(R117-5) response array items maxLength tightened (100→50) is INFO — server now guarantees shorter elements", () => {
+    // responseConstraintSeverity max-sense: after (50) < before (100) → INFO
+    // Server reduces its upper bound — stronger guarantee for clients (non-breaking).
+    function makeRespArrayMaxSpec(maxLength: number): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /names:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  maxLength: ${maxLength}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeRespArrayMaxSpec(100), makeRespArrayMaxSpec(50));
+    const c = changes.find((x) => x.type === "response-schema-items-constraint-changed" && String(x.location).endsWith(".maxLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(100);
+    expect(c?.after).toBe(50);
+  });
+});
