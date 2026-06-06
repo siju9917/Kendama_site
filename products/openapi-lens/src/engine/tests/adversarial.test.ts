@@ -6734,3 +6734,112 @@ paths:
     expect(changes.find((c) => c.type === "parameter-enum-changed")).toBeDefined();
   });
 });
+
+// ─── Round 38: Swagger 2.0 formData parameters ───────────────────────────────
+
+describe("Swagger 2.0 formData parameters — known limitation (5.7.5 round 38)", () => {
+  it("Swagger 2.0 formData parameters are silently dropped — no false positives when stable", () => {
+    // Swagger 2.0 uses `in: formData` for multipart/form-data fields.
+    // The engine's parseParameter() only accepts path/query/header/cookie — formData is
+    // filtered out and treated as if the parameter doesn't exist.
+    const spec = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+paths:
+  /upload:
+    post:
+      consumes: [multipart/form-data]
+      parameters:
+        - name: file
+          in: formData
+          required: true
+          type: file
+        - name: description
+          in: formData
+          required: false
+          type: string
+      responses:
+        "200":
+          description: ok
+`;
+    // No crash, no false-positive changes vs itself.
+    const changes = analyzeOpenApiDiff(spec, spec);
+    expect(changes).toHaveLength(0);
+  });
+
+  it("Swagger 2.0 formData parameter addition/removal produces no change event (false negative — known limitation)", () => {
+    const withFormData = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+paths:
+  /upload:
+    post:
+      consumes: [multipart/form-data]
+      parameters:
+        - name: file
+          in: formData
+          required: true
+          type: file
+      responses:
+        "200":
+          description: ok
+`;
+    const withoutFormData = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+paths:
+  /upload:
+    post:
+      consumes: [multipart/form-data]
+      parameters: []
+      responses:
+        "200":
+          description: ok
+`;
+    // Known limitation: formData parameters are not tracked; this is a false negative.
+    const changes = analyzeOpenApiDiff(withFormData, withoutFormData);
+    expect(changes.filter((c) => c.type === "parameter-removed")).toHaveLength(0);
+  });
+
+  it("Swagger 2.0 body parameter is handled as requestBody — type changes ARE detected", () => {
+    const withString = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const withInteger = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: ok
+`;
+    // body parameter → treated as requestBody; type changes ARE detected.
+    const changes = analyzeOpenApiDiff(withString, withInteger);
+    const typeChange = changes.find((c) => c.type === "request-schema-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+});
