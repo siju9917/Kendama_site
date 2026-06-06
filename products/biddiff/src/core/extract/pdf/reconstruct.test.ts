@@ -31,6 +31,27 @@ describe("clusterIntoLines", () => {
     expect(lines[0].map((i) => i.text).join(" ")).toBe("Hello world.");
     expect(lines[1].map((i) => i.text).join(" ")).toBe("Next line.");
   });
+
+  // 5.7.5 bug-hunt (2026-06-06): when the topmost item on the page has a large
+  // font (e.g. a 24pt section heading), sorted[0].height = 24 → tolerance = 12.
+  // Body text lines in 10pt font with 12pt single-spacing are then exactly AT
+  // the tolerance (|12| ≤ 12) and get merged into one cluster, causing the diff
+  // engine to treat two separate paragraphs as one block.
+  // Fix: use the MEDIAN item height so large-heading outliers don't inflate it.
+  it("separates body lines even when the topmost item has a large font", () => {
+    const items: PageTextItem[] = [
+      baseItem({ text: "SECTION A HEADING", x: 50, y: 700, height: 24, fontSize: 24 }),
+      baseItem({ text: "First line.", x: 50, y: 670, height: 10, fontSize: 10 }),
+      baseItem({ text: "Second line.", x: 50, y: 658, height: 10, fontSize: 10 }),
+      baseItem({ text: "Third line.", x: 50, y: 646, height: 10, fontSize: 10 }),
+    ];
+    const lines = clusterIntoLines(items);
+    expect(lines.length).toBe(4);
+    expect(lines[0][0].text).toBe("SECTION A HEADING");
+    expect(lines[1][0].text).toBe("First line.");
+    expect(lines[2][0].text).toBe("Second line.");
+    expect(lines[3][0].text).toBe("Third line.");
+  });
 });
 
 describe("detectColumnSplit", () => {

@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **691/691 tests** (BidDiff 585/585 + openapi-lens 106/106).
+- **Build green:** **692/692 tests** (BidDiff 586/586 + openapi-lens 106/106).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -601,6 +601,17 @@ all green; check tests 16/16.
     stripped). All 5 new `it` blocks pass immediately — no bugs found, but the gap
     is now regression-locked. 582/582 BidDiff. Total suite: **688/688 tests**.
 
+46. **5.7.5 bug: PDF `clusterIntoLines` merges body lines when page-top item has large font**
+    — `clusterIntoLines` set tolerance = `sorted[0].height * 0.5`. `sorted[0]` is the
+    topmost item on the page — often a section heading in 18–24pt. A 24pt heading gives
+    tolerance=12; body text in 10pt font with 12pt single-spacing has adjacent lines exactly
+    at the boundary (|12| ≤ 12) and collapses them into one cluster. That cluster becomes
+    one block, hiding any per-paragraph change between those two body lines — the diff engine
+    shows one giant MODIFY instead of targeted paragraph-level changes. Fix: compute tolerance
+    from the MEDIAN item height on the page (stable against outliers). 1 new regression test
+    (4-item page: 24pt heading + three 10pt body lines → asserts 4 separate clusters).
+    586/586 BidDiff. Total suite: **692/692 tests**.
+
 ## Notes for the next session
 
 - Read this file in full; run `ops/checks/run-all.mjs` first; proceed
@@ -610,11 +621,11 @@ all green; check tests 16/16.
   This is the last ship blocker besides the store submission itself.
 - This session's work is on branch `claude/intelligent-faraday-FnmJn` per task
   instructions. Must be merged to `main` at session end per CLAUDE.md rule 6.
-- **BidDiff bug-hunt lane is SATURATED** (585 tests, every core fn + all sidepanel
+- **BidDiff bug-hunt lane is SATURATED** (586 tests, every core fn + all sidepanel
   components tested). All unblocked POLISH done. Next session: privacy copy fix
   (NEED #7, when human responds), store submission prep, and D5 VS Code extension
   Phase 1 scaffold (once Proposal #3 auto-proceeds 2026-06-13).
-- **D5 Phase 0 engine is in `products/openapi-lens/`** — 91 tests, all passing.
+- **D5 Phase 0 engine is in `products/openapi-lens/`** — 106 tests, all passing.
   Phase 1 (VS Code extension scaffold) starts when Proposal #3 auto-proceeds 2026-06-13.
 - Spend cap: plan-included web tools (sub-agents, search) are FREE; $0 committed
   external spend. No cap blocker.

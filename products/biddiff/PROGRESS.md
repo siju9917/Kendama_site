@@ -210,6 +210,21 @@ session has specifics, not a vague "improve extraction":
     converts U+2212 (text.test.ts); `aggressiveNormalize` treats "−$5,000" (U+2212)
     equal to "-$5,000" (suppress.test.ts). 584/584 pass, typecheck clean.
 
+13. **PDF `clusterIntoLines` merges body lines when heading font is large — DONE
+    (FIXED 2026-06-06, 5.7.5 bug-hunt).** `clusterIntoLines` derived its y-coordinate
+    clustering tolerance from `sorted[0].height` — the topmost item on the page, which is
+    frequently a large-font section heading (18–24pt). A 24pt heading gives tolerance=12.
+    Body text in 10pt font with tight 12pt single-spacing sits exactly at the tolerance
+    boundary (|12| ≤ 12), so two adjacent body lines collapse into one cluster. That merged
+    cluster becomes one block, hiding any per-paragraph change between the two lines — the
+    diff engine would show one giant MODIFY instead of targeted paragraph-level changes.
+    Fix: compute tolerance from the **median** item height on the page. The median is stable
+    against heading/table outliers and reflects the actual body-text font size. For a typical
+    page with one 24pt heading and many 10pt body items, median = 10 → tolerance = 5, which
+    correctly separates lines 12pt apart. 1 new regression test (4-item page with 24pt
+    heading + three 10pt body lines; asserts 4 separate clusters). 586/586 pass, typecheck
+    clean.
+
 **Domain-Expert P1 status (2026-06-06, updated):** The BD2 gate was WITHDRAWN
 (human declined outreach; factory validated from public FAR/DFARS sources instead).
 Obs #4 DONE (A-K subsections), obs #8 DONE (list renumbering), obs #9 DONE (sub-CLINs),

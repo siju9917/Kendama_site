@@ -131,7 +131,14 @@ export function clusterIntoLines(items: ReadonlyArray<PageTextItem>): PageTextIt
   if (items.length === 0) return [];
   const sorted = [...items].sort((a, b) => b.y - a.y || a.x - b.x);
   const lines: PageTextItem[][] = [];
-  const tolerance = (sorted[0].height || 10) * 0.5;
+  // Use median item height (not sorted[0]). sorted[0] is the topmost item on
+  // the page — often a large heading. A 24pt heading gives tolerance=12, which
+  // exactly equals the ~12pt line spacing of tight 10pt body text, collapsing
+  // two adjacent body lines into one cluster. The median is stable against
+  // heading/table outliers and gives a tolerance representative of body text.
+  const sortedHeights = sorted.map((i) => i.height || 10).sort((a, b) => a - b);
+  const medHeight = sortedHeights[Math.floor(sortedHeights.length / 2)];
+  const tolerance = medHeight * 0.5;
   let current: PageTextItem[] = [sorted[0]];
   let currentY = sorted[0].y;
   for (let i = 1; i < sorted.length; i++) {
