@@ -2350,3 +2350,274 @@ paths:
     expect(changes.find((c) => c.type === "response-schema-items-readonly-changed")).toBeUndefined();
   });
 });
+
+describe("response items null-transition classify fixes (5.7.5 round 13)", () => {
+  it("response-schema-items-type-changed (null→type) has a meaningful INFO message, not generic fallback", () => {
+    // Before fix: rule fell through to generic "Change detected at..." fallback message.
+    // After fix: a specific rule produces a human-readable INFO message.
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /data:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /data:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "response-schema-items-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("INFO");
+    // Must NOT be the generic fallback message
+    expect(typeChange?.message).not.toMatch(/^Change detected at/);
+    expect(typeChange?.message).toMatch(/added|guarantees|non-breaking/i);
+  });
+
+  it("response-schema-items-format-changed (null→format) is INFO, not BREAKING", () => {
+    // Server adds a format annotation to previously untyped array items.
+    // This is a tighter server promise (non-breaking for clients).
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /ids:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /ids:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const fmtChange = changes.find((c) => c.type === "response-schema-items-format-changed");
+    expect(fmtChange).toBeDefined();
+    expect(fmtChange?.severity).toBe("INFO");
+    expect(fmtChange?.message).toMatch(/added|guarantees|non-breaking/i);
+  });
+
+  it("response-schema-items-format-changed (format→format) remains BREAKING", () => {
+    // Changing from one format to another is still BREAKING (clients deserializing the old format fail).
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /ids:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: date
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /ids:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: date-time
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const fmtChange = changes.find((c) => c.type === "response-schema-items-format-changed");
+    expect(fmtChange).toBeDefined();
+    expect(fmtChange?.severity).toBe("BREAKING");
+  });
+
+  it("response-schema-items-enum-changed (null→enum) is INFO, not BREAKING", () => {
+    // Server adds an enum to previously unconstrained array items.
+    // This constrains the server's promise — non-breaking for clients handling any value.
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /status:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /status:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  enum: [active, inactive]
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const enumChange = changes.find((c) => c.type === "response-schema-items-enum-changed");
+    expect(enumChange).toBeDefined();
+    expect(enumChange?.severity).toBe("INFO");
+    expect(enumChange?.message).toMatch(/added|guarantees|non-breaking/i);
+  });
+
+  it("response-schema-items-enum-changed (enum→null) remains BREAKING", () => {
+    // Server removes enum from response items: clients relying on the constraint may now receive unexpected values.
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /status:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  enum: [active, inactive]
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /status:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const enumChange = changes.find((c) => c.type === "response-schema-items-enum-changed");
+    expect(enumChange).toBeDefined();
+    expect(enumChange?.severity).toBe("BREAKING");
+  });
+
+  it("request-schema-items-type-changed (type→null) has a meaningful INFO message, not generic fallback", () => {
+    // Removing a type constraint from request items is INFO — server now accepts any element type.
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /data:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /data:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items: {}
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "request-schema-items-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("INFO");
+    // Must NOT be the generic fallback message
+    expect(typeChange?.message).not.toMatch(/^Change detected at/);
+    expect(typeChange?.message).toMatch(/removed|constraint|any type/i);
+  });
+});

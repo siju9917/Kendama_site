@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **963/963 tests** (BidDiff 586/586 + openapi-lens 377/377).
+- **Build green:** **975/975 tests** (BidDiff 586/586 + openapi-lens 389/389).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -208,12 +208,14 @@ Priority order is `ops/loop.md`.
 
 **Unblocked (zero-cost):**
 7. ~~**P2** Vite/Vitest toolchain bump~~ — **DONE 2026-06-06.** Vite 6.4.3 + Vitest 4.1.8.
-8. ~~**D5 Phase 0 engine**~~ — **DONE + hardened 2026-06-06.** `products/openapi-lens/` — 371/371 tests
-   (rounds 5–10: allOf constraint inheritance, top-level body schema constraints/format/enum,
+8. ~~**D5 Phase 0 engine**~~ — **DONE + hardened 2026-06-06.** `products/openapi-lens/` — 389/389 tests
+   (rounds 5–13: allOf constraint inheritance, top-level body schema constraints/format/enum,
    parameter items type/format/enum/nullable/constraints, items.properties recursion,
    Swagger 2.0 path-level body param fix, `diffSchemaType` null-transition gap,
-   items readOnly/writeOnly diff). VS Code extension scaffold (Phase 1) begins once
-   Proposal #3 auto-proceeds 2026-06-13.
+   items readOnly/writeOnly diff, request-body-required direction completeness (round 11),
+   diffSchemaItems recursion depth guard (round 12), response items null-transition
+   classify fixes for type/format/enum (round 13)). VS Code extension scaffold (Phase 1)
+   begins once Proposal #3 auto-proceeds 2026-06-13.
 9. Recurring: re-critique cadence, "nothing is ever done" reviews,
    ambient ideation, factory self-improvement, META audit.
 
@@ -831,6 +833,24 @@ all green; check tests 16/16.
     (default 0) with `MAX_ITEMS_DEPTH = 3` guard, then recursively call `diffSchemaItems` when
     `bItems?.items || cItems?.items` exists. +2 adversarial tests (inner type change BREAKING;
     depth guard no-throw). 375→377 openapi-lens. Total suite: **963/963 tests**.
+
+79. **5.7.5 round 13: response items null-transition classify gaps** — three bugs where
+    `response-schema-items-*-changed` with `before=null` (constraint newly added) was
+    incorrectly classified as BREAKING or had a cryptic generic fallback message:
+    (1) `response-schema-items-type-changed: null→type` — fell through to generic "Change
+    detected at..." message; severity INFO was correct via fallback but message was wrong.
+    Fix: added specific INFO rule with meaningful human-readable message.
+    (2) `response-schema-items-format-changed: null→format` — unconditionally BREAKING; adding a
+    format to response items is non-breaking (server announces stronger guarantee). Fix: split
+    rule into `before !== null → BREAKING` and `before === null → INFO`.
+    (3) `response-schema-items-enum-changed: null→enum` — BREAKING via `!before || !after` guard;
+    adding enum to response items is INFO (server promises fewer values — non-breaking for clients
+    handling any value). Fix: added `!before && after → INFO` guard before the existing BREAKING.
+    Also fixed `request-schema-items-type-changed: type→null` (INFO but had generic fallback
+    message — added specific rule with meaningful message). Root cause: all four were the
+    "null → value" constraint-ADDED case on response side, where direction semantics reverse.
+    +12 tests (6 classify unit + 6 adversarial integration). 377→389 openapi-lens.
+    Total suite: **975/975 tests**.
 
 69. **First-principles BCL format-pack roadmap scoring** (5.7.6 continuous ideation):
     Evaluated K8s YAML, SQL migration, GraphQL, CloudFormation, Avro, Docker image diff as

@@ -140,6 +140,33 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   inherited; op-level body overrides path-level). +2 coverage tests regression-locking behavior that
   was already correct (op-level overrides path-level for non-body params; `application/json` preferred
   over other content types when multiple coexist). **349/349 tests.**
+- [x] **5.7.5 round 13 — response items null-transition classify gaps** — three bugs where
+  `response-schema-items-*-changed` with `before=null` (constraint newly added) was incorrectly
+  classified as BREAKING instead of INFO, or had a cryptic generic fallback message:
+  (1) `response-schema-items-type-changed: null→type` fell through to generic "Change detected
+  at..." message (severity INFO was correct via fallback, but message was wrong). Fixed: added
+  specific INFO rule with meaningful message.
+  (2) `response-schema-items-format-changed: null→format` was unconditionally BREAKING — adding
+  a format to response items is non-breaking (server announces stronger guarantee). Fixed:
+  split rule into `before !== null → BREAKING` and `before === null → INFO`.
+  (3) `response-schema-items-enum-changed: null→enum` was BREAKING via the `!before || !after`
+  guard — adding an enum to response items is INFO (server promises fewer values, not more).
+  Fixed: distinguish `!before && after → INFO` from `before && !after → BREAKING`.
+  Also fixed `request-schema-items-type-changed: type→null` (INFO but had generic message).
+  +12 tests (6 classify unit + 6 adversarial integration). **389/389 tests.**
+- [x] **5.7.5 round 11 — `request-body-required` direction completeness** — `diffRequestBody`
+  only emitted `request-body-required-changed` for `false→true` (body became required = BREAKING).
+  The reverse `true→false` (body became optional = INFO) was never emitted. Also, `false→null`
+  (optional body removed from spec) fell through to a cryptic generic fallback. Fix: added
+  `true→false` emission in `diffRequestBody`; added `false→null` INFO classify rule with
+  meaningful message. +2 adversarial tests. **375/375 tests.**
+- [x] **5.7.5 round 12 — `diffSchemaItems` recursion depth guard** — `diffSchemaItems`
+  recursed into `items.items` without a depth bound. A schema with 5+ levels of nested arrays
+  would produce infinite recursion and stack overflow. Fix: added `MAX_ITEMS_DEPTH = 3`
+  constant, `depth` parameter, and early return at limit. Also fixed an incorrect test that
+  asserted `changes.length > 0` for a change beyond the depth limit — corrected to assert only
+  `not.toThrow()` (the guard's purpose is crash prevention, not change detection beyond limit).
+  +2 adversarial tests. **377/377 tests.**
 - [x] **5.7.5 round 9 — `diffSchemaType` null-transition gap** — `diffSchemaType` guarded
   `bType !== undefined && cType !== undefined`, silently dropping body schema type-added
   (undefined→string) and type-removed (string→undefined) transitions — same pattern as item 54's
@@ -284,6 +311,12 @@ auto-proceeds (2026-06-13) or earlier if human approves.
 | Request array items lost readOnly (true→false) | INFO |
 | Request array items became writeOnly | INFO |
 | Request array items lost writeOnly | INFO |
+| Response array items type constraint added (null→type) | INFO |
+| Response array items type constraint removed (type→null) | BREAKING |
+| Response array items format constraint added (null→format) | INFO |
+| Response array items enum added (null→enum) | INFO |
+| Response array items enum removed (enum→null) | BREAKING |
+| Request array items type constraint removed (type→null) | INFO |
 
 ---
 

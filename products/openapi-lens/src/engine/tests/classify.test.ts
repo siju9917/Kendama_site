@@ -807,3 +807,43 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     },
   );
 });
+
+describe("classify — null-transition fixes (5.7.5 round 13)", () => {
+  it("response-schema-items-type-changed (null→type) has non-generic INFO message", () => {
+    const result = classifyChanges([raw("response-schema-items-type-changed", null, "string", "responses[200].content.schema.items.type")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/added|guarantees|non-breaking/i);
+  });
+
+  it("response-schema-items-format-changed (null→format) is INFO", () => {
+    const result = classifyChanges([raw("response-schema-items-format-changed", null, "uuid", "responses[200].content.schema.items.format")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/added|guarantees|non-breaking/i);
+  });
+
+  it("response-schema-items-format-changed (format→null) remains BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-items-format-changed", "date", null, "responses[200].content.schema.items.format")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+  });
+
+  it("response-schema-items-enum-changed (null→enum) is INFO", () => {
+    const result = classifyChanges([raw("response-schema-items-enum-changed", null, ["a", "b"], "responses[200].content.schema.items.enum")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/added|guarantees|non-breaking/i);
+  });
+
+  it("response-schema-items-enum-changed (enum→null) remains BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-items-enum-changed", ["a", "b"], null, "responses[200].content.schema.items.enum")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+  });
+
+  it("request-schema-items-type-changed (type→null) has non-generic INFO message", () => {
+    const result = classifyChanges([raw("request-schema-items-type-changed", "string", null, "requestBody.content.schema.items.type")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/removed|constraint|any type/i);
+  });
+});
