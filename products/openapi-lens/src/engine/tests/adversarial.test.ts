@@ -5189,6 +5189,59 @@ paths:
   });
 });
 
+describe("path-item $ref resolution — OAS 3.1 components/pathItems (5.7.5 round 30)", () => {
+  const makeSpec = (propType: string) => `
+openapi: "3.1.0"
+info:
+  title: T
+  version: "1"
+components:
+  pathItems:
+    ItemsPath:
+      get:
+        responses:
+          "200":
+            description: ok
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    id:
+                      type: ${propType}
+paths:
+  /items:
+    $ref: "#/components/pathItems/ItemsPath"
+`;
+
+  it("property type change in shared path item (via $ref) is detected", () => {
+    const changes = analyzeOpenApiDiff(makeSpec("string"), makeSpec("integer"));
+    const typeChange = changes.find((c) => c.type === "response-schema-property-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+    expect(typeChange?.path).toBe("/items");
+  });
+
+  it("unchanged path item $ref produces no changes", () => {
+    const spec = makeSpec("string");
+    expect(analyzeOpenApiDiff(spec, spec)).toHaveLength(0);
+  });
+
+  it("nonexistent path item $ref is handled gracefully (falls back to $ref object, finds no methods)", () => {
+    const spec = `
+openapi: "3.1.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    $ref: "#/components/pathItems/NonExistent"
+`;
+    expect(() => analyzeOpenApiDiff(spec, spec)).not.toThrow();
+    expect(analyzeOpenApiDiff(spec, spec)).toHaveLength(0);
+  });
+});
+
 describe("requestBody $ref resolution — changes in #/components/requestBodies propagate (5.7.5 round 29)", () => {
   const makeSpec = (required: string[], props: Record<string, string>) => `
 openapi: "3.0.0"

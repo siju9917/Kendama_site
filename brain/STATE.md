@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **1344/1344 tests** (BidDiff 586/586 + openapi-lens 758/758).
+- **Build green:** **1347/1347 tests** (BidDiff 586/586 + openapi-lens 761/761).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -148,6 +148,11 @@
   no content field). Added parseSharedRequestBodies + updated parseRequestBody to resolve
   $ref the same way as parseResponses/$ref. Changes to shared request bodies now propagate
   correctly. 3 adversarial tests → 758.
+  5.7.5 bug-hunt round 30 (bug fix): path-item $ref resolution gap — OAS 3.1
+  components/pathItems/$ref not resolved. Path item `{$ref: "..."}` had no HTTP method
+  keys, so zero operations were found. Added parseSharedPathItems + $ref resolution in
+  parseOperations' path loop. Type changes in shared path items now detected. 3 adversarial
+  tests → 761.
   All typecheck clean; full CI gate verified green.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`

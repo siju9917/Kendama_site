@@ -392,17 +392,34 @@ function parseSecurityRequirements(raw: unknown): Record<string, string[]> | nul
   return result;
 }
 
+/** Parse #/components/pathItems (OAS 3.1) into a lookup map for path-item $ref resolution. */
+function parseSharedPathItems(raw: Record<string, unknown>): Record<string, unknown> {
+  const components = isObject(raw["components"]) ? raw["components"] : {};
+  return isObject(components["pathItems"]) ? components["pathItems"] : {};
+}
+
 /** Parse the paths object into a flat list of operations. */
 function parseOperations(raw: Record<string, unknown>, schemaLookup: Record<string, unknown>, version: OapiSpec["version"]): OapiOperation[] {
   const paramLookup = parseSharedParameters(raw, schemaLookup);
   const responseLookup = parseSharedResponses(raw);
   const headerLookup = parseSharedHeaders(raw);
   const requestBodyLookup = parseSharedRequestBodies(raw);
+  const pathItemLookup = parseSharedPathItems(raw);
   const paths = isObject(raw["paths"]) ? raw["paths"] : {};
   const ops: OapiOperation[] = [];
 
-  for (const [path, pathItem] of Object.entries(paths)) {
-    if (!isObject(pathItem)) continue;
+  for (const [path, rawPathItem] of Object.entries(paths)) {
+    if (!isObject(rawPathItem)) continue;
+    // Resolve path-item $ref (OAS 3.1 `$ref: "#/components/pathItems/X"`).
+    const pathItemRef = asString(rawPathItem["$ref"]);
+    const pathItem: Record<string, unknown> = pathItemRef
+      ? ((): Record<string, unknown> => {
+          const match = /^#\/components\/pathItems\/(.+)$/.exec(pathItemRef);
+          if (!match || !match[1]) return rawPathItem;
+          const target = pathItemLookup[match[1]];
+          return isObject(target) ? target : rawPathItem;
+        })()
+      : rawPathItem;
     const pathLevelParams = asArray(pathItem["parameters"]);
 
     for (const method of HTTP_METHODS) {
