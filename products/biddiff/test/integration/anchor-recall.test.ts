@@ -28,6 +28,8 @@ const CLAUSE_CASES: AnchorCase[] = [
   { text: "Clauses 52.219-14 and 52.222-50 incorporated.", expect: [{ type: "CLAUSE_REF", normalized: "52.219-14" }, { type: "CLAUSE_REF", normalized: "52.222-50" }] },
   // Wrapped across a space (post-PDF-extraction):
   { text: "See 52. 204-21 and 252. 204-7012.", expect: [{ type: "CLAUSE_REF", normalized: "52.204-21" }, { type: "CLAUSE_REF", normalized: "252.204-7012" }] },
+  // Narrow-column table break at the hyphen (5.7.5 fix, 2026-06-06):
+  { text: "DFARS 252.204- 7012 Safeguarding Covered Defense Information.", expect: [{ type: "CLAUSE_REF", normalized: "252.204-7012" }] },
 ];
 
 const PAGE_LIMIT_CASES: AnchorCase[] = [
