@@ -836,3 +836,85 @@ to `claude/intelligent-faraday-FnmJn`.
 guard-pattern check (Adversarial Tester #2) as a test requirement on any React
 component with `useEffect`-registered window event listeners.
 
+### Session continuation note (2026-06-06, D5 Phase 0 + factory hardening)
+
+Context window continuation. Suite 567+91=658 total (BidDiff 567 unchanged; openapi-lens
+grew 68→91 with adversarial + property-diff passes).
+
+**Items completed:**
+
+- **Item 32** (D5 Phase 0 full engine): Parser (17 tests) + diff (20) + classify (22) +
+  integration (9) + adversarial 5.7.2 second pass (15) + property-level diff extension (8)
+  = 91/91 tests. Key defect found during adversarial pass: YAML spec built by string
+  concatenation produced wrong YAML structure (new path appended after `components:` block
+  became a top-level key, not a `paths` entry). Test suite reconstructed with standalone
+  spec strings. `diffSchemaProperties()` added to detect property type changes, removals,
+  additions — filled the gap where a property changing from `number` to `string` was
+  invisible to the engine.
+
+- **Item 33** (5.7.3 roster growth): Four new items added to CRITIQUE_AGENTS.md:
+  - Correctness Critic #1: compound diff keys required (single-field keys silently
+    merge distinct entities — `path:id` + `query:id` collapsing on `name` alone)
+  - Adversarial Tester #2: YAML/JSON spec string-concatenation must be tree-validated
+  - Domain-Expert Critic #5: OpenAPI/REST API specialization block added (property-level
+    diff coverage; allOf/oneOf composition warning; request-vs-response polarity reversal;
+    remote `$ref` gap documentation)
+  - Roster growth log updated with 4 new rows.
+
+- **Item 34** (5.7.6 WISHLIST): Two new items logged from openapi-lens friction:
+  "allOf/oneOf/anyOf composition schema merger" and "recursive property-level diff beyond
+  1 level."
+
+- **Item 35** (brain updates): APPROVALS.md Proposal #3 Phase 0 status noted. IDEA_BACKLOG.md
+  D5 row updated. STATE.md test counts corrected (68→91 in two places). Session items 33-35
+  added. All factory checks green (11/11).
+
+**Updated 5.7.7 assessment for this continuation:**
+
+- **5.7.1 (monthly re-critique):** N/A — no shipped products.
+- **5.7.2 (escalating critique):** HELD — the D5 adversarial second pass (15 tests) was a
+  fully independent re-attack of the engine with new adversarial inputs (malformed YAML,
+  circular-looking schemas, mixed-format specs, empty specs, Swagger 2.0 edge cases, parameter
+  namespace collisions). P0/P1/P2 = 0. The property-diff extension (item 32) was itself
+  attacked by an adversarial test set (8 tests). **Caveat (fourth consecutive cycle without the
+  full 14-critic panel):** the accumulating panel debt is real. The trigger remains: K1 phase
+  gate closes, or a ship event occurs.
+- **5.7.3 (roster growth):** HELD with strong evidence — four new checklist/specialization
+  additions including the OpenAPI domain specialization for Domain-Expert #5, which is a
+  genuinely broad addition (applies to all future API-diff products: D5, D6, and any
+  new formats in the "one shell, N packs" family).
+- **5.7.4 ("nothing is done"):** HELD — property-level diff gap was found by asking
+  "what would make this engine materially better?" — a `type` change inside `properties`
+  was invisible to the engine. This was found and fixed in Phase 0 (not deferred to Phase 2).
+- **5.7.5 (continuous bug-hunt):** HELD — the YAML-concatenation test construction bug
+  was found by running the adversarial suite against the engine with edge-case inputs.
+  The test for "a spec with no paths" (just info block) and similar minimal inputs exposed
+  that the constructed test specs themselves had structural defects.
+- **5.7.6 (continuous ideation):** HELD — two new WISHLIST items from real friction.
+
+**5.7.8 (audit-of-the-auditor):**
+
+1. Was the audit shallow? Six rules addressed with held/partial verdicts and concrete
+   artifact citations (test file names, check names, specific CRITIQUE_AGENTS.md items).
+   Not shallow.
+2. Was an obvious lapse missed? **One finding:** the property-level diff at 1 level deep
+   is documented as a Known Limitation (PROGRESS.md) — but the WISHLIST item just logged
+   frames it as "recursive diff beyond 1 level." The ACTUAL limitation is that even 1-level
+   property diffs have no `allOf`/`oneOf` composition support. The D5 Phase 1 build session
+   will need an explicit "what's the depth guarantee?" test before claiming coverage. Logged
+   as a Phase 1 gate item.
+3. Was the conclusion defended or asserted? Verdicts cite specific test files and checklist
+   additions. Evidence-bound.
+
+**Standing audit from Finding 2 above:** Phase 1 must include an explicit test verifying the
+"1-level-deep property diff covers these cases, and explicitly DOES NOT cover these other cases"
+contract — so the limitation is tested, not just documented.
+
+**Where applied:** `governance/CRITIQUE_AGENTS.md` (four new items), `brain/WISHLIST.md`
+(two new entries), `brain/STATE.md` (items 32-35), this lesson.
+
+**Recurrence test:** the next session's 5.7.7 must either (a) note the formal 14-critic panel
+ran, or (b) re-justify why not. Four consecutive cycle-continuations without the panel is
+approaching the mandatory cadence threshold; if K1 P1s clear at all in the next session,
+the full panel runs immediately.
+

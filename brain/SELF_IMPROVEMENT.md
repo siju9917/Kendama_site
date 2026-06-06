@@ -39,7 +39,13 @@ the top idea cannot be approved.
 
 **Strengthens or weakens?** stronger.
 
-**Status:** proposed.
+**Status:** **done (2026-06-06).** The backlog now has the full candidate set:
+5 seeded ideas (ranks 1-5) + the complete D-family (D1-D6 derivatives with scores
+and deep-eval research files) + WISHLIST items + standing candidate categories.
+All major candidates either have full deep-evaluation research files or are
+explicitly deferred per the hard filters. Proposals #2-#4 posted to APPROVALS.md.
+The "seeding placeholder" caveat is no longer valid — the backlog reflects the
+full candidate set as of 2026-06-06.
 
 **Reasoning trace:** Bootstrap acknowledged the seeding is
 partial (see `brain/IDEA_BACKLOG.md`'s "seeding placeholder"
