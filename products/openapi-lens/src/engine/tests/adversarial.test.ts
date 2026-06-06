@@ -4792,3 +4792,93 @@ paths:
     expect(c?.severity).toBe("BREAKING");
   });
 });
+
+// ─── Round 26: response-schema-nullable-changed direction polarity ─────────
+// Bug: top-level body response nullable had inverted BREAKING/INFO vs property/items levels.
+// false→true = loosening (server can now return null) = BREAKING.
+// true→false = tightening (server guarantees non-null) = INFO.
+
+const NULLABLE_PREAMBLE = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:`;
+
+describe("round 26 — response-schema-nullable-changed direction polarity fix", () => {
+  it("response body nullable false→true is BREAKING (server may now return null; clients crash)", () => {
+    const baseline = `${NULLABLE_PREAMBLE}
+                type: string
+                nullable: false`;
+    const current = `${NULLABLE_PREAMBLE}
+                type: string
+                nullable: true`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const c = changes.find((ch) => ch.type === "response-schema-nullable-changed");
+    expect(c).toBeDefined();
+    expect(c?.before).toBe(false);
+    expect(c?.after).toBe(true);
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.message).toMatch(/null/i);
+  });
+
+  it("response body nullable true→false is INFO (server guarantees non-null; tightening = INFO for responses)", () => {
+    const baseline = `${NULLABLE_PREAMBLE}
+                type: string
+                nullable: true`;
+    const current = `${NULLABLE_PREAMBLE}
+                type: string
+                nullable: false`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const c = changes.find((ch) => ch.type === "response-schema-nullable-changed");
+    expect(c).toBeDefined();
+    expect(c?.before).toBe(true);
+    expect(c?.after).toBe(false);
+    expect(c?.severity).toBe("INFO");
+    expect(c?.message).toMatch(/no longer nullable|never null/i);
+  });
+
+  it("CONTRAST: response property nullable false→true is also BREAKING (consistent with body level)", () => {
+    const baseline = `${NULLABLE_PREAMBLE}
+                type: object
+                properties:
+                  name:
+                    type: string
+                    nullable: false`;
+    const current = `${NULLABLE_PREAMBLE}
+                type: object
+                properties:
+                  name:
+                    type: string
+                    nullable: true`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const c = changes.find((ch) => ch.type === "response-schema-property-nullable-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("CONTRAST: response items nullable false→true is also BREAKING (consistent with body level)", () => {
+    const baseline = `${NULLABLE_PREAMBLE}
+                type: array
+                items:
+                  type: string
+                  nullable: false`;
+    const current = `${NULLABLE_PREAMBLE}
+                type: array
+                items:
+                  type: string
+                  nullable: true`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const c = changes.find((ch) => ch.type === "response-schema-items-nullable-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+  });
+});

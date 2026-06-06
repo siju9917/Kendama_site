@@ -273,6 +273,22 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   rules (direction-aware): request readOnly false→true = BREAKING; response writeOnly false→true
   = BREAKING; all other directions = INFO (mirrors property/items rules). TYPE_STUBS updated
   (+4 entries). +10 tests (4 TYPE_STUBS completeness + 6 adversarial integration). **495/495 tests.**
+- [x] **5.7.5 round 26 — `response-schema-nullable-changed` BREAKING/INFO polarity inverted** —
+  Post-round-25 escalating critique (5.7.2 second independent hard pass) found that the
+  `response-schema-nullable-changed` (top-level body schema) had inverted BREAKING/INFO
+  classification vs the property-level and items-level rules (which were both correct):
+  - **Was** (wrong): `before=true, after=false` = BREAKING; `before=false, after=true` = INFO.
+  - **Correct**: `before=false, after=true` = BREAKING (server may now return null where clients
+    assumed non-null — crash on null dereference); `before=true, after=false` = INFO (server
+    tightens guarantee, clients benefit from non-null guarantee — no client breakage).
+  The message for the BREAKING case was also wrong ("Clients handling null values will need to be
+  updated" — implies dead code, not crash risk). Fixed: swapped the two rules; updated messages to
+  accurately describe the breaking scenario (clients that assume non-null will crash) and the info
+  scenario (server now guarantees non-null). Fixed two classify unit tests that were asserting the
+  wrong expected severity. Updated TYPE_STUBS to use the BREAKING case (false→true). Added 4
+  adversarial integration tests: BREAKING direction, INFO direction, plus 2 contrast tests
+  confirming property and items levels are consistently BREAKING for false→true.
+  +4 adversarial tests, +0 new types. **521/521 tests.**
 - [x] **5.7.5 round 25 — `minProperties`/`maxProperties` constraints missing** — OpenAPI defines
   `minProperties` (minimum number of object properties required) and `maxProperties` (maximum
   allowed) as standard constraint fields. Neither was in `OapiSchema`, the parser, `flattenAllOf`,
@@ -391,14 +407,14 @@ auto-proceeds (2026-06-13) or earlier if human approves.
 | Response status code removed | BREAKING |
 | Required response field removed | BREAKING |
 | Response field type changed | BREAKING |
-| Response field nullable: true→false | BREAKING |
+| Response body schema nullable: true→false | INFO |
+| Response body schema nullable: false→true | BREAKING |
 | Endpoint added | INFO |
 | Optional parameter added | INFO |
 | Parameter required: true→false | INFO |
 | Request schema field required→optional | INFO |
 | Response status code added | INFO |
 | Response field guaranteed as required | INFO |
-| Response field nullable: false→true | INFO |
 | Response property type changed | BREAKING |
 | Response property removed | BREAKING |
 | Request property type changed | BREAKING |

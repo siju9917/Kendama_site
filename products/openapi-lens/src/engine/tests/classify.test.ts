@@ -138,14 +138,20 @@ describe("classifyChanges — classification rules", () => {
     expect(result[0]?.message).toMatch(/added/i);
   });
 
-  it("classifies nullable changed (true→false) as BREAKING", () => {
-    const result = classifyChanges([raw("response-schema-nullable-changed", true, false)]);
+  it("classifies response-schema-nullable-changed (false→true) as BREAKING — server may now return null", () => {
+    // Direction-aware: loosening a RESPONSE constraint = BREAKING.
+    // Clients that assumed this field is never null will crash when they receive a null.
+    const result = classifyChanges([raw("response-schema-nullable-changed", false, true)]);
     expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/null/i);
   });
 
-  it("classifies nullable changed (false→true) as INFO", () => {
-    const result = classifyChanges([raw("response-schema-nullable-changed", false, true)]);
+  it("classifies response-schema-nullable-changed (true→false) as INFO — server guarantees non-null", () => {
+    // Direction-aware: tightening a RESPONSE constraint = INFO.
+    // Server now guarantees the field is never null; clients benefit.
+    const result = classifyChanges([raw("response-schema-nullable-changed", true, false)]);
     expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/no longer nullable|never null/i);
   });
 
   it("classifies request-body-required-changed (true→null, body removed) as BREAKING", () => {
@@ -746,7 +752,7 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "response-schema-field-required-added":    [false, true],
     "response-schema-field-required-removed":  [true, false],
     "response-schema-type-changed":            ["string", "object"],
-    "response-schema-nullable-changed":        [true, false],
+    "response-schema-nullable-changed":        [false, true],
     "response-schema-property-type-changed":   ["string", "integer"],
     "response-schema-property-removed":        ["string", null],
     "response-schema-property-added":          [null, "string"],

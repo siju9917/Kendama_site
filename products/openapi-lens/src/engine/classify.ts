@@ -197,12 +197,23 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     matches: (c) => c.type === "response-schema-type-changed" && c.before === null ? "INFO" : null,
     message: (c) => `Response body type added: ${c.location}. Server now guarantees type ${c.after} (previously unspecified).`,
   },
+  // response-schema-nullable-changed: loosening (false→true) = BREAKING, tightening (true→false) = INFO.
+  // Mirrors direction-aware logic for response-schema-property-nullable-changed and
+  // response-schema-items-nullable-changed. false→true means the server may now return null where
+  // it previously guaranteed a value — clients that assumed non-null will crash.
+  {
+    matches: (c) =>
+      c.type === "response-schema-nullable-changed" && c.before === false && c.after === true
+        ? "BREAKING"
+        : null,
+    message: (c) => `Response body field can now be null: ${c.location}. Clients that assume this field is never null will break when they receive a null.`,
+  },
   {
     matches: (c) =>
       c.type === "response-schema-nullable-changed" && c.before === true && c.after === false
-        ? "BREAKING"
+        ? "INFO"
         : null,
-    message: (c) => `Response field became non-nullable: ${c.location}. Clients handling null values will need to be updated.`,
+    message: (c) => `Response body field is no longer nullable: ${c.location}. Server now guarantees this field is never null (non-breaking for clients).`,
   },
   {
     matches: (c) =>
@@ -792,13 +803,6 @@ const CLASSIFY_RULES: ClassifyRule[] = [
   {
     matches: (c) => c.type === "response-schema-field-required-added" ? "INFO" : null,
     message: (c) => `Response now guarantees a required field: ${c.location}. Clients can now rely on this field being present.`,
-  },
-  {
-    matches: (c) =>
-      c.type === "response-schema-nullable-changed" && c.before === false && c.after === true
-        ? "INFO"
-        : null,
-    message: (c) => `Response field can now be null: ${c.location}. Clients should handle null values for this field.`,
   },
   {
     matches: (c) =>
