@@ -90,13 +90,15 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **685/685 tests** (BidDiff 579/579 + openapi-lens 106/106).
+- **Build green:** **686/686 tests** (BidDiff 580/580 + openapi-lens 106/106).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
   1 sign-before-dollar + 1 classify precedence pin + 3 bare-paren page-limit +
   46 DiffView component + 12 SamAttachments + 4 N-A21 filter counter +
-  4 NAICS-separator-forms fix + 4 critical-rule MOVE-behavior characterization).
+  4 NAICS-separator-forms fix + 4 critical-rule MOVE-behavior characterization +
+  1 NAICS e2e integration + 4 extractSolicitationId over-capture +
+  1 SF-1449 solicitation/contract/order form).
   OpenAPI-lens: Phase 0 engine 96/96 (critique panel) + 10 more (5.7.5 bug-hunt:
   $ref parameter resolution + double-$ref chain). All typecheck clean; full CI gate verified green.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
@@ -563,6 +565,15 @@ all green; check tests 16/16.
     change final char from `[A-Z0-9]` to `\d` (IDs always end with digit suffix).
     4 new tests (space+word, tab+word, comma/paren no-regression). 579/579 BidDiff.
     Total suite: **685/685 tests**.
+42. **BidDiff 5.7.5 bug: SF-1449 "Solicitation/Contract/Order Number" header not matched**
+    — the most common commercial acquisition form (SF-1449 used for commercial items,
+    SF-33 for negotiated contracts) uses the slash-separated label
+    "Solicitation/Contract/Order Number" which was not recognized by `extractSolicitationId`.
+    A document using this form would never produce a solicitation ID, making the N14
+    mismatch guard a silent no-op for those solicitations. Fix: added `(?:\/[a-z\/]+)?`
+    optional group after "solicitation" in the prefix alternation so the slash form
+    matches. With or without a colon delimiter both work. 1 new test (2 assertions:
+    plain form + colon form). 580/580 BidDiff. Total suite: **686/686 tests**.
 
 ## Notes for the next session
 
@@ -573,7 +584,7 @@ all green; check tests 16/16.
   This is the last ship blocker besides the store submission itself.
 - This session's work is on branch `claude/intelligent-faraday-FnmJn` per task
   instructions. Must be merged to `main` at session end per CLAUDE.md rule 6.
-- **BidDiff bug-hunt lane is SATURATED** (567 tests, every core fn + all sidepanel
+- **BidDiff bug-hunt lane is SATURATED** (580 tests, every core fn + all sidepanel
   components tested). All unblocked POLISH done. Next session: privacy copy fix
   (NEED #7, when human responds), store submission prep, and D5 VS Code extension
   Phase 1 scaffold (once Proposal #3 auto-proceeds 2026-06-13).
