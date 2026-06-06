@@ -4335,3 +4335,224 @@ paths:
     expect(constraintChange?.severity).toBe("BREAKING");
   });
 });
+
+// ─── Round 24: top-level body schema readOnly / writeOnly ─────────────────────
+describe("top-level body schema readOnly/writeOnly (5.7.5 round 24)", () => {
+  const PREAMBLE = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:`;
+
+  it("request body readOnly false→true fires BREAKING (request-schema-readonly-changed)", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              readOnly: true
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const ro = changes.find((c) => c.type === "request-schema-readonly-changed");
+    expect(ro).toBeDefined();
+    expect(ro?.severity).toBe("BREAKING");
+    expect(ro?.message).toMatch(/read.only|ignored|400/i);
+  });
+
+  it("request body readOnly true→false fires INFO (request-schema-readonly-changed)", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              readOnly: true
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const ro = changes.find((c) => c.type === "request-schema-readonly-changed");
+    expect(ro).toBeDefined();
+    expect(ro?.severity).toBe("INFO");
+  });
+
+  it("response body writeOnly false→true fires BREAKING (response-schema-writeonly-changed)", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                writeOnly: true
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const wo = changes.find((c) => c.type === "response-schema-writeonly-changed");
+    expect(wo).toBeDefined();
+    expect(wo?.severity).toBe("BREAKING");
+    expect(wo?.message).toMatch(/write.only|no longer receive/i);
+  });
+
+  it("response body writeOnly true→false fires INFO (response-schema-writeonly-changed)", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                writeOnly: true
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const wo = changes.find((c) => c.type === "response-schema-writeonly-changed");
+    expect(wo).toBeDefined();
+    expect(wo?.severity).toBe("INFO");
+  });
+
+  it("response body readOnly false→true fires INFO (not BREAKING) (response-schema-readonly-changed)", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                readOnly: true
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const ro = changes.find((c) => c.type === "response-schema-readonly-changed");
+    expect(ro).toBeDefined();
+    expect(ro?.severity).toBe("INFO");
+    // Must NOT be classified as BREAKING
+    expect(ro?.severity).not.toBe("BREAKING");
+  });
+
+  it("request body writeOnly false→true fires INFO (not BREAKING) (request-schema-writeonly-changed)", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              writeOnly: true
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const wo = changes.find((c) => c.type === "request-schema-writeonly-changed");
+    expect(wo).toBeDefined();
+    expect(wo?.severity).toBe("INFO");
+    expect(wo?.severity).not.toBe("BREAKING");
+  });
+});

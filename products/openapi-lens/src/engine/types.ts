@@ -143,7 +143,11 @@ export type OapiChangeType =
   | "request-schema-property-additional-properties-changed"
   | "response-schema-property-additional-properties-changed"
   | "request-schema-items-additional-properties-changed"
-  | "response-schema-items-additional-properties-changed";
+  | "response-schema-items-additional-properties-changed"
+  | "request-schema-readonly-changed"
+  | "response-schema-readonly-changed"
+  | "request-schema-writeonly-changed"
+  | "response-schema-writeonly-changed";
 
 /** A raw structural difference between two specs before classification. */
 export interface OapiRawChange {

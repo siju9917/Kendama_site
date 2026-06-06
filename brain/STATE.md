@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **1071/1071 tests** (BidDiff 586/586 + openapi-lens 485/485).
+- **Build green:** **1081/1081 tests** (BidDiff 586/586 + openapi-lens 495/495).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -221,7 +221,9 @@ Priority order is `ops/loop.md`.
    items-level additionalProperties detection (round 18),
    enum order-sensitivity false-positive fix — enumSetsEqual() (round 19),
    items-additionalProperties spurious-event guard fix (round 20),
-   items-format/enum/nullable/constraint spurious-event guard fix (round 21)). VS Code extension scaffold (Phase 1)
+   items-format/enum/nullable/constraint spurious-event guard fix (round 21),
+   parameter-items scalar guard fix (round 22),
+   response enum-removed message fix (round 23)). VS Code extension scaffold (Phase 1)
    begins once Proposal #3 auto-proceeds 2026-06-13.
 9. Recurring: re-critique cadence, "nothing is ever done" reviews,
    ambient ideation, factory self-improvement, META audit.

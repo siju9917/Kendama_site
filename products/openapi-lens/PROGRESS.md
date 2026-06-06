@@ -260,6 +260,19 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   into explicit `before && !after` branch (proper "enum removed" message) vs remaining null-null edge.
   Severity (BREAKING) was already correct — only messages were wrong.
   +2 classify unit tests (message content check for both types). **485/485 tests.**
+- [x] **5.7.5 round 24 — top-level body schema `readOnly`/`writeOnly` missing from diff** —
+  Post-round-23 audit revealed that `readOnly`/`writeOnly` were compared at property level
+  (added in round 10) and at items level, but NOT at the top-level body schema. A request body
+  schema going from `readOnly: false` to `readOnly: true` (BREAKING — server will reject the
+  body) and a response body schema going from `writeOnly: false` to `writeOnly: true` (BREAKING
+  — payload disappears from responses) were completely invisible.
+  Fixed: added `diffSchemaTopLevelReadOnlyWriteOnly()` helper in `diff.ts`, wired into both
+  `diffRequestBody` and `diffResponses`. Added 4 new OapiChangeType values
+  (`request-schema-readonly-changed`, `response-schema-readonly-changed`,
+  `request-schema-writeonly-changed`, `response-schema-writeonly-changed`). Added 6 classify
+  rules (direction-aware): request readOnly false→true = BREAKING; response writeOnly false→true
+  = BREAKING; all other directions = INFO (mirrors property/items rules). TYPE_STUBS updated
+  (+4 entries). +10 tests (4 TYPE_STUBS completeness + 6 adversarial integration). **495/495 tests.**
 - [x] **5.7.5 round 15 — request-side constraint removal classified as BREAKING instead of INFO** —
   systematic audit of all request-side classify rules found 11 cases where a constraint being REMOVED
   from the server spec (before=value, after=null/undefined) was incorrectly classified as BREAKING.

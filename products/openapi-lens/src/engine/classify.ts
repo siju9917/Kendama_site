@@ -1079,6 +1079,52 @@ const CLASSIFY_RULES: ClassifyRule[] = [
         : `Response body schema enum values removed: ${c.location}. Removed: [${(before ?? []).filter((v) => !(after ?? []).includes(v)).join(", ")}].`;
     },
   },
+
+  // ─── Top-level body schema readOnly / writeOnly (direction-aware) ──────────
+  // Response body readOnly: INFO in both directions (annotation-only; payload unchanged).
+  {
+    matches: (c) => c.type === "response-schema-readonly-changed" ? "INFO" : null,
+    message: (c) => c.after === true
+      ? `Response body schema became read-only: ${c.location}. Server signals this payload is not writable; no payload change for clients.`
+      : `Response body schema is no longer read-only: ${c.location}. The payload may now be accepted in request bodies.`,
+  },
+  // Request body readOnly false→true: BREAKING (server will reject/ignore the body).
+  {
+    matches: (c) =>
+      c.type === "request-schema-readonly-changed" && c.before === false && c.after === true
+        ? "BREAKING"
+        : null,
+    message: (c) => `Request body schema became read-only: ${c.location}. Clients sending this body will now receive a 400 or have it ignored.`,
+  },
+  {
+    matches: (c) =>
+      c.type === "request-schema-readonly-changed" && c.before === true && c.after === false
+        ? "INFO"
+        : null,
+    message: (c) => `Request body schema is no longer read-only: ${c.location}. Clients may now send this body in requests.`,
+  },
+  // Response body writeOnly false→true: BREAKING (payload disappears from responses).
+  {
+    matches: (c) =>
+      c.type === "response-schema-writeonly-changed" && c.before === false && c.after === true
+        ? "BREAKING"
+        : null,
+    message: (c) => `Response body schema became write-only: ${c.location}. Clients that read this payload will no longer receive it in responses.`,
+  },
+  {
+    matches: (c) =>
+      c.type === "response-schema-writeonly-changed" && c.before === true && c.after === false
+        ? "INFO"
+        : null,
+    message: (c) => `Response body schema is no longer write-only: ${c.location}. This payload will now appear in responses.`,
+  },
+  // Request body writeOnly: INFO in both directions (annotation about request bodies).
+  {
+    matches: (c) => c.type === "request-schema-writeonly-changed" ? "INFO" : null,
+    message: (c) => c.after === true
+      ? `Request body schema became write-only: ${c.location}. This body is accepted in requests but will not appear in responses.`
+      : `Request body schema is no longer write-only: ${c.location}. This body may now appear in response payloads.`,
+  },
 ];
 
 /**

@@ -799,6 +799,10 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "response-schema-property-additional-properties-changed":[true, false],
     "request-schema-items-additional-properties-changed":    [true, false],
     "response-schema-items-additional-properties-changed":   [true, false],
+    "request-schema-readonly-changed":                       [false, true],
+    "response-schema-readonly-changed":                      [false, true],
+    "request-schema-writeonly-changed":                      [false, true],
+    "response-schema-writeonly-changed":                     [false, true],
   };
 
   it.each(Object.keys(TYPE_STUBS) as OapiChangeType[])(

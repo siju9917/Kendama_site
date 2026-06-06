@@ -592,6 +592,40 @@ function diffSchemaTopLevelFields(
   }
 }
 
+/** Compare readOnly and writeOnly on a top-level request/response body schema. */
+function diffSchemaTopLevelReadOnlyWriteOnly(
+  path: string,
+  method: HttpMethod,
+  location: string,
+  baseline: OapiSchema | null,
+  current: OapiSchema | null,
+  isRequest: boolean,
+  changes: OapiRawChange[],
+): void {
+  const bReadOnly = baseline?.readOnly ?? false;
+  const cReadOnly = current?.readOnly ?? false;
+  if (bReadOnly !== cReadOnly) {
+    changes.push({
+      type: isRequest ? "request-schema-readonly-changed" : "response-schema-readonly-changed",
+      path, method,
+      location: `${location}.readOnly`,
+      before: bReadOnly,
+      after: cReadOnly,
+    });
+  }
+  const bWriteOnly = baseline?.writeOnly ?? false;
+  const cWriteOnly = current?.writeOnly ?? false;
+  if (bWriteOnly !== cWriteOnly) {
+    changes.push({
+      type: isRequest ? "request-schema-writeonly-changed" : "response-schema-writeonly-changed",
+      path, method,
+      location: `${location}.writeOnly`,
+      before: bWriteOnly,
+      after: cWriteOnly,
+    });
+  }
+}
+
 /** Compare nullable in a schema (response or request). */
 function diffNullable(
   path: string,
@@ -654,6 +688,7 @@ function diffRequestBody(
     diffSchemaTopLevelConstraints(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffSchemaTopLevelFields(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffAdditionalProperties(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
+    diffSchemaTopLevelReadOnlyWriteOnly(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
   }
 }
 
@@ -683,6 +718,7 @@ function diffResponses(
     diffSchemaTopLevelConstraints(path, method, loc, br.schema, cr.schema, false, changes);
     diffSchemaTopLevelFields(path, method, loc, br.schema, cr.schema, false, changes);
     diffAdditionalProperties(path, method, loc, br.schema, cr.schema, false, changes);
+    diffSchemaTopLevelReadOnlyWriteOnly(path, method, loc, br.schema, cr.schema, false, changes);
   }
 
   for (const code of Object.keys(cMap)) {
