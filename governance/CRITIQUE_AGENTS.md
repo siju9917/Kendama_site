@@ -126,6 +126,15 @@ Checklist:
   silently drops the value. Characterize this behavior in a test and
   verify it is acceptable or fix it. Added 2026-06-06 (BidDiff
   `detectMoney`: `$1.5MMM` returns `$1 = 1.00` not no-match).
+- **A `window.addEventListener('keydown')` handler in a React
+  `useEffect` requires tests for each guard independently:**
+  (a) modifier keys (`metaKey`/`ctrlKey`/`altKey` each bypass
+  the handler), (b) active input element (`e.target.tagName ===
+  'INPUT'` or `'TEXTAREA'` bypasses), (c) IME composition
+  (`e.isComposing`), (d) empty-list / disabled-state guard. Testing
+  only the happy path (the key works) leaves all guards untested.
+  Added 2026-06-06 (DiffView: J/K nav had all four guards but zero
+  tests for any of them until the first component test was written).
 
 ### 3. Security Critic
 
@@ -517,3 +526,4 @@ with no growth is a warning sign flagged in the weekly digest.
 | 2026-06-06 | Correctness Critic (#1) checklist | Added: a sign detector firing before digits must ALSO fire before currency symbols (`$` etc.) — `"-$5,000"` must normalize differently from `"$5,000"`. Probe `[-+]$AMOUNT` explicitly | BidDiff N15: `isLeadingSign` only checked `next === digit`, not `next === "$"`, so a sign-removal on a dollar amount was silently suppressed (`products/biddiff/CRITIQUE_LOG.md` bug-hunt pass, session 2026-06-06) |
 | 2026-06-06 | Adversarial Tester (#2) checklist | Added: a regex optional group wrapping BOTH a word prefix and `\(` makes the paren optional too — test every regex with and without each optional prefix INDEPENDENTLY | BidDiff N16: `PAGE_LIMIT_RE` had `\(?` inside the word-group optional so bare `"(30) pages"` (no word prefix) never produced a PAGE_LIMIT anchor (`products/biddiff/CRITIQUE_LOG.md` bug-hunt, session 2026-06-06) |
 | 2026-06-06 | Adversarial Tester (#2) checklist | Added: optional groups with `\b` can produce unexpected partial matches through backtracking — when the full match fails `\b`, the engine backtracks an optional group and produces a shorter, potentially wrong match. Characterize this behavior in a test. | BidDiff `detectMoney`: `$1.5MMM` returns `$1 = 1.00` (not no-match) because `MM` fails the word boundary but the engine backtracks the optional decimal and matches `$1` with `\b` between the digit and the subsequent `.` |
+| 2026-06-06 | Adversarial Tester (#2) checklist | Added: a `window.addEventListener('keydown')` handler in a React useEffect requires independent tests for each guard: modifier keys, active input elements, IME composition, empty-list guard. The happy path alone leaves all guards untested. | BidDiff DiffView: J/K nav had all four guards but zero tests for any guard before `DiffView.test.tsx` was written in the 2026-06-06 session continuation. The gap was found by "nothing is done" 5.7.4 review. |
