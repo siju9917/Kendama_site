@@ -95,6 +95,9 @@ Every cycle pulls from this queue. The priority order (highest
 first) is exactly PART 4.6:
 
 1. **Brain reconciliation.** First action of every session: run
+   `node ops/checks/install-githooks.mjs` (activate the commit-msg
+   auto-skip interlock so this session's pushes can never trigger an
+   external host build — GUARDRAILS.md #17), then run
    `node ops/checks/run-all.mjs` (the factory-level checks — see
    `ops/checks/README.md`). A blocking (P0/P1) finding is the
    highest-priority queue item and is fixed before anything else.
@@ -158,6 +161,7 @@ triggers the lapse-restore rule above (priority 3).
 | Continuous bug-hunt (new inputs, no code change) | Weekly minimum, per shipped product | 5.7.5 |
 | Continuous ideation logging | Every loop, ambient | 5.7.6 |
 | META-loop audit of 5.7.1–5.7.6 | Every cycle | 5.7.7 |
+| Git-hook activation (`node ops/checks/install-githooks.mjs`) | Every session start, before run-all | GUARDRAILS #17 |
 | Factory checks (`node ops/checks/run-all.mjs`) | Every session start | `ops/checks/` |
 | Brain integrity check | Every session start (now automated by `ops/checks/brain-integrity.mjs`) | PART 2.4 |
 | Research-loop refresh of `MARKET_SIGNALS.md` | Every session | PART 4.4 |

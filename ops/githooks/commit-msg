@@ -1,0 +1,42 @@
+#!/bin/sh
+# Kendama commit-msg hook — enforces GUARDRAILS.md #17.
+#
+# Kendama_site is a NON-DEPLOYABLE factory/brain repo, but the factory commits
+# and pushes constantly by design (CLAUDE.md "Every session" #6). External hosts
+# that auto-build on every push (Render, Netlify, Vercel, Heroku, ...) will fail
+# on this repo forever and email on each failure — the "build failed for
+# appraise-os" spam the human hit on 2026-06-06.
+#
+# The off-switch for an existing service lives in the host's dashboard (a human
+# action, logged in human/NEED_FROM_HUMAN.md). What the factory CAN guarantee
+# from inside Git is that its own pushes never trigger a host build: this hook
+# appends host skip-tokens to every commit message so the build is skipped at
+# the source. Belt-and-suspenders to the dashboard fix, not a replacement.
+#
+# Activated by `git config core.hooksPath ops/githooks`
+# (run ops/checks/install-githooks.mjs at session start — see ops/loop.md).
+
+set -e
+
+MSG_FILE="$1"
+[ -n "$MSG_FILE" ] && [ -f "$MSG_FILE" ] || exit 0
+
+MSG=$(cat "$MSG_FILE")
+
+# Render honours "[skip render]"; Netlify honours "[skip netlify]" / "[skip ci]".
+# The tokens are inert on any host that does not recognise them, so they are
+# safe to carry unconditionally on this non-deployable repo.
+EXTRA=""
+for TOKEN in "[skip render]" "[skip netlify]" "[skip ci]"; do
+  case "$MSG" in
+    *"$TOKEN"*) : ;;            # already present — leave as-is
+    *) EXTRA="$EXTRA $TOKEN" ;; # missing — schedule for append
+  esac
+done
+
+if [ -n "$EXTRA" ]; then
+  EXTRA=${EXTRA# }             # strip the single leading space
+  { printf '%s\n' "$MSG"; printf '\n%s\n' "$EXTRA"; } > "$MSG_FILE"
+fi
+
+exit 0

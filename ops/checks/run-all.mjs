@@ -21,6 +21,7 @@ import { BLOCKING_LEVELS } from './lib.mjs';
 import * as ruleCadence from './rule-cadence-consistency.mjs';
 import * as brainIntegrity from './brain-integrity.mjs';
 import * as noGithubActions from './no-github-actions.mjs';
+import * as noExternalAutodeploy from './no-external-autodeploy.mjs';
 import * as humanQueue from './human-queue.mjs';
 import * as noForbiddenMarkers from './no-forbidden-markers.mjs';
 import * as governanceIntegrity from './governance-integrity.mjs';
@@ -37,7 +38,7 @@ import * as rankingIntegrity from './ranking-integrity.mjs';
 // synthetic instants (never the live clock), so a timezone/logic regression
 // in the guard is caught at session start.
 
-const CHECKS = [brainIntegrity, noGithubActions, ruleCadence, humanQueue, noForbiddenMarkers, governanceIntegrity, stopGuardLogic, checksRegistry, stateCountSanity, approvalsWindow, rankingIntegrity];
+const CHECKS = [brainIntegrity, noGithubActions, noExternalAutodeploy, ruleCadence, humanQueue, noForbiddenMarkers, governanceIntegrity, stopGuardLogic, checksRegistry, stateCountSanity, approvalsWindow, rankingIntegrity];
 
 const ICON = { P0: '✗', P1: '✗', P2: '!', info: '·' };
 
