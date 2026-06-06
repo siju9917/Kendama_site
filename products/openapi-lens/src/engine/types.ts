@@ -176,6 +176,8 @@ export type OapiChangeType =
   | "operation-security-scope-removed"
   | "response-header-required-changed"
   | "response-header-format-changed"
+  | "response-header-enum-changed"
+  | "response-header-nullable-changed"
   | "response-media-type-removed"
   | "response-media-type-added"
   | "request-media-type-removed"

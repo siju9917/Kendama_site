@@ -7206,3 +7206,103 @@ paths:
     expect(changes.filter((c) => c.type === "response-schema-items-type-changed")).toHaveLength(0);
   });
 });
+
+// ─── Round 43: response header enum and nullable diffing ───────────────────
+
+describe("response header enum changes (5.7.5 round 43)", () => {
+  function makeHeaderSpec(headerExtra: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /jobs/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Job-Status:
+              required: true
+              schema:
+                type: string
+                ${headerExtra}
+          content:
+            application/json:
+              schema: {type: object}
+`;
+  }
+
+  it("removing enum values from a response header is BREAKING (clients switch on status values)", () => {
+    const before = makeHeaderSpec('enum: ["pending", "active", "closed"]');
+    const after  = makeHeaderSpec('enum: ["pending", "active"]');
+    const changes = analyzeOpenApiDiff(before, after);
+    const enumChange = changes.find((c) => c.type === "response-header-enum-changed");
+    expect(enumChange).toBeDefined();
+    expect(enumChange?.severity).toBe("BREAKING");
+  });
+
+  it("adding enum values to a response header is INFO (non-breaking — clients already handle the subset)", () => {
+    const before = makeHeaderSpec('enum: ["pending", "active"]');
+    const after  = makeHeaderSpec('enum: ["pending", "active", "closed"]');
+    const changes = analyzeOpenApiDiff(before, after);
+    const enumChange = changes.find((c) => c.type === "response-header-enum-changed");
+    expect(enumChange).toBeDefined();
+    expect(enumChange?.severity).toBe("INFO");
+  });
+
+  it("reordering response header enum values produces no event (same set)", () => {
+    const before = makeHeaderSpec('enum: ["pending", "active", "closed"]');
+    const after  = makeHeaderSpec('enum: ["closed", "pending", "active"]');
+    const changes = analyzeOpenApiDiff(before, after);
+    expect(changes.filter((c) => c.type === "response-header-enum-changed")).toHaveLength(0);
+  });
+});
+
+describe("response header nullable changes (5.7.5 round 43)", () => {
+  function makeNullableHeaderSpec(nullable: boolean): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /counter:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Retry-After:
+              required: false
+              schema:
+                type: integer
+                nullable: ${nullable}
+          content:
+            application/json:
+              schema: {type: object}
+`;
+  }
+
+  it("response header nullable false→true is BREAKING (server may now return null → client null deref)", () => {
+    const changes = analyzeOpenApiDiff(
+      makeNullableHeaderSpec(false),
+      makeNullableHeaderSpec(true),
+    );
+    const nullableChange = changes.find((c) => c.type === "response-header-nullable-changed");
+    expect(nullableChange).toBeDefined();
+    expect(nullableChange?.severity).toBe("BREAKING");
+  });
+
+  it("response header nullable true→false is INFO (server now guarantees non-null → clients benefit)", () => {
+    const changes = analyzeOpenApiDiff(
+      makeNullableHeaderSpec(true),
+      makeNullableHeaderSpec(false),
+    );
+    const nullableChange = changes.find((c) => c.type === "response-header-nullable-changed");
+    expect(nullableChange).toBeDefined();
+    expect(nullableChange?.severity).toBe("INFO");
+  });
+});

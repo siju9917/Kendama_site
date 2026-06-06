@@ -787,6 +787,28 @@ function diffResponseHeaders(
         after: cFmt,
       });
     }
+    const bEnum = bHdr.schema?.enum;
+    const cEnum = cHdr.schema?.enum;
+    if (!enumSetsEqual(bEnum, cEnum) && (bEnum !== undefined || cEnum !== undefined)) {
+      changes.push({
+        type: "response-header-enum-changed",
+        path, method,
+        location: `${loc}.schema.enum`,
+        before: bEnum ?? null,
+        after: cEnum ?? null,
+      });
+    }
+    const bNullable = bHdr.schema?.nullable ?? false;
+    const cNullable = cHdr.schema?.nullable ?? false;
+    if (bNullable !== cNullable) {
+      changes.push({
+        type: "response-header-nullable-changed",
+        path, method,
+        location: `${loc}.schema.nullable`,
+        before: bNullable,
+        after: cNullable,
+      });
+    }
   }
 
   for (const name of cKeys) {
