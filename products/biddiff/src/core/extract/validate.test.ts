@@ -111,6 +111,23 @@ describe("extractSolicitationId", () => {
     // The ID is on its own line (as in real federal PDFs), followed by newline text.
     expect(extractSolicitationId("Solicitation No. W912TP-26-R-0001\nfor IT Services")).toBe("W912TP-26-R-0001");
   });
+
+  // 5.7.5 bug-hunt (2026-06-06): greedy middle char-class `[A-Z0-9 \t-]{3,18}` plus
+  // `[A-Z0-9]` last-char previously over-captured trailing words that appear on the
+  // same line after a space (e.g. "W912TP-26-R-0001 Amendment" → "W912TP-26-R-0001AME").
+  // Fix: change last char from [A-Z0-9] to \d — federal IDs always end with the
+  // sequential digit sequence; this forces backtrack before any word that starts a letter.
+  it("stops at space + alphabetic trailing text (Amendment) — does not over-capture", () => {
+    expect(extractSolicitationId("Solicitation No. W912TP-26-R-0001 Amendment 3")).toBe("W912TP-26-R-0001");
+    expect(extractSolicitationId("Solicitation No. FA8701-25-R-0042 for Cloud Services")).toBe("FA8701-25-R-0042");
+  });
+  it("stops at tab + trailing text — does not over-capture", () => {
+    expect(extractSolicitationId("Solicitation No. W912TP-26-R-0001\tAmendment 3")).toBe("W912TP-26-R-0001");
+  });
+  it("no regression — comma and paren still stop the match", () => {
+    expect(extractSolicitationId("Solicitation No. W912TP-26-R-0001, Amendment 3")).toBe("W912TP-26-R-0001");
+    expect(extractSolicitationId("Solicitation No. W912TP-26-R-0001 (Amendment 3)")).toBe("W912TP-26-R-0001");
+  });
 });
 
 describe("isPdfEncrypted", () => {

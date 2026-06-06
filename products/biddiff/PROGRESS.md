@@ -173,6 +173,19 @@ session has specifics, not a vague "improve extraction":
     pass; 4 new tests: colon format, em-dash with spaces, no-space em-dash, no-regression.
     571/571 pass, typecheck clean.
 
+11. **`extractSolicitationId` over-captures trailing text after a space — DONE
+    (FIXED 2026-06-06, 5.7.5 bug-hunt).** The greedy middle char class
+    `[A-Z0-9 \t-]{3,18}[A-Z0-9]` included spaces, so "W912TP-26-R-0001 Amendment"
+    extended the capture to "W912TP-26-R-0001AME" (stripping the space but absorbing
+    the letters). A prior document formatted with a newline after the ID and a current
+    document formatted with a space would produce different normalized IDs, causing a
+    false "solicitation number mismatch" warning (N14) even for the same solicitation.
+    Fix: change final `[A-Z0-9]` to `\d` — federal solicitation IDs always end with
+    the 4-digit sequential suffix; the regex now backtracks before any word starting
+    with a letter. Internal space-tolerance preserved ("W912TP -26-R-0001" still works).
+    4 new tests (space+Amendment, tab+Amendment, comma no-regression, paren no-regression).
+    579/579 pass, typecheck clean.
+
 **Domain-Expert P1 status (2026-06-06, updated):** The BD2 gate was WITHDRAWN
 (human declined outreach; factory validated from public FAR/DFARS sources instead).
 Obs #4 DONE (A-K subsections), obs #8 DONE (list renumbering), obs #9 DONE (sub-CLINs),

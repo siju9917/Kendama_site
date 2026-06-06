@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **682/682 tests** (BidDiff 576/576 + openapi-lens 106/106).
+- **Build green:** **685/685 tests** (BidDiff 579/579 + openapi-lens 106/106).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -557,6 +557,12 @@ all green; check tests 16/16.
     (block text → enrichStructuredDocument → SET_ASIDE anchor → evaluateCriticality → CRITICAL)
     for the "NAICS: XXXXXX" SAM.gov format that was fixed in item 38. 1 new engine-edge test.
     576/576 BidDiff. Total suite: **682/682 tests**.
+41. **BidDiff 5.7.5 bug: `extractSolicitationId` over-captures trailing text** — greedy
+    `[A-Z0-9 \t-]{3,18}[A-Z0-9]` absorbed "Amendment" after a space, producing
+    "W912TP-26-R-0001AME" — causing false solicitation-mismatch warnings (N14). Fix:
+    change final char from `[A-Z0-9]` to `\d` (IDs always end with digit suffix).
+    4 new tests (space+word, tab+word, comma/paren no-regression). 579/579 BidDiff.
+    Total suite: **685/685 tests**.
 
 ## Notes for the next session
 
