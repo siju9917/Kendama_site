@@ -402,6 +402,10 @@ describe("adversarial round 47 — new data-store resource type coverage", () =>
   it("aws_msk_cluster update is CRITICAL (in-flight Kafka messages at risk during cluster modification)", () => {
     expect(classifyChange(makeUpdateChange("aws_msk_cluster")).severity).toBe("CRITICAL");
   });
+
+  it("azurerm_kubernetes_cluster update is CRITICAL (AKS node drain disrupts workloads, mirrors EKS/GKE)", () => {
+    expect(classifyChange(makeUpdateChange("azurerm_kubernetes_cluster")).severity).toBe("CRITICAL");
+  });
 });
 
 describe("adversarial round 48 — new IAM/security resource type coverage", () => {

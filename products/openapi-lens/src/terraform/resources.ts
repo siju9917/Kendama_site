@@ -37,6 +37,7 @@ export const DATA_STORE_TYPES: readonly string[] = [
   "google_redis_instance",      // Cloud Memorystore Redis — cache loss on update
   "google_memcache_instance",   // Cloud Memorystore Memcached — cache loss on update
   "google_container_cluster",   // GKE cluster — node drain disrupts all workloads (mirrors aws_eks_cluster)
+  "azurerm_kubernetes_cluster", // AKS cluster — node drain disrupts all workloads (mirrors aws_eks_cluster)
   "aws_msk_cluster",            // Amazon MSK (Managed Kafka) — in-flight messages at risk on modify
 ];
 
