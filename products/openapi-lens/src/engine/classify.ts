@@ -770,6 +770,52 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     },
   },
 
+  // ─── Items readOnly / writeOnly (direction-aware, mirrors property rules) ───
+  // Response items readOnly: INFO in both directions (annotation-only; doesn't change payload).
+  {
+    matches: (c) => c.type === "response-schema-items-readonly-changed" ? "INFO" : null,
+    message: (c) => c.after === true
+      ? `Response array items became read-only: ${c.location}. Server signals these elements are not writable.`
+      : `Response array items are no longer read-only: ${c.location}. Elements may now be writable.`,
+  },
+  // Request items readOnly false→true: BREAKING (clients can no longer send these items).
+  {
+    matches: (c) =>
+      c.type === "request-schema-items-readonly-changed" && c.before === false && c.after === true
+        ? "BREAKING"
+        : null,
+    message: (c) => `Request array items became read-only: ${c.location}. Clients that send these items will now receive a 400 or have them ignored.`,
+  },
+  {
+    matches: (c) =>
+      c.type === "request-schema-items-readonly-changed" && c.before === true && c.after === false
+        ? "INFO"
+        : null,
+    message: (c) => `Request array items are no longer read-only: ${c.location}. Clients may now send these items.`,
+  },
+  // Response items writeOnly false→true: BREAKING (items disappear from responses).
+  {
+    matches: (c) =>
+      c.type === "response-schema-items-writeonly-changed" && c.before === false && c.after === true
+        ? "BREAKING"
+        : null,
+    message: (c) => `Response array items became write-only: ${c.location}. Clients that read these items will no longer receive them in responses.`,
+  },
+  {
+    matches: (c) =>
+      c.type === "response-schema-items-writeonly-changed" && c.before === true && c.after === false
+        ? "INFO"
+        : null,
+    message: (c) => `Response array items are no longer write-only: ${c.location}. These items will now appear in responses.`,
+  },
+  // Request items writeOnly: INFO in both directions.
+  {
+    matches: (c) => c.type === "request-schema-items-writeonly-changed" ? "INFO" : null,
+    message: (c) => c.after === true
+      ? `Request array items became write-only: ${c.location}. These items are accepted in requests but will not appear in responses.`
+      : `Request array items are no longer write-only: ${c.location}. These items may now appear in responses.`,
+  },
+
   // ─── Top-level body schema format ─────────────────────────────────────────
   {
     matches: (c) => c.type === "request-schema-format-changed" ? "BREAKING" : null,

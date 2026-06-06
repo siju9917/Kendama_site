@@ -405,6 +405,32 @@ function diffSchemaItems(
       });
     }
   }
+  // Compare readOnly/writeOnly only when both items schemas exist (avoids double-reporting
+  // when items are newly added — that case is already covered by items-type-changed).
+  if (bItems && cItems) {
+    const bReadOnly = bItems.readOnly ?? false;
+    const cReadOnly = cItems.readOnly ?? false;
+    if (bReadOnly !== cReadOnly) {
+      changes.push({
+        type: isRequest ? "request-schema-items-readonly-changed" : "response-schema-items-readonly-changed",
+        path, method,
+        location: `${location}.items.readOnly`,
+        before: bReadOnly,
+        after: cReadOnly,
+      });
+    }
+    const bWriteOnly = bItems.writeOnly ?? false;
+    const cWriteOnly = cItems.writeOnly ?? false;
+    if (bWriteOnly !== cWriteOnly) {
+      changes.push({
+        type: isRequest ? "request-schema-items-writeonly-changed" : "response-schema-items-writeonly-changed",
+        path, method,
+        location: `${location}.items.writeOnly`,
+        before: bWriteOnly,
+        after: cWriteOnly,
+      });
+    }
+  }
   // Recurse into items object properties (e.g. array<{id: string, name: string}>).
   if (bItems?.properties || cItems?.properties || bItems?.required || cItems?.required) {
     diffSchemaRequiredFields(path, method, `${location}.items`, bItems ?? null, cItems ?? null, isRequest, changes);

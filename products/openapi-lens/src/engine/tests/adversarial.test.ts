@@ -1990,3 +1990,189 @@ paths:
     expect(typeChange?.after).toBe("string");
   });
 });
+
+// ─── items readOnly / writeOnly — parsed-but-never-diffed (5.7.5 round 10) ──
+
+describe("items readOnly/writeOnly — full pipeline (5.7.5 round 10)", () => {
+  it("request items readOnly false→true is BREAKING — clients can no longer send these items", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /orders:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                readOnly: false
+      responses:
+        "201":
+          description: created
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /orders:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                readOnly: true
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const roChange = changes.find((c) => c.type === "request-schema-items-readonly-changed");
+    expect(roChange).toBeDefined();
+    expect(roChange?.severity).toBe("BREAKING");
+    expect(roChange?.before).toBe(false);
+    expect(roChange?.after).toBe(true);
+  });
+
+  it("response items writeOnly false→true is BREAKING — items disappear from responses", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  writeOnly: false
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  writeOnly: true
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const woChange = changes.find((c) => c.type === "response-schema-items-writeonly-changed");
+    expect(woChange).toBeDefined();
+    expect(woChange?.severity).toBe("BREAKING");
+    expect(woChange?.before).toBe(false);
+    expect(woChange?.after).toBe(true);
+  });
+
+  it("response items readOnly false→true is INFO — annotation change only", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  readOnly: false
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  readOnly: true
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const roChange = changes.find((c) => c.type === "response-schema-items-readonly-changed");
+    expect(roChange).toBeDefined();
+    expect(roChange?.severity).toBe("INFO");
+  });
+
+  it("no spurious readOnly/writeOnly events when items schema is added from scratch", () => {
+    // Adding items (null → {type: string, readOnly: true}) should emit items-type-changed,
+    // NOT items-readonly-changed (readOnly is part of the new items, not a delta from false).
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  readOnly: true
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    // items-type-changed fired (null → string)
+    expect(changes.find((c) => c.type === "response-schema-items-type-changed")).toBeDefined();
+    // readOnly should NOT produce a separate event for newly added items
+    expect(changes.find((c) => c.type === "response-schema-items-readonly-changed")).toBeUndefined();
+  });
+});

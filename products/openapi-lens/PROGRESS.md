@@ -140,6 +140,20 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   inherited; op-level body overrides path-level). +2 coverage tests regression-locking behavior that
   was already correct (op-level overrides path-level for non-body params; `application/json` preferred
   over other content types when multiple coexist). **349/349 tests.**
+- [x] **5.7.5 round 9 — `diffSchemaType` null-transition gap** — `diffSchemaType` guarded
+  `bType !== undefined && cType !== undefined`, silently dropping body schema type-added
+  (undefined→string) and type-removed (string→undefined) transitions — same pattern as item 54's
+  property fix. Fix: null sentinel (`?? null`) + direction-aware rules (2→4): request type-added
+  = BREAKING, request type-removed = INFO; response type-removed = BREAKING, response type-added
+  = INFO. +8 tests (4 classify unit + 4 adversarial integration). **357/357 tests.**
+- [x] **5.7.5 round 10 — items `readOnly`/`writeOnly` parsed-but-never-diffed** — `diffSchemaItems`
+  compared type, format, enum, nullable, and constraints but NOT `readOnly`/`writeOnly`. An array
+  response changing `items.writeOnly: false → true` (items disappear from responses = BREAKING) was
+  invisible. Fix: compare readOnly/writeOnly in `diffSchemaItems` when both schemas exist (guarded
+  to avoid double-reporting when items schema is newly added). 4 new OapiChangeType values, 6 classify
+  rules (response writeOnly false→true = BREAKING; request readOnly false→true = BREAKING; all others
+  INFO), +10 new tests (6 classify unit + 4 adversarial integration including spurious-event guard).
+  **371/371 tests.**
 - [x] **5.7.5 round 7 — array parameter items diffing** — parsed-but-never-diffed audit
   found that `items` on array-type parameters (e.g., `GET /items?ids=1,2,3` with
   `schema: {type: array, items: {type: string}}`) was completely ignored. A parameter
@@ -262,6 +276,14 @@ auto-proceeds (2026-06-13) or earlier if human approves.
 | Response array items constraint tightened | INFO |
 | Response array items constraint removed | BREAKING |
 | Response array items pattern changed | BREAKING |
+| Response array items became writeOnly (false→true) | BREAKING |
+| Response array items lost writeOnly (true→false) | INFO |
+| Response array items became readOnly (false→true) | INFO |
+| Response array items lost readOnly (true→false) | INFO |
+| Request array items became readOnly (false→true) | BREAKING |
+| Request array items lost readOnly (true→false) | INFO |
+| Request array items became writeOnly | INFO |
+| Request array items lost writeOnly | INFO |
 
 ---
 

@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **943/943 tests** (BidDiff 586/586 + openapi-lens 357/357).
+- **Build green:** **957/957 tests** (BidDiff 586/586 + openapi-lens 371/371).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -208,11 +208,12 @@ Priority order is `ops/loop.md`.
 
 **Unblocked (zero-cost):**
 7. ~~**P2** Vite/Vitest toolchain bump~~ — **DONE 2026-06-06.** Vite 6.4.3 + Vitest 4.1.8.
-8. ~~**D5 Phase 0 engine**~~ — **DONE + hardened 2026-06-06.** `products/openapi-lens/` — 357/357 tests
-   (rounds 5–9: allOf constraint inheritance, top-level body schema constraints/format/enum,
+8. ~~**D5 Phase 0 engine**~~ — **DONE + hardened 2026-06-06.** `products/openapi-lens/` — 371/371 tests
+   (rounds 5–10: allOf constraint inheritance, top-level body schema constraints/format/enum,
    parameter items type/format/enum/nullable/constraints, items.properties recursion,
-   Swagger 2.0 path-level body param fix, `diffSchemaType` null-transition gap).
-   VS Code extension scaffold (Phase 1) begins once Proposal #3 auto-proceeds 2026-06-13.
+   Swagger 2.0 path-level body param fix, `diffSchemaType` null-transition gap,
+   items readOnly/writeOnly diff). VS Code extension scaffold (Phase 1) begins once
+   Proposal #3 auto-proceeds 2026-06-13.
 9. Recurring: re-critique cadence, "nothing is ever done" reviews,
    ambient ideation, factory self-improvement, META audit.
 
@@ -802,6 +803,17 @@ all green; check tests 16/16.
     response type-removed = BREAKING (server may return any type; clients fail); response type-added
     = INFO (server now guarantees type). +8 tests (4 classify unit + 4 adversarial integration covering
     all null-transition combinations). 349→357 openapi-lens. Total suite: **943/943 tests**.
+
+76. **5.7.5 round 10: `items.readOnly`/`items.writeOnly` parsed-but-never-diffed** —
+    `diffSchemaItems` compared type, format, enum, nullable, and constraints but never
+    `readOnly`/`writeOnly`. A response array changing `items.writeOnly: false → true` (items
+    disappear from responses) was completely invisible. Fix: compare readOnly/writeOnly in
+    `diffSchemaItems` ONLY when both item schemas exist (guarded to avoid double-reporting
+    when items schema is newly added). 4 new OapiChangeType values, 6 classify rules
+    (response writeOnly false→true = BREAKING; request readOnly false→true = BREAKING;
+    all others INFO — mirrors property-level semantics). +14 tests (6 classify unit + 4 TYPE_STUBS
+    completeness + 4 adversarial integration including spurious-event guard). 357→371 openapi-lens.
+    Total suite: **957/957 tests**.
 
 69. **First-principles BCL format-pack roadmap scoring** (5.7.6 continuous ideation):
     Evaluated K8s YAML, SQL migration, GraphQL, CloudFormation, Avro, Docker image diff as

@@ -651,6 +651,39 @@ describe("classifyChanges — classification rules", () => {
     expect(result[0]?.severity).toBe("INFO");
   });
 
+  // ─── items readOnly / writeOnly (5.7.5 round 10) ─────────────────────────
+  it("classifies request-schema-items-readonly-changed (false→true) as BREAKING — clients cannot send readOnly items", () => {
+    const result = classifyChanges([raw("request-schema-items-readonly-changed", false, true, "requestBody.content.schema.items.readOnly")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/read-only|readonly/i);
+  });
+
+  it("classifies request-schema-items-readonly-changed (true→false) as INFO — items no longer readOnly", () => {
+    const result = classifyChanges([raw("request-schema-items-readonly-changed", true, false, "requestBody.content.schema.items.readOnly")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies response-schema-items-writeonly-changed (false→true) as BREAKING — items disappear from responses", () => {
+    const result = classifyChanges([raw("response-schema-items-writeonly-changed", false, true, "responses[200].content.schema.items.writeOnly")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/write-only|writeonly/i);
+  });
+
+  it("classifies response-schema-items-writeonly-changed (true→false) as INFO — items now appear in responses", () => {
+    const result = classifyChanges([raw("response-schema-items-writeonly-changed", true, false, "responses[200].content.schema.items.writeOnly")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies response-schema-items-readonly-changed as INFO (annotation-only change)", () => {
+    const result = classifyChanges([raw("response-schema-items-readonly-changed", false, true, "responses[200].content.schema.items.readOnly")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies request-schema-items-writeonly-changed as INFO", () => {
+    const result = classifyChanges([raw("request-schema-items-writeonly-changed", false, true, "requestBody.content.schema.items.writeOnly")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
   it("returns empty array for empty input", () => {
     expect(classifyChanges([])).toEqual([]);
   });
@@ -740,6 +773,10 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "parameter-items-enum-changed":                 [["a", "b"], ["a"]],
     "parameter-items-nullable-changed":             [true, false],
     "parameter-items-constraint-changed":           [3, 10],
+    "response-schema-items-readonly-changed":       [false, true],
+    "request-schema-items-readonly-changed":        [false, true],
+    "response-schema-items-writeonly-changed":      [false, true],
+    "request-schema-items-writeonly-changed":       [false, true],
   };
 
   it.each(Object.keys(TYPE_STUBS) as OapiChangeType[])(
