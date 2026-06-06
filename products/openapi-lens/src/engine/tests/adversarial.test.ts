@@ -7744,3 +7744,120 @@ paths:
     expect(bodyChange?.severity).toBe("BREAKING");
   });
 });
+
+// ─── Round 50: simultaneous multi-field property changes ─────────────────────
+
+describe("simultaneous property changes — multiple events fire independently (5.7.5 round 50)", () => {
+  // When a property changes in type AND nullable AND required simultaneously,
+  // each dimension should independently emit its own event.
+
+  it("response property changes type AND nullable simultaneously — both events emitted", () => {
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    nullable: false
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    nullable: true
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const typeChange = changes.find((c) => c.type === "response-schema-property-type-changed");
+    const nullableChange = changes.find((c) => c.type === "response-schema-property-nullable-changed");
+    // Both events must fire
+    expect(typeChange).toBeDefined();
+    expect(nullableChange).toBeDefined();
+    // Type change in response is BREAKING
+    expect(typeChange?.severity).toBe("BREAKING");
+    // nullable false→true in response is BREAKING
+    expect(nullableChange?.severity).toBe("BREAKING");
+  });
+
+  it("request property added to required[] AND type changed — both events are BREAKING", () => {
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                age:
+                  type: string
+      responses:
+        "201":
+          description: created
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [age]
+              properties:
+                age:
+                  type: integer
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const typeChange = changes.find((c) => c.type === "request-schema-property-type-changed");
+    const reqAdded = changes.find((c) => c.type === "request-schema-field-required-added");
+    // Both fire independently
+    expect(typeChange).toBeDefined();
+    expect(reqAdded).toBeDefined();
+    // Both BREAKING
+    expect(typeChange?.severity).toBe("BREAKING");
+    expect(reqAdded?.severity).toBe("BREAKING");
+  });
+});
