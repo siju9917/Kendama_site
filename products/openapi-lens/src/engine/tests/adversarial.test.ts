@@ -13552,3 +13552,100 @@ paths:
     expect(c?.severity).toBe("BREAKING");
   });
 });
+
+// ─── Round 107: top-level body schema enum — three untested directions ────────
+// Existing tests cover: response null→enum (INFO), response enum+value-added (BREAKING),
+// request enum→null (INFO), request enum-value-added (INFO), request enum-value-removed (BREAKING).
+// Three directions at the body level were never exercised:
+//   1. request-schema-enum-changed: null→enum → BREAKING (server adds enum restriction)
+//   2. response-schema-enum-changed: enum→null → BREAKING (server removes enum guarantee)
+//   3. response-schema-enum-changed: enum value removed → INFO (server guarantees fewer values)
+
+describe("adversarial round 107 — top-level body schema enum untested directions", () => {
+  function makeRequestEnumSpec(enumValues: string[] | null): string {
+    const enumLine = enumValues !== null
+      ? `              enum: [${enumValues.map((v) => `"${v}"`).join(", ")}]`
+      : "";
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /submit:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              ${enumLine.trim()}
+      responses:
+        "201":
+          description: created
+`;
+  }
+
+  function makeResponseEnumSpec(enumValues: string[] | null): string {
+    const enumLine = enumValues !== null
+      ? `                enum: [${enumValues.map((v) => `"${v}"`).join(", ")}]`
+      : "";
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /status:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+${enumLine}
+`;
+  }
+
+  it("(R107-1) request body enum added (null→enum) is BREAKING — server now restricts accepted values", () => {
+    // Classify rule: request-schema-enum-changed with !before && after → BREAKING.
+    // Untested: adding an enum constraint to a previously unconstrained request body field.
+    const changes = analyzeOpenApiDiff(
+      makeRequestEnumSpec(null),
+      makeRequestEnumSpec(["draft", "published"]),
+    );
+    const c = changes.find((x) => x.type === "request-schema-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.before).toBeNull();
+    expect(c?.after).toEqual(["draft", "published"]);
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("(R107-2) response body enum removed (enum→null) is BREAKING — server no longer guarantees restricted set", () => {
+    // Classify rule: response-schema-enum-changed with !before || !after → BREAKING (second branch).
+    // Removing the enum constraint from a response body is BREAKING: exhaustive clients may
+    // crash on unexpected values.
+    const changes = analyzeOpenApiDiff(
+      makeResponseEnumSpec(["active", "inactive"]),
+      makeResponseEnumSpec(null),
+    );
+    const c = changes.find((x) => x.type === "response-schema-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.before).toEqual(["active", "inactive"]);
+    expect(c?.after).toBeNull();
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("(R107-3) response body enum value removed is INFO — server sends fewer possible values (safe for exhaustive clients)", () => {
+    // Classify rule: response-schema-enum-changed with enum→enum where values are removed → INFO.
+    // Removing values from a response enum tightens the server's guarantee — clients that already
+    // handle the remaining values are unaffected; only clients that specifically expected the
+    // removed value might be surprised (but it was always optional to handle every value).
+    const changes = analyzeOpenApiDiff(
+      makeResponseEnumSpec(["active", "inactive", "suspended"]),
+      makeResponseEnumSpec(["active", "inactive"]),
+    );
+    const c = changes.find((x) => x.type === "response-schema-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+  });
+});
