@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **961/961 tests** (BidDiff 586/586 + openapi-lens 375/375).
+- **Build green:** **963/963 tests** (BidDiff 586/586 + openapi-lens 377/377).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -823,6 +823,14 @@ all green; check tests 16/16.
     "Change detected at...". Fix: explicit INFO rule with clear message. Also added INFO rule
     for `true → false` case. +4 tests (2 classify unit + 2 adversarial integration).
     371→375 openapi-lens. Total suite: **961/961 tests**.
+
+78. **5.7.5 round 12: `diffSchemaItems` did not recurse into `items.items`** —
+    doubly-nested arrays (`array<array<T>>` — matrix/batch endpoints) had their inner array
+    element type changes completely invisible. `diffSchemaItems` only recursed into items object
+    properties (`bItems.properties`) but never into `bItems.items`. Fix: add `depth` parameter
+    (default 0) with `MAX_ITEMS_DEPTH = 3` guard, then recursively call `diffSchemaItems` when
+    `bItems?.items || cItems?.items` exists. +2 adversarial tests (inner type change BREAKING;
+    depth guard no-throw). 375→377 openapi-lens. Total suite: **963/963 tests**.
 
 69. **First-principles BCL format-pack roadmap scoring** (5.7.6 continuous ideation):
     Evaluated K8s YAML, SQL migration, GraphQL, CloudFormation, Avro, Docker image diff as

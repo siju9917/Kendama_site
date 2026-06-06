@@ -2078,6 +2078,93 @@ paths:
   });
 });
 
+// ─── doubly-nested array items (5.7.5 round 12) ─────────────────────────────
+
+describe("doubly-nested array items — array<array<T>> inner type change (5.7.5 round 12)", () => {
+  it("inner array element type change (string→integer in array<array<T>>) is BREAKING", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /matrix:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+                  items:
+                    type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /matrix:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+                  items:
+                    type: integer
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const innerTypeChange = changes.find(
+      (c) => c.type === "response-schema-items-type-changed" && String(c.location).includes(".items.items"),
+    );
+    expect(innerTypeChange).toBeDefined();
+    expect(innerTypeChange?.severity).toBe("BREAKING");
+    expect(innerTypeChange?.before).toBe("string");
+    expect(innerTypeChange?.after).toBe("integer");
+  });
+
+  it("max items depth guard — no stack overflow on deeply nested arrays beyond MAX_ITEMS_DEPTH", () => {
+    // 6 levels of nesting — depth guard must prevent infinite recursion.
+    // The change is beyond the depth limit so 0 changes are expected, but no throw.
+    const makeSpec = (type: string) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /deep:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        type: array
+                        items:
+                          type: array
+                          items:
+                            type: ${type}
+`;
+    // Must not throw (no infinite recursion or stack overflow)
+    expect(() => analyzeOpenApiDiff(makeSpec("string"), makeSpec("integer"))).not.toThrow();
+  });
+});
+
 // ─── items readOnly / writeOnly — parsed-but-never-diffed (5.7.5 round 10) ──
 
 describe("items readOnly/writeOnly — full pipeline (5.7.5 round 10)", () => {

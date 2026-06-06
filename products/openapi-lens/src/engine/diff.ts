@@ -180,6 +180,9 @@ function diffSchemaType(
 /** Maximum nesting depth for recursive property diffing. Guards against pathological schemas. */
 const MAX_PROPERTY_DEPTH = 5;
 
+/** Maximum nesting depth for recursive items diffing (e.g. array<array<array<T>>>). */
+const MAX_ITEMS_DEPTH = 3;
+
 /**
  * Compare properties of two object schemas, recursing into nested objects up to MAX_PROPERTY_DEPTH.
  * Detects type changes, removals, and additions at any nesting level; the `location` field carries
@@ -343,7 +346,9 @@ function diffSchemaItems(
   current: OapiSchema | null,
   isRequest: boolean,
   changes: OapiRawChange[],
+  depth: number = 0,
 ): void {
+  if (depth >= MAX_ITEMS_DEPTH) return;
   const bItems = baseline?.items;
   const cItems = current?.items;
   if (!bItems && !cItems) return;
@@ -435,6 +440,10 @@ function diffSchemaItems(
   if (bItems?.properties || cItems?.properties || bItems?.required || cItems?.required) {
     diffSchemaRequiredFields(path, method, `${location}.items`, bItems ?? null, cItems ?? null, isRequest, changes);
     diffSchemaProperties(path, method, `${location}.items`, bItems ?? null, cItems ?? null, isRequest, changes, 0);
+  }
+  // Recurse into doubly-nested array items (e.g. array<array<T>> — matrix/batch endpoints).
+  if (bItems?.items || cItems?.items) {
+    diffSchemaItems(path, method, `${location}.items`, bItems ?? null, cItems ?? null, isRequest, changes, depth + 1);
   }
 }
 
