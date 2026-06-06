@@ -7237,18 +7237,22 @@ paths:
 `;
   }
 
-  it("removing enum values from a response header is BREAKING (clients switch on status values)", () => {
-    const before = makeHeaderSpec('enum: ["pending", "active", "closed"]');
-    const after  = makeHeaderSpec('enum: ["pending", "active"]');
+  it("adding enum values to a response header is BREAKING (clients with exhaustive handling break on unknown values)", () => {
+    // Consistent with response-schema-property-enum-changed: adding values to a response
+    // enum is BREAKING because exhaustive client-side handlers (switch/match) fail on new values.
+    const before = makeHeaderSpec('enum: ["pending", "active"]');
+    const after  = makeHeaderSpec('enum: ["pending", "active", "closed"]');
     const changes = analyzeOpenApiDiff(before, after);
     const enumChange = changes.find((c) => c.type === "response-header-enum-changed");
     expect(enumChange).toBeDefined();
     expect(enumChange?.severity).toBe("BREAKING");
   });
 
-  it("adding enum values to a response header is INFO (non-breaking — clients already handle the subset)", () => {
-    const before = makeHeaderSpec('enum: ["pending", "active"]');
-    const after  = makeHeaderSpec('enum: ["pending", "active", "closed"]');
+  it("removing enum values from a response header is INFO (server narrows output — dead code in client)", () => {
+    // Consistent with response-schema-property-enum-changed: removing values from a response
+    // enum is INFO because client-side handlers for the removed value become dead code, not broken.
+    const before = makeHeaderSpec('enum: ["pending", "active", "closed"]');
+    const after  = makeHeaderSpec('enum: ["pending", "active"]');
     const changes = analyzeOpenApiDiff(before, after);
     const enumChange = changes.find((c) => c.type === "response-header-enum-changed");
     expect(enumChange).toBeDefined();
@@ -7304,5 +7308,148 @@ paths:
     const nullableChange = changes.find((c) => c.type === "response-header-nullable-changed");
     expect(nullableChange).toBeDefined();
     expect(nullableChange?.severity).toBe("INFO");
+  });
+});
+
+// ─── Round 44: cookie parameter coverage ─────────────────────────────────────
+
+describe("cookie parameters — never previously tested (5.7.5 round 44)", () => {
+  function makeCookieSpec(extra: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /orders:
+    get:
+      parameters:
+        ${extra}
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: {type: object}
+`;
+  }
+
+  const SESSION_COOKIE = `
+        - name: session-id
+          in: cookie
+          required: true
+          schema: {type: string}`;
+
+  const OPTIONAL_PREF_COOKIE = `
+        - name: user-pref
+          in: cookie
+          required: false
+          schema: {type: string}`;
+
+  it("adding a required cookie parameter is BREAKING (clients not sending it get 400/401)", () => {
+    const before = makeCookieSpec("[]");
+    const after  = makeCookieSpec(SESSION_COOKIE);
+    const changes = analyzeOpenApiDiff(before, after);
+    const added = changes.find((c) => c.type === "parameter-added");
+    expect(added).toBeDefined();
+    expect(added?.severity).toBe("BREAKING");
+    // location should encode cookie context
+    expect(String(added?.location)).toContain("cookie");
+  });
+
+  it("adding an optional cookie parameter is INFO (clients not sending it still work)", () => {
+    const before = makeCookieSpec("[]");
+    const after  = makeCookieSpec(OPTIONAL_PREF_COOKIE);
+    const changes = analyzeOpenApiDiff(before, after);
+    const added = changes.find((c) => c.type === "parameter-added");
+    expect(added).toBeDefined();
+    expect(added?.severity).toBe("INFO");
+  });
+
+  it("removing a cookie parameter is BREAKING (server may stop honouring it — clients relying on it break)", () => {
+    const before = makeCookieSpec(SESSION_COOKIE);
+    const after  = makeCookieSpec("[]");
+    const changes = analyzeOpenApiDiff(before, after);
+    const removed = changes.find((c) => c.type === "parameter-removed");
+    expect(removed).toBeDefined();
+    expect(removed?.severity).toBe("BREAKING");
+  });
+
+  it("cookie parameter type change (string→integer) is BREAKING", () => {
+    const strCookie = `
+        - name: order-id
+          in: cookie
+          required: true
+          schema: {type: string}`;
+    const intCookie = `
+        - name: order-id
+          in: cookie
+          required: true
+          schema: {type: integer}`;
+    const before = makeCookieSpec(strCookie);
+    const after  = makeCookieSpec(intCookie);
+    const changes = analyzeOpenApiDiff(before, after);
+    const typeChange = changes.find((c) => c.type === "parameter-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+
+  it("cookie parameter required false→true is BREAKING (newly mandatory for existing clients)", () => {
+    const optCookie = `
+        - name: user-pref
+          in: cookie
+          required: false
+          schema: {type: string}`;
+    const reqCookie = `
+        - name: user-pref
+          in: cookie
+          required: true
+          schema: {type: string}`;
+    const before = makeCookieSpec(optCookie);
+    const after  = makeCookieSpec(reqCookie);
+    const changes = analyzeOpenApiDiff(before, after);
+    const reqChange = changes.find((c) => c.type === "parameter-required-changed");
+    expect(reqChange).toBeDefined();
+    expect(reqChange?.severity).toBe("BREAKING");
+  });
+
+  it("cookie parameter required true→false is INFO (optional is less restrictive)", () => {
+    const reqCookie = `
+        - name: session-id
+          in: cookie
+          required: true
+          schema: {type: string}`;
+    const optCookie = `
+        - name: session-id
+          in: cookie
+          required: false
+          schema: {type: string}`;
+    const before = makeCookieSpec(reqCookie);
+    const after  = makeCookieSpec(optCookie);
+    const changes = analyzeOpenApiDiff(before, after);
+    const reqChange = changes.find((c) => c.type === "parameter-required-changed");
+    expect(reqChange).toBeDefined();
+    expect(reqChange?.severity).toBe("INFO");
+  });
+
+  it("cookie parameter enum restriction tightened is BREAKING (values no longer accepted)", () => {
+    const broadCookie = `
+        - name: theme
+          in: cookie
+          required: false
+          schema:
+            type: string
+            enum: ["light", "dark", "high-contrast"]`;
+    const narrowCookie = `
+        - name: theme
+          in: cookie
+          required: false
+          schema:
+            type: string
+            enum: ["light", "dark"]`;
+    const before = makeCookieSpec(broadCookie);
+    const after  = makeCookieSpec(narrowCookie);
+    const changes = analyzeOpenApiDiff(before, after);
+    const enumChange = changes.find((c) => c.type === "parameter-enum-changed");
+    expect(enumChange).toBeDefined();
+    expect(enumChange?.severity).toBe("BREAKING");
   });
 });
