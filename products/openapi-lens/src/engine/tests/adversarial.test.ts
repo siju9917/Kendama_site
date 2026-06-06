@@ -6477,3 +6477,98 @@ paths:
     expect(changes.filter((c) => c.type === "response-schema-property-type-changed")).toHaveLength(0);
   });
 });
+
+// ─── Round 36: OAS 3.1 multi-type arrays (non-null union) ────────────────────
+
+describe("OAS 3.1 multi-type array without null — documented limitation (5.7.5 round 36)", () => {
+  it("type: [integer, string] picks integer as primary type — second type is silently ignored", () => {
+    // This documents the known behaviour: the parser extracts only the first non-null type.
+    // A response property changing from type: [integer, string] to type: integer should
+    // show NO change (they're semantically different but parse to the same primary type).
+    const withUnion = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    type: [integer, string]
+`;
+    const withInteger = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    type: integer
+`;
+    // Known limitation: both parse to primary type = "integer", so no diff is emitted.
+    // This is a false negative for the union→single narrowing.
+    const changes = analyzeOpenApiDiff(withUnion, withInteger);
+    expect(changes.filter((c) => c.type === "response-schema-property-type-changed")).toHaveLength(0);
+  });
+
+  it("type: [string, integer] (string first) correctly picks string as primary type", () => {
+    const withStringFirst = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    type: [string, integer]
+`;
+    const withInteger = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    type: integer
+`;
+    // [string, integer] → primary type string. integer → primary type integer.
+    // This IS detected as a type change (string → integer), BREAKING.
+    const changes = analyzeOpenApiDiff(withStringFirst, withInteger);
+    const typeChange = changes.find(
+      (c) => c.type === "response-schema-property-type-changed" && String(c.location).includes("value"),
+    );
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+});
