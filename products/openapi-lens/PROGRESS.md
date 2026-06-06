@@ -498,12 +498,74 @@ auto-proceeds (2026-06-13) or earlier if human approves.
 
 _Begins when Proposal #3 auto-proceeds (2026-06-13) or human approves._
 
-- [ ] VS Code extension manifest (`package.json` extensions fields)
-- [ ] Activation on YAML/JSON file open (`onLanguage:yaml`)
-- [ ] Diagnostic provider (inline squiggles for BREAKING changes)
-- [ ] CodeLens provider (summary above `openapi:` declaration)
-- [ ] Git HEAD baseline comparison (via VS Code git API)
-- [ ] Manual baseline file selection (file picker)
+### Architecture (designed 2026-06-06, before build window)
+
+**Directory structure:**
+```
+products/openapi-lens/
+  package.json           ← add VS Code extension manifest fields
+  src/
+    engine/              ← existing Phase 0 code (no changes)
+    extension/
+      extension.ts       ← activation + deactivation entry point
+      providers/
+        diagnosticProvider.ts  ← converts BreakingChange[] → vscode.Diagnostic[]
+        codeLensProvider.ts    ← "X BREAKING, Y INFO" above openapi: declaration
+      baseline/
+        gitBaseline.ts         ← fetch spec at git HEAD via git extension API
+        fileBaseline.ts        ← manual baseline via file picker
+      openApiDetector.ts       ← detects if a document is an OpenAPI spec
+      commands.ts              ← registerCommand bindings
+```
+
+**Activation flow:**
+1. Activate on `onLanguage:yaml` and `onLanguage:json`.
+2. `extension.ts` calls `openApiDetector.isOpenApiDocument(doc)` before doing any work.
+3. If true, fetch baseline (git HEAD first, then configured fallback).
+4. Parse baseline + current with `parseOapiSpec`, diff, classify.
+5. Map `BreakingChange[]` to `vscode.Diagnostic[]` (BREAKING → error; INFO → information).
+6. Push to `DiagnosticCollection`.
+
+**Key VS Code APIs:**
+- `vscode.languages.createDiagnosticCollection("openapi-lens")` — manage squiggles
+- `vscode.languages.registerCodeLensProvider({language: 'yaml'}, provider)` — CodeLens
+- `vscode.workspace.onDidSaveTextDocument(handler)` — re-analyze on save (not on keystroke)
+- `vscode.extensions.getExtension('vscode.git')` — access git API for HEAD comparison
+- `vscode.commands.registerCommand('openapi-lens.selectBaseline', handler)` — manual baseline
+- `vscode.window.showInformationMessage(msg)` — status feedback
+
+**Diagnostic mapping:**
+```typescript
+// BREAKING → vscode.DiagnosticSeverity.Error (red squiggle)
+// INFO → vscode.DiagnosticSeverity.Information (blue squiggle)
+// Map location string to Range using YAML/JSON AST node lookup
+```
+
+**Baseline strategy (priority order):**
+1. If `settings.openapi-lens.baselineFile` is set → use that file.
+2. Else if git extension is available → `git show HEAD:<rel-path>` for the spec at HEAD.
+3. Else → show "Set baseline" CodeLens prompt (no diff without a baseline).
+
+**Location → Range mapping:**
+The engine's `location` field is a dotted path string (e.g.,
+`responses[200].content.schema.properties.name.type`). To convert to a VS Code Range,
+use `js-yaml` with `onMark` or `yaml-ast-parser` to build an AST node map during parse,
+then look up the nearest ancestor key whose path matches the location prefix.
+
+**Checklist:**
+- [ ] VS Code extension manifest (`package.json` extensions fields: `main`, `activationEvents`,
+  `contributes.commands`, `contributes.configuration`, `engines.vscode`)
+- [ ] Activation on YAML/JSON file open (`onLanguage:yaml`, `onLanguage:json`)
+- [ ] `openApiDetector.ts`: check for `openapi:` or `swagger:` top-level key in document text
+- [ ] `diagnosticProvider.ts`: `BreakingChange[]` → `vscode.Diagnostic[]` with Range lookup
+- [ ] `codeLensProvider.ts`: "X BREAKING, Y INFO" CodeLens at line 0; "No changes" if clean
+- [ ] `gitBaseline.ts`: git extension API → `git show HEAD:<path>` → baseline string
+- [ ] `fileBaseline.ts`: `vscode.window.showOpenDialog` → read file → baseline string
+- [ ] `commands.ts`: register `openapi-lens.selectBaseline` and `openapi-lens.clearBaseline`
+- [ ] `extension.ts`: wire all providers; dispose on deactivate
+- [ ] Vitest unit tests for diagnosticProvider (BreakingChange → Diagnostic mapping)
+- [ ] Vitest unit tests for openApiDetector (YAML/JSON with and without openapi: key)
+- [ ] VS Code extension test (`@vscode/test-electron`) for end-to-end activation
 
 ## Phase 2 — Full UI + hardening (PLANNED)
 
