@@ -13808,3 +13808,156 @@ paths:
     expect(c?.severity).toBe("INFO");
   });
 });
+
+// ─── Round 109: items-format-changed null transitions ─────────────────────────
+// When BOTH bItems and cItems exist (the `if (bItems && cItems)` guard in diffSchemaItems),
+// format changes fire even when one side has no format (null transition).
+// Existing tests cover: response null→format (INFO) and format→format (BREAKING);
+// request format→format (BREAKING) in round 21 characterization. Three directions untested:
+//   1. response items format removed (format→null): BREAKING (clients lose format guarantee)
+//   2. request items format added (null→format, items exist on both sides): BREAKING
+//   3. request items format removed (format→null, items exist on both sides): INFO
+
+describe("adversarial round 109 — items format null transitions (both items sides exist)", () => {
+  it("(R109-1) response items format removed (date→null): BREAKING — clients lose format guarantee", () => {
+    // Classify: response-schema-items-format-changed with before !== null → BREAKING.
+    // Removing the format from existing items breaks clients that expect the server
+    // to return values in a specific format (e.g., ISO date strings).
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /events:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: date
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /events:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-schema-items-format-changed");
+    expect(c).toBeDefined();
+    expect(c?.before).toBe("date");
+    expect(c?.after).toBeNull();
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("(R109-2) request items format added (null→uuid, items exist on both sides): BREAKING — server now validates format", () => {
+    // Classify: request-schema-items-format-changed with after !== null → BREAKING.
+    // The guard 'if (bItems && cItems)' ensures this fires only when both sides have items.
+    // Clients sending array elements without uuid format will now receive 400.
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /tags:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        "201":
+          description: created
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /tags:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "request-schema-items-format-changed");
+    expect(c).toBeDefined();
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe("uuid");
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("(R109-3) request items format removed (date→null, items exist on both sides): INFO — server relaxes format constraint", () => {
+    // Classify: request-schema-items-format-changed with after === null → INFO.
+    // Clients can now send any string format; existing date-format-compliant clients still work.
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /events:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: date
+      responses:
+        "201":
+          description: created
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /events:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "request-schema-items-format-changed");
+    expect(c).toBeDefined();
+    expect(c?.before).toBe("date");
+    expect(c?.after).toBeNull();
+    expect(c?.severity).toBe("INFO");
+  });
+});
