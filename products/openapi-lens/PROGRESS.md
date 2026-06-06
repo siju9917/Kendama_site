@@ -121,6 +121,15 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   `response-schema-items-constraint-changed`) with direction-aware classify rules matching
   the existing property constraint classification logic. 10 new unit tests + 2 adversarial
   integration tests. **297/297 tests.**
+- [x] **5.7.5 round 7 — array parameter items diffing** — parsed-but-never-diffed audit
+  found that `items` on array-type parameters (e.g., `GET /items?ids=1,2,3` with
+  `schema: {type: array, items: {type: string}}`) was completely ignored. A parameter
+  changing from `array<string>` to `array<integer>` was invisible. Added items sub-field
+  comparison in `diffParameters` for `type`, `format`, `enum`, `nullable`. 4 new
+  OapiChangeType values (`parameter-items-type-changed`, `parameter-items-format-changed`,
+  `parameter-items-enum-changed`, `parameter-items-nullable-changed`), 5 classify rules
+  (type/format BREAKING; enum direction-aware; nullable direction-aware), 6 unit tests,
+  2 adversarial integration tests. **337/337 tests.**
 - [x] **5.7.5 round 6 — top-level body schema format + enum diffing** — systematic
   parsed-but-never-diffed audit found that `format` and `enum` on the request/response
   body schema itself (not inside properties) were never compared. An endpoint accepting

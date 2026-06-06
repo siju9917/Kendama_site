@@ -710,6 +710,18 @@ all green; check tests 16/16.
     response nested required-removed (BREAKING). 297→300 openapi-lens.
     Total: **886/886 tests**.
 
+66. **5.7.5 round 7 — array parameter items diffing** — `items` on array-type parameters
+    (e.g., `GET /items?ids=1,2,3` with `schema.type=array`) was parsed but never diffed.
+    A query parameter changing from `array<string>` to `array<integer>` was invisible.
+    Fixed: items sub-field comparison in `diffParameters` for type/format/enum/nullable.
+    4 new types, 5 classify rules, 6 unit tests + 2 adversarial integration tests.
+    325→337 openapi-lens. Total: **923/923 tests**.
+
+65. **5.7.5 round 6 — top-level body schema format + enum diffing** — `format` and `enum`
+    on the request/response body schema itself (not inside properties) were never compared.
+    Fixed: `diffSchemaTopLevelFields` helper wired into `diffRequestBody`/`diffResponses`.
+    4 new types, 4 classify rules, 6 tests. 313→325 openapi-lens. Total: **911/911 tests**.
+
 64. **5.7.5 round 5 / 5.7.2 escalating critique — allOf constraint inheritance + top-level body
     schema constraints** — escalating critique of the constraint diffing work found two gaps:
     (1) `flattenAllOf` merged type/format/nullable/readOnly/writeOnly/items/enum from allOf members
