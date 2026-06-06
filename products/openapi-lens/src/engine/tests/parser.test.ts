@@ -712,3 +712,33 @@ paths:
     expect(op.requestBody?.schema?.properties?.["legacy"]).toBeUndefined();
   });
 });
+
+describe("parseOapiSpec — error handling (round 65)", () => {
+  it("throws on empty string input (yaml.load returns undefined, not an object)", () => {
+    expect(() => parseOapiSpec("")).toThrow(/root must be an object/);
+  });
+
+  it("throws on malformed YAML that js-yaml cannot parse", () => {
+    expect(() => parseOapiSpec("openapi: [unclosed bracket\ninfo: bad")).toThrow();
+  });
+
+  it("throws when root is an array (valid YAML but not an object)", () => {
+    expect(() => parseOapiSpec("- item1\n- item2")).toThrow(/root must be an object/);
+  });
+
+  it("throws when root is a number (valid YAML scalar but not an object)", () => {
+    expect(() => parseOapiSpec("42")).toThrow(/root must be an object/);
+  });
+
+  it("succeeds on valid JSON spec (JSON.parse path taken over yaml.load)", () => {
+    const json = JSON.stringify({
+      openapi: "3.0.0",
+      info: { title: "T", version: "1" },
+      paths: {},
+    });
+    expect(() => parseOapiSpec(json)).not.toThrow();
+    const spec = parseOapiSpec(json);
+    expect(spec.version).toBe("3.0");
+    expect(spec.operations).toHaveLength(0);
+  });
+});
