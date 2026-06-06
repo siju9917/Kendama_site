@@ -90,9 +90,10 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **486/486 tests** (was 455 at last session; +31 this session:
+- **Build green:** **488/488 tests** (was 455 at last session; +33 this session:
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
-  1 SET_ASIDE false-positive regression + 1 Domain-Expert critic anchor gate),
+  1 SET_ASIDE false-positive regression + 1 Domain-Expert critic anchor gate +
+  1 obs#7 USD money characterization + 1 sign-before-dollar false-negative fix),
   lint + typecheck clean; full CI gate verified green end-to-end.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`
@@ -416,6 +417,19 @@ all green; check tests 16/16.
     5.7.1–5.7.6 holdings verified; 5.7.8 raised two findings (D4 eval gap;
     WISHLIST thinness). Domain-Expert Critic (#5) anchor-extension gate
     committed to `CRITIQUE_AGENTS.md`.
+13. **D3 (protobuf JetBrains) deep eval**: 580/1000, CONDITIONAL DEFER. Decisive:
+    Buf Technologies ships free JetBrains plugin (intellij-buf, plugin 19147, April 2026),
+    $93M funding; defensibility 3/10. Research in `brain/RESEARCH/2026-06-06-protobuf-grpc-jetbrains-plugin.md`.
+14. **D6 (Terraform VS Code blast-radius classifier) deep eval**: 641/1000, CONDITIONAL PROCEED.
+    Decisive: Infracost $17M+ revenue ($15M Series A Nov 2025), on-device gap confirmed
+    (zero VS Code extensions do blast-radius classification). Research in
+    `brain/RESEARCH/2026-06-06-terraform-plan-classifier.md`. Proposal #4 posted to APPROVALS.md.
+    RANKING.md updated (D4 DROPPED, D3 DEFER, D6 PROCEED). NEED #10 updated for D5+D6.
+15. **obs#7 money characterization test** (`detectMoney` test file): 486→487 tests.
+    USD-prefix and spelled-out-suffix forms locked as KNOWN LIMITATION with test.
+16. **Sign-before-dollar false-negative fix** (`suppress.ts` N15):
+    `isLeadingSign` now fires before "$" (not just before digits). Red test first
+    → fix → 35/35 suppress tests pass, 488/488 full suite green. PROGRESS N15 DONE.
 
 ## Notes for the next session
 

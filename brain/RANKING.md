@@ -88,14 +88,23 @@ marketplace + (for plugins) a chosen sub-feature:
    candidate if a redesign makes it on-device or the filter is relaxed.
    Note: RANKING.md previously listed D4 as #4 (a brain drift vs IDEA_BACKLOG's
    2026-06-01 re-filter note); corrected 2026-06-06.
-5. **D3 protobuf/gRPC JetBrains plugin** — Proven-leaning (buf.build proves pain
-   + willingness to pay); on-device; JetBrains Marketplace billing proven. Not yet
-   deeply evaluated. First-principles partial 448/580 (Dist 8, Maint 9, Build 7,
-   Self-serve 10, Defens 5, Strategic 7). Evaluate as a potential replacement for
-   VS Code lens if full score > 636.
-6. **D6 terraform plan destructive-change classifier (VS Code)** — Proven-leaning
-   pain (every `terraform apply` is a held breath); on-device trust wedge;
-   VS Code Marketplace. Not yet deeply evaluated. Partial 438/580.
+5. ~~**D3 protobuf/gRPC JetBrains plugin**~~ **CONDITIONAL DEFER (2026-06-06).** Score 580/1000.
+   Deep evaluation: `brain/RESEARCH/2026-06-06-protobuf-grpc-jetbrains-plugin.md`.
+   **Decisive finding:** Buf Technologies already ships a free JetBrains plugin
+   (`intellij-buf`, plugin ID 19147, last release April 2026) with `buf breaking`
+   integration, backed by $93M funding and $5.4M ARR. Defensibility 3/10 (competing
+   against a well-funded free incumbent); probability 4/10. Score 580/1000 < 600 threshold.
+   Revisit only after D5 ships and if buf's JetBrains plugin stagnates.
+6. **D6 terraform plan destructive-change classifier (VS Code)** — **CONDITIONAL PROCEED (2026-06-06).**
+   Full cited score: **641/1000** — clears the 600 threshold; SLIGHTLY OUTSCORES D5 (636).
+   Deep evaluation: `brain/RESEARCH/2026-06-06-terraform-plan-classifier.md`.
+   **Decisive evidence:** Infracost ($17M+ revenue, $15M Series A Nov 2025) proves the
+   plan-annotation-in-IDE category is fundable. On-device gap confirmed: zero VS Code
+   extensions do blast-radius classification on plan JSON (TerraScope, Scalr ext, and
+   HashiCorp official all verified — none does inline CRITICAL/NORMAL classification).
+   Plan JSON schema stable since Terraform 0.12 with formal backward-compat guarantee.
+   **Sequencing:** Build AFTER D5 (VS Code lens) — D5 provides the extension scaffold
+   D6 reuses. These are TWO products on the same platform, not competing alternatives.
 7. **Rank-2 FAR/DFARS MCP server** — strategic-fit 9, but *emerging*
    (unproven) MCP distribution — evidence risk dominates.
 

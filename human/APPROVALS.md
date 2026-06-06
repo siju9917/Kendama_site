@@ -36,6 +36,49 @@ To respond, edit the proposal's "**Status:**" line:
 
 ## Open proposals
 
+### Proposal #4 — VS Code Terraform Plan Classifier (factory recommendation: PROCEED, after Proposal #3)
+
+- **Posted:** 2026-06-06
+- **Auto-proceed window:** 7 days — defaults to **PROCEED** (build D6 after D5) if no response by 2026-06-13
+- **Status:** _awaiting human response_
+- **Source:** Deep evaluation completed 2026-06-06. Full research at `brain/RESEARCH/2026-06-06-terraform-plan-classifier.md`
+- **Factory recommendation: PROCEED after D5** — score 641/1000 (slightly outscores D5 at 636). Same VS Code extension scaffold as Proposal #3; D6 is the second build in the pipeline.
+
+**Executive summary:**
+
+A VS Code extension that reads `terraform plan` output and classifies each proposed change by blast radius: CRITICAL (resource replacement/destroy, data-store deletion, IAM/security-group widening) vs NORMAL (in-place attribute tweaks). Every `terraform apply` is a held breath — the operator scans change lines for the one that will replace the prod database. The wedge: all incumbents (Spacelift, env0, Terraform Cloud) are CI/cloud-gated; zero existing VS Code extensions do on-device CRITICAL/NORMAL blast-radius classification.
+
+**Key evidence:**
+1. **Category proven by Infracost:** $17M+ revenue, $15M Series A (November 2025, Pruven Capital + YC + Sequoia), 3,500+ customers including 10% of Fortune 500. Plan annotation in the IDE is a real, fundable market.
+2. **Gap confirmed:** Exhaustive search found zero VS Code extensions doing on-device destructive-change classification from plan JSON. HashiCorp official runs terraform but does zero plan analysis. TerraScope does diff visualization, no severity classification. Scalr requires Scalr subscription.
+3. **Filter compliance:** fully on-device (no backend required), TypeScript, VS Code Marketplace organic discovery. Plan JSON schema stable since Terraform 0.12 with documented backward-compat.
+4. **Security wedge documented:** "Bucket full of secrets" incident (Mercari, 2023) proves enterprise security reviewers have explicit justification for on-device vs. hosted plan analysis.
+5. **Sequencing:** D6 builds AFTER D5 (Proposal #3) — D5 provides the VS Code extension scaffold D6 reuses.
+
+**Full scoring:**
+
+| Factor | Weight | Score | Weighted |
+|---|---:|---:|---:|
+| Revenue ceiling | 18 | 6 | 108 |
+| Probability | 14 | 5 | 70 |
+| Distribution quality | 14 | 8 | 112 |
+| Maintenance fit | 10 | 9 | 90 |
+| Build feasibility | 10 | 8 | 80 |
+| Self-serve monetization | 8 | 5 | 40 |
+| Defensibility | 8 | 6 | 48 |
+| Evidence quality | 10 | 5 | 50 |
+| Strategic fit | 8 | 9 | 72 |
+| **Total** | **100** | | **670 (mid: 641)** |
+
+**Your options:**
+- `Status: APPROVED on YYYY-MM-DD by human — build D6 after D5 ships` — factory sequences D6 after BidDiff + D5
+- `Status: REDIRECT on YYYY-MM-DD by human — build D6 BEFORE D5` — if you prefer the terraform/DevOps market over OpenAPI first
+- `Status: REJECTED on YYYY-MM-DD by human — reason: <why>` — factory removes from build queue
+
+**Auto-proceed default:** PROCEED (after D5). If no response by 2026-06-13, factory builds D6 after D5 ships.
+
+---
+
 ### Proposal #3 — VS Code OpenAPI Breaking-Change Lens (factory recommendation: PROCEED)
 
 - **Posted:** 2026-06-06

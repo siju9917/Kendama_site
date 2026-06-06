@@ -318,12 +318,13 @@ budget).
 
 ---
 
-## 10. **[OPEN, non-blocking]** VS Code Marketplace publisher registration (for Breaking-Change Lens)
+## 10. **[OPEN, non-blocking]** VS Code Marketplace publisher registration (for Breaking-Change Lens and Terraform Plan Classifier)
 
-**Why:** The VS Code Breaking-Change Lens extension (proposal #3, if approved) will be published
-to the VS Code Marketplace. The Marketplace requires a publisher account. A personal publisher
-account is free; an organization account is $100 one-time (requires approval per
-`governance/PRODUCT_CONSTRAINTS.md` since it exceeds the ≤$5 threshold).
+**Why:** Both the VS Code Breaking-Change Lens (Proposal #3) and the VS Code Terraform Plan
+Classifier (Proposal #4) will be published to the VS Code Marketplace. The Marketplace requires
+a publisher account. A personal publisher account is free; an organization account is $100 one-time
+(requires approval per `governance/PRODUCT_CONSTRAINTS.md` since it exceeds the ≤$5 threshold).
+One publisher account covers both extensions.
 
 **Non-blocking:** The factory can build the extension and test it locally without a publisher
 account. The account is only needed at publish time.
