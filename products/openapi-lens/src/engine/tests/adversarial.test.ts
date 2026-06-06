@@ -11025,3 +11025,112 @@ paths:
     expect(constChange?.after).toBe(50);
   });
 });
+
+// ─── Round 87: items-level constraint null-transitions ─────────────────────────
+// Existing items-constraint tests only cover value-to-value changes (3→10 BREAKING at line ~4241,
+// 5→2 BREAKING at line ~1130). The null-transition paths — adding or removing a constraint from
+// array item schemas entirely — have never been tested end-to-end.
+
+describe("adversarial round 87 — items-level constraint null-transitions (end-to-end)", () => {
+  function makeRequestArraySpec87(itemsConstraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /words:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                ${itemsConstraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  function makeResponseArraySpec87(itemsConstraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /words:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  ${itemsConstraintLine}
+`;
+  }
+
+  it("adding minLength to request array items (null→5) is BREAKING — clients sending shorter elements now fail", () => {
+    // requestConstraintSeverity min-sense: before === null → BREAKING
+    // Array elements with <5 chars were previously accepted; now they fail validation.
+    const noMin   = makeRequestArraySpec87("");
+    const withMin = makeRequestArraySpec87("minLength: 5");
+    const changes = analyzeOpenApiDiff(noMin, withMin);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-items-constraint-changed" && String(c.location).endsWith(".minLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(5);
+  });
+
+  it("removing minLength from request array items (5→null) is INFO — constraint relaxed, all prior valid elements remain valid", () => {
+    // requestConstraintSeverity min-sense: after === null → INFO
+    // Elements with ≥5 chars still pass; shorter elements now also accepted.
+    const withMin = makeRequestArraySpec87("minLength: 5");
+    const noMin   = makeRequestArraySpec87("");
+    const changes = analyzeOpenApiDiff(withMin, noMin);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-items-constraint-changed" && String(c.location).endsWith(".minLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(5);
+    expect(constChange?.after).toBeNull();
+  });
+
+  it("adding minLength to response array items (null→5) is INFO — server now guarantees elements are at least 5 chars", () => {
+    // responseConstraintSeverity min-sense: before === null → INFO
+    // Server adding a floor guarantee to element lengths is a stronger promise for clients.
+    const noMin   = makeResponseArraySpec87("");
+    const withMin = makeResponseArraySpec87("minLength: 5");
+    const changes = analyzeOpenApiDiff(noMin, withMin);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-items-constraint-changed" && String(c.location).endsWith(".minLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(5);
+  });
+
+  it("removing minLength from response array items (5→null) is BREAKING — server may now return shorter elements", () => {
+    // responseConstraintSeverity min-sense: after === null → BREAKING
+    // Clients relying on each element being ≥5 chars may break when server returns shorter strings.
+    const withMin = makeResponseArraySpec87("minLength: 5");
+    const noMin   = makeResponseArraySpec87("");
+    const changes = analyzeOpenApiDiff(withMin, noMin);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-items-constraint-changed" && String(c.location).endsWith(".minLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBe(5);
+    expect(constChange?.after).toBeNull();
+  });
+});
