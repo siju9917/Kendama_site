@@ -13649,3 +13649,162 @@ ${enumLine}
     expect(c?.severity).toBe("INFO");
   });
 });
+
+// ─── Round 108: property-type-changed null transitions ────────────────────────
+// The classify rules for request/response property type changes have four branches each.
+// Prior tests cover type→type (non-null both sides). Three null-transition directions
+// for PROPERTY-LEVEL type changes have never been exercised:
+//   1. response property type added (null → string): classify before=null → INFO
+//   2. request property type added (null → string): classify after!=null → BREAKING
+//   3. request property type removed (string → null): classify after=null → INFO
+// These are distinct from the already-tested body-schema type null transitions.
+
+describe("adversarial round 108 — property type null transitions (request + response)", () => {
+  it("(R108-1) response property type added (null→string): INFO — server adds type guarantee", () => {
+    // Classify: response-schema-property-type-changed with before=null → INFO.
+    // A previously untyped response property gains an explicit type annotation.
+    // Clients benefit (server now guarantees the type); no existing behavior breaks.
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  score:
+                    description: user score
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  score:
+                    type: integer
+                    description: user score
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-schema-property-type-changed" && String(x.location).includes("score"));
+    expect(c).toBeDefined();
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe("integer");
+    expect(c?.severity).toBe("INFO");
+  });
+
+  it("(R108-2) request property type added (null→string): BREAKING — server now validates type", () => {
+    // Classify: request-schema-property-type-changed with after != null → BREAKING.
+    // Clients that were previously allowed to send any value for this property will now
+    // receive 400/422 if they send non-string values.
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tag:
+                  description: optional label
+      responses:
+        "201":
+          description: created
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tag:
+                  type: string
+                  description: optional label
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "request-schema-property-type-changed" && String(x.location).includes("tag"));
+    expect(c).toBeDefined();
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe("string");
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("(R108-3) request property type removed (string→null): INFO — server no longer enforces type", () => {
+    // Classify: request-schema-property-type-changed with after=null → INFO.
+    // Server removes the type constraint — previously-valid clients continue to work;
+    // server now accepts any value for this property.
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+      responses:
+        "201":
+          description: created
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  description: any value accepted
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "request-schema-property-type-changed" && String(x.location).includes("code"));
+    expect(c).toBeDefined();
+    expect(c?.before).toBe("string");
+    expect(c?.after).toBeNull();
+    expect(c?.severity).toBe("INFO");
+  });
+});
