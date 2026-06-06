@@ -852,22 +852,22 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => `Response header now guaranteed: ${c.location}. Server now always sends this header (non-breaking for existing clients).`,
   },
 
-  // response-header-enum-changed: enum values removed = BREAKING (clients switch on values break).
-  // Enum values added = INFO (new value; existing clients unaffected if they handle unknowns).
+  // response-header-enum-changed: enum values ADDED = BREAKING (exhaustive client handlers fail on unknown values).
+  // Enum values REMOVED = INFO (server narrows output; dead code in client).
   {
     matches: (c) =>
       c.type === "response-header-enum-changed" && c.before !== null && c.after !== null
-        ? ((c.before as unknown[]).length > (c.after as unknown[]).length ? "BREAKING" : "INFO")
+        ? ((c.before as unknown[]).length < (c.after as unknown[]).length ? "BREAKING" : "INFO")
         : null,
     message: (c) => {
       const before = c.before as unknown[] | null;
       const after  = c.after  as unknown[] | null;
-      const removed = (before ?? []).filter((v) => !(after ?? []).includes(v));
       const added   = (after  ?? []).filter((v) => !(before ?? []).includes(v));
-      if (removed.length > 0) {
-        return `Response header enum values removed at ${c.location}: [${removed.join(", ")}] removed. Clients handling these values will receive unexpected data.`;
+      const removed = (before ?? []).filter((v) => !(after  ?? []).includes(v));
+      if (added.length > 0) {
+        return `Response header enum values added at ${c.location}: [${added.join(", ")}] added. Clients with exhaustive handling may fail on new values.`;
       }
-      return `Response header enum values added at ${c.location}: [${added.join(", ")}] added. Existing clients are unaffected if they handle unknown enum values.`;
+      return `Response header enum values removed at ${c.location}: [${removed.join(", ")}] removed. Server narrows output (non-breaking — dead code in client).`;
     },
   },
   // Catch-all for header enum change with null before (newly added enum) or null after (enum removed).
