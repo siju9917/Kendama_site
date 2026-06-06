@@ -228,44 +228,65 @@ async function validateLicense(key: string): Promise<'active' | 'expired' | 'inv
 
 ## D. Product-specific integration notes
 
-### D5 — OpenAPI Breaking-Change Lens (beachhead: oasdiff)
+### D5 — OpenAPI Breaking-Change Lens
 
-**The diff engine:** `oasdiff` is an open-source Go library with a JavaScript/WASM build.
-It takes two OpenAPI specs (JSON or YAML) and returns a structured diff including:
-- Breaking changes (operationId removed, required field added, type changed)
-- Non-breaking changes (description added, new optional field)
+**The diff engine:** Phase 0 complete (2026-06-06). Our own pure TypeScript engine lives at
+`products/openapi-lens/src/engine/`. It is zero-dependency, fully testable with Vitest, and
+exposes a clean public API via `src/engine/index.ts`:
 
 ```typescript
-import { diff, breaking } from 'oasdiff';    // hypothetical JS wrapper
-const result = diff(baselineYaml, currentYaml);
-const breakingChanges = breaking(result);    // filtered to breaking-only
+import { analyzeOpenApiDiff, breakingOnly } from '../engine/index';
+// analyzeOpenApiDiff(baselineText: string, currentText: string): BreakingChange[]
+// breakingOnly(changes: BreakingChange[]): BreakingChange[]  (severity === 'BREAKING' only)
+
+const changes = analyzeOpenApiDiff(baselineText, currentText);
+const critical = breakingOnly(changes);
+// Each BreakingChange: { type, severity, path, method, location, before, after, message }
 ```
 
-**The wedge:** oasdiff itself exists, but has no VS Code extension as of 2026-06-06.
-The gap is the IDE-native, instant-feedback-on-save experience — users today run oasdiff
-as a CLI in their terminal or CI pipeline; the extension brings it to where they write code.
+**The wedge:** oasdiff (1.2k GitHub stars, Go CLI) is the leading breaking-change tool but
+has NO VS Code extension. Our engine is pure TypeScript — no Go runtime, no WASM, instant
+activation. oasdiff validates the demand; our extension fills the VS Code gap.
 
 **Baseline storage:** the extension needs to know WHAT to diff against. Two options:
-1. **Git baseline** (preferred): diff current file against `HEAD~1` or the last committed
-   version. Use `vscode.workspace.openTextDocument` on the git-object path.
-2. **Explicit file selection**: user picks a baseline file via file picker.
+1. **Git baseline** (preferred for Phase 1): diff current file against `HEAD~1` or the last
+   committed version. Read via VS Code git extension API.
+2. **Explicit file selection** (Phase 1 fallback): user picks a baseline file via file picker.
    Store the choice in `ctx.workspaceState`.
 
 **File detection heuristic:** a YAML/JSON file is an OpenAPI spec if it contains
 `openapi:` (v3) or `swagger:` (v2) at the top level. Run this cheaply on file open
-before invoking the heavier oasdiff analysis.
+before invoking the heavier engine analysis. Cost: one `.includes()` on the first 500 chars.
 
-**Schema to category mapping:** adapt BidDiff's `critical.ts` CRITICAL_RULES pattern:
+**Line number mapping (Phase 1 architectural challenge):** Our engine returns `BreakingChange`
+objects with `{ path, method, location }` — not line numbers. To place VS Code diagnostics
+at specific lines, we need to map `location` to a source position. Three approaches:
+
+1. **CST-based (most precise):** Use the `yaml` npm package (Eemeli Aro's) which preserves
+   source positions in its CST. Navigate CST nodes to find the field named in `location`.
+   This requires adding `yaml` as a Phase 1 dependency. The Phase 0 engine used `js-yaml`
+   which does NOT preserve positions.
+
+2. **Regex search (MVP approach):** After the diff, for each change, run a targeted regex
+   search through the document text for the field name in context. For a change at
+   `paths./users.get.requestBody.schema.properties.name.type`, search for `name:` in the
+   `/users` GET block. Imprecise but workable: squiggle the right block, not the exact line.
+
+3. **Block-level fallback (simplest):** Map `path + method` to the start line of that
+   operation. Each `paths./users:` block has a deterministic location in the YAML. Use
+   the operation line, not the specific field line. Diagnostic appears at the endpoint
+   definition, not the exact field.
+
+**Phase 1 recommendation:** Start with approach 3 (block-level) for the first ship, as it
+requires no new dependencies and is reliable. Upgrade to approach 1 (CST) in Phase 2 when
+precision matters more. Document this design trade-off in the extension's Phase 1 PROGRESS.
+
+**Schema to category mapping** (already in the engine — no new work needed):
 ```typescript
-const OAPI_CRITICAL_RULES = [
-  { matches: (c) => c.type === 'endpoint-removed', reason: () => 'An API endpoint was removed.' },
-  { matches: (c) => c.type === 'required-property-added', reason: () => 'A required request field was added.' },
-  // etc.
-];
+// BreakingChange already has: type, severity, path, method, location, message
+// Diagnostic severity: severity === 'BREAKING' → DiagnosticSeverity.Error
+//                       severity === 'INFO' → DiagnosticSeverity.Warning
 ```
-
-This is the same rule-pack-loader pattern as the D-family — oasdiff's breaking-change
-taxonomy maps directly onto the `ChangeCategory` × `Severity` output model.
 
 ### D6 — Terraform Plan Destructive-Change Classifier
 
