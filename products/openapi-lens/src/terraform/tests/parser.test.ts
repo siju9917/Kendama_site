@@ -171,7 +171,7 @@ describe("parseTerraformPlan — output_changes", () => {
     expect(result.outputChanges[0]!.sensitive).toBe(false);
   });
 
-  it("parses a sensitive output and marks it sensitive", () => {
+  it("parses a sensitive output (boolean true) and marks it sensitive", () => {
     const result = parseTerraformPlan(
       makePlan({
         output_changes: {
@@ -185,6 +185,39 @@ describe("parseTerraformPlan — output_changes", () => {
       }),
     );
     expect(result.outputChanges[0]!.sensitive).toBe(true);
+  });
+
+  it("marks sensitive when after_sensitive is a partial-sensitive object", () => {
+    // Complex output where only some fields are sensitive (Terraform marks them as an object).
+    const result = parseTerraformPlan(
+      makePlan({
+        output_changes: {
+          db_config: {
+            actions: ["update"],
+            before: { host: "db.example.com", password: "old" },
+            after: { host: "db.example.com", password: null },
+            after_sensitive: { password: true },
+          },
+        },
+      }),
+    );
+    expect(result.outputChanges[0]!.sensitive).toBe(true);
+  });
+
+  it("does not mark sensitive when after_sensitive is false", () => {
+    const result = parseTerraformPlan(
+      makePlan({
+        output_changes: {
+          public_ip: {
+            actions: ["update"],
+            before: "1.2.3.4",
+            after: "5.6.7.8",
+            after_sensitive: false,
+          },
+        },
+      }),
+    );
+    expect(result.outputChanges[0]!.sensitive).toBe(false);
   });
 
   it("skips no-op outputs", () => {

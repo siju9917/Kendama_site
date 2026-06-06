@@ -96,11 +96,16 @@ function parseOutputChanges(raw: unknown): TfOutputChange[] {
     const actions = entry["actions"] as string[];
     // Skip no-op outputs (no actual change).
     if (actions.every((a: string) => a === "no-op")) continue;
-    results.push({
-      name,
-      actions,
-      sensitive: entry["after_sensitive"] === true || entry["before_sensitive"] === true,
-    });
+    // after_sensitive / before_sensitive can be:
+    //   - true (the entire output is sensitive)
+    //   - an object like {"password": true} (some fields of a complex output are sensitive)
+    //   - false / absent (not sensitive)
+    const isSensitive =
+      entry["after_sensitive"] === true ||
+      entry["before_sensitive"] === true ||
+      (entry["after_sensitive"] !== null && typeof entry["after_sensitive"] === "object") ||
+      (entry["before_sensitive"] !== null && typeof entry["before_sensitive"] === "object");
+    results.push({ name, actions, sensitive: isSensitive });
   }
   return results;
 }
