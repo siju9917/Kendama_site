@@ -14303,3 +14303,154 @@ describe("Round 112 — parameter-enum-changed and parameter-items-enum-changed 
     expect(c?.severity).toBe("INFO");
   });
 });
+
+// ─── Round 113: untested null-transition directions for parameter format/type ─
+// parameter-format-changed: INFO direction (format→null) tested in round 20,
+// but BREAKING direction (null→format and format→format) was never tested.
+// parameter-type-changed: type→type BREAKING tested, null→type BREAKING not tested.
+// Also: request-schema-property/items-writeonly-changed true→false (INFO) — only
+// false→true was previously tested for each.
+
+function makeParamFormatSpec(format: string | null): string {
+  const fmtLine = format ? `\n            format: "${format}"` : "";
+  return `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - name: since
+          in: query
+          required: false
+          schema:
+            type: string${fmtLine}
+      responses:
+        "200":
+          description: ok
+`;
+}
+
+function makeParamTypeSpec(type: string | null): string {
+  const typeLine = type ? `\n            type: "${type}"` : "";
+  return `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: {${typeLine}}
+      responses:
+        "200":
+          description: ok
+`;
+}
+
+describe("Round 113 — parameter-format/type null transitions and writeonly symmetric directions", () => {
+  it("(R113-1) parameter format added (null→format) is BREAKING — server now validates date-time format", () => {
+    const changes = analyzeOpenApiDiff(
+      makeParamFormatSpec(null),
+      makeParamFormatSpec("date-time"),
+    );
+    const c = changes.find((x) => x.type === "parameter-format-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBeUndefined(); // diff.ts stores bp.schema.format raw (undefined when absent)
+    expect(c?.after).toBe("date-time");
+  });
+
+  it("(R113-2) parameter format changed (date→date-time) is BREAKING — different format constraints may reject existing values", () => {
+    const changes = analyzeOpenApiDiff(
+      makeParamFormatSpec("date"),
+      makeParamFormatSpec("date-time"),
+    );
+    const c = changes.find((x) => x.type === "parameter-format-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe("date");
+    expect(c?.after).toBe("date-time");
+  });
+
+  it("(R113-3) parameter type added (null→integer) is BREAKING — server now rejects non-integer values", () => {
+    const changes = analyzeOpenApiDiff(
+      makeParamTypeSpec(null),
+      makeParamTypeSpec("integer"),
+    );
+    const c = changes.find((x) => x.type === "parameter-type-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBeUndefined(); // diff.ts stores bp.schema.type raw (undefined when absent)
+    expect(c?.after).toBe("integer");
+  });
+
+  it("(R113-4) request property writeOnly true→false is INFO — field is no longer annotated write-only", () => {
+    function makeRequestWriteOnlySpec(writeOnly: boolean): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                  writeOnly: ${writeOnly}
+      responses:
+        "201":
+          description: created
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeRequestWriteOnlySpec(true), makeRequestWriteOnlySpec(false));
+    const c = changes.find((x) => x.type === "request-schema-property-writeonly-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(true);
+    expect(c?.after).toBe(false);
+  });
+
+  it("(R113-5) request items writeOnly true→false is INFO — annotation removed, items no longer marked write-only", () => {
+    function makeRequestItemsWriteOnlySpec(writeOnly: boolean): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /bulk:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                writeOnly: ${writeOnly}
+                properties:
+                  secret: {type: string}
+      responses:
+        "200":
+          description: ok
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeRequestItemsWriteOnlySpec(true), makeRequestItemsWriteOnlySpec(false));
+    const c = changes.find((x) => x.type === "request-schema-items-writeonly-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(true);
+    expect(c?.after).toBe(false);
+  });
+});
