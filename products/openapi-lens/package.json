@@ -24,6 +24,10 @@
       {
         "command": "openapi-lens.showTerraformPanel",
         "title": "OpenAPI Lens: Show Terraform plan classification"
+      },
+      {
+        "command": "openapi-lens.showChangePanel",
+        "title": "OpenAPI Lens: Show breaking-change panel"
       }
     ],
     "configuration": {

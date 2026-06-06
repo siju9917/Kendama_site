@@ -5,11 +5,15 @@ import { OpenApiCodeLensProvider } from "./providers/codeLensProvider.js";
 import { fetchGitHeadContent } from "./baseline/gitBaseline.js";
 import { registerCommands } from "./commands.js";
 import { activateTerraformSupport, deactivateTerraformSupport } from "./terraformExtension.js";
+import { createChangeWebviewContent } from "./providers/changeWebviewProvider.js";
 import { analyzeOpenApiDiff } from "../engine/index.js";
 import type { BreakingChange } from "../engine/types.js";
 
 let diagnosticCollection: vscode.DiagnosticCollection | undefined;
 let codeLensProvider: OpenApiCodeLensProvider | undefined;
+let changeWebviewPanel: vscode.WebviewPanel | undefined;
+// Last known changes for the active OpenAPI document — used by showChangePanel command.
+let lastKnownChanges: BreakingChange[] = [];
 
 // Per-document manual baseline content, keyed by document URI string.
 // Global manualBaselineContent was wrong: selecting a baseline for one spec
@@ -27,6 +31,12 @@ export function activate(context: vscode.ExtensionContext): void {
       codeLensProvider,
     ),
     codeLensProvider,
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("openapi-lens.showChangePanel", () => {
+      showOpenApiWebviewPanel(lastKnownChanges);
+    }),
   );
 
   registerCommands(context, {
@@ -67,6 +77,25 @@ export function activate(context: vscode.ExtensionContext): void {
   if (active) void analyzeDocument(active);
 }
 
+function showOpenApiWebviewPanel(changes: BreakingChange[]): void {
+  const content = createChangeWebviewContent(changes);
+  if (changeWebviewPanel) {
+    changeWebviewPanel.reveal(vscode.ViewColumn.Beside);
+    changeWebviewPanel.webview.html = content;
+    return;
+  }
+  changeWebviewPanel = vscode.window.createWebviewPanel(
+    "openapi-lens.changePanel",
+    "OpenAPI: Breaking Changes",
+    vscode.ViewColumn.Beside,
+    { enableScripts: false, retainContextWhenHidden: true },
+  );
+  changeWebviewPanel.webview.html = content;
+  changeWebviewPanel.onDidDispose(() => {
+    changeWebviewPanel = undefined;
+  });
+}
+
 async function analyzeDocument(document: vscode.TextDocument): Promise<void> {
   if (!diagnosticCollection || !codeLensProvider) return;
   if (!isOpenApiDocument(document)) {
@@ -89,8 +118,13 @@ async function analyzeDocument(document: vscode.TextDocument): Promise<void> {
     // don't affect API consumers and should not appear in the diagnostic panel.
     const allChanges: BreakingChange[] = analyzeOpenApiDiff(baselineText, currentText);
     const visibleChanges = allChanges.filter((c) => c.severity !== "SAFE");
+    lastKnownChanges = visibleChanges;
     diagnosticCollection.set(document.uri, buildDiagnostics(visibleChanges, document));
     codeLensProvider.update(visibleChanges);
+    // Auto-update the WebView panel if it's already open.
+    if (changeWebviewPanel) {
+      changeWebviewPanel.webview.html = createChangeWebviewContent(visibleChanges);
+    }
   } catch {
     // Parse errors in the spec — clear stale diagnostics.
     diagnosticCollection.delete(document.uri);
@@ -125,8 +159,11 @@ async function resolveBaseline(document: vscode.TextDocument): Promise<string | 
 export function deactivate(): void {
   diagnosticCollection?.dispose();
   codeLensProvider?.dispose();
+  changeWebviewPanel?.dispose();
   deactivateTerraformSupport();
   diagnosticCollection = undefined;
   codeLensProvider = undefined;
+  changeWebviewPanel = undefined;
+  lastKnownChanges = [];
   manualBaselineByUri.clear();
 }

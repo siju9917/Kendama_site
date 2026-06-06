@@ -57,9 +57,9 @@ export class OpenApiCodeLensProvider implements vscode.CodeLensProvider {
     if (info > 0) parts.push(`${info} INFO`);
     const lens = new vscode.CodeLens(range);
     lens.command = {
-      title: `OpenAPI Lens: ${parts.join(", ")}`,
-      command: "openapi-lens.selectBaseline",
-      tooltip: "Click to change baseline",
+      title: `OpenAPI Lens: ${parts.join(", ")} — click to view details`,
+      command: "openapi-lens.showChangePanel",
+      tooltip: "Open the full breaking-change panel",
     };
     return [lens];
   }

@@ -128,12 +128,12 @@ describe("OpenApiCodeLensProvider", () => {
       expect(title).toContain("2 INFO");
     });
 
-    it("command is openapi-lens.selectBaseline to allow changing baseline", () => {
+    it("command is openapi-lens.showChangePanel to open the details panel", () => {
       const provider = new OpenApiCodeLensProvider();
       provider.update([makeBreaking()]);
       const lenses = provider.provideCodeLenses(makeDoc());
       // @ts-expect-error accessing .command on mock
-      expect(lenses[0]!.command.command).toBe("openapi-lens.selectBaseline");
+      expect(lenses[0]!.command.command).toBe("openapi-lens.showChangePanel");
     });
   });
 
