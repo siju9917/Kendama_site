@@ -10029,3 +10029,157 @@ paths:
     expect(constChange?.after).toBeNull();
   });
 });
+
+// ─── Round 75: response body top-level maximum constraint (max-sense paths) ──
+
+describe("adversarial round 75 — top-level response body maximum constraint (end-to-end)", () => {
+  function makeMaxResponseSpec(maxLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /score:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: integer
+                ${maxLine}
+`;
+  }
+
+  it("adding maximum to response body integer (null→100) is INFO — server adds an upper bound guarantee, non-breaking for clients", () => {
+    // responseConstraintSeverity max-sense: before === null → INFO
+    // Server now promises to return at most 100; clients already handling any integer are unaffected.
+    const noMax   = makeMaxResponseSpec("");
+    const withMax = makeMaxResponseSpec("maximum: 100");
+    const changes = analyzeOpenApiDiff(noMax, withMax);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".maximum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(100);
+  });
+
+  it("raising maximum on response body integer (100→200) is BREAKING — server may now return values clients couldn't handle", () => {
+    // responseConstraintSeverity max-sense: after (200) > before (100) → BREAKING
+    // Clients relying on maximum=100 may not handle values in [101, 200].
+    const withMax100 = makeMaxResponseSpec("maximum: 100");
+    const withMax200 = makeMaxResponseSpec("maximum: 200");
+    const changes = analyzeOpenApiDiff(withMax100, withMax200);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".maximum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBe(100);
+    expect(constChange?.after).toBe(200);
+  });
+
+  it("removing maximum from response body integer (100→null) is BREAKING — server drops the ceiling guarantee", () => {
+    // responseConstraintSeverity max-sense: after === null → BREAKING
+    // Clients that relied on maximum=100 may receive unbounded values.
+    const withMax = makeMaxResponseSpec("maximum: 100");
+    const noMax   = makeMaxResponseSpec("");
+    const changes = analyzeOpenApiDiff(withMax, noMax);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".maximum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBe(100);
+    expect(constChange?.after).toBeNull();
+  });
+});
+
+// ─── Round 76: request body top-level min/max null-transitions ──────────────
+// Round 33 tested minimum increase (1→5, BREAKING) at top-level body.
+// The null-transition paths (add/remove) for top-level request body min and max
+// are only exercised at property level — never at top-level body schema level.
+
+describe("adversarial round 76 — top-level request body minimum/maximum null-transitions (end-to-end)", () => {
+  function makeConstrainedBodySpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /scores:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: integer
+              ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("adding minimum to request body integer (null→1) is BREAKING — new constraint rejects previously valid small values", () => {
+    // requestConstraintSeverity min-sense: before === null → BREAKING
+    // Clients sending 0 or negative integers will now fail validation.
+    const noMin   = makeConstrainedBodySpec("");
+    const withMin = makeConstrainedBodySpec("minimum: 1");
+    const changes = analyzeOpenApiDiff(noMin, withMin);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".minimum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(1);
+  });
+
+  it("removing minimum from request body integer (1→null) is INFO — constraint relaxed, all prior valid values still accepted", () => {
+    // requestConstraintSeverity min-sense: after === null → INFO
+    // Removing minimum is strictly more permissive — existing clients are unaffected.
+    const withMin = makeConstrainedBodySpec("minimum: 1");
+    const noMin   = makeConstrainedBodySpec("");
+    const changes = analyzeOpenApiDiff(withMin, noMin);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".minimum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(1);
+    expect(constChange?.after).toBeNull();
+  });
+
+  it("adding maximum to request body integer (null→100) is BREAKING — new constraint rejects previously valid large values", () => {
+    // requestConstraintSeverity max-sense: before === null → BREAKING
+    // Clients sending values > 100 will now fail validation.
+    const noMax   = makeConstrainedBodySpec("");
+    const withMax = makeConstrainedBodySpec("maximum: 100");
+    const changes = analyzeOpenApiDiff(noMax, withMax);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".maximum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(100);
+  });
+
+  it("removing maximum from request body integer (100→null) is INFO — constraint relaxed, all prior valid values still accepted", () => {
+    // requestConstraintSeverity max-sense: after === null → INFO
+    // Removing maximum is strictly more permissive — existing clients unaffected.
+    const withMax = makeConstrainedBodySpec("maximum: 100");
+    const noMax   = makeConstrainedBodySpec("");
+    const changes = analyzeOpenApiDiff(withMax, noMax);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".maximum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(100);
+    expect(constChange?.after).toBeNull();
+  });
+});
