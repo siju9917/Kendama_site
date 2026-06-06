@@ -10183,3 +10183,103 @@ paths:
     expect(constChange?.after).toBeNull();
   });
 });
+
+// ─── Round 77: response body top-level minLength + minItems null-transitions ─
+// minLength property tests at line ~1053 use PROPERTY-level schema (.properties.code.minLength).
+// These tests verify the same semantics at TOP-LEVEL response body schema scope.
+
+describe("adversarial round 77 — response body top-level minLength/minItems null-transitions (end-to-end)", () => {
+  function makeStringResponseSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /code:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+                ${constraintLine}
+`;
+  }
+
+  function makeArrayResponseSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                ${constraintLine}
+`;
+  }
+
+  it("adding minLength to response body string (null→5) is INFO — server now guarantees minimum length", () => {
+    // responseConstraintSeverity min-sense: before === null → INFO
+    const noMin   = makeStringResponseSpec("");
+    const withMin = makeStringResponseSpec("minLength: 5");
+    const changes = analyzeOpenApiDiff(noMin, withMin);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".minLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(5);
+  });
+
+  it("removing minLength from response body string (5→null) is BREAKING — server may now return shorter strings", () => {
+    // responseConstraintSeverity min-sense: after === null → BREAKING
+    const withMin = makeStringResponseSpec("minLength: 5");
+    const noMin   = makeStringResponseSpec("");
+    const changes = analyzeOpenApiDiff(withMin, noMin);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".minLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBe(5);
+    expect(constChange?.after).toBeNull();
+  });
+
+  it("adding minItems to response body array (null→3) is INFO — server now guarantees at least 3 elements", () => {
+    // responseConstraintSeverity min-sense: before === null → INFO
+    const noMin   = makeArrayResponseSpec("");
+    const withMin = makeArrayResponseSpec("minItems: 3");
+    const changes = analyzeOpenApiDiff(noMin, withMin);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".minItems"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(3);
+  });
+
+  it("removing minItems from response body array (3→null) is BREAKING — server may now return empty arrays", () => {
+    // responseConstraintSeverity min-sense: after === null → BREAKING
+    const withMin = makeArrayResponseSpec("minItems: 3");
+    const noMin   = makeArrayResponseSpec("");
+    const changes = analyzeOpenApiDiff(withMin, noMin);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".minItems"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBe(3);
+    expect(constChange?.after).toBeNull();
+  });
+});
