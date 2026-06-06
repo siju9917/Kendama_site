@@ -6905,7 +6905,7 @@ paths:
     expect(scopeRemoved?.severity).toBe("INFO");
   });
 
-  it("replacing one auth scheme with another emits remove + add pair", () => {
+  it("replacing one auth scheme with another emits remove + add pair (round 39)", () => {
     const withOAuth2 = makeSpec("security:\n      - OAuth2: []");
     const withApiKey = makeSpec("security:\n      - ApiKey: []");
     const changes = analyzeOpenApiDiff(withOAuth2, withApiKey);
@@ -6917,5 +6917,178 @@ paths:
     expect(added).toBeDefined();
     expect(added?.after).toBe("ApiKey");
     expect(added?.severity).toBe("INFO");
+  });
+});
+
+// ─── Round 40: deeply nested allOf + cross-version comparison ─────────────────
+
+describe("deeply nested allOf (allOf within allOf member) (5.7.5 round 40)", () => {
+  it("allOf member that itself has allOf is fully flattened — required fields from 3 levels propagate", () => {
+    // Level structure: Root allOf [GrandChild, Extra]
+    //   GrandChild allOf [Base, ChildExtension]
+    //     Base: required [id], properties {id: string}
+    //     ChildExtension: required [name], properties {name: string}
+    //   Extra: required [email], properties {email: string}
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+components:
+  schemas:
+    Base:
+      type: object
+      required: [id]
+      properties:
+        id: {type: string}
+    ChildExtension:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+    GrandChild:
+      allOf:
+        - $ref: "#/components/schemas/Base"
+        - $ref: "#/components/schemas/ChildExtension"
+    Extra:
+      type: object
+      required: [email]
+      properties:
+        email: {type: string}
+    Root:
+      allOf:
+        - $ref: "#/components/schemas/GrandChild"
+        - $ref: "#/components/schemas/Extra"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Root"
+`;
+    // Current removes the `required: [id]` from Base — should propagate up to Root
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+components:
+  schemas:
+    Base:
+      type: object
+      properties:
+        id: {type: string}
+    ChildExtension:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+    GrandChild:
+      allOf:
+        - $ref: "#/components/schemas/Base"
+        - $ref: "#/components/schemas/ChildExtension"
+    Extra:
+      type: object
+      required: [email]
+      properties:
+        email: {type: string}
+    Root:
+      allOf:
+        - $ref: "#/components/schemas/GrandChild"
+        - $ref: "#/components/schemas/Extra"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Root"
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    // id was required in baseline (inherited through GrandChild → Root)
+    // now optional — response-schema-field-required-removed (BREAKING)
+    const requiredRemoved = changes.find(
+      (c) => c.type === "response-schema-field-required-removed" && String(c.location).includes("id"),
+    );
+    expect(requiredRemoved).toBeDefined();
+    expect(requiredRemoved?.severity).toBe("BREAKING");
+  });
+});
+
+describe("OAS 3.0 ↔ OAS 3.1 cross-version comparison (5.7.5 round 40)", () => {
+  it("comparing OAS 3.0 spec to OAS 3.1 spec detects schema changes correctly", () => {
+    const oas30 = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+`;
+    const oas31 = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: integer
+`;
+    const changes = analyzeOpenApiDiff(oas30, oas31);
+    const typeChange = changes.find((c) => c.type === "response-schema-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+
+  it("OAS 3.0 nullable: true equivalent to OAS 3.1 type: [string, null] — no false positive", () => {
+    const oas30 = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+                nullable: true
+`;
+    const oas31 = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: [string, "null"]
+`;
+    // Both represent "string | null" — no type-changed or nullable-changed expected.
+    const changes = analyzeOpenApiDiff(oas30, oas31);
+    expect(changes.filter((c) => c.type === "response-schema-type-changed")).toHaveLength(0);
+    expect(changes.filter((c) => c.type === "response-schema-nullable-changed")).toHaveLength(0);
   });
 });
