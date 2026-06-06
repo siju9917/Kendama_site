@@ -227,7 +227,9 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const after = c.after as unknown[] | null;
       // Enum added to previously unconstrained items: server now promises only these values (INFO, not BREAKING).
       if (!before && after) return "INFO";
-      // Enum removed or one/both sides null (other null case): BREAKING.
+      // Enum removed from response items: server no longer restricts element values; exhaustive clients break.
+      if (before && !after) return "BREAKING";
+      // Null-null edge (shouldn't fire due to diff guard, but defend): BREAKING.
       if (!before || !after) return "BREAKING";
       const added = after.filter((v) => !before.includes(v));
       if (added.length > 0) return "BREAKING";
@@ -237,6 +239,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const before = c.before as unknown[] | null;
       const after = c.after as unknown[] | null;
       if (!before && after) return `Response array items enum added: ${c.location}. Server now guarantees elements are one of [${(after as unknown[]).join(", ")}] (non-breaking for clients).`;
+      if (before && !after) return `Response array items enum constraint removed: ${c.location}. Server may now return elements with any value; clients with exhaustive enum handling will break.`;
       if (!before || !after) return `Response array items enum changed: ${c.location}.`;
       const added = after.filter((v) => !before.includes(v));
       if (added.length > 0) return `Response array items enum values added at ${c.location}: [${added.join(", ")}]. Clients with exhaustive enum handling will break.`;
@@ -355,7 +358,9 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const after = c.after as unknown[] | undefined | null;
       // Enum added to previously unconstrained property: server now promises only these values (INFO).
       if (!before && after) return "INFO";
-      // Enum removed or null-null edge: BREAKING.
+      // Enum removed from response property: server no longer restricts values; exhaustive clients break.
+      if (before && !after) return "BREAKING";
+      // Null-null edge (shouldn't fire due to diff guard, but defend): BREAKING.
       if (!before || !after) return "BREAKING";
       const added = after.filter((v) => !before.includes(v));
       if (added.length > 0) return "BREAKING";
@@ -365,7 +370,8 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const before = c.before as unknown[] | undefined | null;
       const after = c.after as unknown[] | undefined | null;
       if (!before && after) return `Response property enum added: ${c.location}. Server now guarantees this field is one of [${(after as unknown[]).join(", ")}] (non-breaking for clients).`;
-      if (!before || !after) return `Response property enum changed at ${c.location}: values may be added.`;
+      if (before && !after) return `Response property enum constraint removed: ${c.location}. Server may now return any value for this property; clients with exhaustive enum handling will break.`;
+      if (!before || !after) return `Response property enum changed at ${c.location}.`;
       const added = (after as unknown[]).filter((v) => !(before as unknown[]).includes(v));
       if (added.length > 0) return `Response property enum values added at ${c.location}: [${added.join(", ")}]. Clients with exhaustive enum handling (e.g. switch statements without default) will break.`;
       const removed = (before as unknown[]).filter((v) => !(after as unknown[]).includes(v));

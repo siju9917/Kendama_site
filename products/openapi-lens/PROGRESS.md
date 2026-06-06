@@ -250,6 +250,16 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   Fix: moved format, enum, nullable, and constraint comparisons inside an inner `if (bItems && cItems)`
   guard, while the type comparison remains outside as the primary detector. +2 adversarial tests.
   **483/483 tests.**
+- [x] **5.7.5 round 23 — response enum-removed message says "values may be added" instead of "enum removed"** —
+  Two classify rules had wrong message text for the `before=array, after=null` (enum REMOVED from response) case:
+  - `response-schema-property-enum-changed` message: "Response property enum changed at X: values may be added" —
+    says the wrong direction (values aren't being ADDED; the whole enum constraint was REMOVED)
+  - `response-schema-items-enum-changed` message: "Response array items enum changed: X" — vague/generic;
+    doesn't communicate that enum was removed and exhaustive clients break
+  Both had their `!before || !after` catch-all also handling the `before && !after` case together. Split
+  into explicit `before && !after` branch (proper "enum removed" message) vs remaining null-null edge.
+  Severity (BREAKING) was already correct — only messages were wrong.
+  +2 classify unit tests (message content check for both types). **485/485 tests.**
 - [x] **5.7.5 round 15 — request-side constraint removal classified as BREAKING instead of INFO** —
   systematic audit of all request-side classify rules found 11 cases where a constraint being REMOVED
   from the server spec (before=value, after=null/undefined) was incorrectly classified as BREAKING.

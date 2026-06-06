@@ -881,6 +881,22 @@ describe("classify — null-transition fixes (5.7.5 round 14)", () => {
     expect(result[0]?.message).not.toMatch(/^Change detected at/);
   });
 
+  // Round 23: message quality — enum REMOVED from response (before=array, after=null) must
+  // say "removed" / "exhaustive", not "may be added" (which was the wrong direction).
+  it("response-schema-property-enum-changed (enum→null) message says removed/exhaustive (round 23)", () => {
+    const result = classifyChanges([raw("response-schema-property-enum-changed", ["open", "closed"], null, "responses[200].content.schema.properties[state].enum")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/removed|exhaustive/i);
+    expect(result[0]?.message).not.toMatch(/may be added/i);
+  });
+
+  it("response-schema-items-enum-changed (enum→null) message says removed/exhaustive (round 23)", () => {
+    const result = classifyChanges([raw("response-schema-items-enum-changed", ["a", "b"], null, "responses[200].content.schema.items.enum")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/removed|exhaustive/i);
+    expect(result[0]?.message).not.toMatch(/^Response array items enum changed:/);
+  });
+
   it("response-schema-format-changed (null→format) is INFO at body level", () => {
     const result = classifyChanges([raw("response-schema-format-changed", null, "binary", "responses[200].content.schema.format")]);
     expect(result[0]?.severity).toBe("INFO");
