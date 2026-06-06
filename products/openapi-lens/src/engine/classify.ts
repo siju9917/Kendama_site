@@ -75,6 +75,20 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => `Required request body removed from spec: ${c.location}. The server contract no longer documents this body; clients sending it may be rejected.`,
   },
   {
+    matches: (c) =>
+      c.type === "request-body-required-changed" && c.before === true && c.after === false
+        ? "INFO"
+        : null,
+    message: (c) => `Request body became optional: ${c.location}. Existing clients sending the body are unaffected; new clients may omit it.`,
+  },
+  {
+    matches: (c) =>
+      c.type === "request-body-required-changed" && c.before === false && c.after === null
+        ? "INFO"
+        : null,
+    message: (c) => `Optional request body removed from spec: ${c.location}. Clients not sending the body are unaffected.`,
+  },
+  {
     matches: (c) => c.type === "request-schema-field-required-added" ? "BREAKING" : null,
     message: (c) => `Required field added to request body: ${c.location}. Clients not sending this field will now receive 400.`,
   },

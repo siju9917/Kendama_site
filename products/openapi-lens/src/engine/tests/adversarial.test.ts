@@ -1991,6 +1991,93 @@ paths:
   });
 });
 
+// ─── request-body-required direction gaps (5.7.5 round 11) ──────────────────
+
+describe("request-body-required direction completeness (5.7.5 round 11)", () => {
+  it("request body becoming optional (required: true→false) is emitted as INFO", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: created
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const reqChange = changes.find((c) => c.type === "request-body-required-changed");
+    expect(reqChange).toBeDefined();
+    expect(reqChange?.severity).toBe("INFO");
+    expect(reqChange?.before).toBe(true);
+    expect(reqChange?.after).toBe(false);
+  });
+
+  it("optional request body removed from spec emits INFO with clear message (not cryptic fallback)", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: created
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const reqChange = changes.find((c) => c.type === "request-body-required-changed");
+    expect(reqChange).toBeDefined();
+    expect(reqChange?.severity).toBe("INFO");
+    expect(reqChange?.message).not.toMatch(/^Change detected at/);
+  });
+});
+
 // ─── items readOnly / writeOnly — parsed-but-never-diffed (5.7.5 round 10) ──
 
 describe("items readOnly/writeOnly — full pipeline (5.7.5 round 10)", () => {

@@ -552,6 +552,9 @@ function diffRequestBody(
     if (!bb.required && cb.required) {
       changes.push({ type: "request-body-required-changed", path, method, location: "requestBody.required", before: false, after: true });
     }
+    if (bb.required && !cb.required) {
+      changes.push({ type: "request-body-required-changed", path, method, location: "requestBody.required", before: true, after: false });
+    }
     diffSchemaType(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffSchemaRequiredFields(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffSchemaProperties(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);

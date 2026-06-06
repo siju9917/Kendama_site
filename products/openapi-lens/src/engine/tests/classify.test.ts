@@ -154,6 +154,22 @@ describe("classifyChanges — classification rules", () => {
     expect(result[0]?.message).toMatch(/removed/i);
   });
 
+  it("classifies request-body-required-changed (false→null, optional body removed) as INFO with clear message", () => {
+    // Optional body removed from spec — clients not sending it are unaffected, but contract changed
+    const result = classifyChanges([raw("request-body-required-changed", false, null, "requestBody")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/optional|removed/i);
+  });
+
+  it("classifies request-body-required-changed (true→false, body became optional) as INFO", () => {
+    // Required body relaxed to optional — non-breaking for existing clients
+    const result = classifyChanges([raw("request-body-required-changed", true, false, "requestBody.required")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/optional/i);
+  });
+
   it("classifies response-schema-property-type-changed as BREAKING", () => {
     const result = classifyChanges([raw("response-schema-property-type-changed", "string", "integer", "responses[200].properties.id.type")]);
     expect(result[0]?.severity).toBe("BREAKING");
