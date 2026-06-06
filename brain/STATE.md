@@ -721,6 +721,30 @@ all green; check tests 16/16.
     on bItems/cItems (3 integration tests + 1 parser test). 337→345 openapi-lens.
     Total: **931/931 tests**.
 
+68. **5.7.4 "nothing is done" review — openapi-lens Phase 2 WISHLIST** (context-window
+    continuation, 2026-06-06): Adversarial review of Phase 0 engine against "what would
+    a top-tier API tooling team add?" identified 4 new Phase 2 engine-addition candidates
+    currently absent from the engine: (1) response `headers` diff (X-Rate-Limit, Location
+    etc. are contract; removing is BREAKING); (2) security scheme/scope changes (new
+    required OAuth scope = BREAKING); (3) `servers` array changes (base URL change breaks
+    all clients); (4) `operationId` changes (SDK generator method-name renames). All 4 added
+    to `products/openapi-lens/PROGRESS.md` Phase 2 engine-additions section + Known
+    Limitations entries. No new tests (Phase 2 scope, not Phase 0 bug). Suite unchanged:
+    **931/931 tests**.
+
+69. **First-principles BCL format-pack roadmap scoring** (5.7.6 continuous ideation):
+    Evaluated K8s YAML, SQL migration, GraphQL, CloudFormation, Avro, Docker image diff as
+    format-pack candidates for the Breaking-Change Lens product line (NOT new D-series items
+    — framed correctly per the meta-synthesis "one product, not five"). Scored on pain
+    acuity, gap genuineness, parser cost, BCL model fit. Result: SQL migration diff (STRONG
+    — universal backend pain, strong gap, sql-ddl parsing the only tax); K8s YAML diff
+    (STRONG — easy parser, genuine gap, kubectl diff shows but doesn't classify); GraphQL
+    diff (MEDIUM — CLI competitor graphql-inspector exists; VS-Code extension gap uncertain);
+    CloudFormation diff (MEDIUM — CDK diff covers serious AWS users); Avro diff (LOW-MEDIUM
+    — small niche); Docker image diff (DROPPED — binary layer analysis doesn't fit BCL
+    model). Sequencing note: K8s YAML is cheapest pack-2, SQL migration is highest-value.
+    Added to `brain/IDEA_BACKLOG.md` as "BCL format-pack roadmap candidates" subsection.
+
 66. **5.7.5 round 7 — array parameter items diffing** — `items` on array-type parameters
     (e.g., `GET /items?ids=1,2,3` with `schema.type=array`) was parsed but never diffed.
     A query parameter changing from `array<string>` to `array<integer>` was invisible.
@@ -835,7 +859,7 @@ all green; check tests 16/16.
   components tested). All unblocked POLISH done. Next session: privacy copy fix
   (NEED #7, when human responds), store submission prep, and D5 VS Code extension
   Phase 1 scaffold (once Proposal #3 auto-proceeds 2026-06-13).
-- **D5 Phase 0 engine is in `products/openapi-lens/`** — 307 tests, all passing.
+- **D5 Phase 0 engine is in `products/openapi-lens/`** — 345 tests, all passing.
   Phase 1 (VS Code extension scaffold) starts when Proposal #3 auto-proceeds 2026-06-13.
 - Spend cap: plan-included web tools (sub-agents, search) are FREE; $0 committed
   external spend. No cap blocker.

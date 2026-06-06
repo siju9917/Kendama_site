@@ -53,7 +53,9 @@
 #### Factory hardening and research
 
 - **SELF_IMPROVEMENT #11 done**: `brain/PLAYBOOKS/openapi-engine-diff.md` — captures the full Phase 0 arc (field-coverage matrix, direction-aware polarity, TYPE_STUBS completeness guard, flattenAllOf discipline, `?? null` sentinel, recursion cap).
-- **MARKET_SIGNALS.md first substantive entry**: D6 (Terraform plan classifier) gap CONFIRMED — no VS Code extension classifies plan-level destructive changes on-device. HashiCorp official (7M+ installs): no plan risk classification. TerraScope: visual diff only, no semantic risk. Infracost: cost-delta focused. The niche is genuinely unoccupied. (D5 OpenAPI gap sweep in progress.)
+- **MARKET_SIGNALS.md substantive entries**: D6 (Terraform plan classifier) gap CONFIRMED — no VS Code extension classifies plan-level destructive changes on-device. D5 gap CONFIRMED + strengthened — Optic (the only partial VS Code competitor) archived January 2026; best CLI tools (oasdiff 1.2k stars, pb33f/openapi-changes) have no VS Code wrapper.
+- **openapi-lens Phase 2 WISHLIST** (5.7.4 "nothing is done" review): 4 new engine-addition candidates identified — response headers diff, security scheme/scope changes, servers array changes, operationId changes. Added to PROGRESS.md as Phase 2 items + Known Limitations.
+- **BCL format-pack roadmap scored** (first-principles, 5.7.6): SQL migration diff (STRONG), K8s YAML diff (STRONG, cheapest pack-2), GraphQL (MEDIUM, gap research-gated), CloudFormation (MEDIUM), Avro (LOW-MEDIUM), Docker image diff (DROPPED — not BCL model fit). Added to `brain/IDEA_BACKLOG.md`.
 - **5.7.3 Roster growth**: 8+ new CRITIQUE_AGENTS.md checklist items across the session's 8 hardening rounds.
 - **5.7.7 META audit**: All 6 maximization rules HELD for rounds 5-8. Phase 0 saturation claim verified.
 - **Factory checks**: 11/11 passing.
@@ -88,7 +90,7 @@
 - **5.7.3 Roster growth:** HELD — 8+ new checklist items this session covering constraint inheritance discipline, top-level-vs-per-property field separation, parameter items diffing, and items.properties recursion.
 - **5.7.4 "Nothing is ever done":** HELD — the adversarial "nothing is done" question for each D5 round produced real fixes (not just documentation).
 - **5.7.5 Continuous bug-hunt:** HELD — 8 distinct structural gaps found in pure hunt mode on D5; 6 additional BidDiff bugs found and fixed this session.
-- **5.7.6 Continuous ideation:** HELD — openapi-engine-diff playbook written; D6 market gap confirmed; D7/D8/D9 IaC classifier family logged as WISHLIST candidates.
+- **5.7.6 Continuous ideation:** HELD — openapi-engine-diff playbook written; D6 market gap confirmed; BCL format-pack roadmap candidates scored (SQL migration, K8s YAML, GraphQL, CloudFormation, Avro, Docker); openapi-lens Phase 2 WISHLIST additions (response headers, security scheme changes, servers array, operationId).
 - **5.7.7 (this audit):** done, with evidence.
 - **5.7.8 (audit-the-auditor):** Phase 0 saturation claim verified against the types.ts field list. All "HELD" verdicts cite specific test counts and artifact names. No fabrication detected.
 
