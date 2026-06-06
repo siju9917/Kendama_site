@@ -10,6 +10,7 @@ import { describe, it, expect } from "vitest";
 import { DiffEngine } from "./engine.js";
 import { LocalClauseClient } from "../clauses/client.js";
 import { buildBlock, buildSection } from "../model/build.js";
+import { enrichStructuredDocument } from "../extract/normalize.js";
 import type { Section, StructuredDocument } from "../model/types.js";
 
 function meta(name: string): StructuredDocument["metadata"] {
@@ -166,6 +167,42 @@ describe("DiffEngine edge cases", () => {
     // The new instruction in Section L IS legitimately critical — no spurious
     // CRITICAL from the shifted items (there are none). The count reflects the
     // real change, not noise.
+  });
+
+  // 5.7.5 end-to-end: NAICS colon-separator form goes all the way to CRITICAL.
+  // Tests the full pipeline: block text → detectAllAnchors (via enrichStructuredDocument)
+  // → SET_ASIDE anchor → evaluateCriticality → CRITICAL severity.
+  // Regression for the bug where "NAICS: 541519" (SAM.gov colon format) was silently
+  // dropped by the anchor detector, making a NAICS-code change appear as NORMAL.
+  it("NAICS code change in SAM.gov colon format (NAICS: XXXXXX) is CRITICAL end-to-end", () => {
+    function makeDoc(naicsText: string): StructuredDocument {
+      const block = buildBlock({
+        sectionPath: "H",
+        ordinal: 0,
+        blockType: "PARAGRAPH",
+        rawText: naicsText,
+      });
+      const section = buildSection({
+        heading: "Section H — Special Contract Requirements",
+        headingLevel: 1,
+        ucfLetter: "H",
+        sectionType: "OTHER",
+        blocks: [block],
+        ordinal: 0,
+      });
+      return enrichStructuredDocument({ metadata: meta("h-doc"), sections: [section] });
+    }
+
+    const prior = makeDoc("NAICS: 541511 (Computer Programming Services)");
+    const current = makeDoc("NAICS: 541519 (Other Computer Related Services)");
+    const r = engine.diff(current, prior);
+
+    const naicsChange = r.changes.find((c) => c.changeType === "MODIFY");
+    expect(naicsChange).toBeDefined();
+    expect(naicsChange?.severity).toBe("CRITICAL");
+    expect(naicsChange?.criticalReasons).toContain(
+      "A set-aside designation, NAICS code, or size standard changed.",
+    );
   });
 
   it("inserting a list item where content also changed produces INSERT + MODIFY (not suppressed)", () => {

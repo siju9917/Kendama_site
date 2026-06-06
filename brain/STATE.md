@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **681/681 tests** (BidDiff 575/575 + openapi-lens 106/106).
+- **Build green:** **682/682 tests** (BidDiff 576/576 + openapi-lens 106/106).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -553,6 +553,10 @@ all green; check tests 16/16.
     (correct: moving a deadline or eval criteria block changes where proposal managers look).
     Rules 5 (PRICING_CLINS) and 6 (ATTACHMENTS) explicitly exclude MOVE. 4 new tests
     pinning this behavior. 575/575 BidDiff. Total suite: **681/681 tests**.
+40. **BidDiff 5.7.5: NAICS colon-form end-to-end integration test** — full pipeline
+    (block text → enrichStructuredDocument → SET_ASIDE anchor → evaluateCriticality → CRITICAL)
+    for the "NAICS: XXXXXX" SAM.gov format that was fixed in item 38. 1 new engine-edge test.
+    576/576 BidDiff. Total suite: **682/682 tests**.
 
 ## Notes for the next session
 
