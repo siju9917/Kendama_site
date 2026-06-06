@@ -12046,3 +12046,124 @@ paths:
     expect(postsChanges).toHaveLength(0);
   });
 });
+
+// ─── Round 95: multi-response-code isolation + simultaneous req+res changes ───
+// Multi-response-code spec: verify that changing the 200 body constraint doesn't
+// produce spurious changes on the 404 response (and vice versa).
+// Simultaneous changes: when BOTH request and response body constraints change in
+// one diff, both are independently detected in the result set.
+
+describe("adversarial round 95 — multi-response-code isolation and simultaneous req+res changes (end-to-end)", () => {
+  it("changing 200 response body constraint produces no spurious change on 404 response", () => {
+    // Multi-response-code spec: 200 has a response body, 404 has no body schema.
+    // Changing the 200 minimum should produce exactly one change, not touching 404.
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: integer
+                minimum: 1
+        "404":
+          description: not found
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: integer
+                minimum: 5
+        "404":
+          description: not found
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const constraintChanges = changes.filter(
+      (c) => c.type === "response-schema-property-constraint-changed",
+    );
+    // Should be exactly one: the 200 minimum change
+    expect(constraintChanges).toHaveLength(1);
+    expect(constraintChanges[0]!.before).toBe(1);
+    expect(constraintChanges[0]!.after).toBe(5);
+    expect(String(constraintChanges[0]!.location)).toContain("200");
+    // Verify the 200 change is BREAKING (min decreased from 1→5 on response = 5>1 = INFO...
+    // wait: responseConstraintSeverity min-sense: after(5) > before(1) → INFO)
+    expect(constraintChanges[0]!.severity).toBe("INFO");
+  });
+
+  it("simultaneous request body and response body constraint changes are both detected independently", () => {
+    // Tests that diffRequestBody and diffResponses both run and both emit changes
+    // when constraints change in both directions at once in a single diff.
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /echo:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: integer
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: integer
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /echo:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: integer
+              minimum: 1
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: integer
+                maximum: 100
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    // Request body minimum added (BREAKING)
+    const reqChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".minimum"),
+    );
+    expect(reqChange).toBeDefined();
+    expect(reqChange?.severity).toBe("BREAKING");
+    expect(reqChange?.before).toBeNull();
+    expect(reqChange?.after).toBe(1);
+    // Response body maximum added (INFO — server adds guarantee)
+    const resChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".maximum"),
+    );
+    expect(resChange).toBeDefined();
+    expect(resChange?.severity).toBe("INFO");
+    expect(resChange?.before).toBeNull();
+    expect(resChange?.after).toBe(100);
+  });
+});
