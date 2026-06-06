@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **698/698 tests** (BidDiff 586/586 + openapi-lens 112/112).
+- **Build green:** **711/711 tests** (BidDiff 586/586 + openapi-lens 125/125).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -101,7 +101,8 @@
   1 SF-1449 solicitation/contract/order form +
   2 SET_ASIDE+CLIN anchor-recall recall suites).
   OpenAPI-lens: Phase 0 engine 96/96 (critique panel) + 10 more (5.7.5 bug-hunt:
-  $ref parameter resolution + double-$ref chain) + 6 more (array items type diffing).
+  $ref parameter resolution + double-$ref chain) + 19 more (array items type diffing,
+  property-level enum changes, operation deprecated detection, property format changes).
   All typecheck clean; full CI gate verified green.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`
@@ -602,6 +603,15 @@ all green; check tests 16/16.
     stripped). All 5 new `it` blocks pass immediately — no bugs found, but the gap
     is now regression-locked. 582/582 BidDiff. Total suite: **688/688 tests**.
 
+48. **5.7.5 gaps: openapi-lens property enum, format, and deprecated-operation detection**
+    — Systematic "parsed-but-never-diffed" audit on `normalizeSchema` fields: `enum` and
+    `format` in schema properties were parsed but never compared; `deprecated` on operations
+    was parsed but ignored. Implemented: `request/response-schema-property-enum-changed`
+    (request: remove = BREAKING, add = INFO; response: add = BREAKING, remove = INFO — reverse
+    polarity because response restricts output), `operation-deprecated-changed` (both
+    directions INFO), `request/response-schema-property-format-changed` (both BREAKING).
+    13 new tests. 112→125 openapi-lens. Total suite: **711/711 tests**.
+
 47. **5.7.5 gap: openapi-lens array `items` schema never diffed** — `OapiSchema.items`
     was parsed in `parser.ts` but `diffSchemaItems()` was never called. A response schema
     changing from `array<string>` to `array<integer>` was completely invisible (no raw change
@@ -635,7 +645,7 @@ all green; check tests 16/16.
   components tested). All unblocked POLISH done. Next session: privacy copy fix
   (NEED #7, when human responds), store submission prep, and D5 VS Code extension
   Phase 1 scaffold (once Proposal #3 auto-proceeds 2026-06-13).
-- **D5 Phase 0 engine is in `products/openapi-lens/`** — 112 tests, all passing.
+- **D5 Phase 0 engine is in `products/openapi-lens/`** — 125 tests, all passing.
   Phase 1 (VS Code extension scaffold) starts when Proposal #3 auto-proceeds 2026-06-13.
 - Spend cap: plan-included web tools (sub-agents, search) are FREE; $0 committed
   external spend. No cap blocker.

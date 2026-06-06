@@ -33,8 +33,8 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   (BREAKING / INFO) and a human-readable `message`
 - [x] **`src/engine/index.ts`**: Public API — `analyzeOpenApiDiff()`,
   `breakingOnly()`, all type exports
-- [x] **112/112 tests** — parser (21), diff (20), classify (22), integration (9),
-  adversarial (19), property-diff (15), array-items (6)
+- [x] **125/125 tests** — parser (21), diff (20), classify (22), integration (9),
+  adversarial (19), property-diff (34)
 - [x] Typecheck clean
 - [x] **Full 14-critic panel passed** (2026-06-06) — P1 circular-ref fix,
   P2 `request-schema-property-added` type gap fixed, P2 pin tests for allOf/remote-$ref.
@@ -43,11 +43,14 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   parameters specified via `$ref: "#/components/parameters/X"` were silently dropped.
   Fixed `parseSharedParameters()` + updated `parseParameter`/`parseParameters`/`parseOperations`.
   4 new tests.
-- [x] **5.7.5 bug-hunt (2026-06-06, continuation)** — found and fixed array `items` schema diffing gap:
-  `OapiSchema.items` was parsed but `diffSchemaItems()` was never called. A response schema
-  changing from `array<string>` to `array<integer>` was completely invisible. Added
-  `diffSchemaItems()`, wired into both `diffRequestBody` and `diffResponses`, added two BREAKING
-  classify rules, 6 new tests. **112/112 tests total.**
+- [x] **5.7.5 bug-hunt (2026-06-06, continuation)** — systematic "parsed-but-never-diffed" audit
+  found and fixed 4 gaps:
+  - Array `items` schema: `array<string>` → `array<integer>` was invisible. Added `diffSchemaItems()`.
+  - Property-level `enum` changes: removing enum values from request property (BREAKING) or adding to
+    response property (BREAKING for exhaustive clients) were invisible.
+  - Operation `deprecated` flag: changing `deprecated: false → true` was invisible.
+  - Property-level `format` changes: `format: date → date-time` was invisible.
+  19 new tests total. **125/125 tests.**
 
 ### Breaking-change rules implemented (Phase 0)
 
@@ -82,6 +85,14 @@ auto-proceeds (2026-06-13) or earlier if human approves.
 | Request property added | INFO |
 | Response array element type changed | BREAKING |
 | Request array element type changed | BREAKING |
+| Response property enum values added (new) | BREAKING |
+| Response property enum values removed | INFO |
+| Request property enum values removed | BREAKING |
+| Request property enum values added | INFO |
+| Response property format changed | BREAKING |
+| Request property format changed | BREAKING |
+| Operation deprecated (false → true) | INFO |
+| Operation un-deprecated (true → false) | INFO |
 
 ---
 
@@ -141,8 +152,6 @@ _Begins when Proposal #3 auto-proceeds (2026-06-13) or human approves._
   as-is; their members are not merged into a flat schema for diffing. The
   top-level `allOf`/`oneOf`/`anyOf` arrays are parsed and stored, but only
   top-level `type`, `required[]`, and `properties` are diffed. Tested behavior.
-- **No deprecated-field propagation.** The `deprecated` flag is parsed but
-  not used in classification (no severity downgrade for deprecated operations).
 - **Property diff is one level deep only.** `properties.fieldName.type`
   changes are detected. Nested objects (`user.address.zipCode`) are not
   recursively diffed. Phase 2 adds full recursive property diffing.
