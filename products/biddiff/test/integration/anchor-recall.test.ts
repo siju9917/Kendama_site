@@ -7,7 +7,7 @@
  * involving these phrasings.
  */
 import { describe, it, expect } from "vitest";
-import { detectAllAnchors } from "../../src/core/extract/anchors/index.js";
+import { detectAllAnchors, detectSetAside } from "../../src/core/extract/anchors/index.js";
 
 interface AnchorCase {
   text: string;
@@ -53,8 +53,64 @@ function check(cases: AnchorCase[]): void {
   }
 }
 
+// SAM.gov System for Award Management uses the colon separator format for
+// NAICS on the solicitation synopsis page: "NAICS: 541519". The set-aside
+// designation appears on the cover page under "Set-Aside:" or inline.
+const SET_ASIDE_CASES: AnchorCase[] = [
+  // SAM.gov colon format (most common in published synopses)
+  { text: "NAICS: 541519 (Other Computer Related Services)", expect: [{ type: "SET_ASIDE" }] },
+  { text: "NAICS: 541330", expect: [{ type: "SET_ASIDE" }] },
+  // Cover-page "NAICS Code:" format
+  { text: "NAICS Code: 541512 (Computer Systems Design and Related Services)", expect: [{ type: "SET_ASIDE" }] },
+  // Plain-space form (also common on cover pages)
+  { text: "NAICS 541511", expect: [{ type: "SET_ASIDE" }] },
+  // Set-aside designation
+  { text: "This acquisition is set-aside for small businesses.", expect: [{ type: "SET_ASIDE" }] },
+  { text: "Set-Aside: Total Small Business", expect: [{ type: "SET_ASIDE" }] },
+  // Size standard
+  { text: "Size Standard: $30 million in average annual receipts.", expect: [{ type: "SET_ASIDE" }] },
+  { text: "The applicable size standard is 1,000 employees.", expect: [{ type: "SET_ASIDE" }] },
+];
+
+// CLIN recall requires Section B / PRICING context (allowClin: true).
+// These phrasings appear on Section B pricing pages and IDIQ task orders.
+const CLIN_CASES = [
+  // Standard 4-digit CLIN with description
+  { text: "CLIN 0001: Systems Engineering Support Services, Labor Category: Senior Engineer.", clin: "0001" },
+  // Sub-CLIN (DFARS 204.71 format — letter suffix)
+  { text: "CLIN 0001AA is a sub-CLIN for travel costs.", clin: "0001AA" },
+  { text: "SubCLIN 0002AA Informational: Government-Furnished Equipment.", clin: "0002AA" },
+  // Leading zeros stripped form
+  { text: "CLIN 1 base year — not to exceed $5M.", clin: "0001" },
+];
+
 describe("Anchor recall — real-world phrasings", () => {
   it("date phrasings", () => check(DATE_CASES));
   it("clause phrasings including PDF-broken numbers", () => check(CLAUSE_CASES));
   it("page-limit phrasings", () => check(PAGE_LIMIT_CASES));
+
+  // 5.7.5 gap (2026-06-06): anchor-recall had no SET_ASIDE or CLIN recall cases.
+  // SET_ASIDE drives critical rule 7 (eligibility-determining); CLIN drives rule 5
+  // (pricing structure). Missing these in recall tests means real-world phrasings
+  // that differ from the unit-test canonical forms could silently break CRITICAL detection.
+  it("SET_ASIDE phrasings — SAM.gov colon format, set-aside designation, size standard", () => {
+    for (const c of SET_ASIDE_CASES) {
+      const anchors = detectSetAside(c.text);
+      expect(
+        anchors.some((a) => a.type === "SET_ASIDE"),
+        `"${c.text}" should produce a SET_ASIDE anchor; got ${JSON.stringify(anchors)}`,
+      ).toBe(true);
+    }
+  });
+
+  it("CLIN phrasings — standard, sub-CLIN, leading-zero stripped", () => {
+    for (const c of CLIN_CASES) {
+      const anchors = detectAllAnchors(c.text, { allowClin: true });
+      const clin = anchors.find((a) => a.type === "CLIN" && a.normalized === c.clin);
+      expect(
+        clin,
+        `"${c.text}" should produce CLIN(${c.clin}); got ${JSON.stringify(anchors.filter((a) => a.type === "CLIN").map((a) => a.normalized))}`,
+      ).toBeDefined();
+    }
+  });
 });
