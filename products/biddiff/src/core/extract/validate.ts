@@ -78,6 +78,25 @@ export function validateInput(file: ArrayBuffer, fileName?: string): FileKind {
   return kind;
 }
 
+/**
+ * Scan the first N characters of extracted text for a solicitation number.
+ * Returns the canonical (uppercased, whitespace-stripped) ID, or null if
+ * none is found. Conservative: only fires on explicit "Solicitation No./
+ * Number" labels to avoid false positives on unrelated alphanumeric strings.
+ *
+ * Normalizes the match so "W912TP -26-R-0001" == "W912TP-26-R-0001".
+ */
+export function extractSolicitationId(text: string): string | null {
+  // Scan only the first 2000 characters — the ID is on the cover page.
+  const head = text.slice(0, 2000);
+  const m = head.match(
+    /(?:solicitation\s*(?:no\.?|number)\s*[:.]?\s*|rfp\s*(?:no\.?|number)\s*[:.]?\s*|rfq\s*(?:no\.?|number)\s*[:.]?\s*)([A-Z0-9][A-Z0-9 \t-]{3,18}[A-Z0-9])/i,
+  );
+  if (!m) return null;
+  // Normalize: uppercase, collapse internal whitespace, trim
+  return m[1].replace(/\s+/g, "").toUpperCase();
+}
+
 /** Heuristic check for an encrypted PDF (the canonical /Encrypt dictionary). */
 export function isPdfEncrypted(bytes: Uint8Array): boolean {
   // Search the first ~200 KB for "/Encrypt". The dictionary is in the trailer

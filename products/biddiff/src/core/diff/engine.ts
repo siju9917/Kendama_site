@@ -214,6 +214,16 @@ export class DiffEngine implements IDiffEngine {
         `Extraction confidence is ${(diffConfidence * 100).toFixed(0)}% — lower than typical for clean text PDFs.`,
       );
     }
+    // Solicitation-number mismatch guard (N14): if both documents report a
+    // solicitation number and they differ, the user probably dropped the wrong
+    // file. Surface it as a non-critical warning so they can verify.
+    const curId = current.metadata.solicitationId;
+    const priId = prior.metadata.solicitationId;
+    if (curId && priId && curId !== priId) {
+      pushUnique(
+        `These documents report different solicitation numbers (${curId} vs. ${priId}). Verify you selected the correct files.`,
+      );
+    }
 
     const id = contentHash(
       `diff:${current.metadata.sourceFileHash}:${prior.metadata.sourceFileHash}:${sortedChanges.length}`,

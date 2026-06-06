@@ -37,6 +37,55 @@ describe("DiffEngine — warning propagation", () => {
   });
 });
 
+describe("DiffEngine — solicitation-number mismatch guard (N14)", () => {
+  it("emits a warning when both docs have different solicitation IDs", () => {
+    const engine = new DiffEngine(new LocalClauseClient());
+    const pair = loadAllPairs().find((b) => b.pairId.startsWith("null-"))!;
+    const current = enrichStructuredDocument({
+      ...pair.current,
+      metadata: { ...pair.current.metadata, solicitationId: "W912TP-26-R-0001" },
+    });
+    const prior = enrichStructuredDocument({
+      ...pair.prior,
+      metadata: { ...pair.prior.metadata, solicitationId: "FA8701-25-R-0042" },
+    });
+    const result = engine.diff(current, prior);
+    const mismatch = result.warnings.find((w) => w.includes("W912TP-26-R-0001") && w.includes("FA8701-25-R-0042"));
+    expect(mismatch).toBeTruthy();
+  });
+
+  it("does not warn when both docs have the same solicitation ID", () => {
+    const engine = new DiffEngine(new LocalClauseClient());
+    const pair = loadAllPairs().find((b) => b.pairId.startsWith("null-"))!;
+    const id = "W912TP-26-R-0001";
+    const current = enrichStructuredDocument({
+      ...pair.current,
+      metadata: { ...pair.current.metadata, solicitationId: id },
+    });
+    const prior = enrichStructuredDocument({
+      ...pair.prior,
+      metadata: { ...pair.prior.metadata, solicitationId: id },
+    });
+    const result = engine.diff(current, prior);
+    expect(result.warnings.some((w) => w.includes("solicitation numbers"))).toBe(false);
+  });
+
+  it("does not warn when one doc has no solicitation ID (extraction may have failed)", () => {
+    const engine = new DiffEngine(new LocalClauseClient());
+    const pair = loadAllPairs().find((b) => b.pairId.startsWith("null-"))!;
+    const current = enrichStructuredDocument({
+      ...pair.current,
+      metadata: { ...pair.current.metadata, solicitationId: "W912TP-26-R-0001" },
+    });
+    const prior = enrichStructuredDocument({
+      ...pair.prior,
+      metadata: { ...pair.prior.metadata, solicitationId: null },
+    });
+    const result = engine.diff(current, prior);
+    expect(result.warnings.some((w) => w.includes("solicitation numbers"))).toBe(false);
+  });
+});
+
 describe("DiffEngine — null pairs", () => {
   it("identical documents produce zero changes", () => {
     const engine = new DiffEngine(new LocalClauseClient());
