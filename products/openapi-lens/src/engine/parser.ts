@@ -89,6 +89,10 @@ function normalizeSchema(raw: unknown, lookup: Record<string, unknown>, visited:
   if (format) schema.format = format;
   const nullable = asBoolean(raw["nullable"]);
   if (nullable !== undefined) schema.nullable = nullable;
+  const readOnly = asBoolean(raw["readOnly"]);
+  if (readOnly !== undefined) schema.readOnly = readOnly;
+  const writeOnly = asBoolean(raw["writeOnly"]);
+  if (writeOnly !== undefined) schema.writeOnly = writeOnly;
 
   const rawEnum = raw["enum"];
   if (Array.isArray(rawEnum)) schema.enum = rawEnum;

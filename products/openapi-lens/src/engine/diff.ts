@@ -196,6 +196,28 @@ function diffSchemaProperties(
         after: cPropNull,
       });
     }
+    const bReadOnly = bProp.readOnly ?? false;
+    const cReadOnly = cProp.readOnly ?? false;
+    if (bReadOnly !== cReadOnly) {
+      changes.push({
+        type: isRequest ? "request-schema-property-readonly-changed" : "response-schema-property-readonly-changed",
+        path, method,
+        location: `${location}.properties.${key}.readOnly`,
+        before: bReadOnly,
+        after: cReadOnly,
+      });
+    }
+    const bWriteOnly = bProp.writeOnly ?? false;
+    const cWriteOnly = cProp.writeOnly ?? false;
+    if (bWriteOnly !== cWriteOnly) {
+      changes.push({
+        type: isRequest ? "request-schema-property-writeonly-changed" : "response-schema-property-writeonly-changed",
+        path, method,
+        location: `${location}.properties.${key}.writeOnly`,
+        before: bWriteOnly,
+        after: cWriteOnly,
+      });
+    }
   }
 
   for (const key of cKeys) {

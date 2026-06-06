@@ -353,6 +353,39 @@ describe("classifyChanges — classification rules", () => {
     expect(result[0]?.message).toMatch(/un-deprecated/i);
   });
 
+  it("classifies response-schema-property-writeonly-changed (false→true) as BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-property-writeonly-changed", false, true, "responses[200].properties.password.writeOnly")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/write-only/i);
+  });
+
+  it("classifies response-schema-property-writeonly-changed (true→false) as INFO", () => {
+    const result = classifyChanges([raw("response-schema-property-writeonly-changed", true, false, "responses[200].properties.password.writeOnly")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies request-schema-property-readonly-changed (false→true) as BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-property-readonly-changed", false, true, "requestBody.properties.id.readOnly")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/read-only/i);
+  });
+
+  it("classifies request-schema-property-readonly-changed (true→false) as INFO", () => {
+    const result = classifyChanges([raw("request-schema-property-readonly-changed", true, false, "requestBody.properties.id.readOnly")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies response-schema-property-readonly-changed (false→true) as INFO", () => {
+    const result = classifyChanges([raw("response-schema-property-readonly-changed", false, true, "responses[200].properties.id.readOnly")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/read-only/i);
+  });
+
+  it("classifies request-schema-property-writeonly-changed (false→true) as INFO", () => {
+    const result = classifyChanges([raw("request-schema-property-writeonly-changed", false, true, "requestBody.properties.password.writeOnly")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
   it("handles multiple changes in a single call", () => {
     const changes = classifyChanges([
       raw("endpoint-removed", "get /a", null),
@@ -435,6 +468,10 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "response-schema-items-nullable-changed":       [false, true],
     "request-schema-items-nullable-changed":        [true, false],
     "parameter-deprecated-changed":                 [false, true],
+    "response-schema-property-readonly-changed":    [false, true],
+    "request-schema-property-readonly-changed":     [false, true],
+    "response-schema-property-writeonly-changed":   [false, true],
+    "request-schema-property-writeonly-changed":    [false, true],
   };
 
   it.each(Object.keys(TYPE_STUBS) as OapiChangeType[])(

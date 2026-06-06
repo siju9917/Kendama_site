@@ -845,3 +845,105 @@ describe("items-level nullable diff — request", () => {
     expect(info).toHaveLength(1);
   });
 });
+
+// ─── readOnly / writeOnly diffing (5.7.4 review, 2026-06-06) ─────────────────
+
+function makeReadWriteSpec(responseReadOnly: boolean | null, requestReadOnly?: boolean | null, responseWriteOnly?: boolean | null): string {
+  const respRO = responseReadOnly !== null && responseReadOnly !== undefined ? `\n                    readOnly: ${responseReadOnly}` : "";
+  const reqRO = requestReadOnly !== null && requestReadOnly !== undefined ? `\n                  readOnly: ${requestReadOnly}` : "";
+  const respWO = responseWriteOnly !== null && responseWriteOnly !== undefined ? `\n                    writeOnly: ${responseWriteOnly}` : "";
+  return `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string${respRO}${respWO}
+    ${requestReadOnly !== undefined ? `post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string${reqRO}
+      responses:
+        "201":
+          description: created` : ""}
+`;
+}
+
+describe("readOnly diff — response", () => {
+  it("detects INFO when a response property gains readOnly: true", () => {
+    const baseline = makeReadWriteSpec(null);
+    const current = makeReadWriteSpec(true);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const info = changes.filter((c) => c.type === "response-schema-property-readonly-changed" && c.severity === "INFO");
+    expect(info).toHaveLength(1);
+    expect(info[0]?.after).toBe(true);
+    expect(info[0]?.location).toMatch(/id/);
+  });
+
+  it("detects INFO when a response property loses readOnly (true → false)", () => {
+    const baseline = makeReadWriteSpec(true);
+    const current = makeReadWriteSpec(false);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const info = changes.filter((c) => c.type === "response-schema-property-readonly-changed");
+    expect(info).toHaveLength(1);
+    expect(info[0]?.severity).toBe("INFO");
+  });
+});
+
+describe("writeOnly diff — response", () => {
+  it("detects BREAKING when a response property becomes writeOnly: true (disappears from responses)", () => {
+    const baseline = makeReadWriteSpec(null, undefined, false);
+    const current = makeReadWriteSpec(null, undefined, true);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = changes.filter((c) => c.type === "response-schema-property-writeonly-changed" && c.severity === "BREAKING");
+    expect(breaking).toHaveLength(1);
+    expect(breaking[0]?.before).toBe(false);
+    expect(breaking[0]?.after).toBe(true);
+    expect(breaking[0]?.message).toMatch(/write-only/i);
+  });
+
+  it("detects INFO when a response property loses writeOnly (true → false)", () => {
+    const baseline = makeReadWriteSpec(null, undefined, true);
+    const current = makeReadWriteSpec(null, undefined, false);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const info = changes.filter((c) => c.type === "response-schema-property-writeonly-changed" && c.severity === "INFO");
+    expect(info).toHaveLength(1);
+  });
+});
+
+describe("readOnly diff — request", () => {
+  it("detects BREAKING when a request property becomes readOnly: true (clients can no longer send it)", () => {
+    const baseline = makeReadWriteSpec(null, null);
+    const current = makeReadWriteSpec(null, true);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = changes.filter((c) => c.type === "request-schema-property-readonly-changed" && c.severity === "BREAKING");
+    expect(breaking).toHaveLength(1);
+    expect(breaking[0]?.before).toBe(false);
+    expect(breaking[0]?.after).toBe(true);
+    expect(breaking[0]?.message).toMatch(/read-only/i);
+  });
+
+  it("detects INFO when a request property loses readOnly (true → false)", () => {
+    const baseline = makeReadWriteSpec(null, true);
+    const current = makeReadWriteSpec(null, false);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const info = changes.filter((c) => c.type === "request-schema-property-readonly-changed" && c.severity === "INFO");
+    expect(info).toHaveLength(1);
+  });
+});

@@ -7,6 +7,8 @@ export interface OapiSchema {
   type?: string;
   format?: string;
   nullable?: boolean;
+  readOnly?: boolean;
+  writeOnly?: boolean;
   enum?: unknown[];
   required?: string[];
   properties?: Record<string, OapiSchema>;
@@ -97,7 +99,11 @@ export type OapiChangeType =
   | "request-schema-items-enum-changed"
   | "response-schema-items-nullable-changed"
   | "request-schema-items-nullable-changed"
-  | "parameter-deprecated-changed";
+  | "parameter-deprecated-changed"
+  | "response-schema-property-readonly-changed"
+  | "request-schema-property-readonly-changed"
+  | "response-schema-property-writeonly-changed"
+  | "request-schema-property-writeonly-changed";
 
 /** A raw structural difference between two specs before classification. */
 export interface OapiRawChange {

@@ -273,6 +273,22 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     },
   },
 
+  // ─── BREAKING for writeOnly/readOnly semantic changes ────────────────────
+  {
+    matches: (c) =>
+      c.type === "response-schema-property-writeonly-changed" && c.before === false && c.after === true
+        ? "BREAKING"
+        : null,
+    message: (c) => `Response property became write-only: ${c.location}. Clients that read this field will no longer receive it in responses.`,
+  },
+  {
+    matches: (c) =>
+      c.type === "request-schema-property-readonly-changed" && c.before === false && c.after === true
+        ? "BREAKING"
+        : null,
+    message: (c) => `Request property became read-only: ${c.location}. Clients that send this property will now receive a 400 or have it ignored.`,
+  },
+
   // ─── INFO for property/items nullable direction changes ──────────────────
   {
     matches: (c) =>
@@ -301,6 +317,34 @@ const CLASSIFY_RULES: ClassifyRule[] = [
         ? "INFO"
         : null,
     message: (c) => `Request array items became nullable: ${c.location}. Clients may optionally send null elements in this array.`,
+  },
+  {
+    matches: (c) =>
+      c.type === "response-schema-property-readonly-changed" ? "INFO" : null,
+    message: (c) => c.after === true
+      ? `Response property became read-only: ${c.location}. Clients still receive this field but the server signals it cannot be written.`
+      : `Response property is no longer read-only: ${c.location}. This field may now be accepted in request bodies.`,
+  },
+  {
+    matches: (c) =>
+      c.type === "response-schema-property-writeonly-changed" && c.before === true && c.after === false
+        ? "INFO"
+        : null,
+    message: (c) => `Response property is no longer write-only: ${c.location}. This field will now appear in response bodies.`,
+  },
+  {
+    matches: (c) =>
+      c.type === "request-schema-property-readonly-changed" && c.before === true && c.after === false
+        ? "INFO"
+        : null,
+    message: (c) => `Request property is no longer read-only: ${c.location}. Clients may now send this property in requests.`,
+  },
+  {
+    matches: (c) =>
+      c.type === "request-schema-property-writeonly-changed" ? "INFO" : null,
+    message: (c) => c.after === true
+      ? `Request property became write-only: ${c.location}. This property is now accepted in requests but will not appear in responses.`
+      : `Request property is no longer write-only: ${c.location}. This property may now appear in response bodies.`,
   },
 
   // ─── INFO for property type direction changes ────────────────────────────
