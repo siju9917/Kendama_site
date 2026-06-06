@@ -2305,3 +2305,52 @@ governance/brain-integrity fix.
 
 ---
 
+
+## 2026-06-06 — Phase K1 — Resolution pass 2: Domain-Expert P1 effectively RESOLVED
+
+**Pass type:** Domain-expert validation from public FAR/DFARS sources (BD2 gate removed; human outreach declined per PRODUCT_CONSTRAINTS.md Filter 3).
+
+**Critics run:** Domain-Expert Critic, Correctness Critic (#3).
+
+**Domain-Expert P1 EFFECTIVELY RESOLVED (V1 scope)**
+
+From public FAR/DFARS knowledge (no practitioner interviews):
+
+1. **Coverage-obs #9 DONE — sub-CLIN detection (DFARS 204.71):**
+   - `CLIN_RE` extended to match `CLIN 0001AA` / `SubCLIN 0002AB` format.
+   - Sub-CLINs now route to PRICING_CLINS and trigger critical rule 5.
+   - Sources: DFARS 204.71 / DoD PSFR pricing guide — sub-CLINs (SLINs) are standard.
+   - 3 new unit tests + 1 integration test (end-to-end PRICING → CRITICAL).
+   - 455 → 486 tests (across this session).
+
+2. **NEW: SET_ASIDE anchor + critical rule 7 (FAR Part 19 / FAR 4.6):**
+   - Detects "set-aside"/"set aside", "NAICS XXXXXX", "size standard" phrases.
+   - Critical rule 7: SET_ASIDE anchor on INSERT/DELETE/MODIFY → CRITICAL.
+   - Reason: "A set-aside designation, NAICS code, or size standard changed."
+   - Validated from: FAR 19.501-19.507 (set-aside designations) and FAR 4.6 (NAICS).
+   - Miss-cost: a set-aside change can disqualify all large businesses from bidding;
+     a missed set-aside change = non-compliant bid (automatic rejection).
+   - 8 unit tests + 1 integration test (end-to-end cover-page SET_ASIDE → CRITICAL).
+
+3. **Coverage-obs #5 (TIME/TIMEZONE) — validated low-priority (no implementation):**
+   - Per FAR 52.215-1(c)(1), proposal due date AND time must appear in Section L.
+   - Time always co-occurs with date in Section L → existing DATE anchor catches it.
+   - Section L time-only changes already flagged CRITICAL via SUBMISSION_INSTRUCTIONS.
+   - Gap (time-only in non-INSTRUCTIONS sections) is narrow by the FAR structure.
+   - Decision: no V1 implementation; document as V2 Polish if users report misses.
+
+4. **Coverage-obs #6 partially resolved:**
+   - SET_ASIDE item: DONE (above).
+   - Submission destination (email): existing SUBMISSION_INSTRUCTIONS already catches
+     changes in Section L (where FAR requires it). V2 enhancement only.
+   - Others (PoP, staffing minimums): false-positive risk too high for V1 without
+     corpus validation. Documented as V2 candidates.
+
+**Critic checklist growth (5.7.3):**
+- Domain-Expert Critic checklist: add "Were new anchor types validated from public
+  regulatory sources before adding?" and "Did the integration test verify the full
+  detection→classify→critical chain for each new anchor?"
+
+**Remaining open on K1:** Compliance P1 (NEED #7, human-gated: privacy copy).
+Ambition P1 resolves on ship. Phase K1 does NOT yet converge.
+
