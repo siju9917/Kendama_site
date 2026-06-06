@@ -14187,3 +14187,119 @@ ${enumLine}
     expect(c?.severity).toBe("BREAKING");
   });
 });
+
+// ─── Round 112: parameter-enum-changed and parameter-items-enum-changed ─────
+// Only "value removed → BREAKING" was previously tested for each type.
+// Missing: null→enum (BREAKING), enum→null (INFO), value added (INFO).
+
+function makeParamEnumSpec(enumValues: string[] | null): string {
+  const enumLine = enumValues ? `\n            enum: [${enumValues.join(", ")}]` : "";
+  return `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string${enumLine}
+      responses:
+        "200":
+          description: ok
+`;
+}
+
+function makeParamItemsEnumSpec(enumValues: string[] | null): string {
+  const enumLine = enumValues ? `\n              enum: [${enumValues.join(", ")}]` : "";
+  return `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - name: tags
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string${enumLine}
+      responses:
+        "200":
+          description: ok
+`;
+}
+
+describe("Round 112 — parameter-enum-changed and parameter-items-enum-changed missing directions", () => {
+  it("(R112-1) parameter enum added (null→enum) is BREAKING — server now restricts accepted parameter values", () => {
+    const changes = analyzeOpenApiDiff(
+      makeParamEnumSpec(null),
+      makeParamEnumSpec(["active", "inactive"]),
+    );
+    const c = changes.find((x) => x.type === "parameter-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.message).toMatch(/added|restrict/i);
+  });
+
+  it("(R112-2) parameter enum removed (enum→null) is INFO — constraint relaxed, any value now accepted", () => {
+    const changes = analyzeOpenApiDiff(
+      makeParamEnumSpec(["active", "inactive"]),
+      makeParamEnumSpec(null),
+    );
+    const c = changes.find((x) => x.type === "parameter-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.message).toMatch(/removed|no longer/i);
+  });
+
+  it("(R112-3) parameter enum value added is INFO — new accepted values, existing clients still work", () => {
+    const changes = analyzeOpenApiDiff(
+      makeParamEnumSpec(["active", "inactive"]),
+      makeParamEnumSpec(["active", "inactive", "suspended"]),
+    );
+    const c = changes.find((x) => x.type === "parameter-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+  });
+
+  it("(R112-4) parameter items enum added (null→enum) is BREAKING — array elements must now match enum", () => {
+    const changes = analyzeOpenApiDiff(
+      makeParamItemsEnumSpec(null),
+      makeParamItemsEnumSpec(["active", "inactive"]),
+    );
+    const c = changes.find((x) => x.type === "parameter-items-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.message).toMatch(/added|must now/i);
+  });
+
+  it("(R112-5) parameter items enum removed (enum→null) is INFO — constraint removed, any element value accepted", () => {
+    const changes = analyzeOpenApiDiff(
+      makeParamItemsEnumSpec(["active", "inactive"]),
+      makeParamItemsEnumSpec(null),
+    );
+    const c = changes.find((x) => x.type === "parameter-items-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.message).toMatch(/removed|no longer/i);
+  });
+
+  it("(R112-6) parameter items enum value added is INFO — new accepted element values, existing clients unaffected", () => {
+    const changes = analyzeOpenApiDiff(
+      makeParamItemsEnumSpec(["active", "inactive"]),
+      makeParamItemsEnumSpec(["active", "inactive", "suspended"]),
+    );
+    const c = changes.find((x) => x.type === "parameter-items-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+  });
+});
