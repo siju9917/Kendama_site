@@ -1086,6 +1086,96 @@ paths:
   });
 });
 
+// ─── Nested property items diffing ───────────────────────────────────────────
+
+describe("nested property items diff (array property's element type)", () => {
+  it("detects BREAKING when a response array property's items type changes (string → integer)", () => {
+    const makeSpec = (itemType: string) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tags:
+                    type: array
+                    items:
+                      type: ${itemType}
+`;
+    const changes = analyzeOpenApiDiff(makeSpec("string"), makeSpec("integer"));
+    const itemsChange = changes.find((c) => c.type === "response-schema-items-type-changed");
+    expect(itemsChange).toBeDefined();
+    expect(itemsChange?.severity).toBe("BREAKING");
+    expect(itemsChange?.before).toBe("string");
+    expect(itemsChange?.after).toBe("integer");
+    expect(itemsChange?.location).toMatch(/tags.*items/);
+  });
+
+  it("detects BREAKING when a request array property's items type changes (string → integer)", () => {
+    const makeSpec = (itemType: string) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tags:
+                  type: array
+                  items:
+                    type: ${itemType}
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(makeSpec("string"), makeSpec("integer"));
+    const itemsChange = changes.find((c) => c.type === "request-schema-items-type-changed");
+    expect(itemsChange).toBeDefined();
+    expect(itemsChange?.severity).toBe("BREAKING");
+    expect(itemsChange?.location).toMatch(/tags.*items/);
+  });
+
+  it("detects no spurious items-type-changed when array property items are identical", () => {
+    const spec = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tags:
+                    type: array
+                    items:
+                      type: string
+`;
+    const changes = analyzeOpenApiDiff(spec, spec);
+    expect(changes.filter((c) => c.type === "response-schema-items-type-changed")).toHaveLength(0);
+  });
+});
+
 // ─── Nested required field diffing ────────────────────────────────────────────
 
 describe("nested required field diff", () => {

@@ -259,6 +259,11 @@ function diffSchemaProperties(
       }
     }
 
+    // Diff items schema for array-typed properties (e.g. user.tags: array<string>).
+    if (bProp.items || cProp.items) {
+      diffSchemaItems(path, method, `${location}.properties.${key}`, bProp, cProp, isRequest, changes);
+    }
+
     // Recurse into nested object properties (both old and new exist — diff them).
     if (bProp.properties || cProp.properties || bProp.required || cProp.required) {
       diffSchemaRequiredFields(

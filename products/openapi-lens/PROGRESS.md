@@ -95,6 +95,12 @@ auto-proceeds (2026-06-13) or earlier if human approves.
     BREAKING, tightening = INFO. Pattern changes = always BREAKING for both.
     2 new OapiChangeType values. 13 new classify tests + 5 recursive diff tests + 6 allOf
     parser tests. **275/275 tests.**
+- [x] **5.7.4 continuation — nested property items diffing** — array-typed properties (e.g.
+  `user.tags: {type: array, items: {type: string}}`) had their `items` schema invisible to
+  the diff engine. A change from `array<string>` to `array<integer>` in a response property
+  was silent. Fixed: `diffSchemaItems` is now called in the property loop inside
+  `diffSchemaProperties`, guarded by `bProp.items || cProp.items`. 3 new tests.
+  **303/303 tests.**
 - [x] **5.7.4 continuation — nested required field diffing** — `diffSchemaRequiredFields`
   was only called at the top level (request body + response schema), not recursively.
   Adding `required: [city]` to a nested `address` object schema was invisible. Fixed:
