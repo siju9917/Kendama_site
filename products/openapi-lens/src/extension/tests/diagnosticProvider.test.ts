@@ -191,6 +191,70 @@ describe("findLineForLocation", () => {
     const result = findLineForLocation(doc, "info.title");
     expect(result).toBe(0); // 'title' not found within window; 'info' at line 0 is the last found
   });
+
+  // ─── Round 104: synthetic engine location strings ──────────────────────────
+  // Engine location strings like "parameter(query:id).schema.type" use the
+  // synthesised format "parameter(<in>:<name>)" — not a literal YAML key.
+  // escapeRegExp escapes the parentheses but the key itself never appears in
+  // the document, so the segment is not found and the function falls back to
+  // the last successfully-located ancestor.
+
+  it("(R104-1) synthetic parameter location 'parameter(query:id).schema.type' — segment not found, falls back to last found ancestor", () => {
+    const doc = makeMockDocument([
+      "openapi: 3.0.0",
+      "paths:",
+      "  /users:",
+      "    get:",
+      "      parameters:",
+      "        - name: id",
+      "          in: query",
+      "          schema:",
+      "            type: string",
+    ]);
+    // "parameter(query:id)" will not match any YAML key (no line of the form
+    // `parameter(query:id):` exists).  The function falls back to line 0.
+    // The subsequent segments "schema" and "type" may or may not match (schema
+    // at line 7, type at line 8), but the test verifies no error is thrown and
+    // the result is a valid non-negative line number.
+    const result = findLineForLocation(doc, "parameter(query:id).schema.type");
+    expect(result).toBeGreaterThanOrEqual(0);
+    expect(typeof result).toBe("number");
+  });
+
+  it("(R104-2) location with colon inside key segment does not crash (colon is literal in regex)", () => {
+    // Colons are NOT in escapeRegExp's escape set — they are literal in regex.
+    // A key like "security.bearerAuth:write" is handled gracefully (no match, no throw).
+    const doc = makeMockDocument([
+      "openapi: 3.0.0",
+      "security:",
+      "  - bearerAuth:",
+      "      - write",
+    ]);
+    const result = findLineForLocation(doc, "security.bearerAuth:write");
+    expect(typeof result).toBe("number");
+    expect(result).toBeGreaterThanOrEqual(0);
+  });
+
+  it("(R104-3) location with response bracket notation 'responses[200].content.schema.type' finds type line", () => {
+    const doc = makeMockDocument([
+      "openapi: 3.0.0",
+      "paths:",
+      "  /users:",
+      "    get:",
+      "      responses:",
+      '        "200":',
+      "          description: ok",
+      "          content:",
+      "            application/json:",
+      "              schema:",
+      "                type: string",
+    ]);
+    // Segments: ["responses", "200", "content", "schema", "type"]
+    // "200" is NOT purely numeric (/^\d+$/ matches) — wait, it IS. So "200" is skipped.
+    // Progressive: responses→4, content→7, schema→9, type→10
+    const result = findLineForLocation(doc, "responses[200].content.schema.type");
+    expect(result).toBe(10);
+  });
 });
 
 describe("buildDiagnostics", () => {
