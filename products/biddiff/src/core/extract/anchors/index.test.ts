@@ -147,6 +147,18 @@ describe("money", () => {
     expect(detectMoney("$.5M").length).toBe(0); // no leading zero → no match
     expect(detectMoney("$1.5MM").map((x) => x.normalized)).toEqual(["1.00"]); // "MM" not recognized
   });
+  it("KNOWN LIMITATION (PROGRESS.md obs #7): USD-prefix and spelled-out forms not parsed", () => {
+    // "$"-prefixed forms work; non-dollar-sign prefixes do not.
+    // Not changed: widening MONEY_RE to "USD"/"dollars" carries false-positive
+    // risk ("5 USD per line item", "5 million parameters") and the miss-cost
+    // is low (a USD amount change still surfaces as a plain text diff).
+    // These probe the US domestic-contract common cases:
+    expect(detectMoney("USD 5,000,000 ceiling").length).toBe(0);   // "USD" prefix
+    expect(detectMoney("5,000,000 USD").length).toBe(0);            // trailing currency code
+    expect(detectMoney("5 million dollars").length).toBe(0);        // spelled-out suffix
+    // Contrast: "$" + spelled-out magnitude suffix IS handled:
+    expect(detectMoney("$2.3 million").map((x) => x.normalized)).toEqual(["2300000.00"]);
+  });
 });
 
 describe("page limits", () => {
