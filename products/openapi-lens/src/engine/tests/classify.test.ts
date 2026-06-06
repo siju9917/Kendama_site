@@ -797,6 +797,8 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "response-schema-additional-properties-changed":         [true, false],
     "request-schema-property-additional-properties-changed": [true, false],
     "response-schema-property-additional-properties-changed":[true, false],
+    "request-schema-items-additional-properties-changed":    [true, false],
+    "response-schema-items-additional-properties-changed":   [true, false],
   };
 
   it.each(Object.keys(TYPE_STUBS) as OapiChangeType[])(
@@ -1167,5 +1169,35 @@ describe("classify — pattern constraint null-transitions (5.7.5 round 17)", ()
     const result = classifyChanges([raw("response-schema-items-constraint-changed", "^[a-z]+$", null, "responses[200].content.schema.items.pattern")]);
     expect(result[0]?.severity).toBe("BREAKING");
     expect(result[0]?.message).toMatch(/removed|may now return/i);
+  });
+});
+
+describe("classify — items-level additionalProperties (5.7.5 round 18)", () => {
+  it("request-schema-items-additional-properties-changed (true→false) is BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-items-additional-properties-changed", true, false, "requestBody.content.schema.items.additionalProperties")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/extra|additional|reject/i);
+  });
+
+  it("request-schema-items-additional-properties-changed (false→true) is INFO", () => {
+    const result = classifyChanges([raw("request-schema-items-additional-properties-changed", false, true, "requestBody.content.schema.items.additionalProperties")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/open|accept|non-breaking/i);
+  });
+
+  it("response-schema-items-additional-properties-changed (true→false) is INFO", () => {
+    const result = classifyChanges([raw("response-schema-items-additional-properties-changed", true, false, "responses[200].content.schema.items.additionalProperties")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/closed|guarantee|stricter/i);
+  });
+
+  it("response-schema-items-additional-properties-changed (false→true) is INFO", () => {
+    const result = classifyChanges([raw("response-schema-items-additional-properties-changed", false, true, "responses[200].content.schema.items.additionalProperties")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/extra|unknown|graceful/i);
   });
 });

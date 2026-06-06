@@ -413,6 +413,22 @@ function diffSchemaItems(
       });
     }
   }
+  // Compare additionalProperties on the items schema. Normalize absent/true → true (extras
+  // allowed); the significant transition is true ↔ false (schema closes/opens).
+  {
+    const bAP = bItems?.additionalProperties ?? true;
+    const cAP = cItems?.additionalProperties ?? true;
+    if (bAP !== cAP) {
+      changes.push({
+        type: isRequest ? "request-schema-items-additional-properties-changed" : "response-schema-items-additional-properties-changed",
+        path, method,
+        location: `${location}.items.additionalProperties`,
+        before: bAP,
+        after: cAP,
+      });
+    }
+  }
+
   // Compare readOnly/writeOnly only when both items schemas exist (avoids double-reporting
   // when items are newly added — that case is already covered by items-type-changed).
   if (bItems && cItems) {

@@ -185,6 +185,18 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   `parameter-items-constraint-changed`. Also improved message functions at all 6 sites to emit
   direction-aware messages (removed/added/changed) instead of a single generic "changed" message.
   +16 tests (12 classify unit + 4 adversarial integration). **458/458 tests.**
+- [x] **5.7.5 round 18 — `diffSchemaItems` never compared `additionalProperties` on the items schema** —
+  the items schema's `additionalProperties` field was completely absent from `diffSchemaItems`, meaning
+  a request array that previously accepted elements with extra properties (`additionalProperties: true`)
+  being closed (`additionalProperties: false`) was completely invisible — a BREAKING change missed
+  entirely. Response-side closing was also invisible (INFO — server now guarantees clean elements).
+  Fixed: added `additionalProperties` comparison inside `diffSchemaItems`, normalizing absent/true → true
+  (same semantics) and detecting the `true ↔ false` transition. Added 2 new OapiChangeType values
+  (`request-schema-items-additional-properties-changed`, `response-schema-items-additional-properties-changed`),
+  4 direction-aware classify rules (request `true→false` = BREAKING; request `false→true` = INFO;
+  response both directions = INFO — mirrors body-level and property-level semantics). TYPE_STUBS updated
+  (+2 entries). +8 tests (2 TYPE_STUBS completeness + 4 classify unit + 2 adversarial integration).
+  **466/466 tests.**
 - [x] **5.7.5 round 15 — request-side constraint removal classified as BREAKING instead of INFO** —
   systematic audit of all request-side classify rules found 11 cases where a constraint being REMOVED
   from the server spec (before=value, after=null/undefined) was incorrectly classified as BREAKING.

@@ -760,6 +760,23 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     matches: (c) => c.type === "response-schema-property-additional-properties-changed" && c.after === true ? "INFO" : null,
     message: (c) => `Response property schema opened: ${c.location}. Nested object may now return extra fields beyond what is documented.`,
   },
+  // Items-level additionalProperties: same direction logic as body and property levels.
+  {
+    matches: (c) => c.type === "request-schema-items-additional-properties-changed" && c.after === false ? "BREAKING" : null,
+    message: (c) => `Request array items schema closed: ${c.location}. Server now rejects array elements with extra properties (\`additionalProperties: false\`). Clients sending elements with undocumented fields will receive 400.`,
+  },
+  {
+    matches: (c) => c.type === "request-schema-items-additional-properties-changed" && c.after === true ? "INFO" : null,
+    message: (c) => `Request array items schema opened: ${c.location}. Server no longer enforces \`additionalProperties: false\` on array elements; extra fields are now accepted (non-breaking for clients).`,
+  },
+  {
+    matches: (c) => c.type === "response-schema-items-additional-properties-changed" && c.after === false ? "INFO" : null,
+    message: (c) => `Response array items schema closed: ${c.location}. Server now guarantees array elements have no extra properties (\`additionalProperties: false\`). Clients benefit from stricter element guarantee.`,
+  },
+  {
+    matches: (c) => c.type === "response-schema-items-additional-properties-changed" && c.after === true ? "INFO" : null,
+    message: (c) => `Response array items schema opened: ${c.location}. Server may now return array elements with extra properties beyond what is documented. Clients should handle unknown fields in elements gracefully.`,
+  },
 
   // ─── SAFE / INFO ────────────────────────────────────────────────────────
   {

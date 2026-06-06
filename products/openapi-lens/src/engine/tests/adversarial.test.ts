@@ -3543,6 +3543,7 @@ paths:
   });
 
   it("removing a response property pattern is BREAKING (server may now return un-patterned values)", () => {
+
     const baseline = `
 openapi: "3.0.0"
 info:
@@ -3587,5 +3588,113 @@ paths:
     expect(patternChange).toBeDefined();
     expect(patternChange?.severity).toBe("BREAKING");
     expect(patternChange?.message).toMatch(/removed|may now return/i);
+  });
+});
+
+describe("items-level additionalProperties detection (5.7.5 round 18)", () => {
+  it("closing request array items schema is BREAKING", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /batch:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /batch:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                additionalProperties: false
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const apChange = changes.find((c) => c.type === "request-schema-items-additional-properties-changed");
+    expect(apChange).toBeDefined();
+    expect(apChange?.severity).toBe("BREAKING");
+    expect(apChange?.after).toBe(false);
+    expect(apChange?.message).not.toMatch(/^Change detected at/);
+  });
+
+  it("closing response array items schema is INFO", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                  additionalProperties: false
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const apChange = changes.find((c) => c.type === "response-schema-items-additional-properties-changed");
+    expect(apChange).toBeDefined();
+    expect(apChange?.severity).toBe("INFO");
+    expect(apChange?.after).toBe(false);
+    expect(apChange?.message).not.toMatch(/^Change detected at/);
   });
 });
