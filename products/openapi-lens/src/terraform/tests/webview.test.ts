@@ -202,4 +202,23 @@ describe("createPlanWebviewContent", () => {
     expect(html).toContain("create&lt;xss&gt;");
     expect(html).not.toContain("create&amp;lt;");
   });
+
+  it("round 70: HTML-special chars in resource type field are escaped", () => {
+    const html = createPlanWebviewContent(
+      makeSummary({
+        changes: [makeClassification("CRITICAL", { type: "aws_instance<xss>" })],
+        critical: 1,
+      }),
+    );
+    expect(html).toContain("aws_instance&lt;xss&gt;");
+    expect(html).not.toContain("aws_instance<xss>");
+  });
+
+  it("round 70: HTML-special chars in terraformVersion are escaped", () => {
+    const html = createPlanWebviewContent(
+      makeSummary({ terraformVersion: '1.8.0"injected' }),
+    );
+    expect(html).toContain("1.8.0&quot;injected");
+    expect(html).not.toContain('1.8.0"injected');
+  });
 });

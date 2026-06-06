@@ -9695,3 +9695,60 @@ paths:
     expect(changes.filter((c) => c.type === "server-removed")).toHaveLength(0);
   });
 });
+
+// ─── Round 70: response-header-enum null transitions ────────────────────────
+
+describe("adversarial round 70 — response-header-enum null-transition paths (catch-all rule)", () => {
+  function makeHeaderEnumSpec(enumLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /jobs/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Status:
+              required: true
+              schema:
+                type: string
+                ${enumLine}
+          content:
+            application/json:
+              schema: {type: object}
+`;
+  }
+
+  it("adding enum constraint to response header (null→[a,b]) is INFO — tightens server output, clients benefit", () => {
+    // Catch-all rule: before === null → INFO
+    // The server now promises it will only emit constrained values — clients with exhaustive
+    // handling gain additional safety; no existing client breaks.
+    const noEnum  = makeHeaderEnumSpec("");
+    const withEnum = makeHeaderEnumSpec('enum: ["pending", "active"]');
+    const changes = analyzeOpenApiDiff(noEnum, withEnum);
+    const enumChange = changes.find((c) => c.type === "response-header-enum-changed");
+    expect(enumChange).toBeDefined();
+    expect(enumChange?.severity).toBe("INFO");
+    expect(enumChange?.before).toBeNull();
+  });
+
+  it("removing enum constraint from response header ([a,b]→null) is BREAKING — server may now return any value", () => {
+    // Catch-all rule: before !== null && after === null → BREAKING
+    // Exhaustive client-side handlers (switch/match) that assumed the old enum
+    // value set will fail when the server sends a previously undocumented value.
+    const withEnum = makeHeaderEnumSpec('enum: ["pending", "active"]');
+    const noEnum   = makeHeaderEnumSpec("");
+    const changes = analyzeOpenApiDiff(withEnum, noEnum);
+    const enumChange = changes.find((c) => c.type === "response-header-enum-changed");
+    expect(enumChange).toBeDefined();
+    expect(enumChange?.severity).toBe("BREAKING");
+    expect(enumChange?.after).toBeNull();
+  });
+});
