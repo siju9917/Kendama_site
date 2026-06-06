@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **711/711 tests** (BidDiff 586/586 + openapi-lens 125/125).
+- **Build green:** **714/714 tests** (BidDiff 586/586 + openapi-lens 128/128).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -101,8 +101,9 @@
   1 SF-1449 solicitation/contract/order form +
   2 SET_ASIDE+CLIN anchor-recall recall suites).
   OpenAPI-lens: Phase 0 engine 96/96 (critique panel) + 10 more (5.7.5 bug-hunt:
-  $ref parameter resolution + double-$ref chain) + 19 more (array items type diffing,
-  property-level enum changes, operation deprecated detection, property format changes).
+  $ref parameter resolution + double-$ref chain) + 22 more (array items type diffing,
+  property-level enum/format changes, operation deprecated detection, required-body
+  removal classification fix, request-body nullable detection).
   All typecheck clean; full CI gate verified green.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`
@@ -603,6 +604,18 @@ all green; check tests 16/16.
     stripped). All 5 new `it` blocks pass immediately — no bugs found, but the gap
     is now regression-locked. 582/582 BidDiff. Total suite: **688/688 tests**.
 
+50. **5.7.5 fix: openapi-lens request body nullable never detected** — `diffResponseNullable`
+    was only called for response schemas. A request body changing from `nullable: true` to
+    `nullable: false` (clients sending null will be rejected → BREAKING) was invisible.
+    Refactored to `diffNullable(isRequest)`, added `request-schema-nullable-changed` type,
+    two classify rules (true→false=BREAKING, false→true=INFO), 2 new tests.
+    Total suite: **714/714 tests**.
+
+49. **5.7.5 fix: openapi-lens required request body removal not classified BREAKING** —
+    `request-body-required-changed` with `before:true, after:null` fell through all classify
+    rules and got INFO. Added rule: `before===true && after===null → BREAKING`. 1 new test.
+    Total suite: **713/713 tests**. (corrected to 714 by item 50)
+
 48. **5.7.5 gaps: openapi-lens property enum, format, and deprecated-operation detection**
     — Systematic "parsed-but-never-diffed" audit on `normalizeSchema` fields: `enum` and
     `format` in schema properties were parsed but never compared; `deprecated` on operations
@@ -645,7 +658,7 @@ all green; check tests 16/16.
   components tested). All unblocked POLISH done. Next session: privacy copy fix
   (NEED #7, when human responds), store submission prep, and D5 VS Code extension
   Phase 1 scaffold (once Proposal #3 auto-proceeds 2026-06-13).
-- **D5 Phase 0 engine is in `products/openapi-lens/`** — 125 tests, all passing.
+- **D5 Phase 0 engine is in `products/openapi-lens/`** — 128 tests, all passing.
   Phase 1 (VS Code extension scaffold) starts when Proposal #3 auto-proceeds 2026-06-13.
 - Spend cap: plan-included web tools (sub-agents, search) are FREE; $0 committed
   external spend. No cap blocker.

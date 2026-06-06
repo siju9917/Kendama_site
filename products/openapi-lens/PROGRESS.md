@@ -33,7 +33,7 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   (BREAKING / INFO) and a human-readable `message`
 - [x] **`src/engine/index.ts`**: Public API — `analyzeOpenApiDiff()`,
   `breakingOnly()`, all type exports
-- [x] **125/125 tests** — parser (21), diff (20), classify (22), integration (9),
+- [x] **128/128 tests** — parser (21), diff (22), classify (22), integration (10),
   adversarial (19), property-diff (34)
 - [x] Typecheck clean
 - [x] **Full 14-critic panel passed** (2026-06-06) — P1 circular-ref fix,
@@ -50,7 +50,9 @@ auto-proceeds (2026-06-13) or earlier if human approves.
     response property (BREAKING for exhaustive clients) were invisible.
   - Operation `deprecated` flag: changing `deprecated: false → true` was invisible.
   - Property-level `format` changes: `format: date → date-time` was invisible.
-  19 new tests total. **125/125 tests.**
+  22 new tests total. **128/128 tests.** Also fixed: required-body removal classified
+  BREAKING (before=true,after=null previously fell to INFO); request-body nullable
+  changes now detected (request-schema-nullable-changed).
 
 ### Breaking-change rules implemented (Phase 0)
 
@@ -93,6 +95,9 @@ auto-proceeds (2026-06-13) or earlier if human approves.
 | Request property format changed | BREAKING |
 | Operation deprecated (false → true) | INFO |
 | Operation un-deprecated (true → false) | INFO |
+| Required request body removed from spec | BREAKING |
+| Request body schema nullable true→false | BREAKING |
+| Request body schema nullable false→true | INFO |
 
 ---
 
