@@ -27,6 +27,12 @@ export const EXTRACTION_LOW_CONFIDENCE_THRESHOLD = 0.7;
 export const STORAGE_HARD_CAP_BYTES = 50 * 1024 * 1024;
 
 /**
+ * Duration (ms) for "copied" / "exported" feedback flash on buttons.
+ * Uniform across ChangeCard, Summary, and any future copy actions.
+ */
+export const COPY_FEEDBACK_FLASH_MS = 2000;
+
+/**
  * Display labels for ChangeCategory. Single source of truth — the
  * in-app summary chips and the exported PDF/Markdown/text reports all
  * read from here so a user can't see "Evaluation" in the panel and

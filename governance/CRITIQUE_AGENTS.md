@@ -65,6 +65,14 @@ Checklist:
   collapse distinct values. Probe normalization with adversarial value
   pairs, asserting the failing case before the fix. Added 2026-05-30
   (suppress.ts %/sign false-negative, pass 12).
+- **A sign detector that fires before raw digits must ALSO fire before
+  currency symbols (`$`, `£`, `€`, `¥`, etc.)** — `-$5,000` is a
+  signed currency value and must normalize differently from `$5,000`.
+  Probe `"-$5,000"` vs `"$5,000"` explicitly; they must produce
+  distinct normalized strings. Added 2026-06-06 (BidDiff N15:
+  `isLeadingSign` only fired when `next` was a digit, not `"$"`, so
+  `"-$5,000"` collapsed to `"$5,000"` and a value-sign change was
+  silently suppressed).
 - **A function relied on as pure must have NO module-level mutable
   state; and a TEST that asserts a pure function is non-deterministic
   is itself a defect.** Two tests asserting contradictory properties
@@ -102,6 +110,14 @@ Checklist:
   might miss (case, whitespace, unicode, schema-order). "It passed"
   only means it ran. Added 2026-05-30 (no-forbidden-markers was
   case-sensitive; the redline OOXML needed 3 corrective passes).
+- **A regex optional group wrapping BOTH a word prefix and an opening
+  bracket `\(` silently makes the bracket optional too.** `(?:[a-z]+
+  \s+)?\(?(\d+)\)?` matches `"thirty (30) pages"` but NOT `"(30)
+  pages"` — the paren-less-word form is missed. Test every regex with
+  and without each optional prefix INDEPENDENTLY, not just the
+  fully-explicit form. Added 2026-06-06 (BidDiff N16: `PAGE_LIMIT_RE`
+  had `\(?` inside the word-group optional, so bare `"(30) pages"` did
+  not produce a PAGE_LIMIT anchor).
 
 ### 3. Security Critic
 
@@ -490,3 +506,5 @@ The META loop (PART 11) audits this table every cycle. A month
 with no growth is a warning sign flagged in the weekly digest.
 
 | 2026-06-06 | Domain-Expert Critic (#5) checklist | Added anchor-extension validation gate: new anchor types require (a) a cited public regulatory source and (b) an integration test exercising the full detection→classify→critical chain, not just a unit test on the detector | BD2 public-source resolution cycle — sub-CLIN (DFARS 204.71) and SET_ASIDE (FAR 19.501) anchors added with citations + end-to-end integration tests; the process proved that "it seemed right" is insufficient for critical-rule additions to a compliance product |
+| 2026-06-06 | Correctness Critic (#1) checklist | Added: a sign detector firing before digits must ALSO fire before currency symbols (`$` etc.) — `"-$5,000"` must normalize differently from `"$5,000"`. Probe `[-+]$AMOUNT` explicitly | BidDiff N15: `isLeadingSign` only checked `next === digit`, not `next === "$"`, so a sign-removal on a dollar amount was silently suppressed (`products/biddiff/CRITIQUE_LOG.md` bug-hunt pass, session 2026-06-06) |
+| 2026-06-06 | Adversarial Tester (#2) checklist | Added: a regex optional group wrapping BOTH a word prefix and `\(` makes the paren optional too — test every regex with and without each optional prefix INDEPENDENTLY | BidDiff N16: `PAGE_LIMIT_RE` had `\(?` inside the word-group optional so bare `"(30) pages"` (no word prefix) never produced a PAGE_LIMIT anchor (`products/biddiff/CRITIQUE_LOG.md` bug-hunt, session 2026-06-06) |

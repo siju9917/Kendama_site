@@ -60,7 +60,7 @@ export function validateInput(file: ArrayBuffer, fileName?: string): FileKind {
   if (kind === "DOC") {
     throw new ExtractionError(
       "UNSUPPORTED_FORMAT",
-      "Legacy .doc files are not supported. Save the document as .docx and try again.",
+      "Legacy .doc files are not supported. In Microsoft Word: File → Save As → format: Word Document (.docx).",
     );
   }
   if (kind === "TXT") {
@@ -72,7 +72,7 @@ export function validateInput(file: ArrayBuffer, fileName?: string): FileKind {
     // drag-drop and the offscreen path bypass it).
     throw new ExtractionError(
       "UNSUPPORTED_FORMAT",
-      "Plain-text (.txt) files are not supported. BidDiff compares PDF (.pdf) and Word (.docx) solicitations.",
+      "Plain-text (.txt) files are not supported. If the amendment is a PDF or Word file, upload that directly.",
     );
   }
   return kind;

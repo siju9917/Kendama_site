@@ -333,7 +333,9 @@ export function DiffView({ result, sessionNotices }: Props): React.ReactElement 
               ? result.warnings.length > 0
                 ? "No textual differences detected — but the warnings above mean extraction may not have read all of the content."
                 : "No changes detected. These two versions appear to be identical."
-              : "No changes match the current filter."}
+              : filter === "CRITICAL"
+                ? "No critical changes match the current filters. Switch to 'All' or a different section to see every change."
+                : "No changes match the current filter."}
           </p>
           {hasActiveFilter && (
             <button onClick={clearFilters}>Clear filters</button>

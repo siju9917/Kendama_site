@@ -92,3 +92,11 @@ the ✕ on the right of an item to delete it (with confirmation).
 ## I hid the disclaimer banner. How do I bring it back?
 
 **Settings → Show disclaimer again.**
+
+## BidDiff flagged something as critical, but my team doesn't think it matters. What should I do?
+
+Trust your team. BidDiff applies federal procurement best practices (FAR/DFARS rules) uniformly —
+it can't know that your specific contract or team has already accounted for a particular change.
+Use the "Mark reviewed" button to track which flags you've evaluated. If you believe a flag is a
+false positive (for example, a page-number format change that looks like a deadline), email
+support@biddiff.example with the document and we'll improve the detector.

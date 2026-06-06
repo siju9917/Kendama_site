@@ -445,6 +445,22 @@ all green; check tests 16/16.
     documents intentional diff). Wired into run-all.mjs (11 checks total, all passing;
     D6's score_note intentional diff noted as info). Fixed `parseFrontMatter` bare-key bug
     (bare `factors:` line wasn't matched). 61/61 check tests green. All committed + pushed.
+20. **Critique roster growth** (5.7.3, 2026-06-06): Two new checklist items added to
+    `governance/CRITIQUE_AGENTS.md` — (a) Correctness Critic #1: "sign detector must fire
+    before currency symbols, not just digits" (N15 class); (b) Adversarial Tester #2:
+    "regex optional group wrapping both a word prefix AND `\(` silently makes the bracket
+    optional too — test each optional prefix independently" (N16 class). Both entries added
+    to the roster growth log table. Factory checks still 11/11 green.
+21. **Adversarial Pass 4** (5.7.2): Second independent hard pass on N15/N16/classify-pin.
+    P0/P1/P2=0. One V1 trade-off documented (Section-M clause reference loses
+    EVALUATION_CRITERIA label, severity still CRITICAL). Phase K1 Compliance P1 still open
+    (human-gated NEED #7). Committed + pushed.
+22. **WISHLIST additions** (5.7.6): Two new items logged — "multi-label change classification
+    (BidDiff V2)" and "factory check drift-between-session validator" — from friction
+    encountered during adversarial pass 4 and the session continuation work.
+23. **META_LESSONS continuation** (5.7.7): Appended a session-continuation note to the
+    2026-06-06 entry covering items 16-22, updating the 5.7.7 assessment for the full
+    session.
 
 ## Notes for the next session
 
@@ -458,9 +474,9 @@ all green; check tests 16/16.
 - **VS Code Breaking-Change Lens evaluation** may complete during or after this
   session. When it lands, read the file, update RANKING.md, and post to APPROVALS.md
   if warranted.
-- **BidDiff bug-hunt lane is SATURATED** (484 tests, every core fn tested). Next
+- **BidDiff bug-hunt lane is SATURATED** (490 tests, every core fn tested). Next
   session should focus on: privacy copy fix (when human responds), store submission
-  prep, and new product deep-evaluation.
+  prep, and new product deep-evaluation (D5 Phase 0 — VS Code extension scaffold).
 - Spend cap: plan-included web tools (sub-agents, search) are FREE; $0 committed
   external spend. No cap blocker.
 

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import type { Change, TokenSpan } from "../core/diff/types.js";
 import { DISCLAIMER_TEXT } from "../shared/disclaimer.js";
+import { COPY_FEEDBACK_FLASH_MS } from "../shared/constants.js";
 
 interface Props {
   change: Change;
@@ -81,7 +82,7 @@ export const ChangeCard = React.memo(function ChangeCard({
     const text = formatChangeForClipboard(change);
     const done = (): void => {
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
+      window.setTimeout(() => setCopied(false), COPY_FEEDBACK_FLASH_MS);
     };
     // navigator.clipboard is the happy path; guard for older/headless envs.
     const clip = typeof navigator !== "undefined" ? navigator.clipboard : undefined;
@@ -200,6 +201,7 @@ export const ChangeCard = React.memo(function ChangeCard({
           className="ghost"
           onClick={() => onToggleReviewed(change.id)}
           aria-pressed={reviewed}
+          aria-label={reviewed ? "Unmark as reviewed" : "Mark as reviewed"}
           title={reviewed ? "Mark as not reviewed" : "Mark as reviewed"}
         >
           {reviewed ? "✓ Reviewed" : "Mark as reviewed"}

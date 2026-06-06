@@ -715,3 +715,44 @@ lesson.
 **Recurrence test:** next session's META audit verifies (a) a WISHLIST item
 grew or the absence is itself explained, and (b) D4/rank-2 evaluations ran or
 are explicitly gated on a reason.
+### Session continuation note (2026-06-06, post-487→490)
+
+The above 5.7.7 audit was written after session items 1-15 (486 tests). The session
+continued:
+
+- **Item 16** (N15, sign-before-dollar fix): `isLeadingSign` extended to fire before `$`.
+  Red test first → fix → 488/488. Adversarial: no false positives on word-internal hyphens
+  (`"pre-$5,000"`) or range dashes (`"50-$3,000"`). ✓
+- **Item 17** (classify-precedence pin): CLAUSE_REF anchor in Section M → category CLAUSES,
+  not EVALUATION_CRITERIA. Severity still CRITICAL (rule 3). Pin test documents V1 trade-off.
+- **Item 18** (N16, page-limit bare-paren fix): `PAGE_LIMIT_RE` split group; `"(30) pages"` now
+  produces PAGE_LIMIT anchor. Red test → fix → 490/490. ✓
+- **Item 19** (factory: ranking-integrity check): YAML front-matter added to 5 research files;
+  `ranking-integrity.mjs` wired; 61/61 check tests green; parser bare-key bug fixed. ✓
+- **Adversarial Pass 4**: N15/N16/classify-pin all adversarially clean. P0/P1/P2 = 0.
+  V1 trade-off documented for Section-M clause reference.
+- **Critique roster growth** (5.7.3): Two new checklist items — sign-before-currency (#1)
+  and regex-optional-group-wraps-bracket (#2) — added to Correctness Critic and Adversarial Tester.
+- **WISHLIST additions** (5.7.6): Multi-label classification (BidDiff V2) and drift-between-
+  session validator (factory self-improvement).
+- **VS Code extension playbook**: `brain/PLAYBOOKS/vscode-extension-ide-diff.md` shipped.
+
+**Updated 5.7.7 assessment for full session:**
+
+- **5.7.2 Escalating critique:** HELD — adversarial passes 3 and 4 completed as independent
+  hard passes on the three code changes. Both returned clean (P0/P1/P2=0). The formal 14-critic
+  panel has not run this cycle (a 5.7.4 "nothing is done" review was initiated as a background
+  agent at session end). This remains the standing caveat.
+- **5.7.3 Roster growth:** HELD — two new checklist items added (sign-before-currency;
+  regex-bracket-in-optional-group). Total new items this session: 3 (anchor-extension gate earlier
+  + these 2 at close).
+- **5.7.6 Ideation:** IMPROVED vs earlier — two new WISHLIST items logged from session friction.
+  The D7/D8/D9 ideation from the prior adversarial pass is still WISHLIST-only (not backlog);
+  correctly resisted as per the meta-synthesis "one engine, N packs" insight.
+
+The structural actions from the 2026-06-06 audit remain:
+- Finding A: D4 Shopify DROPPED per zero-opex filter (Filter 1 violation), so the
+  "D4 unevaluated" concern is resolved by the filter — no evaluation needed.
+- Finding B: A WISHLIST item DID grow this session (multi-label classification + drift
+  validator). The ambition concern is partially addressed.
+

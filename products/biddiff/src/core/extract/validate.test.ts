@@ -49,12 +49,14 @@ describe("validateInput", () => {
       expect((e as ExtractionError).code).toBe("UNSUPPORTED_FORMAT");
     }
   });
-  it("rejects legacy .doc with UNSUPPORTED_FORMAT", () => {
+  it("rejects legacy .doc with UNSUPPORTED_FORMAT and actionable conversion hint", () => {
     try {
       validateInput(bytes("anything"), "legacy.doc");
       throw new Error("should have thrown");
     } catch (e) {
       expect((e as ExtractionError).code).toBe("UNSUPPORTED_FORMAT");
+      // Message must include a concrete conversion step (Word Save As)
+      expect((e as ExtractionError).message).toMatch(/Save.*as.*\.docx|\.docx.*Save/i);
     }
   });
   it("rejects .txt cleanly instead of routing it to the DOCX extractor", () => {

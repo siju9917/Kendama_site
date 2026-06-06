@@ -274,3 +274,71 @@ share the most with D6 (IaC focus); D9 (Docker) is most orthogonal.
 **Promoted to backlog?** Not yet — requires deep evaluation (cap-gated web
 research to verify gap + comparable revenue). Logged as D7/D8/D9 candidates.
 Add to IDEA_BACKLOG on the next research cycle.
+
+---
+
+## 2026-06-06 — Multi-label change classification in BidDiff
+
+**Friction encountered:** The `classify` function uses a first-match rule
+across categories — a CLAUSE_REF anchor inside Section M (EVALUATION_CRITERIA)
+gets classified as CLAUSES (rule 1 fires first), losing the "evaluation criteria
+changed" label. A proposal manager scanning for evaluation-criteria changes would
+miss this one unless they notice it's in Section M. The severity is still CRITICAL
+(clause rules fire on any CLAUSES + INSERT/DELETE/MODIFY), but the category label
+carries information a practitioner needs.
+
+**Where it came up:** Adversarial Pass 4 (2026-06-06), reviewing the classify-
+precedence pin test. Explicitly accepted as a V1 trade-off — the first-match rule
+simplifies classification and the severity is correct — but logged here so V2
+design considers multi-label output.
+
+**Proposed feature (for BidDiff V2 or a configurable option):** Allow a change
+to carry multiple categories when anchors from different category classes
+co-occur (CLAUSE_REF + EVALUATION_CRITERIA anchor, or DEADLINE + SUBMISSION_INSTRUCTIONS).
+Output both labels in the ChangeCard, and fire all category-specific critical rules
+across both labels. This requires a small refactor: `classifyItem` returns
+`string[]` of categories instead of a single `string`; `evaluateCriticality`
+applies rules against ANY matching category.
+
+**Initial size estimate:** Small-medium refactor within the engine (touch
+`classify.ts`, `critical.ts`, and the `ChangeItem` type). Risk: the test
+surface is large; every classify/critical test must handle array output.
+The pin test that documents the current V1 behavior becomes the migration
+regression test.
+
+**Promoted to backlog?** Not yet. Log as V2 BidDiff POLISH. Evaluate when
+a practitioner validates that the category signal materially affects their
+workflow (vs. "section M = CRITICAL anyway, I don't need the label").
+
+---
+
+## 2026-06-06 — Factory check "drift-between-session" validator
+
+**Friction encountered:** This session manually updated STATE.md item counts
+(455→484→486→488→490 tests) across many commits, and the count drifted stale
+between commits. The existing `state-count-sanity` check validates the final
+count headline but doesn't validate that mid-session commits haven't left the
+count stale for a long time.
+
+Also, during the session, the META_LESSONS 5.7.7 audit was written when tests
+were at 486; by session end they were at 490. The audit document was accurate
+at the time of writing but stale when the session ended. There's no mechanism
+to flag "this document was last updated at state X, and state has since advanced."
+
+**Where it came up:** Writing the session continuation and realizing META_LESSONS
+covered items 1-15 but the session actually reached item 19 by end.
+
+**Proposed tool:** A "temporal consistency" check — given a set of brain files
+that assert a count/status (STATE.md, META_LESSONS.md), validate that the
+highest-stated count doesn't lag the actual repo state by more than a fixed
+threshold. Could be as simple as: parse `STATE.md`'s test-count headline,
+compare to `META_LESSONS.md`'s most-recent session audit's stated count — if
+they diverge by >10, flag as P2 "brain drift." 
+
+**Initial size estimate:** Small. Build as another `ops/checks/` module.
+Caveat: must not run the vitest suite (per the existing state-count-sanity
+design note). Instead, read both files and compare the stated test counts
+using the same parser as `state-count-sanity.mjs`.
+
+**Promoted to backlog?** Not yet — candidate for SELF_IMPROVEMENT backlog;
+the state-count-sanity check (#8) is a sibling.
