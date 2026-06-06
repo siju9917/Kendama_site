@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "outDir": "out",
+    "declaration": false,
+    "lib": ["ES2022"],
+    "noEmit": false
+  },
+  "include": ["src/engine", "src/extension"],
+  "exclude": ["src/engine/tests", "src/extension/tests", "node_modules", "out"]
+}

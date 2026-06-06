@@ -12,11 +12,6 @@ function opKey(op: OapiOperation): string {
   return `${op.method} ${op.path}`;
 }
 
-/** Deep-equal check for two JSON-serializable values. */
-function deepEqual(a: unknown, b: unknown): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
-}
-
 /** Compare two enum arrays as sets (order-insensitive). Reordering enum values is not a change. */
 function enumSetsEqual(a: unknown[] | undefined, b: unknown[] | undefined): boolean {
   if (a === undefined && b === undefined) return true;

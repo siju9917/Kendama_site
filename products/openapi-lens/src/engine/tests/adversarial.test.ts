@@ -4666,14 +4666,6 @@ paths:
   });
 
   it("response schema minProperties decrease fires BREAKING (response loosened)", () => {
-    const spec200 = `
-      responses:
-        "200":
-          description: ok
-          content:
-            application/json:
-              schema:
-                type: object`;
     const baseline = `${PREAMBLE}
       requestBody:
         required: false
