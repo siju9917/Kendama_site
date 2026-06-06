@@ -8563,3 +8563,59 @@ paths:
     expect(woChange?.severity).toBe("INFO");
   });
 });
+
+// ─── Round 58: security:[] vs. absent security — known false-negative ─────────
+// OAS 3.0 allows `security: []` at operation level to override global security
+// and make the operation publicly accessible. The diff engine does not currently
+// detect the transition between absent-security (inherits global) and security:[]
+// (no-auth override) because both are represented as an empty scheme map after
+// parsing. This is a Phase 2 limitation — tracking it explicitly requires knowing
+// global security state. The tests below lock this behavior as the current baseline.
+
+describe("security: [] override vs. absent security (round 58 — known limitation)", () => {
+  function makeGloballySecuredSpec(operationSecurity: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+security:
+  - apiKey: []
+paths:
+  /items:
+    get:
+      ${operationSecurity}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("absent → security:[] transition (global auth override to no-auth) currently emits no changes (Phase 2 gap)", () => {
+    // Before: operation inherits global apiKey requirement (absent operation security)
+    // After: operation has security: [] — explicitly publicly accessible
+    // This is a real semantic change (auth requirement lifted) but the diff engine
+    // cannot detect it without global security context. Locked as known behavior.
+    const inheritsGlobal = makeGloballySecuredSpec("");
+    const noAuthOverride = makeGloballySecuredSpec("security: []");
+    const changes = analyzeOpenApiDiff(inheritsGlobal, noAuthOverride);
+    // No scheme-level changes emitted — both sides see an empty scheme map.
+    const secChanges = changes.filter((c) =>
+      c.type === "operation-security-scheme-removed" ||
+      c.type === "operation-security-scheme-added"
+    );
+    expect(secChanges).toHaveLength(0);
+  });
+
+  it("security:[] → absent transition (no-auth override removed, global auth now applies) currently emits no changes (Phase 2 gap)", () => {
+    // Before: operation has security: [] (publicly accessible, overriding global apiKey)
+    // After: operation loses security: [] and inherits global apiKey again
+    // This is BREAKING (auth requirement restored) but currently undetectable.
+    const noAuthOverride = makeGloballySecuredSpec("security: []");
+    const inheritsGlobal = makeGloballySecuredSpec("");
+    const changes = analyzeOpenApiDiff(noAuthOverride, inheritsGlobal);
+    const secChanges = changes.filter((c) =>
+      c.type === "operation-security-scheme-removed" ||
+      c.type === "operation-security-scheme-added"
+    );
+    expect(secChanges).toHaveLength(0);
+  });
+});

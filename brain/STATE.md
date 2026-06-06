@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **1579/1579 tests** (BidDiff 586/586 + openapi-lens 993/993). MILESTONE: 100% adversarial coverage for all 100+ OapiChangeTypes (rounds 43-53). Rounds 54-57: cross-level consistency matrices for enum (18), constraint (30), additionalProperties (12), and format direction (27 tests). All polarity classes are now exhaustively guarded.
+- **Build green:** **1581/1581 tests** (BidDiff 586/586 + openapi-lens 995/995). MILESTONE: 100% adversarial coverage for all 100+ OapiChangeTypes (rounds 43-53). Rounds 54-57: cross-level consistency matrices (enum/constraint/AP/format = 87 new tests). Round 58: security:[] Phase 2 gap documented as locked known behavior (2 tests).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
