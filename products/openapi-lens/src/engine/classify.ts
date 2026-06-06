@@ -104,6 +104,14 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     matches: (c) => c.type === "request-schema-property-removed" ? "BREAKING" : null,
     message: (c) => `Request body property removed: ${c.location}. The server no longer accepts this property (silently ignored or rejected).`,
   },
+  {
+    matches: (c) => c.type === "response-schema-items-type-changed" ? "BREAKING" : null,
+    message: (c) => `Response array element type changed: ${c.location} (${c.before} → ${c.after}). Clients iterating this array will receive the wrong element type.`,
+  },
+  {
+    matches: (c) => c.type === "request-schema-items-type-changed" ? "BREAKING" : null,
+    message: (c) => `Request body array element type changed: ${c.location} (${c.before} → ${c.after}). Clients sending the old element type will fail validation.`,
+  },
 
   // ─── SAFE / INFO ────────────────────────────────────────────────────────
   {

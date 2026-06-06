@@ -80,7 +80,9 @@ export type OapiChangeType =
   | "response-schema-property-added"
   | "request-schema-property-type-changed"
   | "request-schema-property-removed"
-  | "request-schema-property-added";
+  | "request-schema-property-added"
+  | "response-schema-items-type-changed"
+  | "request-schema-items-type-changed";
 
 /** A raw structural difference between two specs before classification. */
 export interface OapiRawChange {

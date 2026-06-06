@@ -197,3 +197,110 @@ describe("property-level diff — request schema properties", () => {
     expect(changes.some((c) => c.type === "response-schema-property-added" && c.location.includes("phone"))).toBe(false);
   });
 });
+
+// ─── Array items diffing (5.7.5 fix, 2026-06-06) ──────────────────────────
+
+function makeArraySpec(responseItemType: string, requestItemType?: string): string {
+  return `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /list:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: ${responseItemType}
+    ${requestItemType ? `post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: ${requestItemType}
+      responses:
+        "201":
+          description: created` : ""}
+`;
+}
+
+describe("array items diff — response", () => {
+  it("detects BREAKING when response array element type changes (string → integer)", () => {
+    const baseline = makeArraySpec("string");
+    const current = makeArraySpec("integer");
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = breakingOnly(changes);
+    expect(breaking.some((c) => c.type === "response-schema-items-type-changed")).toBe(true);
+    const change = breaking.find((c) => c.type === "response-schema-items-type-changed")!;
+    expect(change.before).toBe("string");
+    expect(change.after).toBe("integer");
+    expect(change.location).toMatch(/items/);
+  });
+
+  it("does not emit items-type-changed when element type is unchanged", () => {
+    const s = makeArraySpec("string");
+    const changes = analyzeOpenApiDiff(s, s);
+    expect(changes.filter((c) => c.type === "response-schema-items-type-changed")).toHaveLength(0);
+  });
+
+  it("does not emit items-type-changed when baseline has no items schema", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /list:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+`;
+    const current = makeArraySpec("string");
+    const changes = analyzeOpenApiDiff(baseline, current);
+    expect(changes.filter((c) => c.type === "response-schema-items-type-changed")).toHaveLength(0);
+  });
+});
+
+describe("array items diff — request body", () => {
+  it("detects BREAKING when request body array element type changes (string → integer)", () => {
+    const baseline = makeArraySpec("string", "string");
+    const current = makeArraySpec("string", "integer");
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = breakingOnly(changes);
+    expect(breaking.some((c) => c.type === "request-schema-items-type-changed")).toBe(true);
+    const change = breaking.find((c) => c.type === "request-schema-items-type-changed")!;
+    expect(change.before).toBe("string");
+    expect(change.after).toBe("integer");
+    expect(change.location).toMatch(/items/);
+  });
+
+  it("does not emit items-type-changed when request array element type is unchanged", () => {
+    const s = makeArraySpec("number", "number");
+    const changes = analyzeOpenApiDiff(s, s);
+    expect(changes.filter((c) => c.type === "request-schema-items-type-changed")).toHaveLength(0);
+  });
+
+  it("does not conflate response and request items changes", () => {
+    const baseline = makeArraySpec("string", "string");
+    const current = makeArraySpec("integer", "boolean");
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const responseChange = changes.find((c) => c.type === "response-schema-items-type-changed")!;
+    const requestChange = changes.find((c) => c.type === "request-schema-items-type-changed")!;
+    expect(responseChange).toBeDefined();
+    expect(requestChange).toBeDefined();
+    expect(responseChange.after).toBe("integer");
+    expect(requestChange.after).toBe("boolean");
+  });
+});

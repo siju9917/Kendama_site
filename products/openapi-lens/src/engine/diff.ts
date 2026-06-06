@@ -171,6 +171,30 @@ function diffSchemaProperties(
   }
 }
 
+/** Compare the items schema type for array-typed schemas. */
+function diffSchemaItems(
+  path: string,
+  method: HttpMethod,
+  location: string,
+  baseline: OapiSchema | null,
+  current: OapiSchema | null,
+  isRequest: boolean,
+  changes: OapiRawChange[],
+): void {
+  const bItems = baseline?.items;
+  const cItems = current?.items;
+  if (!bItems && !cItems) return;
+  if (bItems?.type !== undefined && cItems?.type !== undefined && bItems.type !== cItems.type) {
+    changes.push({
+      type: isRequest ? "request-schema-items-type-changed" : "response-schema-items-type-changed",
+      path, method,
+      location: `${location}.items.type`,
+      before: bItems.type,
+      after: cItems.type,
+    });
+  }
+}
+
 /** Compare nullable in a response schema. */
 function diffResponseNullable(
   path: string,
@@ -224,6 +248,7 @@ function diffRequestBody(
     diffSchemaType(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffSchemaRequiredFields(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffSchemaProperties(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
+    diffSchemaItems(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
   }
 }
 
@@ -249,6 +274,7 @@ function diffResponses(
     diffSchemaRequiredFields(path, method, loc, br.schema, cr.schema, false, changes);
     diffResponseNullable(path, method, loc, br.schema, cr.schema, changes);
     diffSchemaProperties(path, method, loc, br.schema, cr.schema, false, changes);
+    diffSchemaItems(path, method, loc, br.schema, cr.schema, false, changes);
   }
 
   for (const code of Object.keys(cMap)) {
