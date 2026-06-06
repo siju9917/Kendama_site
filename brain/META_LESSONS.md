@@ -1083,3 +1083,80 @@ converted into accumulated factory knowledge.
 until a new OapiSchema field is added — at which point `flattenAllOf` + diff + classify + TYPE_STUBS
 all require updates simultaneously; (c) D5 Phase 1 starts when Proposal #3 auto-proceeds 2026-06-13.
 
+---
+
+## 2026-06-06 — 5.7.7 META audit (context-window continuation, items 68–69)
+
+**Operational event:** Saturday Routine context-window continuation. Resumed from a compacted
+context window after rounds 5-8. This continuation was documentation and ideation work — no new
+tests, no code changes. Suite unchanged at 931/931 (BidDiff 586 + openapi-lens 345). All factory
+checks green (11/11).
+
+**Items completed this continuation:**
+- Item 68: 5.7.4 "nothing is done" review for openapi-lens Phase 0 — identified 4 new Phase 2
+  engine-addition candidates (response headers diff, security scheme/scope changes, servers array
+  changes, operationId changes). Added to PROGRESS.md Phase 2 section + Known Limitations.
+- Item 69: BCL format-pack roadmap scoring — first-principles cap-independent evaluation of K8s
+  YAML, SQL migration, GraphQL, CloudFormation, Avro, Docker image diff as format-pack candidates
+  for the Breaking-Change Lens product line. Added to IDEA_BACKLOG.md. WISHLIST.md status updates
+  (allOf composition partially resolved, recursive diff resolved, D7/D8/D9 assessed as BCL packs).
+
+**5.7.1 (monthly re-critique):** N/A — no shipped products.
+
+**5.7.2 (escalating critique):** N/A this continuation — no code changes to escalate-critique.
+Prior escalating passes (rounds 1-8 earlier this Saturday) remain the relevant record.
+
+**5.7.3 (roster growth):** No new checklist items this continuation — the work was documentation,
+not code. Honest note: this is a zero-growth cycle for the roster. It is defensible (documentation-
+only work; no new code pattern to be checked for) but the no-growth cycle is worth noting. Per
+5.7.3, a month with no growth is a warning sign; one documentation-only continuation is not a month.
+
+**5.7.4 ("nothing is done"):** HELD — ran the formal "nothing is done" adversarial review for
+openapi-lens Phase 0 (the question "what would a top-tier API tooling team add?"). Found 4 genuine
+Phase 2 engine-addition candidates, all currently absent from the engine and not previously
+documented. These are real, non-trivial feature gaps (response headers, security scheme changes,
+servers URL changes, operationId). The review produced new content, not "looks complete."
+
+**5.7.5 (continuous bug-hunt):** Not run this continuation — no code changes, documentation-only
+work. Standing cadence continues; the Phase 0 engine is assessed as saturated until a new field is added.
+
+**5.7.6 (continuous ideation):** HELD with strong evidence — BCL format-pack scoring is substantive
+first-principles ideation (6 format candidates evaluated, 2 STRONG, 1 DROPPED). This is exactly the
+kind of cap-independent ideation CLAUDE.md 5.7.6 calls for: new product-line roadmap thinking that
+doesn't require cited research. Additionally, WISHLIST.md status updates on 3 items (allOf, recursive
+diff, D7+) close open loops that had been pending — the ideation captured earlier was reconciled with
+the implementation reality.
+
+**5.7.7 (this audit):** Running now. Evidence-bound verdicts.
+
+**5.7.8 (audit-of-the-auditor):**
+
+1. **Was the audit shallow?** Six rules addressed with honest held/N/A/partial verdicts and
+   concrete evidence (item numbers, file names). The zero-roster-growth note is honest — a shallow
+   audit would have papered it over as N/A.
+
+2. **Was an obvious lapse missed?** One genuine finding from this adversarial re-read:
+   **The BCL format-pack scoring evaluated Docker image diff as "NOT FIT for BCL model"** — which
+   is the right conclusion, but the WISHLIST item that seeded it (D7/D8/D9 ideation, 2026-06-06)
+   described Docker as "detects dependency version changes, removed packages" which IS different
+   from binary layer analysis. A Dockerfile diff (comparing two Dockerfiles for security-relevant
+   changes: new FROM version, USER root, exposed ports) WOULD fit the BCL model and was not
+   scored. This is a genuine gap in the format-pack assessment — Dockerfile diff as a format-pack
+   was not evaluated. Logging: add "Dockerfile diff" to the BCL format-pack roadmap candidates in
+   IDEA_BACKLOG.md as a separate candidate from "Docker image diff" (which was correctly dropped).
+   Verdict: MEDIUM strength (parser is trivial — Dockerfile is line-structured text; gap is moderate
+   since `hadolint` lints Dockerfiles but no VS Code extension classifies security-relevant changes
+   between two Dockerfile versions).
+
+3. **Was the conclusion defended or asserted?** Evidence cited for each verdict above.
+
+**Action from 5.7.8 finding:** Add Dockerfile diff as a distinct BCL format-pack candidate
+(separate from Docker image diff) in IDEA_BACKLOG.md.
+
+**Where applied:** `brain/STATE.md` (items 68-69 logged), `brain/IDEA_BACKLOG.md` (Dockerfile
+diff candidate), this lesson.
+
+**Recurrence test:** (a) factory checks remain 11/11 green; (b) D5 Phase 1 scaffold begins
+2026-06-13 per Proposal #3 auto-proceed; (c) next session's roster growth check verifies
+the roster grew during Phase 1 build work.
+
