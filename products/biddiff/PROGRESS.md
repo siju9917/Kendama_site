@@ -277,18 +277,18 @@ product re-review. Implemented immediately (7 tiny/small, no human gate):
 - **N-A14**: FAQ entry added: "BidDiff flagged something as critical but my team
   doesn't think it matters" — use Mark reviewed; report false positives.
 
-**Queued POLISH (5.7.4 findings):** N18 (History keyboard nav + replace confirm modal).
+**Queued POLISH (5.7.4 findings):** None remaining (unblocked). N18 DONE 2026-06-06.
 Still gated: N-A3 (reviewed card visual contrast — browser), N-A7 (OCR consent
 requires OCR implementation), N-A12 (contrast verification — browser), N-A16
 (store listing accuracy — human), N-A19 (section jump mini-nav — optional).
 
-Net: the unblocked items remain zero-cost. **Done:** N1, N2, N6, N8, N9, N11, N14, N15, N16, N17,
+Net: the unblocked items remain zero-cost. **Done:** N1, N2, N6, N8, N9, N11, N14, N15, N16, N17, N18,
 N-A2, N-A4, N-A5, N-A8, N-A9, N-A10, N-A11, N-A13, N-A14, N-A20.
 (+ N10 characterized, two edge cases logged). **Downgraded** (the capability
 already exists or the delta is marginal, verified by self-audit): N12, N13.
 **Queued POLISH:** N3 (generator done; human-gated Word-render verify before
 the button is wired — NEED #9), N5 (speculative virtualization), N10 (money
-edge cases), N18.
+edge cases).
 **Gated:** N7 (positioning decision). N4 dropped. "Done" remains
 provisional — the list grew this session rather than shrank, which is the
 point of 5.7.4. (Reconciled 2026-05-31: the N1 row and this summary had
