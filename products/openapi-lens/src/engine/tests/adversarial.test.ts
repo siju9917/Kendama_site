@@ -8619,3 +8619,70 @@ paths:
     expect(secChanges).toHaveLength(0);
   });
 });
+
+// ─── Round 59: OAS 3.1 type-array nullable normalization ──────────────────────
+// OAS 3.1 uses `type: ["string", "null"]` instead of OAS 3.0's `nullable: true`.
+// The parser normalizes both to `{type: "string", nullable: true}` so the diff
+// engine operates on a canonical form. These tests verify the normalization works
+// correctly and that cross-version comparisons are detected consistently.
+
+describe("OAS 3.1 type-array nullable normalization (round 59)", () => {
+  function makeTypeArraySpec(typeField: string): string {
+    return `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nickname:
+                    ${typeField}
+`;
+  }
+
+  it("type:[string,null] (OAS 3.1) → type:string (no null) is INFO (nullable removed from response = server stops sending null)", () => {
+    // Before: type: ["string", "null"] → parsed as {type: string, nullable: true}
+    // After: type: string → parsed as {type: string, nullable: false/absent}
+    // Net: nullable true→false in a response = INFO (server stops returning null;
+    // clients that handled null still work — their null branch is now dead code).
+    const withNull = makeTypeArraySpec('type: ["string", "null"]');
+    const withoutNull = makeTypeArraySpec("type: string");
+    const changes = analyzeOpenApiDiff(withNull, withoutNull);
+    const nullableChange = changes.find((c) => c.type === "response-schema-property-nullable-changed");
+    expect(nullableChange).toBeDefined();
+    expect(nullableChange?.before).toBe(true);
+    expect(nullableChange?.after).toBe(false);
+    expect(nullableChange?.severity).toBe("INFO");
+  });
+
+  it("type:string (OAS 3.0) → type:[string,null] (OAS 3.1) is BREAKING (nullable added to response)", () => {
+    // Before: type: string → nullable: false
+    // After: type: ["string", "null"] → nullable: true
+    // Net: nullable false→true in response = BREAKING (clients must now handle null)
+    const withoutNull = makeTypeArraySpec("type: string");
+    const withNull = makeTypeArraySpec('type: ["string", "null"]');
+    const changes = analyzeOpenApiDiff(withoutNull, withNull);
+    const nullableChange = changes.find((c) => c.type === "response-schema-property-nullable-changed");
+    expect(nullableChange).toBeDefined();
+    expect(nullableChange?.before).toBe(false);
+    expect(nullableChange?.after).toBe(true);
+    expect(nullableChange?.severity).toBe("BREAKING");
+  });
+
+  it("type:[string,null] is equivalent to type:string + nullable:true — no change when both forms present", () => {
+    // OAS 3.1 type-array and OAS 3.0 nullable:true should normalize to same schema.
+    const typeArrayForm = makeTypeArraySpec('type: ["string", "null"]');
+    const nullableForm = makeTypeArraySpec("type: string\n                    nullable: true");
+    const changes = analyzeOpenApiDiff(typeArrayForm, nullableForm);
+    // No nullable change — both normalize to {type: string, nullable: true}.
+    const nullableChange = changes.find((c) => c.type === "response-schema-property-nullable-changed");
+    expect(nullableChange).toBeUndefined();
+  });
+});
