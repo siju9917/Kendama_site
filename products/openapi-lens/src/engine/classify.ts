@@ -61,6 +61,13 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => `Request body became required: ${c.location}. Clients omitting the body will now receive 400.`,
   },
   {
+    matches: (c) =>
+      c.type === "request-body-required-changed" && c.before === true && c.after === null
+        ? "BREAKING"
+        : null,
+    message: (c) => `Required request body removed from spec: ${c.location}. The server contract no longer documents this body; clients sending it may be rejected.`,
+  },
+  {
     matches: (c) => c.type === "request-schema-field-required-added" ? "BREAKING" : null,
     message: (c) => `Required field added to request body: ${c.location}. Clients not sending this field will now receive 400.`,
   },

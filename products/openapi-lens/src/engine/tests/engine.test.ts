@@ -451,6 +451,46 @@ components:
     expect(added.severity).toBe("INFO");
   });
 
+  it("detects BREAKING when a required request body is removed from the spec", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: created
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = breakingOnly(changes);
+    expect(breaking.some((c) => c.type === "request-body-required-changed")).toBe(true);
+    const change = breaking.find((c) => c.type === "request-body-required-changed")!;
+    expect(change.before).toBe(true);
+    expect(change.after).toBeNull();
+    expect(change.message).toMatch(/required request body removed/i);
+  });
+
   it("cursor→page_token pagination migration: BREAKING removal + INFO addition", () => {
     const baseline = `
 openapi: "3.0.0"
