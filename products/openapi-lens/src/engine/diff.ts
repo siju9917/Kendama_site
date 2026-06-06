@@ -375,59 +375,60 @@ function diffSchemaItems(
       after: cType,
     });
   }
-  const bFmt = bItems?.format ?? null;
-  const cFmt = cItems?.format ?? null;
-  if (bFmt !== cFmt && (bItems !== undefined || cItems !== undefined)) {
-    changes.push({
-      type: isRequest ? "request-schema-items-format-changed" : "response-schema-items-format-changed",
-      path, method,
-      location: `${location}.items.format`,
-      before: bFmt,
-      after: cFmt,
-    });
-  }
-  const bItemsEnum = bItems?.enum;
-  const cItemsEnum = cItems?.enum;
-  if (!enumSetsEqual(bItemsEnum, cItemsEnum) && (bItemsEnum !== undefined || cItemsEnum !== undefined)) {
-    changes.push({
-      type: isRequest ? "request-schema-items-enum-changed" : "response-schema-items-enum-changed",
-      path, method,
-      location: `${location}.items.enum`,
-      before: bItemsEnum ?? null,
-      after: cItemsEnum ?? null,
-    });
-  }
-  const bItemsNull = bItems?.nullable ?? false;
-  const cItemsNull = cItems?.nullable ?? false;
-  if (bItemsNull !== cItemsNull) {
-    changes.push({
-      type: isRequest ? "request-schema-items-nullable-changed" : "response-schema-items-nullable-changed",
-      path, method,
-      location: `${location}.items.nullable`,
-      before: bItemsNull,
-      after: cItemsNull,
-    });
-  }
-  const itemsConstraintFields = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems"] as const;
-  for (const cf of itemsConstraintFields) {
-    const bVal = bItems?.[cf] ?? null;
-    const cVal = cItems?.[cf] ?? null;
-    if (bVal !== cVal) {
+  // When both items schemas exist, compare all scalar fields. Guards against double-reporting
+  // when items are newly added or removed — items-type-changed (before=null or after=null)
+  // is the primary signal for those transitions. Mirrors the round-10/20 rationale for
+  // readOnly/writeOnly/additionalProperties.
+  if (bItems && cItems) {
+    const bFmt = bItems.format ?? null;
+    const cFmt = cItems.format ?? null;
+    if (bFmt !== cFmt) {
       changes.push({
-        type: isRequest ? "request-schema-items-constraint-changed" : "response-schema-items-constraint-changed",
+        type: isRequest ? "request-schema-items-format-changed" : "response-schema-items-format-changed",
         path, method,
-        location: `${location}.items.${cf}`,
-        before: bVal,
-        after: cVal,
+        location: `${location}.items.format`,
+        before: bFmt,
+        after: cFmt,
       });
     }
-  }
-  // Compare additionalProperties/readOnly/writeOnly only when both items schemas exist
-  // (avoids double-reporting when items are newly added — that case is already covered
-  // by items-type-changed with before=null).
-  if (bItems && cItems) {
-    // additionalProperties: normalize absent/true → true (extras allowed); the significant
-    // transition is true ↔ false (schema closes/opens).
+    const bItemsEnum = bItems.enum;
+    const cItemsEnum = cItems.enum;
+    if (!enumSetsEqual(bItemsEnum, cItemsEnum) && (bItemsEnum !== undefined || cItemsEnum !== undefined)) {
+      changes.push({
+        type: isRequest ? "request-schema-items-enum-changed" : "response-schema-items-enum-changed",
+        path, method,
+        location: `${location}.items.enum`,
+        before: bItemsEnum ?? null,
+        after: cItemsEnum ?? null,
+      });
+    }
+    const bItemsNull = bItems.nullable ?? false;
+    const cItemsNull = cItems.nullable ?? false;
+    if (bItemsNull !== cItemsNull) {
+      changes.push({
+        type: isRequest ? "request-schema-items-nullable-changed" : "response-schema-items-nullable-changed",
+        path, method,
+        location: `${location}.items.nullable`,
+        before: bItemsNull,
+        after: cItemsNull,
+      });
+    }
+    const itemsConstraintFields = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems"] as const;
+    for (const cf of itemsConstraintFields) {
+      const bVal = bItems[cf] ?? null;
+      const cVal = cItems[cf] ?? null;
+      if (bVal !== cVal) {
+        changes.push({
+          type: isRequest ? "request-schema-items-constraint-changed" : "response-schema-items-constraint-changed",
+          path, method,
+          location: `${location}.items.${cf}`,
+          before: bVal,
+          after: cVal,
+        });
+      }
+    }
+    // additionalProperties: normalize absent/true → true (extras allowed); significant transition
+    // is true ↔ false (schema closes/opens).
     const bAP = bItems.additionalProperties ?? true;
     const cAP = cItems.additionalProperties ?? true;
     if (bAP !== cAP) {
@@ -439,7 +440,6 @@ function diffSchemaItems(
         after: cAP,
       });
     }
-
     const bReadOnly = bItems.readOnly ?? false;
     const cReadOnly = cItems.readOnly ?? false;
     if (bReadOnly !== cReadOnly) {

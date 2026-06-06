@@ -227,6 +227,22 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   newly added.
   +3 adversarial integration tests (2 no-spurious + 1 regression that existing detection still works).
   **476/476 tests.**
+- [x] **5.7.5 round 21 — `diffSchemaItems` format/enum/nullable/constraints fired spuriously for newly-added/removed items** —
+  Round 20 moved `additionalProperties` inside the `if (bItems && cItems)` guard. Rounds 21 applies the
+  same principle to the four remaining field comparison groups that were still outside the guard: format,
+  enum, nullable, and constraint fields. When items are newly added (`bItems=undefined`) or removed
+  (`cItems=undefined`), these comparisons would fire events alongside `items-type-changed`, producing
+  spurious (often BREAKING) findings:
+  - Format newly added: fires `items-format-changed` alongside `items-type-changed`
+  - Enum newly added: fires `items-enum-changed` alongside `items-type-changed` (BREAKING for request)
+  - Constraint newly added: fires `items-constraint-changed` alongside `items-type-changed` (BREAKING for request)
+  Fix: unified all scalar field comparisons inside a single `if (bItems && cItems)` guard. The items
+  `type` comparison stays OUTSIDE the guard — it IS the primary detection mechanism for newly-added/removed
+  items. Recursion into items.properties and items.items also stays outside to continue detecting structural
+  changes in those sub-schemas. All 481 pre-existing tests still pass; genuine changes on pre-existing items
+  schemas continue to produce events.
+  +5 adversarial integration tests (3 no-spurious + 2 genuine-change-still-detected).
+  **481/481 tests.**
 - [x] **5.7.5 round 15 — request-side constraint removal classified as BREAKING instead of INFO** —
   systematic audit of all request-side classify rules found 11 cases where a constraint being REMOVED
   from the server spec (before=value, after=null/undefined) was incorrectly classified as BREAKING.

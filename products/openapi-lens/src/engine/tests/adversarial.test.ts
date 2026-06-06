@@ -4058,3 +4058,190 @@ paths:
     expect(apChange?.after).toBe(true);
   });
 });
+
+// ─── items scalar fields guard (5.7.5 round 21) ───────────────────────────
+
+describe("items scalar fields — no spurious events when items are newly added (5.7.5 round 21)", () => {
+  const PREAMBLE = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /v1/items:
+    post:
+`;
+
+  it("newly added items schema with format emits NO format-changed event (only type-changed)", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: date-time
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "request-schema-items-type-changed");
+    expect(typeChange).toBeDefined();
+    const fmtChange = changes.find((c) => c.type === "request-schema-items-format-changed");
+    expect(fmtChange).toBeUndefined();
+  });
+
+  it("newly added items schema with enum emits NO enum-changed event (only type-changed)", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                enum: ["a", "b", "c"]
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "request-schema-items-type-changed");
+    expect(typeChange).toBeDefined();
+    const enumChange = changes.find((c) => c.type === "request-schema-items-enum-changed");
+    expect(enumChange).toBeUndefined();
+  });
+
+  it("newly added items schema with constraint emits NO constraint-changed event (only type-changed)", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                minLength: 5
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "request-schema-items-type-changed");
+    expect(typeChange).toBeDefined();
+    const constraintChange = changes.find((c) => c.type === "request-schema-items-constraint-changed");
+    expect(constraintChange).toBeUndefined();
+  });
+
+  it("format change on existing items schema IS still detected", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: date
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: date-time
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const fmtChange = changes.find((c) => c.type === "request-schema-items-format-changed");
+    expect(fmtChange).toBeDefined();
+    expect(fmtChange?.before).toBe("date");
+    expect(fmtChange?.after).toBe("date-time");
+    expect(fmtChange?.severity).toBe("BREAKING");
+  });
+
+  it("constraint change on existing items schema IS still detected", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                minLength: 3
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                minLength: 10
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const constraintChange = changes.find((c) => c.type === "request-schema-items-constraint-changed");
+    expect(constraintChange).toBeDefined();
+    expect(constraintChange?.before).toBe(3);
+    expect(constraintChange?.after).toBe(10);
+    expect(constraintChange?.severity).toBe("BREAKING");
+  });
+});
