@@ -13321,3 +13321,153 @@ paths:
     expect(propAdded.every((c) => c.severity === "INFO")).toBe(true);
   });
 });
+
+// ─── Round 102: items schema completely removed ──────────────────────────────
+// When `items:` is removed entirely from an array schema, diffSchemaItems
+// emits an items-type-changed event (type → null).  When the items schema was
+// an object with nested properties, the recursion guards at line 467 of diff.ts
+// also fire diffSchemaProperties on the (now-null) current items — emitting
+// additional property-removed events.  These multi-event cases are untested.
+
+describe("adversarial round 102 — items schema completely removed emits items-type-changed (end-to-end)", () => {
+  it("(R102-1) response items with simple type removed: items-type-changed (BREAKING, before=string after=null)", () => {
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-schema-items-type-changed");
+    expect(c).toBeDefined();
+    expect(c?.before).toBe("string");
+    expect(c?.after).toBeNull();
+    // response: before non-null → BREAKING (clients relied on string type)
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("(R102-2) request items with simple type removed: items-type-changed (INFO, before=string after=null)", () => {
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "request-schema-items-type-changed");
+    expect(c).toBeDefined();
+    expect(c?.before).toBe("string");
+    expect(c?.after).toBeNull();
+    // request: after=null → INFO (server no longer validates element type; clients still work)
+    expect(c?.severity).toBe("INFO");
+  });
+
+  it("(R102-3) response items with object+properties removed: emits items-type-changed BREAKING + nested property-removed BREAKING", () => {
+    // When items is an object with nested properties, removing it triggers:
+    //   1. items-type-changed (object → null, BREAKING)
+    //   2. response-schema-property-removed for each nested property (BREAKING)
+    // This exercises the items recursion guard: bItems?.properties truthy → diffSchemaProperties fires
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+
+    // Primary signal: items type removed.
+    const typeChange = changes.find((x) => x.type === "response-schema-items-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("object");
+    expect(typeChange?.after).toBeNull();
+    expect(typeChange?.severity).toBe("BREAKING");
+
+    // Secondary signals: nested properties removed from items object.
+    const propRemoved = changes.filter((x) => x.type === "response-schema-property-removed");
+    expect(propRemoved.length).toBeGreaterThanOrEqual(2);
+    const locs = propRemoved.map((x) => String(x.location));
+    expect(locs.some((l) => l.includes("id"))).toBe(true);
+    expect(locs.some((l) => l.includes("name"))).toBe(true);
+  });
+});
