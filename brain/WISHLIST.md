@@ -241,3 +241,36 @@ re-edit" rather than "retrofit all existing files immediately."
 **Promoted to backlog?** Not yet — logged for the next factory self-improvement
 cycle. It eliminates the current manual/fuzzy calibration problem for all future
 evaluations, at near-zero cost.
+
+---
+
+## 2026-06-06 — Critical-change diff for infrastructure-as-code (D7+ ideation)
+
+**Friction encountered:** The D-family currently tops out at D6 (Terraform VS Code
+classifier). The horizontal capability thesis ("critical-change diff as a platform")
+has additional adjacent verticals that were NOT evaluated this cycle — logged by
+the Ambition Critic as an ideation gap.
+
+**Where it came up:** Adversarial critique pass 3, Ambition Critic finding.
+
+**Proposed ideas (D7+):**
+- **D7: Kubernetes YAML diff classifier** — detects critical changes in K8s
+  manifests (replicas=0, securityContext privilege escalation, RBAC permission
+  widening, secret/configmap changes, image tag changes to "latest"). DevOps
+  audience; incumbent tools (kubeval, Datree, Polaris) focus on validation, not
+  diff classification. On-device. TypeScript + YAML parser.
+- **D8: CloudFormation / CDK diff classifier** — AWS-specific; detects resource
+  replacements, IAM policy widening, data-store deletion in IaC plans. Similar
+  wedge to D6 (Terraform) but AWS-native audience. The CF change-set JSON is
+  the input (structured, not prose). `aws cloudformation deploy --no-execute-changeset`
+  produces the input. High-value CI/CD integration.
+- **D9: Docker image layer diff** — detects dependency version changes, removed
+  packages, new root-level files, privilege changes (USER root), exposed port
+  additions between two image build outputs. Audience: security-conscious DevOps.
+
+**Initial size estimate:** Each is medium scope. D7 (K8s) and D8 (CloudFormation)
+share the most with D6 (IaC focus); D9 (Docker) is most orthogonal.
+
+**Promoted to backlog?** Not yet — requires deep evaluation (cap-gated web
+research to verify gap + comparable revenue). Logged as D7/D8/D9 candidates.
+Add to IDEA_BACKLOG on the next research cycle.

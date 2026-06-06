@@ -2354,3 +2354,126 @@ From public FAR/DFARS knowledge (no practitioner interviews):
 **Remaining open on K1:** Compliance P1 (NEED #7, human-gated: privacy copy).
 Ambition P1 resolves on ship. Phase K1 does NOT yet converge.
 
+
+---
+
+## 2026-06-06 — Phase K1 — Adversarial Pass 3 (5.7.2 escalating critique)
+
+**Pass type:** 5.7.2 mandatory escalating critique — harder adversarial inputs, explicit assumption that something was missed. Runs after the two resolution passes (which both returned clean). Covers all 14 critics.
+
+**Critics run:** Full panel (#1–14), adversarial focus.
+
+---
+
+### #1 Correctness Critic — adversarial
+
+Three correctness improvements found and fixed this session before this formal pass:
+
+1. **N15 FIXED (suppress.ts sign-before-dollar):** `isLeadingSign` only fired when `next` was a digit, not `"$"`. `"-$5,000"` normalized identical to `"$5,000"` — `isListOrdinalOnlyChange` incorrectly returned true for a renumber+sign-removed case. Fixed: `next === "$"` added. Red test first; 35/35 suppress pass. +1 test.
+
+2. **N16 FIXED (PAGE_LIMIT_RE bare-paren form):** "not to exceed (30) pages" produced no PAGE_LIMIT anchor — the `\(` was inside the optional word group so the opening paren required a spelled-out word before it. Fixed: `\(?` separated to its own optional. Red test first; +3 tests. 490/490 full suite.
+
+3. **classify precedence PINNED:** CLAUSE_REF anchor in EVALUATION_CRITERIA section → classified as CLAUSES (rule 1 before rule 2). Severity still CRITICAL via rule 3. Pinned with explicit test and trade-off comment to prevent silent drift.
+
+**Remaining correctness probes this pass — all clean:**
+
+- `isLeadingSign` with the new `next === "$"` fix: adversarial cases "x-$5" (prev is letter → sign NOT kept → correct), "price-$5" vs "price$5" (both normalize to "price$5" since hyphen is preceded by letter → reformatting → correct), "-$0" (sign kept → "-$0" ≠ "$0" → correct).
+- `aggressiveNormalize` with non-USD currency: "€1,000" → "€1000" (€ is Sc, kept like $; thousands comma stripped). This is consistent behavior for the US-domain tool.
+- `detectSetAside` NAICS digit count: "NAICS 54" (2 digits) → no match (requires `\d{4,6}`); "NAICS 5415110" (7 digits) → no match (word boundary breaks before 7th digit). Verified by analysis.
+- `UCF_LETTER_TO_TYPE` mapping vs classification rules: REPS_CERTS (K) and ADMIN (A,G) sections fall through to "OTHER" category — documented acceptable V1 limitation; severity gap is zero (a change with an anchor still triggers the correct critical rule independent of section).
+- `alignBlocks` greedy MODIFY pairing: the `matchedDel`/`matchedIns` sets correctly prevent double-matching. Deterministic sort by `current.ordinal` verified in `blocks.test.ts`.
+
+**Verdict: no new P0/P1 findings.**
+
+---
+
+### #2 Adversarial Tester
+
+Adversarial probes applied this pass:
+- `detectPageLimits("")` — returns [] (empty string handled). ✓
+- `isListOrdinalOnlyChange` with blocks whose `.text` is empty strings — `stripLeadingOrdinal("")` returns null → function returns false → no suppression. ✓
+- Ordinal detector: "-1. text" → regex `^\d+` fails (leading "-" is not a digit) → NOT matched as ordinal → safe. "(0) text" → matches `\([A-Za-z0-9]+\)` → could be ordinal. In context, "(0)" ordinals are not standard, but the match is harmless: content must ALSO match for suppression to fire.
+- Full suite run twice: 490/490 both times. No flakiness observed.
+- `PAGE_LIMIT_RE` with `gi` flag and `lastIndex`: `PAGE_LIMIT_RE.lastIndex = 0` IS set at line 265 of `index.ts`, matching the pattern of `MONEY_RE`, `SET_ASIDE_RE`, and `SECTION_REF_RE`. All module-level singleton regex objects correctly reset `lastIndex = 0` on every call. No stale-state bug. ✓ (Self-correction: an earlier read of the code was mistaken; the reset IS present.)
+
+**Verdict: no adversarial tester findings.**
+
+---
+
+### #3 Security Critic
+
+- Scheme allowlist for SAM downloads: `isAllowedDownloadUrl` enforces HTTPS only. ✓
+- No `dangerouslySetInnerHTML`. No `eval`. No `Function()`. ✓
+- CSP tight (from manifest). No open redirects. ✓
+- `npm audit` — 7 dev-only advisories (Vite/esbuild, not shipped). Documented. ✓
+- No secrets in source; no PII in telemetry. ✓
+
+**Verdict: no new security findings.**
+
+---
+
+### #5 Domain-Expert Critic (anchor-extension validation gate)
+
+New anchors validated this session:
+- SET_ASIDE: FAR 19.501-19.507 cited. Integration test exists (detectAllAnchors → SET_ASIDE; engine-level SET_ASIDE → CRITICAL tested). ✓
+- Sub-CLINs (DFARS 204.71): cited. Integration test exists. ✓
+- A-K sub-sections (obs#4): validated from UCF Sections A-M structure (FAR Part 15). Integration tests exist. ✓
+
+Domain correctness:
+- UCF section type mapping verified complete (A=ADMIN, B=PRICING, C=SOW, D=OTHER, E=OTHER, F=DELIVERIES, G=ADMIN, H=OTHER, I=CLAUSES, J=ATTACHMENT_LIST, K=REPS_CERTS, L=INSTRUCTIONS, M=EVALUATION_CRITERIA). All aligned with FAR/UCF definitions. ✓
+- Section K (REPS_CERTS) falls through to "OTHER" in classify → changes in reps/certs section are NORMAL unless they contain a specific anchor (e.g., CLAUSE_REF for a cert clause). This is a V1 known limitation — a K-section change with a CLAUSE_REF is still caught as CRITICAL via rule 3. Documented.
+
+**Verdict: no new domain-expert findings.**
+
+---
+
+### #9 Compliance Critic
+
+**OPEN P1 (unchanged): Privacy policy and store listing describe server-OCR data flow that is stubbed/unwired.** This is human-gated (NEED #7). Factory recommendation: option A (scope copy to on-device). No change this session.
+
+**Verdict: P1 remains open (human-gated). No new compliance findings.**
+
+---
+
+### #12 Devil's Advocate
+
+Most embarrassing item remains: the Compliance P1 (privacy policy overstates v1 capabilities — describes an opt-in server OCR flow the v1 doesn't implement). Before a user tries the product and reads the privacy policy carefully, this discrepancy is not visible. But it is legally and reputationally significant. NEED #7 is the right gate. No rationalization is possible — this is the single most important pre-ship fix.
+
+Second embarrassing item: "done" means "not yet shipped." BidDiff has been in K1 for an extended period. The human-gated blockers (privacy copy, store submission) are real, but the factory should not let them drift indefinitely.
+
+**Verdict: no NEW embarrassing findings beyond the known Compliance P1.**
+
+---
+
+### #13 Ambition Critic
+
+This cycle:
+- **Boldest work:** D6 (Terraform blast-radius classifier) deep evaluation — identifies a real on-device market gap (no VS Code extension exists) with confirmed comparable revenue (Infracost $17M+). This is genuinely novel. PROCEED recommended.
+- **WISHLIST grew:** "Structured machine-parseable deep-evaluation format" added. This is a factory self-improvement idea that would tighten the research pipeline.
+- **Surprising finding:** sign-before-dollar normalization bug — non-obvious because `"$"` is Sc (not `\p{P}`), not caught by the original leading-sign fix, only found by adversarial probing.
+- **Portfolio diversity:** all current candidates are PLAUSIBLE tier (no Proven, no Speculative). This is the honest finding documented in RANKING.md — the portfolio rule is against majority-Speculative, not against majority-Plausible.
+- **D7+ ideation not done this cycle.** The D-family currently has 6 entries (D1-D6). First-principles ideation from adjacent niches (K8 Kubernetes YAML diff, D7 CloudFormation diff) was NOT explored. This is a gap: the factory should always log adjacent ideas (5.7.6).
+
+**Verdict: one gap — D7+ ideation deferred. Logged to WISHLIST below.**
+
+---
+
+### #14 Research Quality Critic
+
+D3 and D6 research quality:
+- D3 (protobuf JetBrains): decisive blocker found (buf free plugin, plugin ID 19147, April 2026, $93M funding). Research stopped at the correct conclusion point — spending more time would be waste. ✓
+- D6 (terraform): multiple sources cited (Infracost $17M+, HashiCorp official extension, TerraScope, Scalr examined). Exhaustive gap confirmation. ✓
+- Evidence tiers: both correctly PLAUSIBLE (no Proven comparable). Honest downgrade from "provisional" language. ✓
+
+**Verdict: no research quality findings.**
+
+---
+
+## Adversarial Pass 3 — Summary
+
+**P0 findings: 0**
+**P1 findings: 1 (ongoing, human-gated):** Compliance P1 — privacy policy describes server-OCR data flow not present in v1. NEED #7.
+**P2 findings: 0** — the suspected `PAGE_LIMIT_RE.lastIndex` bug was a false read; the reset IS present. Self-corrected above.
+**Minor gap (Ambition, not a severity finding):** D7+ ideation not completed this cycle. Logged to WISHLIST.
+
+Phase K1 still does NOT converge (Compliance P1 human-gated). All other critics returned clean.
