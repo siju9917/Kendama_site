@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **504/504 tests** (was 490 at session start; +14 this context window:
+- **Build green:** **551/551 tests** (was 490 at session start; current context window brought 504→551: +14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive regression + 1 Domain-Expert critic anchor gate +
   1 obs#7 USD money characterization + 1 sign-before-dollar false-negative fix +
@@ -471,6 +471,12 @@ all green; check tests 16/16.
     blocked in Chrome side panels — with an inline "Delete / Cancel" button pair on the
     history row. Escape key cancels. 3 updated + 1 new test. 504 tests.
 27. **PROGRESS.md updated**: N14, N17, N18, N-A10 marked DONE; unblocked POLISH queue now empty.
+28. **DiffView.test.tsx created** (42 tests): first-ever test coverage for the DiffView component —
+    `criticalFirst` pure-function (5 cases), filter chips counts + disabled state, CRITICAL filter
+    on/off, 4 empty-state variants, text filter, warning banners, session notices, N-A10 keyboard
+    context note (3 cases), criticalFirst rendering order in DOM, section filter (4 cases), keyboard
+    nav J/K/ArrowDown/ArrowUp/R + modifier-key guard + INPUT guard + empty-list guard (9 cases),
+    reviewed counter toggle. 509 → **551 tests** (73 test files). All green.
 
 ## Notes for the next session
 
@@ -484,8 +490,8 @@ all green; check tests 16/16.
 - **VS Code Breaking-Change Lens evaluation** may complete during or after this
   session. When it lands, read the file, update RANKING.md, and post to APPROVALS.md
   if warranted.
-- **BidDiff bug-hunt lane is SATURATED** (504 tests, every core fn tested). POLISH queue
-  (N14/N17/N18/N-A10 all DONE this context window). Next session should focus on:
+- **BidDiff bug-hunt lane is SATURATED** (551 tests, every core fn + DiffView component tested).
+  POLISH queue (N14/N17/N18/N-A10 + DiffView coverage all DONE this context window). Next session should focus on:
   privacy copy fix (when human responds), store submission prep, and new product
   deep-evaluation (D5/D6 VS Code extension scaffolding) when approved.
 - Spend cap: plan-included web tools (sub-agents, search) are FREE; $0 committed
