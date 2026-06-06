@@ -98,6 +98,28 @@ describe("evaluateCriticality", () => {
     ).toBe("NORMAL");
   });
 
+  // 5.7.5 characterization (2026-06-06): rules 1 and 4 have NO changeType guard,
+  // so EVAL_CRITERIA+MOVE and DATES+MOVE are CRITICAL — intentionally conservative.
+  // Moving eval criteria between sections changes WHERE a proposal manager must look;
+  // moving a deadline block changes WHERE the due date appears. Over-flagging is
+  // correct here (tool's philosophy: surface, never silently ignore).
+  it("EVALUATION_CRITERIA + MOVE is CRITICAL (rule 4 has no change-type guard)", () => {
+    expect(evaluateCriticality(input({ category: "EVALUATION_CRITERIA", changeType: "MOVE" })).severity).toBe(
+      "CRITICAL",
+    );
+  });
+  it("DATES_DEADLINES + MOVE is CRITICAL (rule 1 has no change-type guard)", () => {
+    expect(evaluateCriticality(input({ category: "DATES_DEADLINES", changeType: "MOVE" })).severity).toBe(
+      "CRITICAL",
+    );
+  });
+  it("ATTACHMENTS + MOVE is NOT critical (rule 6 explicitly requires INSERT|DELETE)", () => {
+    expect(evaluateCriticality(input({ category: "ATTACHMENTS", changeType: "MOVE" })).severity).toBe("NORMAL");
+  });
+  it("PRICING_CLINS + MOVE is NOT critical (rule 5 uses isAddRemoveModify, excludes MOVE)", () => {
+    expect(evaluateCriticality(input({ category: "PRICING_CLINS", changeType: "MOVE" })).severity).toBe("NORMAL");
+  });
+
   // Property test (bug-hunt pass 38): invariants that must hold for ANY input.
   it("severity is CRITICAL iff there is >=1 reason, and reasons emit in rule order (400 inputs)", () => {
     const categories = [

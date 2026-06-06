@@ -90,15 +90,15 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **677/677 tests** (BidDiff 571/571 + openapi-lens 106/106).
-  BidDiff: was 490 at session start; current context window brought 504→571 (+14 N-queue polish +
+- **Build green:** **681/681 tests** (BidDiff 575/575 + openapi-lens 106/106).
+  BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
   1 sign-before-dollar + 1 classify precedence pin + 3 bare-paren page-limit +
   46 DiffView component + 12 SamAttachments + 4 N-A21 filter counter +
-  4 NAICS-separator-forms fix). OpenAPI-lens: Phase 0 engine 96/96 (critique panel) +
-  4 more (5.7.5 bug-hunt: $ref parameter resolution) + 6 more (5.7.5:
-  $ref→components/schemas chain tests). All typecheck clean; full CI gate verified green.
+  4 NAICS-separator-forms fix + 4 critical-rule MOVE-behavior characterization).
+  OpenAPI-lens: Phase 0 engine 96/96 (critique panel) + 10 more (5.7.5 bug-hunt:
+  $ref parameter resolution + double-$ref chain). All typecheck clean; full CI gate verified green.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`
   red-teams every stop against the real clock IN THE HUMAN'S TIMEZONE
@@ -548,6 +548,11 @@ all green; check tests 16/16.
     flagged CRITICAL even though it determines bidder eligibility (FAR Part 19).
     Fix: changed separator to `(?:\s*[:–-]\s*|\s+)` covering colon/em-dash/plain-space.
     4 new tests. 571/571 BidDiff. Total suite: **677/677 tests**.
+39. **BidDiff 5.7.5: MOVE-behavior characterization tests for critical rules** — rules 1
+    (DATES_DEADLINES) and 4 (EVALUATION_CRITERIA) have no changeType guard and fire on MOVE
+    (correct: moving a deadline or eval criteria block changes where proposal managers look).
+    Rules 5 (PRICING_CLINS) and 6 (ATTACHMENTS) explicitly exclude MOVE. 4 new tests
+    pinning this behavior. 575/575 BidDiff. Total suite: **681/681 tests**.
 
 ## Notes for the next session
 
