@@ -327,7 +327,7 @@ export function detectClins(text: string): Anchor[] {
 // verb form ("please set aside time for questions"). In federal procurement
 // documents, the designation is always "Set-Aside" or "set-aside" (hyphenated).
 const SET_ASIDE_RE =
-  /\bset-aside\b|\bNAICS\s+(?:code\s*[:–-]?\s*)?\d{4,6}\b|\bsize\s+standard\b/gi;
+  /\bset-aside\b|\bNAICS(?:\s*[:–-]\s*|\s+)(?:code\s*[:–-]?\s*)?\d{4,6}\b|\bsize\s+standard\b/gi;
 
 export function detectSetAside(text: string): Anchor[] {
   SET_ASIDE_RE.lastIndex = 0;

@@ -278,6 +278,26 @@ describe("SET_ASIDE", () => {
     const a = detectAllAnchors("This is a NAICS 541511 Small Business Set-Aside solicitation.");
     expect(a.some((x) => x.type === "SET_ASIDE")).toBe(true);
   });
+
+  // 5.7.5 bug-hunt (2026-06-06): NAICS separator forms used in SAM.gov tables.
+  // Previously only "NAICS <whitespace> [code] digits" matched — the colon
+  // form ("NAICS: 541519") used in SAM.gov solicitation headers was silently
+  // dropped, so NAICS-code changes in that format would not flag as CRITICAL.
+  it("matches NAICS with colon separator — SAM.gov table format (NAICS: 541519)", () => {
+    expect(detectSetAside("NAICS: 541519").some((x) => x.type === "SET_ASIDE")).toBe(true);
+    expect(detectSetAside("NAICS: 541330 (Engineering Services)").some((x) => x.type === "SET_ASIDE")).toBe(true);
+  });
+  it("matches NAICS with em-dash separator (NAICS – 541519)", () => {
+    expect(detectSetAside("NAICS – 541519").some((x) => x.type === "SET_ASIDE")).toBe(true);
+  });
+  it("matches NAICS with no-space em-dash (NAICS–541519)", () => {
+    expect(detectSetAside("NAICS–541519").some((x) => x.type === "SET_ASIDE")).toBe(true);
+  });
+  it("no regression: NAICS with space and NAICS code: forms still match", () => {
+    expect(detectSetAside("NAICS 541511").some((x) => x.type === "SET_ASIDE")).toBe(true);
+    expect(detectSetAside("NAICS Code: 541511").some((x) => x.type === "SET_ASIDE")).toBe(true);
+    expect(detectSetAside("NAICS code 541511").some((x) => x.type === "SET_ASIDE")).toBe(true);
+  });
 });
 
 describe("section refs", () => {

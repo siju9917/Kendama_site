@@ -90,14 +90,15 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **673/673 tests** (BidDiff 567/567 + openapi-lens 106/106).
-  BidDiff: was 490 at session start; current context window brought 504→567 (+14 N-queue polish +
+- **Build green:** **677/677 tests** (BidDiff 571/571 + openapi-lens 106/106).
+  BidDiff: was 490 at session start; current context window brought 504→571 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
   1 sign-before-dollar + 1 classify precedence pin + 3 bare-paren page-limit +
-  46 DiffView component + 12 SamAttachments + 4 N-A21 filter counter).
-  OpenAPI-lens: Phase 0 engine 96/96 (critique panel) + 4 more (5.7.5 bug-hunt:
-  $ref parameter resolution). All typecheck clean; full CI gate verified green.
+  46 DiffView component + 12 SamAttachments + 4 N-A21 filter counter +
+  4 NAICS-separator-forms fix). OpenAPI-lens: Phase 0 engine 96/96 (critique panel) +
+  4 more (5.7.5 bug-hunt: $ref parameter resolution) + 6 more (5.7.5:
+  $ref→components/schemas chain tests). All typecheck clean; full CI gate verified green.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`
   red-teams every stop against the real clock IN THE HUMAN'S TIMEZONE
@@ -533,6 +534,20 @@ all green; check tests 16/16.
     96/96 tests (was 91); `CRITIQUE_LOG.md` created; PROGRESS.md known-limitations updated.
     This closes the "four consecutive cycles without the full panel" caveat from the 5.7.7 audit.
     Total suite: **663/663 tests** (BidDiff 567/567 + openapi-lens 96/96).
+
+37. **D5 5.7.5 bug-hunt: `$ref` parameter resolution gap** — `parseParameter` checked for
+    `name`/`in` fields; a `$ref` object has neither, so `#/components/parameters/X` refs were
+    silently dropped. Fix: `parseSharedParameters()` pre-builds a lookup map; `parseParameter`
+    resolves refs before inline parsing. 10 new tests (4 parser unit + 4 engine integration + 2
+    adversarial). Total 106/106 openapi-lens. Adversarial Tester #2 roster-growth row added.
+    Total suite: **673/673 tests** (BidDiff 567/567 + openapi-lens 106/106).
+
+38. **BidDiff 5.7.5 bug-hunt: NAICS colon-separator form not matched** — `SET_ASIDE_RE`
+    used `\bNAICS\s+...` (whitespace required), silently dropping "NAICS: 541519" (SAM.gov
+    header format) and em-dash forms. A NAICS-code change in that format would not be
+    flagged CRITICAL even though it determines bidder eligibility (FAR Part 19).
+    Fix: changed separator to `(?:\s*[:–-]\s*|\s+)` covering colon/em-dash/plain-space.
+    4 new tests. 571/571 BidDiff. Total suite: **677/677 tests**.
 
 ## Notes for the next session
 

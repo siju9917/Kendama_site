@@ -162,6 +162,17 @@ session has specifics, not a vague "improve extraction":
    PRICING_CLINS via the existing CLIN anchor and trigger critical rule 5.
    3 new unit tests; 484/484 pass, typecheck clean. BD2 gate removed.
 
+10. **NAICS colon-separator form not matched — DONE (FIXED 2026-06-06, 5.7.5 bug-hunt).**
+    `SET_ASIDE_RE` used `\bNAICS\s+...` which required whitespace between "NAICS" and
+    the rest. The SAM.gov header format `"NAICS: 541519"` (colon directly after NAICS,
+    no "Code" keyword) was silently dropped — a NAICS-code change in that format would
+    not be flagged CRITICAL even though it determines bidder eligibility. Em-dash
+    forms (`NAICS – 541519`, `NAICS–541519`) were also missed. Fixed by changing the
+    separator to `(?:\s*[:–-]\s*|\s+)`, which covers colon, en-dash, em-dash (with or
+    without surrounding spaces) and plain whitespace. All existing tests continue to
+    pass; 4 new tests: colon format, em-dash with spaces, no-space em-dash, no-regression.
+    571/571 pass, typecheck clean.
+
 **Domain-Expert P1 status (2026-06-06, updated):** The BD2 gate was WITHDRAWN
 (human declined outreach; factory validated from public FAR/DFARS sources instead).
 Obs #4 DONE (A-K subsections), obs #8 DONE (list renumbering), obs #9 DONE (sub-CLINs),
