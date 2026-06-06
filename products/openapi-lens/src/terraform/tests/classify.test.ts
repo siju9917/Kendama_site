@@ -415,3 +415,89 @@ describe("analyzeIamDirection — P2 coverage", () => {
     expect(analyzeIamDirection(before, after)).toBe("narrowing");
   });
 });
+
+// ─── Round 103: data store deletion + IAM widening+replacement ───────────────
+// Two untested multi-rule interactions:
+//   1. Data store DELETED (not replaced): Rule 2 (delete → CRITICAL) AND Rule 4
+//      (data store modification → CRITICAL) both fire, generating 2 CRITICAL reasons.
+//   2. IAM resource REPLACED with WIDENING policy: Rule 3 (replacement → CRITICAL)
+//      AND Rule 5 (IAM widening → CRITICAL + WIDENED note) both fire.
+
+describe("classifyChange — Rule 2+4 and Rule 3+5 interactions (round 103)", () => {
+  it("(R103-1) data store deletion fires BOTH Rule 2 (deleted) and Rule 4 (data store) reasons", () => {
+    const c = classifyChange(
+      makeChange({
+        type: "aws_db_instance",
+        address: "aws_db_instance.main",
+        actions: ["delete"],
+        after: null,
+      }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+
+    // Rule 2 reason: permanently DELETED.
+    const deleteReason = c.reasons.find((r) => r.includes("DELETED"));
+    expect(deleteReason).toBeDefined();
+
+    // Rule 4 reason: data store modification/deletion risks data loss.
+    const dataStoreReason = c.reasons.find((r) => r.includes("data store"));
+    expect(dataStoreReason).toBeDefined();
+
+    // Both reasons should be present simultaneously.
+    expect(c.reasons.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("(R103-2) IAM resource replacement with widening policy: CRITICAL with WIDENED note in Rule 5 reason", () => {
+    // Rule 3 (replacement → CRITICAL) fires first; Rule 5 detects widening and
+    // appends the '(access appears to be WIDENED)' note to the IAM reason.
+    const beforePolicy = JSON.stringify({
+      Statement: [{ Effect: "Allow", Action: "s3:GetObject", Resource: "*" }],
+    });
+    const afterPolicy = JSON.stringify({
+      Statement: [
+        { Effect: "Allow", Action: "s3:GetObject", Resource: "*" },
+        { Effect: "Allow", Action: "s3:PutObject", Resource: "*" },
+      ],
+    });
+    const c = classifyChange({
+      address: "aws_iam_policy.app",
+      type: "aws_iam_policy",
+      name: "app",
+      actions: ["delete", "create"], // replacement
+      before: { policy: beforePolicy },
+      after: { policy: afterPolicy },
+    });
+    expect(c.severity).toBe("CRITICAL");
+
+    // Rule 3 reason: REPLACED.
+    const replaceReason = c.reasons.find((r) => r.includes("REPLACED"));
+    expect(replaceReason).toBeDefined();
+
+    // Rule 5 reason: IAM change CRITICAL with WIDENED note.
+    const iamReason = c.reasons.find((r) => r.includes("IAM change is CRITICAL"));
+    expect(iamReason).toBeDefined();
+    expect(iamReason).toContain("WIDENED");
+  });
+
+  it("(R103-3) data store delete+create replacement fires Rule 3 AND Rule 4 (both CRITICAL reasons)", () => {
+    // A data store that is replaced (not just deleted) triggers Rule 3 for replacement
+    // and Rule 4 for being a data store. Unlike a plain delete, both rules should fire.
+    const c = classifyChange(
+      makeChange({
+        type: "aws_s3_bucket",
+        address: "aws_s3_bucket.data",
+        actions: ["delete", "create"],
+      }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+
+    // Rule 3: REPLACED.
+    expect(c.reasons.some((r) => r.includes("REPLACED"))).toBe(true);
+
+    // Rule 4: data store.
+    expect(c.reasons.some((r) => r.includes("data store"))).toBe(true);
+
+    // Should have at least 2 distinct reasons.
+    expect(c.reasons.length).toBeGreaterThanOrEqual(2);
+  });
+});
