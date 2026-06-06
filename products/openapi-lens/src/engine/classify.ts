@@ -1,5 +1,56 @@
 import type { BreakingChange, OapiChangeType, OapiRawChange, Severity } from "./types.js";
 
+// ─── Constraint direction helpers ─────────────────────────────────────────────
+// Single source of truth for which constraint field names are "min-sense"
+// (higher value = tighter) vs "max-sense" (lower value = tighter).
+// Adding a new constraint field requires updating only these Sets, not all 6 classify rules.
+const MIN_SENSE_FIELDS = new Set(["minimum", "minLength", "minItems", "minProperties"]);
+const MAX_SENSE_FIELDS = new Set(["maximum", "maxLength", "maxItems", "maxProperties"]);
+
+type ConstraintKind = "min-sense" | "max-sense" | "pattern" | "other";
+
+function constraintKind(loc: string): ConstraintKind {
+  const field = loc.split(".").pop() ?? "";
+  if (field === "pattern") return "pattern";
+  if (MIN_SENSE_FIELDS.has(field)) return "min-sense";
+  if (MAX_SENSE_FIELDS.has(field)) return "max-sense";
+  return "other";
+}
+
+/** Returns BREAKING if tightening a REQUEST constraint (min increased, max decreased, pattern added/changed). */
+function requestConstraintSeverity(loc: string, before: number | string | null, after: number | string | null): Severity {
+  const kind = constraintKind(loc);
+  if (kind === "pattern") return after === null ? "INFO" : "BREAKING";
+  if (kind === "min-sense") {
+    if (after === null) return "INFO";
+    if (before === null) return "BREAKING";
+    return typeof after === "number" && typeof before === "number" && after > before ? "BREAKING" : "INFO";
+  }
+  if (kind === "max-sense") {
+    if (after === null) return "INFO";
+    if (before === null) return "BREAKING";
+    return typeof after === "number" && typeof before === "number" && after < before ? "BREAKING" : "INFO";
+  }
+  return "INFO";
+}
+
+/** Returns BREAKING if loosening a RESPONSE constraint (min decreased, max increased, pattern removed/changed). */
+function responseConstraintSeverity(loc: string, before: number | string | null, after: number | string | null): Severity {
+  const kind = constraintKind(loc);
+  if (kind === "pattern") return before === null ? "INFO" : "BREAKING";
+  if (kind === "min-sense") {
+    if (after === null) return "BREAKING";
+    if (before === null) return "INFO";
+    return typeof after === "number" && typeof before === "number" && after < before ? "BREAKING" : "INFO";
+  }
+  if (kind === "max-sense") {
+    if (after === null) return "BREAKING";
+    if (before === null) return "INFO";
+    return typeof after === "number" && typeof before === "number" && after > before ? "BREAKING" : "INFO";
+  }
+  return "INFO";
+}
+
 interface ClassifyRule {
   /** Return the Severity if this rule matches, or null to fall through. */
   matches: (c: OapiRawChange) => Severity | null;
@@ -402,21 +453,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const loc = String(c.location);
       const before = c.before as number | string | null;
       const after = c.after as number | string | null;
-      if (loc.endsWith(".pattern")) {
-        if (after === null) return "INFO"; // pattern removed = constraint relaxed
-        return "BREAKING"; // pattern added or changed
-      }
-      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties") || loc.endsWith(".minProperties")) {
-        if (after === null) return "INFO";
-        if (before === null) return "BREAKING";
-        return typeof after === "number" && typeof before === "number" && after > before ? "BREAKING" : "INFO";
-      }
-      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems") || loc.endsWith(".maxProperties") || loc.endsWith(".maxProperties")) {
-        if (after === null) return "INFO";
-        if (before === null) return "BREAKING";
-        return typeof after === "number" && typeof before === "number" && after < before ? "BREAKING" : "INFO";
-      }
-      return "INFO";
+      return requestConstraintSeverity(loc, before, after);
     },
     message: (c) => {
       const loc = String(c.location);
@@ -434,10 +471,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       }
       const bNum = c.before as number;
       const aNum = c.after as number;
-      const tightened =
-        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")
-          ? aNum > bNum
-          : aNum < bNum;
+      const tightened = constraintKind(loc) === "min-sense" ? aNum > bNum : aNum < bNum;
       return tightened
         ? `Request property constraint tightened: ${c.location} (${c.before} → ${c.after}). Clients sending values that were previously valid may now fail validation.`
         : `Request property constraint loosened: ${c.location} (${c.before} → ${c.after}). More values are now accepted (non-breaking for clients).`;
@@ -449,21 +483,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const loc = String(c.location);
       const before = c.before as number | string | null;
       const after = c.after as number | string | null;
-      if (loc.endsWith(".pattern")) {
-        if (before === null) return "INFO"; // pattern newly added = server narrows guarantee (non-breaking for clients)
-        return "BREAKING"; // pattern removed or changed
-      }
-      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")) {
-        if (after === null) return "BREAKING";
-        if (before === null) return "INFO";
-        return typeof after === "number" && typeof before === "number" && after < before ? "BREAKING" : "INFO";
-      }
-      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems") || loc.endsWith(".maxProperties")) {
-        if (after === null) return "BREAKING";
-        if (before === null) return "INFO";
-        return typeof after === "number" && typeof before === "number" && after > before ? "BREAKING" : "INFO";
-      }
-      return "INFO";
+      return responseConstraintSeverity(loc, before, after);
     },
     message: (c) => {
       const loc = String(c.location);
@@ -481,10 +501,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       }
       const bNum = c.before as number;
       const aNum = c.after as number;
-      const loosened =
-        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")
-          ? aNum < bNum
-          : aNum > bNum;
+      const loosened = constraintKind(loc) === "min-sense" ? aNum < bNum : aNum > bNum;
       return loosened
         ? `Response property constraint loosened: ${c.location} (${c.before} → ${c.after}). Server may now return values outside the former constraint. Clients relying on it will break.`
         : `Response property constraint tightened: ${c.location} (${c.before} → ${c.after}). Server now guarantees stricter values (non-breaking for clients).`;
@@ -497,21 +514,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const loc = String(c.location);
       const before = c.before as number | string | null;
       const after = c.after as number | string | null;
-      if (loc.endsWith(".pattern")) {
-        if (after === null) return "INFO"; // pattern removed = constraint relaxed
-        return "BREAKING"; // pattern added or changed
-      }
-      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")) {
-        if (after === null) return "INFO";
-        if (before === null) return "BREAKING";
-        return typeof after === "number" && typeof before === "number" && after > before ? "BREAKING" : "INFO";
-      }
-      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems") || loc.endsWith(".maxProperties")) {
-        if (after === null) return "INFO";
-        if (before === null) return "BREAKING";
-        return typeof after === "number" && typeof before === "number" && after < before ? "BREAKING" : "INFO";
-      }
-      return "INFO";
+      return requestConstraintSeverity(loc, before, after);
     },
     message: (c) => {
       const loc = String(c.location);
@@ -529,10 +532,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       }
       const bNum = c.before as number;
       const aNum = c.after as number;
-      const tightened =
-        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")
-          ? aNum > bNum
-          : aNum < bNum;
+      const tightened = constraintKind(loc) === "min-sense" ? aNum > bNum : aNum < bNum;
       return tightened
         ? `Parameter constraint tightened: ${c.location} (${c.before} → ${c.after}). Clients sending values that were previously valid may now fail validation.`
         : `Parameter constraint loosened: ${c.location} (${c.before} → ${c.after}). More values are now accepted (non-breaking for clients).`;
@@ -544,21 +544,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const loc = String(c.location);
       const before = c.before as number | string | null;
       const after = c.after as number | string | null;
-      if (loc.endsWith(".pattern")) {
-        if (after === null) return "INFO"; // pattern removed = constraint relaxed
-        return "BREAKING"; // pattern added or changed
-      }
-      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")) {
-        if (after === null) return "INFO";
-        if (before === null) return "BREAKING";
-        return typeof after === "number" && typeof before === "number" && after > before ? "BREAKING" : "INFO";
-      }
-      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems") || loc.endsWith(".maxProperties")) {
-        if (after === null) return "INFO";
-        if (before === null) return "BREAKING";
-        return typeof after === "number" && typeof before === "number" && after < before ? "BREAKING" : "INFO";
-      }
-      return "INFO";
+      return requestConstraintSeverity(loc, before, after);
     },
     message: (c) => {
       const loc = String(c.location);
@@ -576,10 +562,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       }
       const bNum = c.before as number;
       const aNum = c.after as number;
-      const tightened =
-        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")
-          ? aNum > bNum
-          : aNum < bNum;
+      const tightened = constraintKind(loc) === "min-sense" ? aNum > bNum : aNum < bNum;
       return tightened
         ? `Request array items constraint tightened: ${c.location} (${c.before} → ${c.after}). Clients sending element values that were previously valid may now fail validation.`
         : `Request array items constraint loosened: ${c.location} (${c.before} → ${c.after}). More element values are now accepted (non-breaking for clients).`;
@@ -591,21 +574,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const loc = String(c.location);
       const before = c.before as number | string | null;
       const after = c.after as number | string | null;
-      if (loc.endsWith(".pattern")) {
-        if (before === null) return "INFO"; // pattern newly added = server narrows guarantee (non-breaking for clients)
-        return "BREAKING"; // pattern removed or changed
-      }
-      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")) {
-        if (after === null) return "BREAKING";
-        if (before === null) return "INFO";
-        return typeof after === "number" && typeof before === "number" && after < before ? "BREAKING" : "INFO";
-      }
-      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems") || loc.endsWith(".maxProperties")) {
-        if (after === null) return "BREAKING";
-        if (before === null) return "INFO";
-        return typeof after === "number" && typeof before === "number" && after > before ? "BREAKING" : "INFO";
-      }
-      return "INFO";
+      return responseConstraintSeverity(loc, before, after);
     },
     message: (c) => {
       const loc = String(c.location);
@@ -623,10 +592,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       }
       const bNum = c.before as number;
       const aNum = c.after as number;
-      const loosened =
-        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")
-          ? aNum < bNum
-          : aNum > bNum;
+      const loosened = constraintKind(loc) === "min-sense" ? aNum < bNum : aNum > bNum;
       return loosened
         ? `Response array items constraint loosened: ${c.location} (${c.before} → ${c.after}). Server may now return element values outside the former constraint. Clients relying on it will break.`
         : `Response array items constraint tightened: ${c.location} (${c.before} → ${c.after}). Server now guarantees stricter element values (non-breaking for clients).`;
@@ -925,21 +891,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const loc = String(c.location);
       const before = c.before as number | string | null;
       const after = c.after as number | string | null;
-      if (loc.endsWith(".pattern")) {
-        if (after === null) return "INFO"; // pattern removed = constraint relaxed
-        return "BREAKING"; // pattern added or changed
-      }
-      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")) {
-        if (after === null) return "INFO";
-        if (before === null) return "BREAKING";
-        return typeof after === "number" && typeof before === "number" && after > before ? "BREAKING" : "INFO";
-      }
-      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems") || loc.endsWith(".maxProperties")) {
-        if (after === null) return "INFO";
-        if (before === null) return "BREAKING";
-        return typeof after === "number" && typeof before === "number" && after < before ? "BREAKING" : "INFO";
-      }
-      return "INFO";
+      return requestConstraintSeverity(loc, before, after);
     },
     message: (c) => {
       const loc = String(c.location);
@@ -953,9 +905,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       if (c.before === null) return `Parameter array element constraint added: ${c.location}. Elements must now satisfy ${constraintName} = ${c.after}.`;
       const bNum = c.before as number;
       const aNum = c.after as number;
-      const tightened =
-        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")
-          ? aNum > bNum : aNum < bNum;
+      const tightened = constraintKind(loc) === "min-sense" ? aNum > bNum : aNum < bNum;
       return tightened
         ? `Parameter array element constraint tightened: ${c.location} (${c.before} → ${c.after}). Clients sending elements that were previously valid may now fail validation.`
         : `Parameter array element constraint loosened: ${c.location} (${c.before} → ${c.after}). More element values are now accepted.`;
