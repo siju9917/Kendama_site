@@ -12486,3 +12486,236 @@ paths:
     expect(c?.after).toBeNull();
   });
 });
+
+// ─── Round 98: nested object property required-array changes ────────────────
+// The diff engine recurses into object-typed properties (diffSchemaProperties
+// depth + 1) and calls diffSchemaRequiredFields on each nested property that
+// has its own required or properties array.  These tests exercise that path —
+// confirming that changes to the nested *required* array (which fields of the
+// nested object are required) propagate the correct change type and severity.
+
+describe("adversarial round 98 — nested object property required-array changes (end-to-end)", () => {
+  const makeSpec = (
+    bodyKind: "request" | "response",
+    nestedRequired: string[],
+    method = "post",
+  ) => {
+    if (bodyKind === "request") {
+      const reqLine = nestedRequired.length > 0
+        ? `                  required: [${nestedRequired.join(", ")}]\n`
+        : "";
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    ${method}:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                profile:
+                  type: object
+${reqLine}                  properties:
+                    id:
+                      type: string
+                    email:
+                      type: string
+                    phone:
+                      type: string
+      responses:
+        "201":
+          description: created
+`;
+    }
+    const resLine = nestedRequired.length > 0
+      ? `                    required: [${nestedRequired.join(", ")}]\n`
+      : "";
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profile:
+                    type: object
+${resLine}                    properties:
+                      id:
+                        type: string
+                      email:
+                        type: string
+                      phone:
+                        type: string
+`;
+  };
+
+  it("(R98-1) response nested object: removing a field from inner required array is BREAKING", () => {
+    // profile.required: [id, email] → [id]: email removed from nested required.
+    // diffSchemaProperties recurses into profile (bProp.required truthy) and calls
+    // diffSchemaRequiredFields → emits response-schema-field-required-removed (BREAKING).
+    const before = makeSpec("response", ["id", "email"]);
+    const after  = makeSpec("response", ["id"]);
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-schema-field-required-removed" && String(x.location).includes("email"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(String(c?.location)).toContain("profile");
+  });
+
+  it("(R98-2) response nested object: adding a field to inner required array is INFO", () => {
+    // profile.required: [id] → [id, email]: phone added to nested required.
+    // Server now guarantees phone is present — non-breaking for existing clients.
+    const before = makeSpec("response", ["id"]);
+    const after  = makeSpec("response", ["id", "email"]);
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-schema-field-required-added" && String(x.location).includes("email"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(String(c?.location)).toContain("profile");
+  });
+
+  it("(R98-3) request nested object: adding a field to inner required array is BREAKING", () => {
+    // profile.required: [id] → [id, email]: clients that omit email in the nested
+    // object will now fail validation — BREAKING.
+    const before = makeSpec("request", ["id"]);
+    const after  = makeSpec("request", ["id", "email"]);
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "request-schema-field-required-added" && String(x.location).includes("email"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(String(c?.location)).toContain("profile");
+  });
+
+  it("(R98-4) request nested object: removing a field from inner required array is INFO", () => {
+    // profile.required: [id, email] → [id]: email becomes optional in nested object.
+    // Existing clients still sending email are unaffected — INFO.
+    const before = makeSpec("request", ["id", "email"]);
+    const after  = makeSpec("request", ["id"]);
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "request-schema-field-required-removed" && String(x.location).includes("email"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(String(c?.location)).toContain("profile");
+  });
+
+  it("(R98-5) required-only trigger (no properties listed): required array change detected even when properties absent", () => {
+    // This tests the `|| bProp.required` branch in the recursion guard:
+    //   if (bProp.properties || cProp.properties || bProp.required || cProp.required)
+    // Even when no `properties` block is present on the nested schema, the required
+    // change causes diffSchemaRequiredFields to fire.
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  address:
+                    type: object
+                    required: [street, city]
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  address:
+                    type: object
+                    required: [street]
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-schema-field-required-removed" && String(x.location).includes("city"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("(R98-6) required added from scratch on nested object: city becomes required where no required array existed before", () => {
+    const withoutRequired = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  address:
+                    type: object
+                    properties:
+                      city: {type: string}
+`;
+    const withRequired = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  address:
+                    type: object
+                    required: [city]
+                    properties:
+                      city: {type: string}
+`;
+    // Response: adding required to nested object = server now guarantees city present (INFO).
+    const changes = analyzeOpenApiDiff(withoutRequired, withRequired);
+    const c = changes.find((x) => x.type === "response-schema-field-required-added" && String(x.location).includes("city"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+  });
+
+  it("(R98-7) multiple nested required fields changed simultaneously: all changes emitted independently", () => {
+    // profile.required: [id, email, phone] → [id]: both email and phone removed.
+    // Both should be independently emitted as BREAKING.
+    const before = makeSpec("response", ["id", "email", "phone"]);
+    const after  = makeSpec("response", ["id"]);
+    const changes = analyzeOpenApiDiff(before, after);
+    const removedChanges = changes.filter(
+      (x) => x.type === "response-schema-field-required-removed" && String(x.location).includes("profile"),
+    );
+    expect(removedChanges).toHaveLength(2);
+    expect(removedChanges.every((x) => x.severity === "BREAKING")).toBe(true);
+    const locs = removedChanges.map((x) => String(x.location));
+    expect(locs.some((l) => l.includes("email"))).toBe(true);
+    expect(locs.some((l) => l.includes("phone"))).toBe(true);
+  });
+});
