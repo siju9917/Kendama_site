@@ -161,7 +161,7 @@ function diffSchemaProperties(
   for (const key of cKeys) {
     if (!bKeys.has(key)) {
       changes.push({
-        type: "response-schema-property-added",
+        type: isRequest ? "request-schema-property-added" : "response-schema-property-added",
         path, method,
         location: `${location}.properties.${key}`,
         before: null,

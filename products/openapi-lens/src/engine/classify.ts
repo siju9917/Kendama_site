@@ -115,6 +115,10 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => `New response property added: ${c.location}. Existing clients can ignore or use the new field.`,
   },
   {
+    matches: (c) => c.type === "request-schema-property-added" ? "INFO" : null,
+    message: (c) => `New request body property added: ${c.location}. Clients may optionally send this field.`,
+  },
+  {
     matches: (c) =>
       c.type === "parameter-added" ? "INFO" : null,
     message: (c) => {

@@ -1,6 +1,7 @@
 /**
  * Adversarial probes for the openapi-lens engine.
  * 5.7.2 second independent hard pass — attacks inputs the spec did not anticipate.
+ * Plus pin tests from Phase 0 critique panel (P1/P2 findings).
  */
 import { describe, expect, it } from "vitest";
 import { analyzeOpenApiDiff, breakingOnly, parseOapiSpec } from "../index.js";
@@ -490,6 +491,118 @@ paths:
     expect(breaking).toHaveLength(1);
     expect(breaking[0]?.type).toBe("parameter-added");
     expect(breaking[0]?.severity).toBe("BREAKING");
+  });
+
+  it("invalid input throws with a clear error message (P2-2 contract pin)", () => {
+    expect(() => parseOapiSpec("")).toThrow(/Invalid OpenAPI spec/);
+    expect(() => parseOapiSpec("not: yaml: at all: [[[")).toThrow();
+    expect(() => parseOapiSpec("42")).toThrow(/Invalid OpenAPI spec/);
+  });
+
+  it("a circular $ref terminates gracefully — returns empty schema without stack overflow (P1-1 fix)", () => {
+    // Node schema references itself via $ref: "#/components/schemas/Node"
+    const spec = parseOapiSpec(`
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /nodes:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Node"
+components:
+  schemas:
+    Node:
+      type: object
+      properties:
+        value:
+          type: string
+        next:
+          $ref: "#/components/schemas/Node"
+`);
+    // Should not throw. The 'next' property resolves to the Node schema (first pass succeeds).
+    // The SECOND level of recursion (Node.properties.next.next) is terminated by the cycle guard.
+    const op = spec.operations[0]!;
+    const schema = op.responses["200"]?.schema;
+    expect(schema?.type).toBe("object");
+    const nextProp = schema?.properties?.["next"];
+    expect(nextProp).toBeDefined();
+    // First recursion level resolved: next has type object (the Node schema)
+    expect(nextProp?.type).toBe("object");
+    // Second recursion level is terminated: next.next is {} (empty schema, no type)
+    const nextNextProp = nextProp?.properties?.["next"];
+    expect(nextNextProp).toBeDefined();
+    expect(nextNextProp?.type).toBeUndefined();
+  });
+
+  it("allOf/oneOf composition schemas are stored but NOT merged for diffing (P2-3 pin)", () => {
+    const spec = parseOapiSpec(`
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Base"
+                  - properties:
+                      extra:
+                        type: string
+components:
+  schemas:
+    Base:
+      type: object
+      properties:
+        id:
+          type: string
+`);
+    // allOf is parsed; base properties are NOT merged into the top-level schema
+    const op = spec.operations[0]!;
+    const schema = op.responses["200"]?.schema;
+    expect(schema?.allOf).toBeDefined();
+    expect(schema?.allOf).toHaveLength(2);
+    // No top-level 'id' or 'extra' property (merging is a known limitation, not performed)
+    expect(schema?.properties?.["id"]).toBeUndefined();
+    expect(schema?.properties?.["extra"]).toBeUndefined();
+    // Diffing two identical allOf specs produces no changes
+    expect(analyzeOpenApiDiff(
+      `openapi: "3.0.0"\ninfo:\n  title: T\n  version: "1"\npaths:\n  /items:\n    get:\n      responses:\n        "200":\n          content:\n            application/json:\n              schema:\n                allOf:\n                  - type: object`,
+      `openapi: "3.0.0"\ninfo:\n  title: T\n  version: "1"\npaths:\n  /items:\n    get:\n      responses:\n        "200":\n          content:\n            application/json:\n              schema:\n                allOf:\n                  - type: object`,
+    )).toHaveLength(0);
+  });
+
+  it("a non-local $ref (remote or relative file) silently resolves to empty schema (P2-4 pin)", () => {
+    const spec = parseOapiSpec(`
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /pets:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "./pet.yaml#/definitions/Pet"
+`);
+    // Remote/file refs return {} — no throw, no type, no properties
+    const op = spec.operations[0]!;
+    const schema = op.responses["200"]?.schema;
+    // null because the resolved schema is empty (no keys)
+    expect(schema).toBeNull();
   });
 
   it("removing all parameters from an endpoint does not emit a false positive on endpoint-removed", () => {

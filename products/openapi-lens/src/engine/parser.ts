@@ -58,20 +58,29 @@ function parseDefinitions(raw: Record<string, unknown>): Record<string, OapiSche
   return schemas;
 }
 
-/** Resolve a local $ref to the referenced schema. Returns empty schema on failure. */
-function resolveLocalRef(ref: string, lookup: Record<string, unknown>): OapiSchema {
+/**
+ * Resolve a local $ref to the referenced schema. Returns empty schema on failure.
+ * The `visited` set prevents infinite recursion on circular $ref chains.
+ */
+function resolveLocalRef(ref: string, lookup: Record<string, unknown>, visited: Set<string>): OapiSchema {
   const match = /^#\/(components\/schemas|definitions)\/(.+)$/.exec(ref);
   if (!match || !match[2]) return {};
   const name = match[2];
+  // Cycle guard: a circular $ref (e.g. a Node schema referencing itself) terminates here.
+  if (visited.has(name)) return {};
   const def = lookup[name];
-  return def !== undefined ? normalizeSchema(def, lookup) : {};
+  if (def === undefined) return {};
+  visited.add(name);
+  const result = normalizeSchema(def, lookup, visited);
+  visited.delete(name);
+  return result;
 }
 
 /** Normalize a raw schema node, resolving $ref if local. */
-function normalizeSchema(raw: unknown, lookup: Record<string, unknown>): OapiSchema {
+function normalizeSchema(raw: unknown, lookup: Record<string, unknown>, visited: Set<string> = new Set()): OapiSchema {
   if (!isObject(raw)) return {};
   const ref = asString(raw["$ref"]);
-  if (ref) return resolveLocalRef(ref, lookup);
+  if (ref) return resolveLocalRef(ref, lookup, visited);
 
   const schema: OapiSchema = {};
   const type = asString(raw["type"]);
@@ -93,17 +102,17 @@ function normalizeSchema(raw: unknown, lookup: Record<string, unknown>): OapiSch
   if (isObject(rawProps)) {
     schema.properties = {};
     for (const [k, v] of Object.entries(rawProps)) {
-      schema.properties[k] = normalizeSchema(v, lookup);
+      schema.properties[k] = normalizeSchema(v, lookup, visited);
     }
   }
 
   const rawItems = raw["items"];
-  if (rawItems !== undefined) schema.items = normalizeSchema(rawItems, lookup);
+  if (rawItems !== undefined) schema.items = normalizeSchema(rawItems, lookup, visited);
 
   for (const key of ["allOf", "oneOf", "anyOf"] as const) {
     const arr = asArray(raw[key]);
     if (arr.length > 0) {
-      schema[key] = arr.map((s) => normalizeSchema(s, lookup));
+      schema[key] = arr.map((s) => normalizeSchema(s, lookup, visited));
     }
   }
 
@@ -214,7 +223,14 @@ function parseOperations(raw: Record<string, unknown>, lookup: Record<string, un
 
 /**
  * Parse an OpenAPI spec (YAML or JSON string) into a normalized OapiSpec.
- * Throws on malformed input.
+ *
+ * Supports OAS 3.0, OAS 3.1, and Swagger 2.0. Accepts both JSON and YAML.
+ * Resolves local `#/components/schemas/X` and `#/definitions/X` refs inline.
+ * Circular `$ref` chains are terminated (return empty schema `{}`).
+ * Remote refs (`./other.yaml`, `https://...`) are silently treated as empty schema.
+ *
+ * @throws {Error} if the root of the document is not an object.
+ * @throws {Error} if YAML parsing fails on malformed input.
  */
 export function parseOapiSpec(input: string): OapiSpec {
   let raw: unknown;

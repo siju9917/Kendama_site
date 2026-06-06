@@ -14,6 +14,9 @@ import type { BreakingChange } from "./types.js";
  * @param baselineInput - YAML or JSON string of the old spec
  * @param currentInput  - YAML or JSON string of the new spec
  * @returns Classified list of all changes (BREAKING, INFO, SAFE)
+ * @throws {Error} if either input cannot be parsed as a valid OpenAPI spec.
+ *   Callers should wrap in try/catch; a parse error indicates invalid input,
+ *   not a breaking change.
  */
 export function analyzeOpenApiDiff(baselineInput: string, currentInput: string): BreakingChange[] {
   const baseline = parseOapiSpec(baselineInput);

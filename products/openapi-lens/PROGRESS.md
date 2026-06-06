@@ -1,6 +1,6 @@
 # PROGRESS.md — VS Code OpenAPI Breaking-Change Lens (D5)
 
-> Status: **Phase 0 — engine complete, not yet a VS Code extension.**
+> Status: **Phase 0 — engine complete + critique-panel cleared. Not yet a VS Code extension.**
 > Human gates pending before ship: VS Code Marketplace publisher registration
 > (free personal account; $100 org account requires approval).
 > See `human/NEED_FROM_HUMAN.md` item pending.
@@ -33,9 +33,12 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   (BREAKING / INFO) and a human-readable `message`
 - [x] **`src/engine/index.ts`**: Public API — `analyzeOpenApiDiff()`,
   `breakingOnly()`, all type exports
-- [x] **91/91 tests** — parser (17), diff (20), classify (22), integration (9),
-  adversarial (15), property-diff (8)
+- [x] **96/96 tests** — parser (17), diff (20), classify (22), integration (9),
+  adversarial (19), property-diff (9)
 - [x] Typecheck clean
+- [x] **Full 14-critic panel passed** (2026-06-06) — P1 circular-ref fix,
+  P2 `request-schema-property-added` type gap fixed, P2 pin tests for allOf/remote-$ref.
+  See `CRITIQUE_LOG.md`. 5.7.2 escalating critique passed.
 
 ### Breaking-change rules implemented (Phase 0)
 
@@ -67,6 +70,7 @@ auto-proceeds (2026-06-13) or earlier if human approves.
 | Request property type changed | BREAKING |
 | Request property removed | BREAKING |
 | Response property added | INFO |
+| Request property added | INFO |
 
 ---
 
@@ -115,11 +119,18 @@ _Begins when Proposal #3 auto-proceeds (2026-06-13) or human approves._
 ## Known limitations (Phase 0)
 
 - **No remote `$ref` resolution.** References to external files or URLs are
-  not resolved; only `#/components/schemas/X` local refs are supported.
+  silently resolved to empty schema `{}`. Only `#/components/schemas/X` and
+  `#/definitions/X` local refs are supported. Tested behavior: a remote $ref
+  produces a `null` response schema (no type, no properties).
+- **Circular `$ref` terminates at depth 2.** A self-referential schema (e.g.,
+  `Node.properties.next.$ref = "Node"`) is resolved one level deep; the
+  second-level back-edge returns `{}`. No stack overflow. Tested behavior.
 - **No `allOf`/`oneOf`/`anyOf` merging.** Composition schemas are stored
-  as-is; their members are not merged into a flat schema for diffing.
+  as-is; their members are not merged into a flat schema for diffing. The
+  top-level `allOf`/`oneOf`/`anyOf` arrays are parsed and stored, but only
+  top-level `type`, `required[]`, and `properties` are diffed. Tested behavior.
 - **No deprecated-field propagation.** The `deprecated` flag is parsed but
   not used in classification (no severity downgrade for deprecated operations).
-- **No property-level diff inside schemas.** Request/response schema changes
-  are compared at the `required[]` array + `type` levels, not recursively
-  into nested `properties`. Phase 2 adds recursive property diffing.
+- **Property diff is one level deep only.** `properties.fieldName.type`
+  changes are detected. Nested objects (`user.address.zipCode`) are not
+  recursively diffed. Phase 2 adds full recursive property diffing.

@@ -178,4 +178,22 @@ describe("property-level diff — request schema properties", () => {
     const breaking = breakingOnly(changes);
     expect(breaking.some((c) => c.type === "request-schema-property-removed")).toBe(true);
   });
+
+  it("detects INFO when a new request body property is added (P2-1 fix: correct type)", () => {
+    const baseline = makeSpec(`                  id:
+                    type: string`, `                  name:
+                    type: string`);
+    const current = makeSpec(`                  id:
+                    type: string`, `                  name:
+                    type: string
+                  phone:
+                    type: string`);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const added = changes.find((c) => c.type === "request-schema-property-added");
+    expect(added).toBeDefined();
+    expect(added?.severity).toBe("INFO");
+    expect(added?.location).toMatch(/phone/);
+    // Must NOT be classified as response-schema-property-added
+    expect(changes.some((c) => c.type === "response-schema-property-added" && c.location.includes("phone"))).toBe(false);
+  });
 });
