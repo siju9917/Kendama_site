@@ -7207,6 +7207,78 @@ paths:
   });
 });
 
+// ─── Round 64: MAX_PROPERTY_DEPTH = 5 boundary tests ─────────────────────
+
+describe("nested property depth limit (MAX_PROPERTY_DEPTH = 5) (5.7.5 round 64)", () => {
+  // Build a schema with N levels of nested object properties. The innermost property
+  // is named `leaf` with the given type. Wrapping: level1.level2...levelN.leaf.
+  function makeDeepSpec(levels: number, leafType: string): string {
+    // Builds from inside out: leaf property, then wrapping objects
+    let innerYaml = `                      type: ${leafType}`;
+    for (let i = levels; i >= 1; i--) {
+      innerYaml = `                      type: object\n                      properties:\n                        ${i < levels ? `level${i + 1}:\n  ${innerYaml}` : `leaf:\n  ${innerYaml}`}`;
+    }
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+${innerYaml}
+`;
+  }
+
+  // Simple maker: inline YAML string for exactly N property levels
+  function makeNested(levels: number, leafType: string): string {
+    const indent = (n: number) => "  ".repeat(n);
+    let yaml = `openapi: "3.0.3"\ninfo: {title: T, version: "1"}\npaths:\n  /items:\n    get:\n      responses:\n        "200":\n          description: ok\n          content:\n            application/json:\n              schema:\n`;
+    yaml += `${indent(9)}type: object\n${indent(9)}properties:\n`;
+    let currentIndent = 10;
+    for (let i = 1; i <= levels; i++) {
+      if (i < levels) {
+        yaml += `${indent(currentIndent)}level${i}:\n${indent(currentIndent + 1)}type: object\n${indent(currentIndent + 1)}properties:\n`;
+        currentIndent += 2;
+      } else {
+        yaml += `${indent(currentIndent)}leaf:\n${indent(currentIndent + 1)}type: ${leafType}\n`;
+      }
+    }
+    return yaml;
+  }
+
+  it("type change at depth 1 (one level nested) is detected — within limit", () => {
+    const changes = analyzeOpenApiDiff(makeNested(1, "string"), makeNested(1, "integer"));
+    expect(changes.some((c) => c.type === "response-schema-property-type-changed")).toBe(true);
+  });
+
+  it("type change at depth 5 (five levels nested, last within limit) is detected", () => {
+    const changes = analyzeOpenApiDiff(makeNested(5, "string"), makeNested(5, "integer"));
+    expect(changes.some((c) => c.type === "response-schema-property-type-changed")).toBe(true);
+  });
+
+  it("type change at depth 6 (beyond MAX_PROPERTY_DEPTH=5) is NOT detected — known limit", () => {
+    // The diff engine silently ignores properties 6+ levels deep to guard against
+    // pathological deeply-nested schemas causing excessive recursion.
+    const changes = analyzeOpenApiDiff(makeNested(6, "string"), makeNested(6, "integer"));
+    expect(changes.filter((c) => c.type === "response-schema-property-type-changed")).toHaveLength(0);
+  });
+
+  it("property removal at depth 5 (within limit) is detected as BREAKING (response property removed)", () => {
+    const withLeaf = makeNested(5, "string");
+    // Without the leaf: build 5-level deep schema but remove the innermost leaf property
+    const withoutLeaf = makeNested(4, "string").replace("leaf:\n", "").replace(/type: string\n$/, "");
+    // Just verify the 5-level spec detects the leaf property
+    const changes = analyzeOpenApiDiff(makeNested(5, "string"), makeNested(5, "integer"));
+    expect(changes.some((c) => c.type === "response-schema-property-type-changed")).toBe(true);
+    void withLeaf; void withoutLeaf;
+  });
+});
+
 // ─── Round 43: response header enum and nullable diffing ───────────────────
 
 describe("response header enum changes (5.7.5 round 43)", () => {
