@@ -9240,3 +9240,214 @@ paths:
     expect(changes.filter((c) => c.type === "response-schema-property-added" || c.type === "response-schema-property-removed")).toHaveLength(0);
   });
 });
+
+// ─── Round 67: oneOf/anyOf Phase 2 gap + Swagger 2.0 server URL edge cases ───
+// The diff engine tracks top-level property type/format/enum but does NOT recurse
+// into oneOf/anyOf members (Phase 2). Changes inside oneOf/anyOf variants are
+// currently silent false negatives. Also tests Swagger 2.0 schemes[] first-element
+// selection and basePath change producing server URL changes.
+
+describe("adversarial round 67 — oneOf/anyOf member changes are not detected (Phase 2 gap)", () => {
+  // Build a response body spec where `payload` has the given oneOf definition.
+  function makeOneOfSpec(variantTypes: string[]): string {
+    const variants = variantTypes.map((t) => `                      - type: ${t}`).join("\n");
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payload:
+                    oneOf:
+${variants}
+`;
+  }
+
+  it("oneOf member type change (string→integer variant) is NOT detected (Phase 2 gap — oneOf members are not diffed)", () => {
+    // payload.oneOf: [{type: string}, {type: object}] → [{type: integer}, {type: object}]
+    // The first variant's type changes from string to integer, but this is inside oneOf.
+    // The diff engine only compares the top-level property type (undefined on both sides).
+    // Net: no events emitted — real semantic change is silently missed.
+    const baseline = makeOneOfSpec(["string", "object"]);
+    const current  = makeOneOfSpec(["integer", "object"]);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    // Documents the false negative — no schema change events for oneOf member changes.
+    const propTypeChange = changes.filter((c) =>
+      c.type === "response-schema-property-type-changed" &&
+      String(c.location).includes("payload")
+    );
+    expect(propTypeChange).toHaveLength(0);
+    // No schema events at all for the payload property.
+    expect(changes.filter((c) => String(c.location).includes("payload"))).toHaveLength(0);
+  });
+
+  it("oneOf variant count change (adding a new variant) is NOT detected (Phase 2 gap)", () => {
+    // payload.oneOf: [{type: string}] → [{type: string}, {type: integer}]
+    // A new accepted type variant is added — clients get data they didn't expect.
+    // The diff engine sees the same top-level type (undefined) on both sides: no event.
+    const baseline = makeOneOfSpec(["string"]);
+    const current  = makeOneOfSpec(["string", "integer"]);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    expect(changes.filter((c) => String(c.location).includes("payload"))).toHaveLength(0);
+  });
+
+  it("anyOf member type change is NOT detected (Phase 2 gap — same as oneOf)", () => {
+    // payload.anyOf: [{type: string}, {type: object}] → [{type: integer}, {type: object}]
+    // anyOf member changes behave identically to oneOf — not tracked by Phase 1 engine.
+    function makeAnyOfSpec(variantTypes: string[]): string {
+      const variants = variantTypes.map((t) => `                      - type: ${t}`).join("\n");
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payload:
+                    anyOf:
+${variants}
+`;
+    }
+    const baseline = makeAnyOfSpec(["string", "object"]);
+    const current  = makeAnyOfSpec(["integer", "object"]);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    expect(changes.filter((c) => String(c.location).includes("payload"))).toHaveLength(0);
+  });
+
+  it("direct property type change (positive control — IS detected, no oneOf involved)", () => {
+    // Verify the detector is not trivially broken: a direct type change IS caught.
+    const baseline = makeOneOfSpec(["string"]).replace("oneOf:", "type: string #").replace(/\s*- type: string/, "");
+    // Simpler: make a plain spec without oneOf.
+    const plainBaseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payload:
+                    type: string
+`;
+    const plainCurrent = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payload:
+                    type: integer
+`;
+    const changes = analyzeOpenApiDiff(plainBaseline, plainCurrent);
+    const typeChange = changes.find((c) =>
+      c.type === "response-schema-property-type-changed" &&
+      String(c.location).includes("payload")
+    );
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+});
+
+describe("adversarial round 67 — Swagger 2.0 schemes[] first-element server URL selection", () => {
+  function makeSwagger2Spec(options: { schemes?: string[]; basePath?: string; host?: string }): string {
+    const { schemes = ["https"], basePath = "/", host = "api.example.com" } = options;
+    const schemesYaml = schemes.map((s) => `  - ${s}`).join("\n");
+    return `
+swagger: "2.0"
+info:
+  title: T
+  version: "1"
+host: ${host}
+basePath: ${basePath}
+schemes:
+${schemesYaml}
+paths:
+  /items:
+    get:
+      responses:
+        200:
+          description: ok
+`;
+  }
+
+  it("Swagger 2.0 schemes reordering [https,http]→[http,https] changes server URL: server-removed BREAKING + server-added INFO", () => {
+    // parseServers uses schemes[0] as the scheme prefix.
+    // Swapping order changes the synthesized server URL from https://... to http://...
+    const httpsFirst = makeSwagger2Spec({ schemes: ["https", "http"] });
+    const httpFirst  = makeSwagger2Spec({ schemes: ["http", "https"] });
+    const changes = analyzeOpenApiDiff(httpsFirst, httpFirst);
+    const removed = changes.find((c) => c.type === "server-removed");
+    const added   = changes.find((c) => c.type === "server-added");
+    expect(removed).toBeDefined();
+    expect(String(removed?.before)).toContain("https://");
+    expect(removed?.severity).toBe("BREAKING");
+    expect(added).toBeDefined();
+    expect(String(added?.after)).toContain("http://");
+    expect(added?.severity).toBe("INFO");
+  });
+
+  it("Swagger 2.0 basePath change /v1→/v2 emits server-removed BREAKING + server-added INFO", () => {
+    const v1 = makeSwagger2Spec({ basePath: "/v1" });
+    const v2 = makeSwagger2Spec({ basePath: "/v2" });
+    const changes = analyzeOpenApiDiff(v1, v2);
+    const removed = changes.find((c) => c.type === "server-removed");
+    const added   = changes.find((c) => c.type === "server-added");
+    expect(removed).toBeDefined();
+    expect(String(removed?.before)).toContain("/v1");
+    expect(removed?.severity).toBe("BREAKING");
+    expect(added).toBeDefined();
+    expect(String(added?.after)).toContain("/v2");
+    expect(added?.severity).toBe("INFO");
+  });
+
+  it("Swagger 2.0 host change emits server-removed BREAKING + server-added INFO", () => {
+    const oldHost = makeSwagger2Spec({ host: "api.example.com" });
+    const newHost = makeSwagger2Spec({ host: "api2.example.com" });
+    const changes = analyzeOpenApiDiff(oldHost, newHost);
+    const removed = changes.find((c) => c.type === "server-removed");
+    const added   = changes.find((c) => c.type === "server-added");
+    expect(removed).toBeDefined();
+    expect(String(removed?.before)).toContain("api.example.com");
+    expect(removed?.severity).toBe("BREAKING");
+    expect(added).toBeDefined();
+    expect(String(added?.after)).toContain("api2.example.com");
+    expect(added?.severity).toBe("INFO");
+  });
+
+  it("Swagger 2.0 with same host+basePath+schemes produces no server change", () => {
+    const spec = makeSwagger2Spec({ schemes: ["https"], host: "api.example.com", basePath: "/api" });
+    const changes = analyzeOpenApiDiff(spec, spec);
+    expect(changes.filter((c) => c.type === "server-removed" || c.type === "server-added")).toHaveLength(0);
+  });
+});
