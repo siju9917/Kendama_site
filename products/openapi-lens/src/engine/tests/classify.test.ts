@@ -1455,3 +1455,47 @@ describe("constraint direction — cross-level consistency", () => {
     expect(result[0]?.message).not.toMatch(/^Change detected at/);
   });
 });
+
+// ─── Cross-level additionalProperties consistency guard ──────────────────────
+// Verifies that the additionalProperties polarity is correct and consistent
+// across all nesting levels (body, property, items) and sides (request, response).
+//
+// Semantics:
+//   Request (body/property/items): closing (→false) = BREAKING (extra fields rejected);
+//     opening (→true) = INFO.
+//   Response (body/property/items): BOTH directions = INFO (schema annotation only;
+//     closing just adds a stricter guarantee, opening just advises graceful handling).
+
+describe("additionalProperties direction — cross-level consistency", () => {
+  type APCase = {
+    type: OapiChangeType;
+    before: boolean;
+    after: boolean;
+    expected: "BREAKING" | "INFO";
+    label: string;
+  };
+
+  const AP_CASES: APCase[] = [
+    // ── Request: closing (→false) = BREAKING ─────────────────────────────────
+    { type: "request-schema-additional-properties-changed",          before: true, after: false, expected: "BREAKING", label: "request body AP closes (→false)" },
+    { type: "request-schema-property-additional-properties-changed", before: true, after: false, expected: "BREAKING", label: "request property AP closes (→false)" },
+    { type: "request-schema-items-additional-properties-changed",    before: true, after: false, expected: "BREAKING", label: "request items AP closes (→false)" },
+    // ── Request: opening (→true) = INFO ───────────────────────────────────────
+    { type: "request-schema-additional-properties-changed",          before: false, after: true, expected: "INFO", label: "request body AP opens (→true)" },
+    { type: "request-schema-property-additional-properties-changed", before: false, after: true, expected: "INFO", label: "request property AP opens (→true)" },
+    { type: "request-schema-items-additional-properties-changed",    before: false, after: true, expected: "INFO", label: "request items AP opens (→true)" },
+    // ── Response: both directions = INFO ─────────────────────────────────────
+    { type: "response-schema-additional-properties-changed",          before: true,  after: false, expected: "INFO", label: "response body AP closes (→false)" },
+    { type: "response-schema-additional-properties-changed",          before: false, after: true,  expected: "INFO", label: "response body AP opens (→true)" },
+    { type: "response-schema-property-additional-properties-changed", before: true,  after: false, expected: "INFO", label: "response property AP closes (→false)" },
+    { type: "response-schema-property-additional-properties-changed", before: false, after: true,  expected: "INFO", label: "response property AP opens (→true)" },
+    { type: "response-schema-items-additional-properties-changed",    before: true,  after: false, expected: "INFO", label: "response items AP closes (→false)" },
+    { type: "response-schema-items-additional-properties-changed",    before: false, after: true,  expected: "INFO", label: "response items AP opens (→true)" },
+  ];
+
+  it.each(AP_CASES)("$label ($type) → $expected", ({ type, before, after, expected }) => {
+    const result = classifyChanges([raw(type, before, after, "test.ap")]);
+    expect(result[0]?.severity).toBe(expected);
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+});
