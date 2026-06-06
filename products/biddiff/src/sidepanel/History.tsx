@@ -26,6 +26,8 @@ function relativeTime(iso: string): string {
 
 export function History({ storage, onOpen }: Props): React.ReactElement | null {
   const [items, setItems] = useState<DiffSummary[]>([]);
+  // id of the item currently showing an inline delete-confirm, null otherwise
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const refresh = useCallback((): void => {
     storage.listDiffs().then(setItems).catch(() => setItems([]));
@@ -33,13 +35,22 @@ export function History({ storage, onOpen }: Props): React.ReactElement | null {
 
   useEffect(refresh, [refresh]);
 
-  const onDelete = async (id: string, label: string): Promise<void> => {
-    // No undo, so confirm before deleting.
-    const ok =
-      typeof window !== "undefined"
-        ? window.confirm(`Delete the diff for "${label}"? This cannot be undone.`)
-        : true;
-    if (!ok) return;
+  // Escape cancels any pending inline confirmation.
+  useEffect(() => {
+    if (!confirmingId) return;
+    const handler = (e: KeyboardEvent): void => {
+      if (e.key === "Escape") setConfirmingId(null);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [confirmingId]);
+
+  const requestDelete = (id: string): void => {
+    setConfirmingId(id);
+  };
+
+  const confirmDelete = async (id: string): Promise<void> => {
+    setConfirmingId(null);
     try {
       await storage.deleteDiff(id);
     } catch {
@@ -57,6 +68,7 @@ export function History({ storage, onOpen }: Props): React.ReactElement | null {
       <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {items.slice(0, 12).map((s) => {
           const unseen = !s.lastViewedAt;
+          const confirming = confirmingId === s.id;
           // Two SIBLING buttons (open + delete) instead of a
           // role="button" row containing a nested <button> — nested
           // interactive elements are invalid ARIA and announce
@@ -89,15 +101,38 @@ export function History({ storage, onOpen }: Props): React.ReactElement | null {
                   </div>
                 </div>
               </button>
-              <button
-                type="button"
-                className="ghost history-item__delete"
-                aria-label="Delete this diff from history"
-                title="Delete"
-                onClick={() => void onDelete(s.id, s.solicitationId ?? s.currentFileName)}
-              >
-                ✕
-              </button>
+              {confirming ? (
+                <span className="history-item__confirm" role="group" aria-label="Confirm delete">
+                  <button
+                    type="button"
+                    className="history-item__confirm-yes"
+                    aria-label="Confirm delete"
+                    onClick={() => void confirmDelete(s.id)}
+                    autoFocus
+                  >
+                    Delete
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost"
+                    style={{ fontSize: 11 }}
+                    aria-label="Cancel delete"
+                    onClick={() => setConfirmingId(null)}
+                  >
+                    Cancel
+                  </button>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  className="ghost history-item__delete"
+                  aria-label="Delete this diff from history"
+                  title="Delete"
+                  onClick={() => requestDelete(s.id)}
+                >
+                  ✕
+                </button>
+              )}
             </li>
           );
         })}
