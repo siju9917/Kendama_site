@@ -2903,3 +2903,280 @@ paths:
     expect(enumChange?.message).not.toMatch(/^Change detected at/);
   });
 });
+
+describe("request-side constraint removal classified as INFO (5.7.5 round 15)", () => {
+  it("parameter-type-changed (type→undefined) is INFO, not BREAKING", () => {
+    // Removing a type constraint from a parameter makes the server more permissive — INFO.
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - name: limit
+          in: query
+          schema: {}
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "parameter-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("INFO");
+    expect(typeChange?.message).not.toMatch(/^Change detected at/);
+  });
+
+  it("parameter-format-changed (format→undefined) is INFO, not BREAKING", () => {
+    // Removing a format constraint from a parameter is more permissive — INFO.
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /events:
+    get:
+      parameters:
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /events:
+    get:
+      parameters:
+        - name: since
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const fmtChange = changes.find((c) => c.type === "parameter-format-changed");
+    expect(fmtChange).toBeDefined();
+    expect(fmtChange?.severity).toBe("INFO");
+    expect(fmtChange?.message).not.toMatch(/^Change detected at/);
+  });
+
+  it("request-schema-format-changed (format→null) is INFO, not BREAKING", () => {
+    // Removing a format constraint from a request body schema is more permissive — INFO.
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /upload:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+              format: date
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /upload:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const fmtChange = changes.find((c) => c.type === "request-schema-format-changed");
+    expect(fmtChange).toBeDefined();
+    expect(fmtChange?.severity).toBe("INFO");
+    expect(fmtChange?.message).not.toMatch(/^Change detected at/);
+  });
+
+  it("request-schema-enum-changed (enum→null) is INFO, not BREAKING", () => {
+    // Removing an enum constraint from a request body is more permissive — INFO.
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /search:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+              enum:
+                - recent
+                - popular
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /search:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const enumChange = changes.find((c) => c.type === "request-schema-enum-changed");
+    expect(enumChange).toBeDefined();
+    expect(enumChange?.severity).toBe("INFO");
+    expect(enumChange?.message).not.toMatch(/^Change detected at/);
+  });
+
+  it("request-schema-property-enum-changed (enum→null) is INFO, not BREAKING", () => {
+    // Removing enum constraint from a request property is more permissive — INFO.
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /orders:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                priority:
+                  type: string
+                  enum:
+                    - low
+                    - medium
+                    - high
+      responses:
+        "201":
+          description: created
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /orders:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                priority:
+                  type: string
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const enumChange = changes.find((c) => c.type === "request-schema-property-enum-changed");
+    expect(enumChange).toBeDefined();
+    expect(enumChange?.severity).toBe("INFO");
+    expect(enumChange?.message).not.toMatch(/^Change detected at/);
+  });
+
+  it("parameter-items-type-changed (type→null) is INFO, not BREAKING", () => {
+    // Removing type from parameter array items is more permissive — INFO.
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /bulk:
+    get:
+      parameters:
+        - name: ids
+          in: query
+          schema:
+            type: array
+            items:
+              type: integer
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /bulk:
+    get:
+      parameters:
+        - name: ids
+          in: query
+          schema:
+            type: array
+            items: {}
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "parameter-items-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("INFO");
+    expect(typeChange?.message).not.toMatch(/^Change detected at/);
+  });
+});

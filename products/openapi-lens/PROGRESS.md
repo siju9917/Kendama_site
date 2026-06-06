@@ -154,6 +154,22 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   Fixed: distinguish `!before && after → INFO` from `before && !after → BREAKING`.
   Also fixed `request-schema-items-type-changed: type→null` (INFO but had generic message).
   +12 tests (6 classify unit + 6 adversarial integration). **389/389 tests.**
+- [x] **5.7.5 round 15 — request-side constraint removal classified as BREAKING instead of INFO** —
+  systematic audit of all request-side classify rules found 11 cases where a constraint being REMOVED
+  from the server spec (before=value, after=null/undefined) was incorrectly classified as BREAKING.
+  When a server removes a constraint from its request schema, it becomes MORE permissive — clients
+  sending previously-valid values are still valid. Correct classification: INFO.
+  Fixed change types: `parameter-type-changed (after=null)`, `parameter-format-changed (after=null)`,
+  `parameter-enum-changed (after=null)`, `request-schema-format-changed (after=null)`,
+  `request-schema-property-format-changed (after=null)`, `request-schema-property-enum-changed (after=null)`,
+  `request-schema-enum-changed (after=null)`, `request-schema-items-format-changed (after=null)`,
+  `request-schema-items-enum-changed (after=null)`, `parameter-items-type-changed (after=null)`,
+  `parameter-items-format-changed (after=null)`, `parameter-items-enum-changed (after=null)`.
+  Root cause: the "BREAKING if `!before || !after`" guard pattern and unconditional-BREAKING rules did
+  not distinguish "constraint added" from "constraint removed" — both hit BREAKING.
+  Fix pattern: for format/type → `c.after !== null ? "BREAKING" : "INFO"`; for enum →
+  `!before && after → BREAKING`, `before && !after → INFO`. Verified direction-aware messages for
+  all cases. +27 tests (21 classify unit + 6 adversarial integration). **428/428 tests.**
 - [x] **5.7.5 round 14 — response property/body null-transition classify gaps** — same systematic
   bug class as round 13, now at property and body levels. Four classify rules incorrectly treated
   "constraint newly added" (before=null) as BREAKING:

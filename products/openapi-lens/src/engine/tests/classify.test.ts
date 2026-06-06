@@ -889,3 +889,155 @@ describe("classify — null-transition fixes (5.7.5 round 14)", () => {
     expect(result[0]?.message).toMatch(/added|guarantees|non-breaking/i);
   });
 });
+
+describe("classify — request-side constraint removal fixes (5.7.5 round 15)", () => {
+  // parameter-type-changed
+  it("parameter-type-changed (type→null) is INFO", () => {
+    const result = classifyChanges([raw("parameter-type-changed", "integer", undefined, "parameter(query:page).schema.type")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/removed|no longer/i);
+  });
+
+  it("parameter-type-changed (null→type) remains BREAKING", () => {
+    const result = classifyChanges([raw("parameter-type-changed", undefined, "string", "parameter(query:q).schema.type")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+
+  // parameter-format-changed
+  it("parameter-format-changed (format→null) is INFO", () => {
+    const result = classifyChanges([raw("parameter-format-changed", "date", undefined, "parameter(query:date).schema.format")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/removed|no longer/i);
+  });
+
+  it("parameter-format-changed (null→format) remains BREAKING", () => {
+    const result = classifyChanges([raw("parameter-format-changed", undefined, "uuid", "parameter(path:id).schema.format")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+
+  // parameter-enum-changed
+  it("parameter-enum-changed (enum→null) is INFO", () => {
+    const result = classifyChanges([raw("parameter-enum-changed", ["asc", "desc"], undefined, "parameter(query:sort).schema.enum")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/removed|no longer/i);
+  });
+
+  it("parameter-enum-changed (null→enum) remains BREAKING", () => {
+    const result = classifyChanges([raw("parameter-enum-changed", undefined, ["asc", "desc"], "parameter(query:sort).schema.enum")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+
+  // request-schema-format-changed
+  it("request-schema-format-changed (format→null) is INFO", () => {
+    const result = classifyChanges([raw("request-schema-format-changed", "date", null, "requestBody.content.schema.format")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/removed|no longer/i);
+  });
+
+  it("request-schema-format-changed (null→format) remains BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-format-changed", null, "date-time", "requestBody.content.schema.format")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+
+  // request-schema-property-format-changed
+  it("request-schema-property-format-changed (format→null) is INFO", () => {
+    const result = classifyChanges([raw("request-schema-property-format-changed", "date-time", null, "requestBody.content.schema.properties.createdAt.format")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/removed|no longer/i);
+  });
+
+  // request-schema-property-enum-changed
+  it("request-schema-property-enum-changed (enum→null) is INFO", () => {
+    const result = classifyChanges([raw("request-schema-property-enum-changed", ["active", "inactive"], undefined, "requestBody.content.schema.properties.status.enum")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/removed|no longer/i);
+  });
+
+  it("request-schema-property-enum-changed (null→enum) remains BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-property-enum-changed", undefined, ["active", "inactive"], "requestBody.content.schema.properties.status.enum")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+
+  // request-schema-enum-changed
+  it("request-schema-enum-changed (enum→null) is INFO", () => {
+    const result = classifyChanges([raw("request-schema-enum-changed", ["v1", "v2"], null, "requestBody.content.schema.enum")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/removed|no longer/i);
+  });
+
+  // request-schema-items-format-changed
+  it("request-schema-items-format-changed (format→null) is INFO", () => {
+    const result = classifyChanges([raw("request-schema-items-format-changed", "uuid", null, "requestBody.content.schema.items.format")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/removed|no longer/i);
+  });
+
+  // request-schema-items-enum-changed
+  it("request-schema-items-enum-changed (enum→null) is INFO", () => {
+    const result = classifyChanges([raw("request-schema-items-enum-changed", ["jpeg", "png"], null, "requestBody.content.schema.items.enum")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/removed|no longer/i);
+  });
+
+  it("request-schema-items-enum-changed (null→enum) remains BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-items-enum-changed", null, ["jpeg", "png"], "requestBody.content.schema.items.enum")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+
+  // parameter-items-type-changed
+  it("parameter-items-type-changed (type→null) is INFO", () => {
+    const result = classifyChanges([raw("parameter-items-type-changed", "string", null, "parameter(query:ids).schema.items.type")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/removed|no longer/i);
+  });
+
+  it("parameter-items-type-changed (null→type) remains BREAKING", () => {
+    const result = classifyChanges([raw("parameter-items-type-changed", null, "integer", "parameter(query:ids).schema.items.type")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+
+  // parameter-items-format-changed
+  it("parameter-items-format-changed (format→null) is INFO", () => {
+    const result = classifyChanges([raw("parameter-items-format-changed", "uuid", null, "parameter(query:codes).schema.items.format")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/removed|no longer/i);
+  });
+
+  it("parameter-items-format-changed (null→format) remains BREAKING", () => {
+    const result = classifyChanges([raw("parameter-items-format-changed", null, "uuid", "parameter(query:codes).schema.items.format")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+
+  // parameter-items-enum-changed
+  it("parameter-items-enum-changed (enum→null) is INFO", () => {
+    const result = classifyChanges([raw("parameter-items-enum-changed", ["jpg", "png"], null, "parameter(query:formats).schema.items.enum")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/removed|no longer/i);
+  });
+
+  it("parameter-items-enum-changed (null→enum) remains BREAKING", () => {
+    const result = classifyChanges([raw("parameter-items-enum-changed", null, ["jpg", "png"], "parameter(query:formats).schema.items.enum")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+});

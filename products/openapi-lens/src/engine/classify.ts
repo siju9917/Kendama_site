@@ -30,20 +30,38 @@ const CLASSIFY_RULES: ClassifyRule[] = [
         : null,
     message: (c) => `Parameter became required: ${c.location}. Existing clients not sending this parameter will now receive 400.`,
   },
+  // parameter-type-changed: direction-aware.
+  // after truthy: type added or changed → BREAKING. after null/undefined: type removed → INFO (less restrictive).
   {
-    matches: (c) => c.type === "parameter-type-changed" ? "BREAKING" : null,
-    message: (c) => `Parameter type changed: ${c.location} (${c.before} → ${c.after}). Clients sending the old type will fail validation.`,
+    matches: (c) => c.type === "parameter-type-changed" && c.after !== null && c.after !== undefined ? "BREAKING" : null,
+    message: (c) => c.before === null || c.before === undefined
+      ? `Parameter type constraint added: ${c.location}. Server now requires type ${c.after}; clients sending other types will fail validation.`
+      : `Parameter type changed: ${c.location} (${c.before} → ${c.after}). Clients sending the old type will fail validation.`,
   },
   {
-    matches: (c) => c.type === "parameter-format-changed" ? "BREAKING" : null,
-    message: (c) => `Parameter format changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). May break serialization/validation.`,
+    matches: (c) => c.type === "parameter-type-changed" && (c.after === null || c.after === undefined) ? "INFO" : null,
+    message: (c) => `Parameter type constraint removed: ${c.location}. Server no longer enforces a specific type (non-breaking for existing clients).`,
+  },
+  // parameter-format-changed: direction-aware.
+  // after truthy: format added or changed → BREAKING. after null/undefined: format removed → INFO (less restrictive).
+  {
+    matches: (c) => c.type === "parameter-format-changed" && c.after !== null && c.after !== undefined ? "BREAKING" : null,
+    message: (c) => c.before === null || c.before === undefined
+      ? `Parameter format constraint added: ${c.location}. Server now enforces format '${c.after}'; clients sending other formats will fail validation.`
+      : `Parameter format changed: ${c.location} (${c.before} → ${c.after}). Clients sending data in the old format may fail validation.`,
+  },
+  {
+    matches: (c) => c.type === "parameter-format-changed" && (c.after === null || c.after === undefined) ? "INFO" : null,
+    message: (c) => `Parameter format constraint removed: ${c.location}. Server no longer enforces '${c.before}' format (non-breaking for existing clients).`,
   },
   {
     matches: (c) => {
       if (c.type !== "parameter-enum-changed") return null;
       const before = c.before as unknown[] | undefined;
       const after = c.after as unknown[] | undefined;
-      if (!before || !after) return "BREAKING";
+      if (!before && after) return "BREAKING"; // enum added = new constraint
+      if (before && !after) return "INFO"; // enum removed = constraint relaxed
+      if (!before || !after) return "BREAKING"; // null-null edge
       const added = after.filter((v) => !before.includes(v));
       const removed = before.filter((v) => !after.includes(v));
       if (removed.length > 0) return "BREAKING";
@@ -53,6 +71,8 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => {
       const before = c.before as unknown[] | undefined;
       const after = c.after as unknown[] | undefined;
+      if (!before && after) return `Parameter enum added: ${c.location}. Server now restricts accepted values to [${after.join(", ")}]. Clients sending other values will fail validation.`;
+      if (before && !after) return `Parameter enum removed: ${c.location}. Server no longer enforces enum restriction; any value is now accepted (non-breaking for existing clients).`;
       if (!before || !after) return `Enum changed for ${c.location}: values may be removed.`;
       const removed = before.filter((v) => !after.includes(v));
       if (removed.length > 0) return `Enum values removed from ${c.location}: [${removed.join(", ")}] no longer accepted. Clients sending these values will fail validation.`;
@@ -174,9 +194,17 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     matches: (c) => c.type === "response-schema-items-format-changed" && c.before === null && c.after !== null ? "INFO" : null,
     message: (c) => `Response array items format constraint added: ${c.location}. Server now guarantees elements use format '${c.after}' (non-breaking for clients).`,
   },
+  // request-schema-items-format-changed: direction-aware.
+  // after truthy: format added or changed → BREAKING. after null: format removed → INFO (less restrictive).
   {
-    matches: (c) => c.type === "request-schema-items-format-changed" ? "BREAKING" : null,
-    message: (c) => `Request array element format changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients sending elements in the old format will fail validation.`,
+    matches: (c) => c.type === "request-schema-items-format-changed" && c.after !== null ? "BREAKING" : null,
+    message: (c) => c.before === null
+      ? `Request array items format constraint added: ${c.location}. Elements must now use format '${c.after}'; clients sending other formats will fail validation.`
+      : `Request array element format changed: ${c.location} (${c.before} → ${c.after}). Clients sending elements in the old format will fail validation.`,
+  },
+  {
+    matches: (c) => c.type === "request-schema-items-format-changed" && c.after === null ? "INFO" : null,
+    message: (c) => `Request array items format constraint removed: ${c.location}. Server no longer enforces '${c.before}' format on elements (non-breaking for existing clients).`,
   },
   {
     matches: (c) =>
@@ -221,7 +249,9 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       if (c.type !== "request-schema-items-enum-changed") return null;
       const before = c.before as unknown[] | null;
       const after = c.after as unknown[] | null;
-      if (!before || !after) return "BREAKING";
+      if (!before && after) return "BREAKING"; // enum added to request items = new constraint
+      if (before && !after) return "INFO"; // enum removed from request items = constraint relaxed
+      if (!before || !after) return "BREAKING"; // null-null edge
       const removed = before.filter((v) => !after.includes(v));
       if (removed.length > 0) return "BREAKING";
       return "INFO";
@@ -229,6 +259,8 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => {
       const before = c.before as unknown[] | null;
       const after = c.after as unknown[] | null;
+      if (!before && after) return `Request array items enum added at ${c.location}: elements must now be one of [${after.join(", ")}]. Clients sending other element values will fail validation.`;
+      if (before && !after) return `Request array items enum removed at ${c.location}. Server no longer restricts element values (non-breaking for existing clients).`;
       if (!before || !after) return `Request array items enum changed: ${c.location}.`;
       const removed = before.filter((v) => !after.includes(v));
       if (removed.length > 0) return `Request array items enum values removed at ${c.location}: [${removed.join(", ")}] no longer accepted. Clients sending these values will fail validation.`;
@@ -280,16 +312,26 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     matches: (c) => c.type === "response-schema-property-format-changed" && c.before === null && c.after !== null ? "INFO" : null,
     message: (c) => `Response property format constraint added: ${c.location}. Server now guarantees this field uses format '${c.after}' (non-breaking for clients).`,
   },
+  // request-schema-property-format-changed: direction-aware.
+  // after truthy: format added or changed → BREAKING. after null: format removed → INFO (less restrictive).
   {
-    matches: (c) => c.type === "request-schema-property-format-changed" ? "BREAKING" : null,
-    message: (c) => `Request property format changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients sending data in the old format will fail validation.`,
+    matches: (c) => c.type === "request-schema-property-format-changed" && c.after !== null ? "BREAKING" : null,
+    message: (c) => c.before === null
+      ? `Request property format constraint added: ${c.location}. Server now enforces format '${c.after}'; clients sending other formats will fail validation.`
+      : `Request property format changed: ${c.location} (${c.before} → ${c.after}). Clients sending data in the old format will fail validation.`,
+  },
+  {
+    matches: (c) => c.type === "request-schema-property-format-changed" && c.after === null ? "INFO" : null,
+    message: (c) => `Request property format constraint removed: ${c.location}. Server no longer enforces '${c.before}' format for this property (non-breaking for existing clients).`,
   },
   {
     matches: (c) => {
       if (c.type !== "request-schema-property-enum-changed") return null;
       const before = c.before as unknown[] | undefined;
       const after = c.after as unknown[] | undefined;
-      if (!before || !after) return "BREAKING";
+      if (!before && after) return "BREAKING"; // enum added = new constraint
+      if (before && !after) return "INFO"; // enum removed = constraint relaxed (non-breaking)
+      if (!before || !after) return "BREAKING"; // null-null edge
       const removed = before.filter((v) => !after.includes(v));
       if (removed.length > 0) return "BREAKING";
       return "INFO";
@@ -297,6 +339,8 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => {
       const before = c.before as unknown[] | undefined;
       const after = c.after as unknown[] | undefined;
+      if (!before && after) return `Request property enum added at ${c.location}: [${after.join(", ")}]. Clients sending other values will fail validation.`;
+      if (before && !after) return `Request property enum removed at ${c.location}. Server no longer restricts values for this property (non-breaking for existing clients).`;
       if (!before || !after) return `Request property enum changed at ${c.location}: values may be removed.`;
       const removed = before.filter((v) => !after.includes(v));
       if (removed.length > 0) return `Request property enum values removed at ${c.location}: [${removed.join(", ")}] no longer accepted. Clients sending these values will fail validation.`;
@@ -729,20 +773,38 @@ const CLASSIFY_RULES: ClassifyRule[] = [
   },
 
   // ─── Parameter items (array parameter element schema) ─────────────────────
+  // parameter-items-type-changed: direction-aware.
+  // after truthy: type added or changed → BREAKING. after null: type removed → INFO (less restrictive).
   {
-    matches: (c) => c.type === "parameter-items-type-changed" ? "BREAKING" : null,
-    message: (c) => `Parameter array element type changed: ${c.location} (${c.before ?? "unspecified"} → ${c.after ?? "unspecified"}). Clients sending arrays with the old element type will fail validation.`,
+    matches: (c) => c.type === "parameter-items-type-changed" && c.after !== null ? "BREAKING" : null,
+    message: (c) => c.before === null
+      ? `Parameter array element type added: ${c.location}. Elements must now be type '${c.after}'; clients sending other types will fail validation.`
+      : `Parameter array element type changed: ${c.location} (${c.before} → ${c.after}). Clients sending arrays with the old element type will fail validation.`,
   },
   {
-    matches: (c) => c.type === "parameter-items-format-changed" ? "BREAKING" : null,
-    message: (c) => `Parameter array element format changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients sending elements in the old format may fail validation.`,
+    matches: (c) => c.type === "parameter-items-type-changed" && c.after === null ? "INFO" : null,
+    message: (c) => `Parameter array element type constraint removed: ${c.location}. Server no longer enforces element type (non-breaking for existing clients).`,
+  },
+  // parameter-items-format-changed: direction-aware.
+  // after truthy: format added or changed → BREAKING. after null: format removed → INFO (less restrictive).
+  {
+    matches: (c) => c.type === "parameter-items-format-changed" && c.after !== null ? "BREAKING" : null,
+    message: (c) => c.before === null
+      ? `Parameter array element format added: ${c.location}. Elements must now use format '${c.after}'.`
+      : `Parameter array element format changed: ${c.location} (${c.before} → ${c.after}). Clients sending elements in the old format may fail validation.`,
+  },
+  {
+    matches: (c) => c.type === "parameter-items-format-changed" && c.after === null ? "INFO" : null,
+    message: (c) => `Parameter array element format constraint removed: ${c.location}. Server no longer enforces '${c.before}' format on elements (non-breaking for existing clients).`,
   },
   {
     matches: (c) => {
       if (c.type !== "parameter-items-enum-changed") return null;
       const before = c.before as unknown[] | null;
       const after = c.after as unknown[] | null;
-      if (!before || !after) return "BREAKING"; // enum added or removed entirely
+      if (!before && after) return "BREAKING"; // enum added to parameter items = new constraint
+      if (before && !after) return "INFO"; // enum removed from parameter items = constraint relaxed
+      if (!before || !after) return "BREAKING"; // null-null edge
       // Request: values removed = BREAKING (clients sending now-invalid values will fail).
       const removed = before.filter((v) => !after.includes(v));
       return removed.length > 0 ? "BREAKING" : "INFO";
@@ -750,8 +812,9 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => {
       const before = c.before as unknown[] | null;
       const after = c.after as unknown[] | null;
-      if (!before) return `Parameter array element enum added: ${c.location}. Elements must now be one of [${(after ?? []).join(", ")}].`;
-      if (!after) return `Parameter array element enum removed: ${c.location}. Enum restriction no longer enforced on array elements.`;
+      if (!before && after) return `Parameter array element enum added: ${c.location}. Elements must now be one of [${after.join(", ")}]. Clients sending other values will receive 422.`;
+      if (before && !after) return `Parameter array element enum removed: ${c.location}. Enum restriction no longer enforced on array elements (non-breaking for existing clients).`;
+      if (!before || !after) return `Parameter array element enum changed: ${c.location}.`;
       const removed = before.filter((v) => !after.includes(v));
       return removed.length > 0
         ? `Parameter array element enum values removed: ${c.location}. Removed: [${removed.join(", ")}]. Clients sending these values will receive 422.`
@@ -855,9 +918,17 @@ const CLASSIFY_RULES: ClassifyRule[] = [
   },
 
   // ─── Top-level body schema format ─────────────────────────────────────────
+  // request-schema-format-changed: direction-aware.
+  // after truthy: format added or changed → BREAKING. after null: format removed → INFO (less restrictive).
   {
-    matches: (c) => c.type === "request-schema-format-changed" ? "BREAKING" : null,
-    message: (c) => `Request body schema format changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients sending data in the old format may fail validation.`,
+    matches: (c) => c.type === "request-schema-format-changed" && c.after !== null ? "BREAKING" : null,
+    message: (c) => c.before === null
+      ? `Request body schema format constraint added: ${c.location}. Server now enforces format '${c.after}'; clients sending other formats will fail validation.`
+      : `Request body schema format changed: ${c.location} (${c.before} → ${c.after}). Clients sending data in the old format may fail validation.`,
+  },
+  {
+    matches: (c) => c.type === "request-schema-format-changed" && c.after === null ? "INFO" : null,
+    message: (c) => `Request body schema format constraint removed: ${c.location}. Server no longer enforces '${c.before}' format (non-breaking for existing clients).`,
   },
   {
     matches: (c) => c.type === "response-schema-format-changed" && c.before !== null ? "BREAKING" : null,
@@ -874,7 +945,9 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       if (c.type !== "request-schema-enum-changed") return null;
       const before = c.before as unknown[] | null;
       const after = c.after as unknown[] | null;
-      if (!before || !after) return "BREAKING"; // enum added or removed entirely
+      if (!before && after) return "BREAKING"; // enum added = new constraint introduced
+      if (before && !after) return "INFO"; // enum removed = constraint relaxed (non-breaking)
+      if (!before || !after) return "BREAKING"; // null-null edge
       // Values removed from request enum = BREAKING (previously-valid values now rejected).
       const removed = before.filter((v) => !after.includes(v));
       return removed.length > 0 ? "BREAKING" : "INFO";
@@ -882,8 +955,9 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => {
       const before = c.before as unknown[] | null;
       const after = c.after as unknown[] | null;
-      if (!before) return `Request body schema enum added: ${c.location}. Server now restricts accepted values to [${(after ?? []).join(", ")}].`;
-      if (!after) return `Request body schema enum removed: ${c.location}. Server no longer enforces enum restriction on this value.`;
+      if (!before && after) return `Request body schema enum added: ${c.location}. Server now restricts accepted values to [${after.join(", ")}]. Clients sending other values will receive 422.`;
+      if (before && !after) return `Request body schema enum removed: ${c.location}. Server no longer enforces enum restriction; any value is now accepted (non-breaking for existing clients).`;
+      if (!before || !after) return `Request body schema enum changed: ${c.location}.`;
       const removed = before.filter((v) => !after.includes(v));
       return removed.length > 0
         ? `Request body schema enum values removed: ${c.location}. Removed: [${removed.join(", ")}]. Clients sending these values will now receive 422.`
