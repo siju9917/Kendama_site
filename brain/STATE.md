@@ -70,7 +70,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **1792/1792 tests** (BidDiff 586/586 + openapi-lens 1206/1206). Rounds 54-95: continuous 5.7.5 bug-hunt + Phase 2 POLISH items. **POLISH N1 DONE** (baseline persistence across VS Code reloads; +3 tests). **POLISH N3 DONE** (progressive semantic line location; +5 tests). **POLISH T1 DONE** (direction-aware IAM/SG classification; +15 tests). All 5.7.4 POLISH items now complete.
+- **Build green:** **1810/1810 tests** (BidDiff 586/586 + openapi-lens 1224/1224). Rounds 54-96: continuous 5.7.5 bug-hunt + Phase 2 POLISH items. **POLISH N1 DONE** (baseline persistence + F1-1 fix: clearBaseline writes `undefined` not `""`). **POLISH N3 DONE** (progressive semantic line location + F2-1/F2-2/F2-5 fixes: searchFrom+1, no full-doc fallback, anchored JSON pattern). **POLISH T1 DONE** (direction-aware IAM + F3-1/F3-5 fixes: Deny statement analysis + assume_role_policy support). All 5.7.4 POLISH items complete. Round 96 (2026-06-06): response header schema constraints (minimum/maximum/minLength/maxLength/pattern/minItems/maxItems) were completely invisible to diff engine — added constraint comparison loop to `diffResponseHeaders` in diff.ts; added `response-header-constraint-changed` to OapiChangeType; added classify rule using responseConstraintSeverity (adding=INFO, removing=BREAKING); TYPE_STUBS updated; 11 adversarial end-to-end tests. +18 tests total (round 96: 11 + T1 critique fixes: 5 + N3 JSON test refinement: 1 + TYPE_STUBS: 1).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -166,6 +166,21 @@
   [integer, string] picks first element as primary (known limitation); 2 adversarial
   tests documenting the gap (false negative when [integer,string]→integer, correct
   detection when [string,integer]→integer) → 793.
+  5.7.5 bug-hunt round 96 + 5.7.2 escalating critique P1 fixes (2026-06-06):
+  (a) Round 96: response-header-constraint-changed — constraint fields (minimum/maximum/
+  minLength/maxLength/pattern/minItems/maxItems) on response header schemas were never
+  compared. A change to X-Rate-Limit.schema.minimum was completely invisible. Added:
+  constraint comparison loop in diffResponseHeaders; new OapiChangeType; classify rule
+  using responseConstraintSeverity (adding=INFO, removing=BREAKING); TYPE_STUBS entry;
+  11 adversarial end-to-end tests. (b) 5.7.2 critique P1 fixes: N1 F1-1 (clearBaseline
+  wrote "" not undefined — VS Code leaves stale key in settings.json; fixed to undefined);
+  N3 F2-1 (searchFrom not incremented after match — could re-match same line; fixed: +1);
+  N3 F2-2 (300-line fallback expanded to full document, defeating progressive guarantee;
+  removed); N3 F2-5 (JSON pattern unanchored, could match inside string values; anchored
+  with ^\s*); T1 F3-1 (Deny statement removal is widening — not analyzed; fixed: counts
+  Deny separately, ambiguous net direction → unknown); T1 F3-5 (aws_iam_role uses
+  assume_role_policy not policy — always returned unknown; fixed: checks all three field
+  names). +5 T1 tests + 1 N3 refinement. Total: 1206 → 1224 openapi-lens tests.
   All typecheck clean; full CI gate verified green.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`

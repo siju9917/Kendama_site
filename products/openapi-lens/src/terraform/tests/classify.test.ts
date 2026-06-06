@@ -260,6 +260,57 @@ describe("analyzeIamDirection", () => {
     const after  = { ingress: [{ cidr_blocks: ["10.0.0.0/8", "192.168.0.0/16"] }] };
     expect(analyzeIamDirection(before, after)).toBe("widening");
   });
+
+  // F3-1: Deny statement direction analysis
+  it("returns 'widening' when a Deny statement is removed (access becomes broader)", () => {
+    const before = { policy: makePolicy([
+      { Effect: "Allow", Action: "s3:*", Resource: "*" },
+      { Effect: "Deny", Action: "s3:DeleteObject", Resource: "*" },
+    ]) };
+    const after = { policy: makePolicy([{ Effect: "Allow", Action: "s3:*", Resource: "*" }]) };
+    expect(analyzeIamDirection(before, after)).toBe("widening");
+  });
+
+  it("returns 'narrowing' when a Deny statement is added (access becomes more restricted)", () => {
+    const before = { policy: makePolicy([{ Effect: "Allow", Action: "s3:*", Resource: "*" }]) };
+    const after = { policy: makePolicy([
+      { Effect: "Allow", Action: "s3:*", Resource: "*" },
+      { Effect: "Deny", Action: "s3:DeleteObject", Resource: "*" },
+    ]) };
+    expect(analyzeIamDirection(before, after)).toBe("narrowing");
+  });
+
+  it("returns 'unknown' when Allow count drops AND Deny count also drops (ambiguous net direction)", () => {
+    // Removing one Allow and one Deny simultaneously — net access direction is unclear.
+    const before = { policy: makePolicy([
+      { Effect: "Allow", Action: "s3:GetObject", Resource: "*" },
+      { Effect: "Allow", Action: "s3:PutObject", Resource: "*" },
+      { Effect: "Deny", Action: "s3:DeleteObject", Resource: "*" },
+    ]) };
+    const after = { policy: makePolicy([
+      { Effect: "Allow", Action: "s3:GetObject", Resource: "*" },
+    ]) };
+    expect(analyzeIamDirection(before, after)).toBe("unknown");
+  });
+
+  // F3-5: assume_role_policy field (aws_iam_role trust policy)
+  it("returns 'widening' when aws_iam_role assume_role_policy gains an Allow statement", () => {
+    const before = { assume_role_policy: makePolicy([{ Effect: "Allow", Action: "sts:AssumeRole", Resource: "arn:aws:iam::123:root" }]) };
+    const after  = { assume_role_policy: makePolicy([
+      { Effect: "Allow", Action: "sts:AssumeRole", Resource: "arn:aws:iam::123:root" },
+      { Effect: "Allow", Action: "sts:AssumeRole", Resource: "arn:aws:iam::456:root" },
+    ]) };
+    expect(analyzeIamDirection(before, after)).toBe("widening");
+  });
+
+  it("returns 'narrowing' when aws_iam_role assume_role_policy loses an Allow statement", () => {
+    const before = { assume_role_policy: makePolicy([
+      { Effect: "Allow", Action: "sts:AssumeRole", Resource: "arn:aws:iam::123:root" },
+      { Effect: "Allow", Action: "sts:AssumeRole", Resource: "arn:aws:iam::456:root" },
+    ]) };
+    const after  = { assume_role_policy: makePolicy([{ Effect: "Allow", Action: "sts:AssumeRole", Resource: "arn:aws:iam::123:root" }]) };
+    expect(analyzeIamDirection(before, after)).toBe("narrowing");
+  });
 });
 
 describe("classifyChange — Rule 5 (T1 direction-aware IAM)", () => {

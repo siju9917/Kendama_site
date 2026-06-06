@@ -12167,3 +12167,169 @@ paths:
     expect(resChange?.after).toBe(100);
   });
 });
+
+// ─── Round 96: response header schema constraint changes ──────────────────────
+// Response headers can carry `schema` with constraint fields (minimum, maximum,
+// minLength, maxLength, pattern, etc.). Until this round, those constraints were
+// completely invisible to the diff engine.  This round adds end-to-end coverage.
+
+describe("adversarial round 96 — response header constraint changes (end-to-end)", () => {
+  function spec(headerSchema: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /rate:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Rate-Limit:
+              schema:
+${headerSchema.replace(/^/gm, "                ")}
+`;
+  }
+
+  function specNoHeader(): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /rate:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Rate-Limit:
+              schema:
+                type: integer
+`;
+  }
+
+  it("adding minimum to response header → INFO (server adds guarantee)", () => {
+    const before = specNoHeader();
+    const after = spec("type: integer\nminimum: 1");
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".minimum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(1);
+  });
+
+  it("removing minimum from response header → BREAKING (clients lose guarantee)", () => {
+    const before = spec("type: integer\nminimum: 1");
+    const after = specNoHeader();
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".minimum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(1);
+    expect(c?.after).toBeNull();
+  });
+
+  it("decreasing minimum on response header → BREAKING (weaker lower-bound guarantee)", () => {
+    const before = spec("type: integer\nminimum: 10");
+    const after = spec("type: integer\nminimum: 1");
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".minimum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(10);
+    expect(c?.after).toBe(1);
+  });
+
+  it("increasing minimum on response header → INFO (stronger lower-bound guarantee)", () => {
+    const before = spec("type: integer\nminimum: 1");
+    const after = spec("type: integer\nminimum: 10");
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".minimum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(1);
+    expect(c?.after).toBe(10);
+  });
+
+  it("adding maximum to response header → INFO (server adds upper-bound guarantee)", () => {
+    const before = specNoHeader();
+    const after = spec("type: integer\nmaximum: 1000");
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".maximum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(1000);
+  });
+
+  it("removing maximum from response header → BREAKING (clients lose upper-bound guarantee)", () => {
+    const before = spec("type: integer\nmaximum: 1000");
+    const after = specNoHeader();
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".maximum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(1000);
+    expect(c?.after).toBeNull();
+  });
+
+  it("increasing maximum on response header → BREAKING (weaker upper-bound guarantee)", () => {
+    const before = spec("type: integer\nmaximum: 100");
+    const after = spec("type: integer\nmaximum: 999");
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".maximum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(100);
+    expect(c?.after).toBe(999);
+  });
+
+  it("adding pattern to response header → INFO (server adds format guarantee)", () => {
+    const before = spec("type: string");
+    const after = spec("type: string\npattern: '^[A-Z]{2,5}$'");
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".pattern"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBeNull();
+  });
+
+  it("removing pattern from response header → BREAKING (clients can no longer rely on format)", () => {
+    const before = spec("type: string\npattern: '^[A-Z]{2,5}$'");
+    const after = spec("type: string");
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".pattern"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.after).toBeNull();
+  });
+
+  it("multiple constraint changes on same header are all emitted independently", () => {
+    const before = spec("type: integer\nminimum: 1\nmaximum: 100");
+    const after = spec("type: integer\nminimum: 5\nmaximum: 50");
+    const changes = analyzeOpenApiDiff(before, after);
+    const headerChanges = changes.filter((x) => x.type === "response-header-constraint-changed");
+    expect(headerChanges).toHaveLength(2);
+    const minChange = headerChanges.find((x) => String(x.location).endsWith(".minimum"));
+    const maxChange = headerChanges.find((x) => String(x.location).endsWith(".maximum"));
+    expect(minChange).toBeDefined();
+    expect(maxChange).toBeDefined();
+    // min increased: INFO (stronger lower bound)
+    expect(minChange?.severity).toBe("INFO");
+    // max decreased: INFO (stronger upper bound)
+    expect(maxChange?.severity).toBe("INFO");
+  });
+
+  it("header constraint change is isolated — does not appear as body schema change", () => {
+    const before = spec("type: integer\nminimum: 1");
+    const after = spec("type: integer\nminimum: 999");
+    const changes = analyzeOpenApiDiff(before, after);
+    const bodyConstraintChanges = changes.filter(
+      (x) => x.type === "response-schema-property-constraint-changed" || x.type === "response-schema-items-constraint-changed",
+    );
+    expect(bodyConstraintChanges).toHaveLength(0);
+    const headerConstraintChanges = changes.filter((x) => x.type === "response-header-constraint-changed");
+    expect(headerConstraintChanges).toHaveLength(1);
+  });
+});

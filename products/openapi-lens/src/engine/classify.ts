@@ -900,6 +900,25 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => `Response header nullable changed at ${c.location}: was nullable, now non-nullable. Server guarantees a non-null value (non-breaking for existing clients).`,
   },
 
+  // response-header-constraint-changed: direction-aware using response semantics.
+  // (Server adding a constraint = stronger guarantee = INFO; removing = clients lose guarantee = BREAKING.)
+  {
+    matches: (c) =>
+      c.type === "response-header-constraint-changed"
+        ? responseConstraintSeverity(c.location, c.before as number | string | null, c.after as number | string | null)
+        : null,
+    message: (c) => {
+      const field = c.location.split(".").pop() ?? "constraint";
+      if (c.before === null) {
+        return `Response header constraint added at ${c.location}: ${field} is now ${c.after}. Server now guarantees this range (non-breaking for existing clients).`;
+      }
+      if (c.after === null) {
+        return `Response header constraint removed at ${c.location}: ${field} was ${c.before}. Clients relying on the server enforcing this limit may be affected.`;
+      }
+      return `Response header constraint changed at ${c.location}: ${field} changed from ${c.before} to ${c.after}.`;
+    },
+  },
+
   // ─── SAFE / INFO ────────────────────────────────────────────────────────
   {
     matches: (c) => c.type === "endpoint-added" ? "INFO" : null,

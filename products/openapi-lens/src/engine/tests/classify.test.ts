@@ -823,6 +823,7 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "response-header-format-changed":                        ["uuid", "uri"],
     "response-header-enum-changed":                          [["a","b","c"], ["a","b"]],
     "response-header-nullable-changed":                      [false, true],
+    "response-header-constraint-changed":                    [null, 10],
     "response-media-type-removed":                           ["application/json", null],
     "response-media-type-added":                             [null, "application/xml"],
     "request-media-type-removed":                            ["application/json", null],

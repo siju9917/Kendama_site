@@ -809,6 +809,20 @@ function diffResponseHeaders(
         after: cNullable,
       });
     }
+    const constraintFields = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems"] as const;
+    for (const cf of constraintFields) {
+      const bVal = bHdr.schema?.[cf] ?? null;
+      const cVal = cHdr.schema?.[cf] ?? null;
+      if (bVal !== cVal) {
+        changes.push({
+          type: "response-header-constraint-changed",
+          path, method,
+          location: `${loc}.schema.${cf}`,
+          before: bVal,
+          after: cVal,
+        });
+      }
+    }
   }
 
   for (const name of cKeys) {

@@ -28,17 +28,18 @@ export function findLineForLocation(
 
   for (const key of segments) {
     const yamlPattern = new RegExp(`^\\s*${escapeRegExp(key)}\\s*:`);
-    const jsonPattern = new RegExp(`"${escapeRegExp(key)}"\\s*:`);
+    // Anchored at line start to avoid matching key names inside JSON string values.
+    const jsonPattern = new RegExp(`^\\s*"${escapeRegExp(key)}"\\s*:`);
 
-    // Try a 300-line window first to stay within the current section, then
-    // expand to the full remaining document if the window search fails.
+    // 300-line window keeps search within the current section.
+    // No fallback to the full document — that risks matching the same key in an
+    // unrelated later section, defeating the progressive-search guarantee.
     const windowEnd = Math.min(document.lineCount, searchFrom + 300);
-    const found = findKeyInRange(document, yamlPattern, jsonPattern, searchFrom, windowEnd)
-      ?? findKeyInRange(document, yamlPattern, jsonPattern, searchFrom, document.lineCount);
+    const found = findKeyInRange(document, yamlPattern, jsonPattern, searchFrom, windowEnd);
 
     if (found !== null) {
       lastFoundLine = found;
-      searchFrom = found; // next segment searches forward from here
+      searchFrom = found + 1; // next segment must start AFTER this line
     }
   }
 

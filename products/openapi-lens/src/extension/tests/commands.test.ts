@@ -81,7 +81,7 @@ describe("registerCommands — clearBaseline", () => {
     expect(vscode.window.showInformationMessage).toHaveBeenCalled();
   });
 
-  it("persists empty string to workspace settings and calls onBaselineCleared", async () => {
+  it("removes the baselineFile key from workspace settings (uses undefined, not empty string) and calls onBaselineCleared", async () => {
     const updateFn = vi.fn().mockResolvedValue(undefined);
     vi.mocked(vscode.workspace.getConfiguration).mockReturnValue({
       update: updateFn,
@@ -94,7 +94,8 @@ describe("registerCommands — clearBaseline", () => {
     const handler = commandHandlers.get("openapi-lens.clearBaseline");
     await handler?.();
 
-    expect(updateFn).toHaveBeenCalledWith("baselineFile", "", 1); // ConfigurationTarget.Workspace = 1
+    // F1-1 fix: must pass undefined (not "") so VS Code removes the key from settings.json.
+    expect(updateFn).toHaveBeenCalledWith("baselineFile", undefined, 1); // ConfigurationTarget.Workspace = 1
     expect(ctx.onBaselineCleared).toHaveBeenCalledOnce();
   });
 });

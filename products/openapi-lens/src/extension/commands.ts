@@ -34,7 +34,8 @@ export function registerCommands(
       // Clear the persisted workspace setting if a workspace is open (best-effort).
       try {
         const config = vscode.workspace.getConfiguration("openapi-lens");
-        await config.update("baselineFile", "", vscode.ConfigurationTarget.Workspace);
+        // Use undefined to remove the key entirely (VS Code convention for clearing a setting).
+        await config.update("baselineFile", undefined, vscode.ConfigurationTarget.Workspace);
       } catch {
         // No workspace open — setting can't be persisted, but in-memory state still clears.
       }

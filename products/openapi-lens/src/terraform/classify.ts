@@ -80,20 +80,33 @@ export function analyzeIamDirection(
 ): "widening" | "narrowing" | "unknown" {
   if (!before || !after) return "unknown";
 
-  // Try IAM policy document analysis (aws_iam_policy, aws_iam_role_policy, etc.)
+  // Try IAM policy document analysis (aws_iam_policy, aws_iam_role, aws_iam_role_policy, etc.)
   const beforeStatements = extractIamStatements(before);
   const afterStatements = extractIamStatements(after);
   if (beforeStatements !== null && afterStatements !== null) {
-    const beforeAllows = beforeStatements.filter(
-      (s) => (s as Record<string, unknown>)["Effect"] === "Allow",
-    ).length;
-    const afterAllows = afterStatements.filter(
-      (s) => (s as Record<string, unknown>)["Effect"] === "Allow",
-    ).length;
-    if (afterAllows > beforeAllows) return "widening";
-    if (afterAllows < beforeAllows) return "narrowing";
+    const countEffect = (stmts: unknown[], effect: string) =>
+      stmts.filter((s) => (s as Record<string, unknown>)["Effect"] === effect).length;
 
-    // Same statement count — check for wildcard Action additions.
+    const beforeAllows = countEffect(beforeStatements, "Allow");
+    const afterAllows = countEffect(afterStatements, "Allow");
+    const beforeDenies = countEffect(beforeStatements, "Deny");
+    const afterDenies = countEffect(afterStatements, "Deny");
+
+    if (afterAllows > beforeAllows) return "widening";
+    if (afterAllows < beforeAllows) {
+      // Fewer Allow statements — but if Deny also decreased the net direction is ambiguous
+      // (removing a Deny widens access and may cancel out the Allow reduction).
+      if (afterDenies < beforeDenies) return "unknown";
+      return "narrowing";
+    }
+
+    // Same Allow count: fewer Deny statements = wider access.
+    if (afterDenies < beforeDenies) return "widening";
+    if (afterDenies > beforeDenies) return "narrowing";
+
+    // Allow and Deny counts unchanged — check for literal wildcard Action (*) additions.
+    // Note: service-level wildcards (e.g. "s3:*") are not detected here; equal-count
+    // changes with service wildcards return "unknown" and default to CRITICAL (conservative).
     const countWildcards = (stmts: unknown[]): number =>
       stmts.filter((s) => {
         const stmt = s as Record<string, unknown>;
@@ -120,17 +133,27 @@ export function analyzeIamDirection(
   return "unknown";
 }
 
-/** Parses IAM policy JSON from a resource state object. Returns null on failure. */
+/**
+ * Parses IAM policy JSON from a resource state object.
+ * Checks multiple field names used by different Terraform resource types:
+ *   "policy"              — aws_iam_policy, aws_iam_role_policy, aws_iam_group_policy
+ *   "assume_role_policy"  — aws_iam_role (trust policy)
+ *   "inline_policy"       — aws_iam_role inline_policy block (JSON string variant)
+ * Returns null on failure or when no recognized field is present.
+ */
 function extractIamStatements(state: Record<string, unknown>): unknown[] | null {
-  const policyVal = state["policy"];
-  if (typeof policyVal !== "string") return null;
-  try {
-    const doc = JSON.parse(policyVal) as Record<string, unknown>;
-    const statements = doc["Statement"];
-    return Array.isArray(statements) ? statements : null;
-  } catch {
-    return null;
+  for (const field of ["policy", "assume_role_policy", "inline_policy"]) {
+    const policyVal = state[field];
+    if (typeof policyVal !== "string") continue;
+    try {
+      const doc = JSON.parse(policyVal) as Record<string, unknown>;
+      const statements = doc["Statement"];
+      if (Array.isArray(statements)) return statements;
+    } catch {
+      // Try next field.
+    }
   }
+  return null;
 }
 
 /** Counts total CIDR entries across all ingress/egress rule arrays. Returns null if not present. */

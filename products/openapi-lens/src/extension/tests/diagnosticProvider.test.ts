@@ -85,12 +85,27 @@ describe("findLineForLocation", () => {
     expect(findLineForLocation(doc, "info.title.nonexistent")).toBe(2);
   });
 
-  it("matches JSON-style quoted key", () => {
+  it("finds well-formatted JSON key at line start (anchored pattern)", () => {
+    const doc = makeMockDocument([
+      "{",
+      '  "openapi": "3.0.0",',
+      '  "info": {',
+      '    "title": "T"',
+      "  }",
+      "}",
+    ]);
+    // "info" at line 2 (after spaces), "title" at line 3.
+    expect(findLineForLocation(doc, "info.title")).toBe(3);
+  });
+
+  it("inline JSON (keys not at line start) returns 0 — anchored pattern prevents false positives inside strings", () => {
     const doc = makeMockDocument([
       '{"openapi":"3.0.0","info":',
       '  {"title":"T"}}',
     ]);
-    expect(findLineForLocation(doc, "info.title")).toBeGreaterThanOrEqual(0);
+    // Keys are embedded inside the line, not at line start — anchored pattern won't match them.
+    // This is the correct tradeoff: no false match inside a string value like '"description":"info: see below"'.
+    expect(findLineForLocation(doc, "info.title")).toBe(0);
   });
 
   // N3 improvements: numeric index skipping + progressive search

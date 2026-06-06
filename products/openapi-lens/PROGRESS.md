@@ -625,6 +625,9 @@ What would make D5 Phase 1 materially better? What would a top-tier team add?
   now returns `{path, content}`. `selectBaseline` command persists the file path to workspace
   settings (`ConfigurationTarget.Workspace`) so `resolveBaseline` step 2 restores the baseline
   on any VS Code reload. Degrades gracefully when no workspace is open. +3 tests. ✓
+  **5.7.2 escalating critique fix (F1-1)**: `clearBaseline` was writing `""` instead of `undefined`
+  to workspace settings. Fixed: now writes `undefined` (VS Code convention for removing a key);
+  test updated to assert `undefined` not `""`.
 
 - [x] **POLISH N2 — Real-time analysis (debounced).** DONE (2026-06-06). Subscribed to
   `onDidChangeTextDocument` with 400ms debounce alongside `onDidSaveTextDocument`.
@@ -634,7 +637,12 @@ What would make D5 Phase 1 materially better? What would a top-tier team add?
   now uses progressive left-to-right segment search (each segment searched from where the
   previous was found, not from line 0). Pure numeric array-index segments (e.g., "0" in
   `parameters[0]`) are filtered out — they don't appear as YAML keys and caused fall-back to
-  line 0. 300-line sliding window per segment; falls back to full remaining document. +5 tests. ✓
+  line 0. 300-line sliding window per segment. +5 tests. ✓
+  **5.7.2 escalating critique fixes (F2-1, F2-2, F2-5)**: (1) `searchFrom = found` was not
+  incremented — next segment could re-match the same line. Fixed: `searchFrom = found + 1`.
+  (2) 300-line window fallback expanded to `document.lineCount`, defeating the progressive-search
+  guarantee. Fixed: removed the full-document fallback. (3) JSON pattern `"key"\s*:` had no
+  anchor — could match key names inside JSON string values. Fixed: anchored as `^\s*"key"\s*:`.
 
 - [x] **POLISH N4 — "Comparing vs:" in WebView panel header.** DONE (2026-06-06).
   `resolveBaseline` now returns `{content, label}` — label is "git HEAD", "selected file",
@@ -652,6 +660,13 @@ What would make D5 Phase 1 materially better? What would a top-tier team add?
   narrowing changes (fewer Allow statements, fewer CIDRs) as NORMAL instead of CRITICAL.
   Unknown direction or no parseable policy stays CRITICAL (conservative). Rule 3/replace still
   overrides narrowing — replaced IAM policy is always CRITICAL. +15 tests. ✓
+  **5.7.2 escalating critique fixes (F3-1, F3-5)**: (1) `Deny` statement changes were ignored —
+  removing a Deny is widening (security risk). Fixed: `analyzeIamDirection` now counts Deny
+  statements separately; fewer Deny = widening, more Deny = narrowing; simultaneous Allow-decrease
+  AND Deny-decrease → "unknown" (conservative). (2) `aws_iam_role` uses `assume_role_policy` not
+  `policy` — direction analysis always returned "unknown" for the most common IAM type. Fixed:
+  `extractIamStatements` now checks `["policy", "assume_role_policy", "inline_policy"]` in order.
+  +5 new tests (Deny analysis + assume_role_policy).
 
 - [x] **POLISH T2 — `output_changes` classification.** DONE (2026-06-06). Parser extracts
   `output_changes` map from plan JSON; sensitive detection handles boolean AND object
@@ -784,10 +799,11 @@ Built as D6 alongside D5 (same extension, two format classifiers):
   (BREAKING) and `request-media-type-removed` (BREAKING) now emitted when content-type
   keys are removed from `content:` maps. Added `contentTypes: string[]` to `OapiRequestBody`
   and `OapiResponse`.
-- ~~**Response `headers` not diffed.**~~ **FIXED (2026-06-06, rounds 24–28, 31, 43).** Response headers
+- ~~**Response `headers` not diffed.**~~ **FIXED (2026-06-06, rounds 24–28, 31, 43, 96).** Response headers
   fully parsed and diffed: `response-header-removed` (BREAKING), `response-header-added` (INFO),
   `response-header-type-changed`, `response-header-required-changed`, `response-header-format-changed`,
-  `response-header-enum-changed`, `response-header-nullable-changed`.
+  `response-header-enum-changed`, `response-header-nullable-changed`, `response-header-constraint-changed`
+  (direction-aware: server adding constraint = INFO; removing = BREAKING; decreasing min / increasing max = BREAKING).
   Handles OAS 3.x (`schema:` wrapper) and Swagger 2.0 (bare `type:`).
 - ~~**Security scheme / scope changes not detected.**~~ **FIXED (2026-06-06, round 27).**
   `operation-security-scheme-removed` (BREAKING), `operation-security-scheme-added` (BREAKING),

@@ -178,6 +178,7 @@ export type OapiChangeType =
   | "response-header-format-changed"
   | "response-header-enum-changed"
   | "response-header-nullable-changed"
+  | "response-header-constraint-changed"
   | "response-media-type-removed"
   | "response-media-type-added"
   | "request-media-type-removed"
