@@ -210,18 +210,22 @@ export function detectDates(text: string): Anchor[] {
 }
 
 // ---------- Money ----------
-// Captures a dollar amount, an optional decimal of any length, and an
-// optional magnitude suffix (K / M / B / thousand / million / billion).
-// Federal solicitations routinely state ceilings as "$1.5M" or
-// "$2.3 million"; without the suffix, "$1.5M" would have parsed as the
-// value $1 (the old pattern required cents to be exactly two digits and
-// ignored the suffix), mis-driving classification and the anchor value.
+// Captures a dollar amount with optional decimal and magnitude suffix.
+// Two forms:
+//   - Normal: leading digits (optional commas) then optional decimal → groups 1+2
+//   - Leading-decimal: no leading digits, starts with "." → group 3
+// Magnitude: K/M/MM/B/thousand/million/billion — MM (accounting "millions")
+// is listed before M so the alternation is greedy (MM matches first where
+// both would apply). "MM" = 1,000,000 in US federal accounting notation.
+// Bug-hunt pass 13 (N10): "$.5M" and "$1.5MM" were not parsed. Fixed by
+// allowing leading-decimal form (group 3) and adding MM to magnitude.
 const MONEY_RE =
-  /\$\s?(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d+))?(?:\s?(K|M|B|thousand|million|billion))?\b/gi;
+  /\$\s?(?:(\d{1,3}(?:,\d{3})*|\d+)(?:\.(\d+))?|\.(\d+))(?:\s?(K|MM|M|B|thousand|million|billion))?\b/gi;
 
 const MAGNITUDE: Readonly<Record<string, number>> = {
   k: 1e3,
   thousand: 1e3,
+  mm: 1e6,
   m: 1e6,
   million: 1e6,
   b: 1e9,
@@ -233,9 +237,10 @@ export function detectMoney(text: string): Anchor[] {
   const out: Anchor[] = [];
   let m: RegExpExecArray | null;
   while ((m = MONEY_RE.exec(text)) !== null) {
-    const whole = m[1].replace(/,/g, "");
-    const frac = m[2] ?? "";
-    const mult = m[3] ? (MAGNITUDE[m[3].toLowerCase()] ?? 1) : 1;
+    // group 1+2: normal form ($1.5M); group 3: leading-decimal form ($.5M)
+    const whole = (m[1] ?? "0").replace(/,/g, "");
+    const frac = m[2] ?? m[3] ?? "";
+    const mult = m[4] ? (MAGNITUDE[m[4].toLowerCase()] ?? 1) : 1;
     // Normalize to a fixed "dollars.cents" string. The value is only
     // ever compared/displayed, so toFixed(2) rounding is sufficient and
     // keeps magnitudes (e.g. $1.5M → 1500000.00) comparable across

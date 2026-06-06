@@ -142,10 +142,14 @@ describe("money", () => {
       "1500000.00",
     ]);
   });
-  it("KNOWN LIMITATION (PROGRESS.md N10): no leading-dot or double-M support", () => {
-    // Documented, low-severity: a money miss still surfaces as a text diff.
-    expect(detectMoney("$.5M").length).toBe(0); // no leading zero → no match
-    expect(detectMoney("$1.5MM").map((x) => x.normalized)).toEqual(["1.00"]); // "MM" not recognized
+  it("parses leading-decimal form ($.5M — no leading zero before decimal)", () => {
+    expect(detectMoney("$.5M").map((x) => x.normalized)).toEqual(["500000.00"]);
+    expect(detectMoney("award ceiling of $.75M").map((x) => x.normalized)).toEqual(["750000.00"]);
+    expect(detectMoney("$.5").map((x) => x.normalized)).toEqual(["0.50"]);
+  });
+  it("parses double-M accounting notation ($1.5MM = $1.5 million)", () => {
+    expect(detectMoney("$1.5MM").map((x) => x.normalized)).toEqual(["1500000.00"]);
+    expect(detectMoney("ceiling not to exceed $2MM").map((x) => x.normalized)).toEqual(["2000000.00"]);
   });
   it("KNOWN LIMITATION (PROGRESS.md obs #7): USD-prefix and spelled-out forms not parsed", () => {
     // "$"-prefixed forms work; non-dollar-sign prefixes do not.
