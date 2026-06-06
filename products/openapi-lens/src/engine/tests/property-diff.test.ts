@@ -251,7 +251,7 @@ describe("array items diff — response", () => {
     expect(changes.filter((c) => c.type === "response-schema-items-type-changed")).toHaveLength(0);
   });
 
-  it("does not emit items-type-changed when baseline has no items schema", () => {
+  it("detects INFO when response gains an items type constraint (was unspecified)", () => {
     const baseline = `
 openapi: "3.0.0"
 info:
@@ -269,7 +269,36 @@ paths:
 `;
     const current = makeArraySpec("string");
     const changes = analyzeOpenApiDiff(baseline, current);
-    expect(changes.filter((c) => c.type === "response-schema-items-type-changed")).toHaveLength(0);
+    const change = changes.find((c) => c.type === "response-schema-items-type-changed");
+    expect(change).toBeDefined();
+    expect(change?.severity).toBe("INFO");
+    expect(change?.before).toBeNull();
+    expect(change?.after).toBe("string");
+  });
+
+  it("detects BREAKING when response loses its items type constraint", () => {
+    const baseline = makeArraySpec("string");
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /list:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = breakingOnly(changes);
+    expect(breaking.some((c) => c.type === "response-schema-items-type-changed")).toBe(true);
+    const change = breaking.find((c) => c.type === "response-schema-items-type-changed")!;
+    expect(change.before).toBe("string");
+    expect(change.after).toBeNull();
   });
 });
 

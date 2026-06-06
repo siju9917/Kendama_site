@@ -119,12 +119,18 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => `Request body property removed: ${c.location}. The server no longer accepts this property (silently ignored or rejected).`,
   },
   {
-    matches: (c) => c.type === "response-schema-items-type-changed" ? "BREAKING" : null,
+    matches: (c) => c.type === "response-schema-items-type-changed" && c.before !== null && c.after !== null ? "BREAKING" : null,
     message: (c) => `Response array element type changed: ${c.location} (${c.before} → ${c.after}). Clients iterating this array will receive the wrong element type.`,
   },
   {
-    matches: (c) => c.type === "request-schema-items-type-changed" ? "BREAKING" : null,
-    message: (c) => `Request body array element type changed: ${c.location} (${c.before} → ${c.after}). Clients sending the old element type will fail validation.`,
+    matches: (c) => c.type === "response-schema-items-type-changed" && c.before !== null && c.after === null ? "BREAKING" : null,
+    message: (c) => `Response array items type constraint removed: ${c.location}. Clients that relied on elements being ${c.before} may now receive any type.`,
+  },
+  {
+    matches: (c) => c.type === "request-schema-items-type-changed" && c.after !== null ? "BREAKING" : null,
+    message: (c) => c.before === null
+      ? `Request array items type constraint added: ${c.location}. Clients sending elements that are not ${c.after} will fail validation.`
+      : `Request body array element type changed: ${c.location} (${c.before} → ${c.after}). Clients sending the old element type will fail validation.`,
   },
   {
     matches: (c) => c.type === "response-schema-property-format-changed" ? "BREAKING" : null,
@@ -173,6 +179,16 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const removed = before.filter((v) => !after.includes(v));
       return `Response property enum values removed at ${c.location}: [${removed.join(", ")}] no longer returned (non-breaking for clients).`;
     },
+  },
+
+  // ─── INFO for items direction changes ────────────────────────────────────
+  {
+    matches: (c) => c.type === "response-schema-items-type-changed" && c.before === null ? "INFO" : null,
+    message: (c) => `Response array items type added: ${c.location}. Server now guarantees elements are ${c.after} (previously unspecified).`,
+  },
+  {
+    matches: (c) => c.type === "request-schema-items-type-changed" && c.after === null ? "INFO" : null,
+    message: (c) => `Request array items type constraint removed: ${c.location}. Server now accepts any element type (non-breaking for clients).`,
   },
 
   // ─── SAFE / INFO ────────────────────────────────────────────────────────

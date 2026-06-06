@@ -206,13 +206,15 @@ function diffSchemaItems(
   const bItems = baseline?.items;
   const cItems = current?.items;
   if (!bItems && !cItems) return;
-  if (bItems?.type !== undefined && cItems?.type !== undefined && bItems.type !== cItems.type) {
+  const bType = bItems?.type ?? null;
+  const cType = cItems?.type ?? null;
+  if (bType !== cType) {
     changes.push({
       type: isRequest ? "request-schema-items-type-changed" : "response-schema-items-type-changed",
       path, method,
       location: `${location}.items.type`,
-      before: bItems.type,
-      after: cItems.type,
+      before: bType,
+      after: cType,
     });
   }
 }
