@@ -77,15 +77,16 @@ session has specifics, not a vague "improve extraction":
    extraction correctness. New test cases in
    `src/core/extract/anchors/index.test.ts`.
 
-4. **Letter-dot-number subsections for sections A–K not detected.**
-   `classifyHeading` recognizes "L.1"/"M.2" items (SECTION_LM rule) but a
-   matching "C.3 Performance Work Statement" for sections A–K matches no
-   rule and returns NONE (letter-dot needs a space after the dot; the
-   numbered rule needs a leading digit). Low impact: the line still sits
-   inside its parent UCF section, so the section TYPE is preserved — only
-   sub-section granularity is lost. Candidate fix: a SECTION_AK_ITEM rule
-   mirroring SECTION_LM for A–K, validated against domain-expert input
-   (BD2). Characterized (not changed) in headings.test.ts (bug-hunt 16).
+4. **Letter-dot-number subsections for sections A–K not detected. — DONE
+   (FIXED 2026-06-06).** `SECTION_LM_RE` was extended from `[LM]` to `[A-M]`
+   — the minimal one-character change. "C.3 Performance Work Statement" is now
+   a SECTION_LM_ITEM with `itemId "C.3"`, correctly assigning ucfLetter "C" via
+   `extractUcfLetter`. The LETTER_DOT vs SECTION_LM patterns are mutually
+   exclusive (LETTER_DOT requires a space after dot; SECTION_LM requires a digit
+   after dot), so no new ambiguity. 8 assertions in the updated obs-#4 test
+   (C.3, B.1, H.2.1, I.4, L.3, M.2.1 — plus regression that bare "C." stays
+   LETTER_DOT). Downstream assemble.ts unchanged. 486/486 pass (test count
+   unchanged; replaced 1 test, added assertions within it).
 
 5. **Deadline TIME / TIMEZONE changes with no date token are not flagged
    critical outside Section L. — OPEN (low priority; public-source validated
@@ -161,12 +162,13 @@ session has specifics, not a vague "improve extraction":
    PRICING_CLINS via the existing CLIN anchor and trigger critical rule 5.
    3 new unit tests; 484/484 pass, typecheck clean. BD2 gate removed.
 
-**Domain-Expert P1 status (2026-06-06):** The BD2 gate was WITHDRAWN (human
-declined outreach; factory validated from public FAR/DFARS sources instead).
-Obs #8 DONE (list renumbering), obs #9 DONE (sub-CLINs), obs #5 CLOSED (public-source
-confirms no V1 implementation needed), obs #6 PARTIALLY RESOLVED (SET_ASIDE
-anchor implemented; others documented as low-priority). Obs #7 (USD money) and obs #4
-(A–K subsection detection) remain OPEN as low-severity improvements. The
+**Domain-Expert P1 status (2026-06-06, updated):** The BD2 gate was WITHDRAWN
+(human declined outreach; factory validated from public FAR/DFARS sources instead).
+Obs #4 DONE (A-K subsections), obs #8 DONE (list renumbering), obs #9 DONE (sub-CLINs),
+obs #5 CLOSED (public-source confirms no V1 implementation needed), obs #6 PARTIALLY
+RESOLVED (SET_ASIDE anchor implemented; others documented as low-priority). Obs #7
+(USD/spelled-out money) remains OPEN as low-severity (money miss still shows as text
+diff; widening the regex needs corpus validation per the characterization note). The
 Domain-Expert P1 is now effectively **RESOLVED** for V1 scope — all high-priority
 gaps addressed or documented with public-source reasoning; no human outreach required.
 

@@ -70,16 +70,23 @@ describe("classifyHeading", () => {
     expect(classifyHeading({ text: "SECTIONAL meeting notes" }).kind.kind).toBe("NONE");
   });
 
-  // KNOWN LIMITATION (PROGRESS.md coverage obs #4): a letter-dot-NUMBER
-  // subsection for sections A–K (e.g. "C.3 ...") matches no rule and returns
-  // NONE — the SECTION_LM item rule only covers L/M. Low impact: the missed
-  // line still sits inside its parent UCF section, so the section TYPE is
-  // preserved; only sub-section granularity is lost. Characterized here (not
-  // changed) so a future fix is deliberate and validated against domain input.
-  it("KNOWN LIMITATION: 'C.3 ...' (A–K letter-dot-number) is not yet a heading", () => {
-    expect(classifyHeading({ text: "C.3 Performance Work Statement" }).kind.kind).toBe("NONE");
-    // Contrast: the L/M equivalent IS recognized.
+  // PROGRESS.md coverage obs #4 — FIXED: A–K letter-dot-number subsections now
+  // detected as SECTION_LM_ITEM (the SECTION_LM_RE was extended from [LM] to [A-M]).
+  it("recognizes A–K letter-dot-number subsections (obs #4 fix)", () => {
+    const c = classifyHeading({ text: "C.3 Performance Work Statement" });
+    expect(c.kind.kind).toBe("SECTION_LM_ITEM");
+    if (c.kind.kind === "SECTION_LM_ITEM") {
+      expect(c.kind.itemId).toBe("C.3");
+    }
+    // Multiple A-K sections and deep numbering.
+    expect(classifyHeading({ text: "B.1 Supplies or Services" }).kind.kind).toBe("SECTION_LM_ITEM");
+    expect(classifyHeading({ text: "H.2.1 Special Conditions" }).kind.kind).toBe("SECTION_LM_ITEM");
+    expect(classifyHeading({ text: "I.4: Contract Clauses" }).kind.kind).toBe("SECTION_LM_ITEM");
+    // L and M still work (no regression).
     expect(classifyHeading({ text: "L.3 Submission" }).kind.kind).toBe("SECTION_LM_ITEM");
+    expect(classifyHeading({ text: "M.2.1 Technical Approach" }).kind.kind).toBe("SECTION_LM_ITEM");
+    // A bare "C." (letter-dot, no item number) stays LETTER_DOT — not a sub-item.
+    expect(classifyHeading({ text: "C. Statement of Work" }).kind.kind).toBe("LETTER_DOT");
   });
 });
 

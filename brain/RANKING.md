@@ -70,16 +70,33 @@ marketplace + (for plugins) a chosen sub-feature:
    TAM too small, Kotlin build risk, VS Code winning.
 2. ~~**D2 `clauseguard` (GitHub Marketplace app)**~~ **CONDITIONAL DEFER (2026-06-06).** Score 556/1000.
    Pain density unvalidated; revenue ceiling $3K–$10K MRR; Filter 1 conditional only.
-3. **VS Code Breaking-Change Lens** — **CONDITIONAL PROCEED (2026-06-06).**
+3. **VS Code Breaking-Change Lens (D5/OpenAPI beachhead)** — **CONDITIONAL PROCEED (2026-06-06).**
    Full cited score: **636/1000 (6.36)** — first candidate to clear the 600 threshold.
    Deep evaluation: `brain/RESEARCH/2026-06-06-vscode-breaking-change-lens.md`.
    Beachhead: **OpenAPI** (oasdiff has no VS Code extension; the slot is open).
    TypeScript/VS Code extension, fully on-device, VS Code Marketplace organic discovery.
    Revenue ceiling realistic 2-year: $3.5K–$10K MRR. Proposal #3 posted to APPROVALS.md.
    Auto-proceeds PROCEED 2026-06-13 if no human response.
-4. **D4 Shopify theme-risk app** — highest revenue ceiling (Proven Shopify-app
-   category) but server-side. Evaluate after VS Code lens.
-5. **Rank-2 FAR/DFARS MCP server** — strategic-fit 9, but *emerging*
+   **NOTE:** D3 (protobuf/gRPC JetBrains) and D6 (terraform plan classifier, VS Code)
+   are on-device candidates NOT yet deeply evaluated; first-principles partial scores
+   suggest D3 could reach 700+ on the JetBrains Proven-payment channel. Evaluate these
+   before or concurrently with VS Code lens Phase 0 to confirm the ranking is correct.
+   Deep evals kicked off 2026-06-06.
+4. ~~**D4 Shopify theme-risk app**~~ **DROPPED (2026-06-01 filter re-ordering).**
+   Server-side (hosting required) = zero-opex Filter 1 violation per
+   `governance/PRODUCT_CONSTRAINTS.md`. Retained in IDEA_BACKLOG as a future
+   candidate if a redesign makes it on-device or the filter is relaxed.
+   Note: RANKING.md previously listed D4 as #4 (a brain drift vs IDEA_BACKLOG's
+   2026-06-01 re-filter note); corrected 2026-06-06.
+5. **D3 protobuf/gRPC JetBrains plugin** — Proven-leaning (buf.build proves pain
+   + willingness to pay); on-device; JetBrains Marketplace billing proven. Not yet
+   deeply evaluated. First-principles partial 448/580 (Dist 8, Maint 9, Build 7,
+   Self-serve 10, Defens 5, Strategic 7). Evaluate as a potential replacement for
+   VS Code lens if full score > 636.
+6. **D6 terraform plan destructive-change classifier (VS Code)** — Proven-leaning
+   pain (every `terraform apply` is a held breath); on-device trust wedge;
+   VS Code Marketplace. Not yet deeply evaluated. Partial 438/580.
+7. **Rank-2 FAR/DFARS MCP server** — strategic-fit 9, but *emerging*
    (unproven) MCP distribution — evidence risk dominates.
 
 **Build as byproducts / infrastructure, NOT lead products** (per the

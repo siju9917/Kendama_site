@@ -192,3 +192,52 @@ real). Strategic fit: medium — it's adjacent to the factory's own needs
 and, more immediately, as a *factory-internal* capability worth prototyping
 (it would have prevented this session's worst lapse). The
 `brain/SELF_IMPROVEMENT.md` count-drift check (#8) is a smaller sibling.
+
+---
+
+## 2026-06-06 — A structured, machine-parseable deep-evaluation format
+
+**Friction encountered:** The SCORING_MODEL (`brain/SCORING_MODEL.md`) produces
+a score from 9 factors × 0–10, but the deep evaluation files (e.g.,
+`brain/RESEARCH/2026-06-06-vscode-breaking-change-lens.md`) are unstructured
+prose. Reading a completed eval requires scanning many paragraphs to extract
+the factor scores; there is no way to grep, diff, or automatically check that
+every factor was addressed. When a second eval is done months later, calibration
+drift (same product scores differently because the prose framing shifted) is
+invisible.
+
+**Where it came up:** This session — running two product deep evaluations back-
+to-back (clauseguard + VS Code lens), then summarizing both to RANKING.md. The
+summaries are the only thing I can actually compare; the underlying reasoning is
+prose locked behind 1000+ lines.
+
+**Proposed tool/format:** A YAML or JSON front-matter block at the top of every
+deep-eval file that machine-encodes the final score:
+
+```yaml
+---
+product: VS Code OpenAPI Breaking-Change Lens
+date: 2026-06-06
+evidence_tier: Plausible
+total_score: 636
+scores:
+  revenue_ceiling: {weight: 18, score: 5, weighted: 90}
+  probability: {weight: 14, score: 4, weighted: 56}
+  # ...
+recommendation: PROCEED
+---
+```
+
+The factory's `ops/checks/` could then include a `ranking-integrity` check
+that (a) parses the front-matter from all research files, (b) re-derives the
+weighted totals, (c) checks that RANKING.md's score for each product matches
+the front-matter, and (d) flags any factor in the scoring model that appears
+in fewer than 50% of evaluations (a sign a factor is routinely skipped).
+
+**Initial size estimate:** Small. The front-matter format is a one-time schema;
+the check is ~50 lines. The backward-compat path is "add front-matter on first
+re-edit" rather than "retrofit all existing files immediately."
+
+**Promoted to backlog?** Not yet — logged for the next factory self-improvement
+cycle. It eliminates the current manual/fuzzy calibration problem for all future
+evaluations, at near-zero cost.
