@@ -415,6 +415,74 @@ describe("diffSpecs — structural diff", () => {
     expect(rc).toBeDefined();
   });
 
+  it("detects request body schema nullable changed (true → false)", () => {
+    const baseline = spec(`paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              nullable: true
+      responses:
+        "201":
+          description: created`);
+    const current = spec(`paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              nullable: false
+      responses:
+        "201":
+          description: created`);
+    const changes = diffSpecs(baseline, current);
+    const nc = changes.find((c) => c.type === "request-schema-nullable-changed")!;
+    expect(nc).toBeDefined();
+    expect(nc.before).toBe(true);
+    expect(nc.after).toBe(false);
+  });
+
+  it("detects request body schema nullable changed (false → true)", () => {
+    const baseline = spec(`paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              nullable: false
+      responses:
+        "201":
+          description: created`);
+    const current = spec(`paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              nullable: true
+      responses:
+        "201":
+          description: created`);
+    const changes = diffSpecs(baseline, current);
+    const nc = changes.find((c) => c.type === "request-schema-nullable-changed")!;
+    expect(nc).toBeDefined();
+    expect(nc.before).toBe(false);
+    expect(nc.after).toBe(true);
+  });
+
   it("does not emit changes for identical endpoints", () => {
     const s = spec(`paths:
   /users/{id}:

@@ -94,6 +94,13 @@ const CLASSIFY_RULES: ClassifyRule[] = [
         : null,
     message: (c) => `Response field became non-nullable: ${c.location}. Clients handling null values will need to be updated.`,
   },
+  {
+    matches: (c) =>
+      c.type === "request-schema-nullable-changed" && c.before === true && c.after === false
+        ? "BREAKING"
+        : null,
+    message: (c) => `Request body field became non-nullable: ${c.location}. Clients sending null for this field will now receive 400.`,
+  },
 
   {
     matches: (c) => c.type === "response-schema-property-type-changed" ? "BREAKING" : null,
@@ -217,6 +224,13 @@ const CLASSIFY_RULES: ClassifyRule[] = [
         ? "INFO"
         : null,
     message: (c) => `Response field can now be null: ${c.location}. Clients should handle null values for this field.`,
+  },
+  {
+    matches: (c) =>
+      c.type === "request-schema-nullable-changed" && c.before === false && c.after === true
+        ? "INFO"
+        : null,
+    message: (c) => `Request body field can now be null: ${c.location}. Clients may optionally send null for this field.`,
   },
   {
     matches: (c) => c.type === "operation-deprecated-changed" && c.after === true ? "INFO" : null,

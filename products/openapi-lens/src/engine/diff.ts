@@ -217,20 +217,21 @@ function diffSchemaItems(
   }
 }
 
-/** Compare nullable in a response schema. */
-function diffResponseNullable(
+/** Compare nullable in a schema (response or request). */
+function diffNullable(
   path: string,
   method: HttpMethod,
   location: string,
   baseline: OapiSchema | null,
   current: OapiSchema | null,
+  isRequest: boolean,
   changes: OapiRawChange[],
 ): void {
   const bNull = baseline?.nullable ?? false;
   const cNull = current?.nullable ?? false;
   if (bNull !== cNull) {
     changes.push({
-      type: "response-schema-nullable-changed",
+      type: isRequest ? "request-schema-nullable-changed" : "response-schema-nullable-changed",
       path, method,
       location: `${location}.nullable`,
       before: bNull,
@@ -271,6 +272,7 @@ function diffRequestBody(
     diffSchemaRequiredFields(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffSchemaProperties(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffSchemaItems(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
+    diffNullable(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
   }
 }
 
@@ -294,7 +296,7 @@ function diffResponses(
     const loc = `responses[${code}].content.schema`;
     diffSchemaType(path, method, loc, br.schema, cr.schema, false, changes);
     diffSchemaRequiredFields(path, method, loc, br.schema, cr.schema, false, changes);
-    diffResponseNullable(path, method, loc, br.schema, cr.schema, changes);
+    diffNullable(path, method, loc, br.schema, cr.schema, false, changes);
     diffSchemaProperties(path, method, loc, br.schema, cr.schema, false, changes);
     diffSchemaItems(path, method, loc, br.schema, cr.schema, false, changes);
   }
