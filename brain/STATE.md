@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **692/692 tests** (BidDiff 586/586 + openapi-lens 106/106).
+- **Build green:** **698/698 tests** (BidDiff 586/586 + openapi-lens 112/112).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -101,7 +101,8 @@
   1 SF-1449 solicitation/contract/order form +
   2 SET_ASIDE+CLIN anchor-recall recall suites).
   OpenAPI-lens: Phase 0 engine 96/96 (critique panel) + 10 more (5.7.5 bug-hunt:
-  $ref parameter resolution + double-$ref chain). All typecheck clean; full CI gate verified green.
+  $ref parameter resolution + double-$ref chain) + 6 more (array items type diffing).
+  All typecheck clean; full CI gate verified green.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`
   red-teams every stop against the real clock IN THE HUMAN'S TIMEZONE
@@ -601,6 +602,15 @@ all green; check tests 16/16.
     stripped). All 5 new `it` blocks pass immediately — no bugs found, but the gap
     is now regression-locked. 582/582 BidDiff. Total suite: **688/688 tests**.
 
+47. **5.7.5 gap: openapi-lens array `items` schema never diffed** — `OapiSchema.items`
+    was parsed in `parser.ts` but `diffSchemaItems()` was never called. A response schema
+    changing from `array<string>` to `array<integer>` was completely invisible (no raw change
+    emitted → no BREAKING classification). Fix: added `diffSchemaItems()`, wired into both
+    `diffRequestBody` and `diffResponses`, added two BREAKING classify rules. 6 new tests
+    (response BREAKING, response no-change, response one-side-only, request BREAKING,
+    request no-change, request+response polarity isolation). 106→112 openapi-lens.
+    Total suite: **698/698 tests**.
+
 46. **5.7.5 bug: PDF `clusterIntoLines` merges body lines when page-top item has large font**
     — `clusterIntoLines` set tolerance = `sorted[0].height * 0.5`. `sorted[0]` is the
     topmost item on the page — often a section heading in 18–24pt. A 24pt heading gives
@@ -625,7 +635,7 @@ all green; check tests 16/16.
   components tested). All unblocked POLISH done. Next session: privacy copy fix
   (NEED #7, when human responds), store submission prep, and D5 VS Code extension
   Phase 1 scaffold (once Proposal #3 auto-proceeds 2026-06-13).
-- **D5 Phase 0 engine is in `products/openapi-lens/`** — 106 tests, all passing.
+- **D5 Phase 0 engine is in `products/openapi-lens/`** — 112 tests, all passing.
   Phase 1 (VS Code extension scaffold) starts when Proposal #3 auto-proceeds 2026-06-13.
 - Spend cap: plan-included web tools (sub-agents, search) are FREE; $0 committed
   external spend. No cap blocker.

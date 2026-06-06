@@ -33,8 +33,8 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   (BREAKING / INFO) and a human-readable `message`
 - [x] **`src/engine/index.ts`**: Public API — `analyzeOpenApiDiff()`,
   `breakingOnly()`, all type exports
-- [x] **100/100 tests** — parser (21), diff (20), classify (22), integration (9),
-  adversarial (19), property-diff (9)
+- [x] **112/112 tests** — parser (21), diff (20), classify (22), integration (9),
+  adversarial (19), property-diff (15), array-items (6)
 - [x] Typecheck clean
 - [x] **Full 14-critic panel passed** (2026-06-06) — P1 circular-ref fix,
   P2 `request-schema-property-added` type gap fixed, P2 pin tests for allOf/remote-$ref.
@@ -43,6 +43,11 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   parameters specified via `$ref: "#/components/parameters/X"` were silently dropped.
   Fixed `parseSharedParameters()` + updated `parseParameter`/`parseParameters`/`parseOperations`.
   4 new tests.
+- [x] **5.7.5 bug-hunt (2026-06-06, continuation)** — found and fixed array `items` schema diffing gap:
+  `OapiSchema.items` was parsed but `diffSchemaItems()` was never called. A response schema
+  changing from `array<string>` to `array<integer>` was completely invisible. Added
+  `diffSchemaItems()`, wired into both `diffRequestBody` and `diffResponses`, added two BREAKING
+  classify rules, 6 new tests. **112/112 tests total.**
 
 ### Breaking-change rules implemented (Phase 0)
 
@@ -75,6 +80,8 @@ auto-proceeds (2026-06-13) or earlier if human approves.
 | Request property removed | BREAKING |
 | Response property added | INFO |
 | Request property added | INFO |
+| Response array element type changed | BREAKING |
+| Request array element type changed | BREAKING |
 
 ---
 
