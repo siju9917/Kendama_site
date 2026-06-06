@@ -289,4 +289,85 @@ describe("parseTerraformPlan — output_changes", () => {
     );
     expect(result.outputChanges[0]!.sensitive).toBe(false);
   });
+
+  it("round 79: before_sensitive:{password:true} (partial object) marks output sensitive", () => {
+    // before_sensitive can be a partial-sensitivity object when the previous value
+    // had sensitive fields. Code line: before_sensitive !== null && typeof before_sensitive === "object".
+    const result = parseTerraformPlan(
+      makePlan({
+        output_changes: {
+          rotated_secret: {
+            actions: ["update"],
+            before: { password: "old" },
+            after: { password: "new" },
+            before_sensitive: { password: true },
+          },
+        },
+      }),
+    );
+    expect(result.outputChanges[0]!.sensitive).toBe(true);
+  });
+
+  it("round 79: before_sensitive:false is NOT sensitive (false is not true and not an object)", () => {
+    // The isSensitive check for before_sensitive has two branches:
+    //   - before_sensitive === true (boolean)
+    //   - before_sensitive is a non-null object
+    // false satisfies neither branch.
+    const result = parseTerraformPlan(
+      makePlan({
+        output_changes: {
+          public_url: {
+            actions: ["update"],
+            before: "https://old.example.com",
+            after: "https://new.example.com",
+            before_sensitive: false,
+          },
+        },
+      }),
+    );
+    expect(result.outputChanges[0]!.sensitive).toBe(false);
+  });
+
+  it("round 79: before_sensitive:{} (empty partial-sensitive object) is treated as sensitive", () => {
+    // Mirrors the after_sensitive:{} test — any non-null object is treated as sensitive.
+    const result = parseTerraformPlan(
+      makePlan({
+        output_changes: {
+          edge_case: {
+            actions: ["update"],
+            before: "old",
+            after: "new",
+            before_sensitive: {},
+          },
+        },
+      }),
+    );
+    expect(result.outputChanges[0]!.sensitive).toBe(true);
+  });
+
+  it("round 79: output_changes as an array (not object) yields empty outputChanges", () => {
+    // Guard: if raw is an array, parseOutputChanges returns [].
+    const result = parseTerraformPlan(
+      makePlan({
+        output_changes: [],
+      }),
+    );
+    expect(result.outputChanges).toEqual([]);
+  });
+
+  it("round 79: output entry with actions as string (not array) is skipped", () => {
+    // Guard: if entry['actions'] is not an Array, the entry is skipped.
+    const result = parseTerraformPlan(
+      makePlan({
+        output_changes: {
+          broken_output: {
+            actions: "create",
+            before: null,
+            after: "value",
+          },
+        },
+      }),
+    );
+    expect(result.outputChanges).toHaveLength(0);
+  });
 });
