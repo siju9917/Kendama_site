@@ -190,4 +190,16 @@ describe("createPlanWebviewContent", () => {
     // 1 header tr (<tr>) + 3 data rows (<tr class="...">) = 4
     expect(trCount).toBe(4);
   });
+
+  it("round 69: output change actions with HTML-special chars are correctly escaped once, not double-escaped", () => {
+    // renderOutputRow previously called esc(actionText) inside the template literal AND
+    // then esc(valueText) again — causing &lt; to become &amp;lt; (double-escape).
+    const html = createPlanWebviewContent(
+      makeSummary({
+        outputChanges: [{ name: "test_output", actions: ["create<xss>"], sensitive: false }],
+      }),
+    );
+    expect(html).toContain("create&lt;xss&gt;");
+    expect(html).not.toContain("create&amp;lt;");
+  });
 });

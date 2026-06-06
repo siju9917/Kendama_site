@@ -11,7 +11,7 @@ function esc(s: string): string {
 
 function renderOutputRow(o: TfOutputChange): string {
   const actionText = o.actions.join(", ");
-  const valueText = o.sensitive ? "(sensitive — value hidden)" : `action: ${esc(actionText)}`;
+  const valueText = o.sensitive ? "(sensitive — value hidden)" : `action: ${actionText}`;
   return `
     <tr>
       <td><code>${esc(o.name)}</code></td>
