@@ -55,6 +55,11 @@ function diffParameters(
     if (bDep !== cDep) {
       changes.push({ type: "parameter-deprecated-changed", path, method, location: `parameter(${bp.in}:${bp.name}).deprecated`, before: bDep, after: cDep });
     }
+    const bNull = bp.schema.nullable ?? false;
+    const cNull = cp.schema.nullable ?? false;
+    if (bNull !== cNull) {
+      changes.push({ type: "parameter-nullable-changed", path, method, location: `parameter(${bp.in}:${bp.name}).schema.nullable`, before: bNull, after: cNull });
+    }
     const paramConstraintFields = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems"] as const;
     for (const cf of paramConstraintFields) {
       const bVal = bp.schema[cf] ?? null;

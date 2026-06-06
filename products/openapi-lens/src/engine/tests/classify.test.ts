@@ -474,6 +474,18 @@ describe("classifyChanges — classification rules", () => {
     expect(result[0]?.message).toMatch(/pattern/i);
   });
 
+  it("classifies parameter-nullable-changed (true→false) as BREAKING", () => {
+    const result = classifyChanges([raw("parameter-nullable-changed", true, false, "parameter(query:q).schema.nullable")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/non-nullable/i);
+  });
+
+  it("classifies parameter-nullable-changed (false→true) as INFO", () => {
+    const result = classifyChanges([raw("parameter-nullable-changed", false, true, "parameter(query:q).schema.nullable")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/nullable/i);
+  });
+
   it("classifies parameter minLength increase as BREAKING (tightening)", () => {
     const result = classifyChanges([raw("parameter-constraint-changed", 3, 8, "parameter(query:q).schema.minLength")]);
     expect(result[0]?.severity).toBe("BREAKING");
@@ -602,6 +614,7 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "response-schema-property-constraint-changed":  [10, 5],
     "request-schema-property-constraint-changed":   [5, 10],
     "parameter-constraint-changed":                 [5, 10],
+    "parameter-nullable-changed":                   [true, false],
     "response-schema-items-constraint-changed":     [10, 5],
     "request-schema-items-constraint-changed":      [5, 10],
   };

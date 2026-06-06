@@ -273,6 +273,22 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     },
   },
 
+  // ─── Parameter nullable ───────────────────────────────────────────────────
+  {
+    matches: (c) =>
+      c.type === "parameter-nullable-changed" && c.before === true && c.after === false
+        ? "BREAKING"
+        : null,
+    message: (c) => `Parameter became non-nullable: ${c.location}. Clients sending null for this parameter will now receive 400.`,
+  },
+  {
+    matches: (c) =>
+      c.type === "parameter-nullable-changed" && c.before === false && c.after === true
+        ? "INFO"
+        : null,
+    message: (c) => `Parameter became nullable: ${c.location}. Clients may optionally send null for this parameter.`,
+  },
+
   // ─── Constraint changes (direction-aware) ────────────────────────────────
   {
     matches: (c) => {

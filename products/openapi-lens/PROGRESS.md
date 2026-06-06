@@ -95,6 +95,11 @@ auto-proceeds (2026-06-13) or earlier if human approves.
     BREAKING, tightening = INFO. Pattern changes = always BREAKING for both.
     2 new OapiChangeType values. 13 new classify tests + 5 recursive diff tests + 6 allOf
     parser tests. **275/275 tests.**
+- [x] **5.7.4 continuation — parameter nullable diffing** — `nullable` on parameter schemas
+  was never compared. For Swagger 2.0 APIs using `nullable: true`, a change from
+  `nullable: true → false` means clients sending null will fail (BREAKING). Added
+  `parameter-nullable-changed` OapiChangeType + 2 classify rules + 2 unit tests.
+  **306/306 tests.**
 - [x] **5.7.4 continuation — nested property items diffing** — array-typed properties (e.g.
   `user.tags: {type: array, items: {type: string}}`) had their `items` schema invisible to
   the diff engine. A change from `array<string>` to `array<integer>` in a response property
