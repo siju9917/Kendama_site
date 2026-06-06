@@ -6,6 +6,13 @@ interface ClassifyRule {
   message: (c: OapiRawChange) => string;
 }
 
+// ORDERING INVARIANT: Within each OapiChangeType, BREAKING rules must appear before INFO rules.
+// For multi-condition types (e.g. response-schema-property-type-changed), the conditions are
+// mutually exclusive (null vs non-null sentinels), so reordering CANNOT produce wrong severities
+// today. However, the convention is enforced defensively: the completeness test in
+// classify.test.ts verifies every OapiChangeType has at least one matching rule, and the
+// Record<OapiChangeType,...> stub map causes a TypeScript compile error if a new type is added
+// without updating the test — that is the primary guard against silent INFO fallback.
 const CLASSIFY_RULES: ClassifyRule[] = [
   // ─── Hard BREAKING ──────────────────────────────────────────────────────
   {
@@ -136,6 +143,74 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => `Request array element format changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients sending elements in the old format will fail validation.`,
   },
   {
+    matches: (c) =>
+      c.type === "response-schema-property-nullable-changed" && c.before === false && c.after === true
+        ? "BREAKING"
+        : null,
+    message: (c) => `Response property became nullable: ${c.location}. Clients that assume this field is never null will break.`,
+  },
+  {
+    matches: (c) =>
+      c.type === "request-schema-property-nullable-changed" && c.before === true && c.after === false
+        ? "BREAKING"
+        : null,
+    message: (c) => `Request property became non-nullable: ${c.location}. Clients that send null for this property will now receive 400.`,
+  },
+  {
+    matches: (c) => {
+      if (c.type !== "response-schema-items-enum-changed") return null;
+      const before = c.before as unknown[] | null;
+      const after = c.after as unknown[] | null;
+      if (!before || !after) return "BREAKING";
+      const added = after.filter((v) => !before.includes(v));
+      if (added.length > 0) return "BREAKING";
+      return "INFO";
+    },
+    message: (c) => {
+      const before = c.before as unknown[] | null;
+      const after = c.after as unknown[] | null;
+      if (!before || !after) return `Response array items enum changed: ${c.location}.`;
+      const added = after.filter((v) => !before.includes(v));
+      if (added.length > 0) return `Response array items enum values added at ${c.location}: [${added.join(", ")}]. Clients with exhaustive enum handling will break.`;
+      const removed = before.filter((v) => !after.includes(v));
+      return `Response array items enum values removed at ${c.location}: [${removed.join(", ")}] no longer returned (non-breaking for clients).`;
+    },
+  },
+  {
+    matches: (c) => {
+      if (c.type !== "request-schema-items-enum-changed") return null;
+      const before = c.before as unknown[] | null;
+      const after = c.after as unknown[] | null;
+      if (!before || !after) return "BREAKING";
+      const removed = before.filter((v) => !after.includes(v));
+      if (removed.length > 0) return "BREAKING";
+      return "INFO";
+    },
+    message: (c) => {
+      const before = c.before as unknown[] | null;
+      const after = c.after as unknown[] | null;
+      if (!before || !after) return `Request array items enum changed: ${c.location}.`;
+      const removed = before.filter((v) => !after.includes(v));
+      if (removed.length > 0) return `Request array items enum values removed at ${c.location}: [${removed.join(", ")}] no longer accepted. Clients sending these values will fail validation.`;
+      const added = after.filter((v) => !before.includes(v));
+      return `Request array items enum values added at ${c.location}: [${added.join(", ")}] are now accepted (non-breaking).`;
+    },
+  },
+  {
+    matches: (c) =>
+      c.type === "response-schema-items-nullable-changed" && c.before === false && c.after === true
+        ? "BREAKING"
+        : null,
+    message: (c) => `Response array items became nullable: ${c.location}. Clients iterating this array will now receive null elements.`,
+  },
+  {
+    matches: (c) =>
+      c.type === "request-schema-items-nullable-changed" && c.before === true && c.after === false
+        ? "BREAKING"
+        : null,
+    message: (c) => `Request array items became non-nullable: ${c.location}. Clients sending null elements in this array will now receive 400.`,
+  },
+  {
     matches: (c) => c.type === "response-schema-items-type-changed" && c.before !== null && c.after !== null ? "BREAKING" : null,
     message: (c) => `Response array element type changed: ${c.location} (${c.before} → ${c.after}). Clients iterating this array will receive the wrong element type.`,
   },
@@ -196,6 +271,36 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const removed = before.filter((v) => !after.includes(v));
       return `Response property enum values removed at ${c.location}: [${removed.join(", ")}] no longer returned (non-breaking for clients).`;
     },
+  },
+
+  // ─── INFO for property/items nullable direction changes ──────────────────
+  {
+    matches: (c) =>
+      c.type === "response-schema-property-nullable-changed" && c.before === true && c.after === false
+        ? "INFO"
+        : null,
+    message: (c) => `Response property became non-nullable: ${c.location}. Server guarantees this field is never null.`,
+  },
+  {
+    matches: (c) =>
+      c.type === "request-schema-property-nullable-changed" && c.before === false && c.after === true
+        ? "INFO"
+        : null,
+    message: (c) => `Request property became nullable: ${c.location}. Clients may optionally send null for this property.`,
+  },
+  {
+    matches: (c) =>
+      c.type === "response-schema-items-nullable-changed" && c.before === true && c.after === false
+        ? "INFO"
+        : null,
+    message: (c) => `Response array items became non-nullable: ${c.location}. Server guarantees array elements are never null.`,
+  },
+  {
+    matches: (c) =>
+      c.type === "request-schema-items-nullable-changed" && c.before === false && c.after === true
+        ? "INFO"
+        : null,
+    message: (c) => `Request array items became nullable: ${c.location}. Clients may optionally send null elements in this array.`,
   },
 
   // ─── INFO for property type direction changes ────────────────────────────

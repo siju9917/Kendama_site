@@ -605,3 +605,243 @@ describe("property-level format diff", () => {
     expect(requestChange.before).toBe("int32");
   });
 });
+
+// ─── Property-level nullable diffing (5.7.5 continuation, 2026-06-06) ────────
+
+function makeNullablePropSpec(responseNullable: boolean | null, requestNullable?: boolean | null): string {
+  const respNullableLine = responseNullable !== null ? `\n                    nullable: ${responseNullable}` : "";
+  const reqNullableLine = requestNullable !== undefined && requestNullable !== null
+    ? `\n                  nullable: ${requestNullable}`
+    : "";
+  return `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string${respNullableLine}
+    ${requestNullable !== undefined ? `post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string${reqNullableLine}
+      responses:
+        "201":
+          description: created` : ""}
+`;
+}
+
+describe("property-level nullable diff — response", () => {
+  it("detects BREAKING when a response property becomes nullable (false → true)", () => {
+    const baseline = makeNullablePropSpec(false);
+    const current = makeNullablePropSpec(true);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = changes.filter((c) => c.type === "response-schema-property-nullable-changed" && c.severity === "BREAKING");
+    expect(breaking).toHaveLength(1);
+    expect(breaking[0]?.before).toBe(false);
+    expect(breaking[0]?.after).toBe(true);
+    expect(breaking[0]?.location).toMatch(/name/);
+  });
+
+  it("detects INFO when a response property becomes non-nullable (true → false)", () => {
+    const baseline = makeNullablePropSpec(true);
+    const current = makeNullablePropSpec(false);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const info = changes.filter((c) => c.type === "response-schema-property-nullable-changed" && c.severity === "INFO");
+    expect(info).toHaveLength(1);
+  });
+
+  it("does not emit property-nullable-changed when nullable is unchanged", () => {
+    const s = makeNullablePropSpec(true);
+    expect(analyzeOpenApiDiff(s, s).filter((c) => c.type === "response-schema-property-nullable-changed")).toHaveLength(0);
+  });
+});
+
+describe("property-level nullable diff — request", () => {
+  it("detects BREAKING when a request property becomes non-nullable (true → false)", () => {
+    const baseline = makeNullablePropSpec(null, true);
+    const current = makeNullablePropSpec(null, false);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = changes.filter((c) => c.type === "request-schema-property-nullable-changed" && c.severity === "BREAKING");
+    expect(breaking).toHaveLength(1);
+    expect(breaking[0]?.before).toBe(true);
+    expect(breaking[0]?.after).toBe(false);
+  });
+
+  it("detects INFO when a request property becomes nullable (false → true)", () => {
+    const baseline = makeNullablePropSpec(null, false);
+    const current = makeNullablePropSpec(null, true);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const info = changes.filter((c) => c.type === "request-schema-property-nullable-changed" && c.severity === "INFO");
+    expect(info).toHaveLength(1);
+  });
+});
+
+// ─── Items-level enum diffing (5.7.5 continuation, 2026-06-06) ──────────────
+
+function makeItemsEnumSpec(responseEnumVals: string[], requestEnumVals?: string[]): string {
+  const respEnum = responseEnumVals.map((v) => `                    - ${v}`).join("\n");
+  const reqEnum = requestEnumVals ? requestEnumVals.map((v) => `                  - ${v}`).join("\n") : "";
+  return `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /list:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  enum:
+${respEnum}
+    ${requestEnumVals ? `post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                enum:
+${reqEnum}
+      responses:
+        "201":
+          description: created` : ""}
+`;
+}
+
+describe("items-level enum diff — response", () => {
+  it("detects BREAKING when a response array items enum gains a value", () => {
+    const baseline = makeItemsEnumSpec(["active", "inactive"]);
+    const current = makeItemsEnumSpec(["active", "inactive", "pending"]);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = changes.filter((c) => c.type === "response-schema-items-enum-changed" && c.severity === "BREAKING");
+    expect(breaking).toHaveLength(1);
+    expect(breaking[0]?.message).toMatch(/exhaustive/i);
+  });
+
+  it("detects INFO when a response array items enum loses a value", () => {
+    const baseline = makeItemsEnumSpec(["active", "inactive", "pending"]);
+    const current = makeItemsEnumSpec(["active", "inactive"]);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const info = changes.filter((c) => c.type === "response-schema-items-enum-changed" && c.severity === "INFO");
+    expect(info).toHaveLength(1);
+  });
+});
+
+describe("items-level enum diff — request", () => {
+  it("detects BREAKING when a request array items enum loses a value", () => {
+    const baseline = makeItemsEnumSpec(["active"], ["active", "pending"]);
+    const current = makeItemsEnumSpec(["active"], ["active"]);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = changes.filter((c) => c.type === "request-schema-items-enum-changed" && c.severity === "BREAKING");
+    expect(breaking).toHaveLength(1);
+    expect(breaking[0]?.message).toMatch(/pending/);
+  });
+
+  it("detects INFO when a request array items enum gains a value", () => {
+    const baseline = makeItemsEnumSpec(["active"], ["active"]);
+    const current = makeItemsEnumSpec(["active"], ["active", "pending"]);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const info = changes.filter((c) => c.type === "request-schema-items-enum-changed" && c.severity === "INFO");
+    expect(info).toHaveLength(1);
+  });
+});
+
+// ─── Items-level nullable diffing (5.7.5 continuation, 2026-06-06) ──────────
+
+function makeItemsNullableSpec(responseNullable: boolean, requestNullable?: boolean): string {
+  const respNullable = `\n                  nullable: ${responseNullable}`;
+  const reqNullable = requestNullable !== undefined ? `\n                nullable: ${requestNullable}` : "";
+  return `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /list:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string${respNullable}
+    ${requestNullable !== undefined ? `post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string${reqNullable}
+      responses:
+        "201":
+          description: created` : ""}
+`;
+}
+
+describe("items-level nullable diff — response", () => {
+  it("detects BREAKING when response array items become nullable (false → true)", () => {
+    const baseline = makeItemsNullableSpec(false);
+    const current = makeItemsNullableSpec(true);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = changes.filter((c) => c.type === "response-schema-items-nullable-changed" && c.severity === "BREAKING");
+    expect(breaking).toHaveLength(1);
+    expect(breaking[0]?.before).toBe(false);
+    expect(breaking[0]?.after).toBe(true);
+  });
+
+  it("detects INFO when response array items become non-nullable (true → false)", () => {
+    const baseline = makeItemsNullableSpec(true);
+    const current = makeItemsNullableSpec(false);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const info = changes.filter((c) => c.type === "response-schema-items-nullable-changed" && c.severity === "INFO");
+    expect(info).toHaveLength(1);
+  });
+});
+
+describe("items-level nullable diff — request", () => {
+  it("detects BREAKING when request array items become non-nullable (true → false)", () => {
+    const baseline = makeItemsNullableSpec(false, true);
+    const current = makeItemsNullableSpec(false, false);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = changes.filter((c) => c.type === "request-schema-items-nullable-changed" && c.severity === "BREAKING");
+    expect(breaking).toHaveLength(1);
+    expect(breaking[0]?.before).toBe(true);
+    expect(breaking[0]?.after).toBe(false);
+  });
+
+  it("detects INFO when request array items become nullable (false → true)", () => {
+    const baseline = makeItemsNullableSpec(false, false);
+    const current = makeItemsNullableSpec(false, true);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const info = changes.filter((c) => c.type === "request-schema-items-nullable-changed" && c.severity === "INFO");
+    expect(info).toHaveLength(1);
+  });
+});

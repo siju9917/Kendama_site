@@ -180,6 +180,17 @@ function diffSchemaProperties(
         after: cProp.format ?? null,
       });
     }
+    const bPropNull = bProp.nullable ?? false;
+    const cPropNull = cProp.nullable ?? false;
+    if (bPropNull !== cPropNull) {
+      changes.push({
+        type: isRequest ? "request-schema-property-nullable-changed" : "response-schema-property-nullable-changed",
+        path, method,
+        location: `${location}.properties.${key}.nullable`,
+        before: bPropNull,
+        after: cPropNull,
+      });
+    }
   }
 
   for (const key of cKeys) {
@@ -228,6 +239,28 @@ function diffSchemaItems(
       location: `${location}.items.format`,
       before: bFmt,
       after: cFmt,
+    });
+  }
+  const bItemsEnum = bItems?.enum;
+  const cItemsEnum = cItems?.enum;
+  if (!deepEqual(bItemsEnum, cItemsEnum) && (bItemsEnum !== undefined || cItemsEnum !== undefined)) {
+    changes.push({
+      type: isRequest ? "request-schema-items-enum-changed" : "response-schema-items-enum-changed",
+      path, method,
+      location: `${location}.items.enum`,
+      before: bItemsEnum ?? null,
+      after: cItemsEnum ?? null,
+    });
+  }
+  const bItemsNull = bItems?.nullable ?? false;
+  const cItemsNull = cItems?.nullable ?? false;
+  if (bItemsNull !== cItemsNull) {
+    changes.push({
+      type: isRequest ? "request-schema-items-nullable-changed" : "response-schema-items-nullable-changed",
+      path, method,
+      location: `${location}.items.nullable`,
+      before: bItemsNull,
+      after: cItemsNull,
     });
   }
 }

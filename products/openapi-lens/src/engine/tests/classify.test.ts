@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { classifyChanges } from "../classify.js";
-import type { OapiRawChange } from "../types.js";
+import type { OapiChangeType, OapiRawChange } from "../types.js";
 
 function raw(type: OapiRawChange["type"], before: unknown, after: unknown, location = "test-location"): OapiRawChange {
   return { type, path: "/test", method: "get", location, before, after };
@@ -277,6 +277,70 @@ describe("classifyChanges — classification rules", () => {
     expect(result[0]?.severity).toBe("INFO");
   });
 
+  it("classifies response-schema-property-nullable-changed (false→true) as BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-property-nullable-changed", false, true, "responses[200].properties.name.nullable")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/nullable/i);
+  });
+
+  it("classifies response-schema-property-nullable-changed (true→false) as INFO", () => {
+    const result = classifyChanges([raw("response-schema-property-nullable-changed", true, false, "responses[200].properties.name.nullable")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies request-schema-property-nullable-changed (true→false) as BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-property-nullable-changed", true, false, "requestBody.properties.name.nullable")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+  });
+
+  it("classifies request-schema-property-nullable-changed (false→true) as INFO", () => {
+    const result = classifyChanges([raw("request-schema-property-nullable-changed", false, true, "requestBody.properties.name.nullable")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies response-schema-items-enum-changed (values added) as BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-items-enum-changed", ["a", "b"], ["a", "b", "c"], "responses[200].items.enum")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/exhaustive/i);
+  });
+
+  it("classifies response-schema-items-enum-changed (values removed) as INFO", () => {
+    const result = classifyChanges([raw("response-schema-items-enum-changed", ["a", "b", "c"], ["a", "b"], "responses[200].items.enum")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies request-schema-items-enum-changed (values removed) as BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-items-enum-changed", ["pending", "active"], ["active"], "requestBody.items.enum")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/pending/);
+  });
+
+  it("classifies request-schema-items-enum-changed (values added) as INFO", () => {
+    const result = classifyChanges([raw("request-schema-items-enum-changed", ["active"], ["active", "pending"], "requestBody.items.enum")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies response-schema-items-nullable-changed (false→true) as BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-items-nullable-changed", false, true, "responses[200].items.nullable")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/null/i);
+  });
+
+  it("classifies response-schema-items-nullable-changed (true→false) as INFO", () => {
+    const result = classifyChanges([raw("response-schema-items-nullable-changed", true, false, "responses[200].items.nullable")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies request-schema-items-nullable-changed (true→false) as BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-items-nullable-changed", true, false, "requestBody.items.nullable")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+  });
+
+  it("classifies request-schema-items-nullable-changed (false→true) as INFO", () => {
+    const result = classifyChanges([raw("request-schema-items-nullable-changed", false, true, "requestBody.items.nullable")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
   it("handles multiple changes in a single call", () => {
     const changes = classifyChanges([
       raw("endpoint-removed", "get /a", null),
@@ -307,4 +371,68 @@ describe("classifyChanges — classification rules", () => {
     expect(result[0]?.method).toBe("delete");
     expect(result[0]?.location).toBe("DELETE /users");
   });
+});
+
+// ─── Completeness guard ─────────────────────────────────────────────────────
+// TypeScript exhaustiveness: Record<OapiChangeType, ...> causes a compile error if any
+// OapiChangeType value is missing from this map. The test then verifies each type is handled
+// by a real rule rather than falling through to the "Change detected at" fallback message.
+describe("classifyChanges — completeness: every OapiChangeType must have a rule", () => {
+  // Minimal before/after values chosen to hit at least one rule for each type.
+  // If you add a new OapiChangeType, TypeScript will require you to add an entry here,
+  // and the test will fail if no classify rule handles it.
+  const TYPE_STUBS: Record<OapiChangeType, [unknown, unknown]> = {
+    "endpoint-added":                          [null, "POST /items"],
+    "endpoint-removed":                        ["GET /items", null],
+    "parameter-added":                         [null, { name: "q", in: "query", required: false }],
+    "parameter-removed":                       [{ name: "q", in: "query", required: false }, null],
+    "parameter-required-changed":              [false, true],
+    "parameter-type-changed":                  ["string", "integer"],
+    "parameter-format-changed":                ["date", "date-time"],
+    "parameter-enum-changed":                  [["a", "b"], ["a"]],
+    "request-body-required-changed":           [false, true],
+    "request-schema-field-required-added":     [false, true],
+    "request-schema-field-required-removed":   [true, false],
+    "request-schema-type-changed":             ["string", "integer"],
+    "response-status-added":                   [null, "429"],
+    "response-status-removed":                 ["200", null],
+    "response-schema-field-required-added":    [false, true],
+    "response-schema-field-required-removed":  [true, false],
+    "response-schema-type-changed":            ["string", "object"],
+    "response-schema-nullable-changed":        [true, false],
+    "response-schema-property-type-changed":   ["string", "integer"],
+    "response-schema-property-removed":        ["string", null],
+    "response-schema-property-added":          [null, "string"],
+    "request-schema-property-type-changed":    ["string", "integer"],
+    "request-schema-property-removed":         ["string", null],
+    "request-schema-property-added":           [null, "string"],
+    "response-schema-items-type-changed":      ["string", "integer"],
+    "request-schema-items-type-changed":       ["string", "integer"],
+    "response-schema-property-enum-changed":   [["a"], ["a", "b"]],
+    "request-schema-property-enum-changed":    [["a", "b"], ["a"]],
+    "operation-deprecated-changed":            [false, true],
+    "response-schema-property-format-changed": ["date", "date-time"],
+    "request-schema-property-format-changed":  ["int32", "int64"],
+    "request-schema-nullable-changed":         [true, false],
+    "response-schema-items-format-changed":         ["uuid", "uri"],
+    "request-schema-items-format-changed":          ["date", "date-time"],
+    "response-schema-property-nullable-changed":    [false, true],
+    "request-schema-property-nullable-changed":     [true, false],
+    "response-schema-items-enum-changed":           [["a"], ["a", "b"]],
+    "request-schema-items-enum-changed":            [["a", "b"], ["a"]],
+    "response-schema-items-nullable-changed":       [false, true],
+    "request-schema-items-nullable-changed":        [true, false],
+  };
+
+  it.each(Object.keys(TYPE_STUBS) as OapiChangeType[])(
+    "type '%s' has a classify rule (no silent INFO fallback)",
+    (type) => {
+      const [before, after] = TYPE_STUBS[type];
+      const change: OapiRawChange = { type, path: "/test", method: "get", location: "test-location", before, after };
+      const result = classifyChanges([change]);
+      expect(result).toHaveLength(1);
+      // The fallback message pattern signals an unhandled type — it must never appear
+      expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    },
+  );
 });

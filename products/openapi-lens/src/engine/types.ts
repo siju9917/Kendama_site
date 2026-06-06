@@ -90,7 +90,13 @@ export type OapiChangeType =
   | "request-schema-property-format-changed"
   | "request-schema-nullable-changed"
   | "response-schema-items-format-changed"
-  | "request-schema-items-format-changed";
+  | "request-schema-items-format-changed"
+  | "response-schema-property-nullable-changed"
+  | "request-schema-property-nullable-changed"
+  | "response-schema-items-enum-changed"
+  | "request-schema-items-enum-changed"
+  | "response-schema-items-nullable-changed"
+  | "request-schema-items-nullable-changed";
 
 /** A raw structural difference between two specs before classification. */
 export interface OapiRawChange {
