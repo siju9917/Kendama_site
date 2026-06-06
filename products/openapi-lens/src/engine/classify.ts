@@ -908,14 +908,21 @@ const CLASSIFY_RULES: ClassifyRule[] = [
         ? responseConstraintSeverity(c.location, c.before as number | string | null, c.after as number | string | null)
         : null,
     message: (c) => {
-      const field = c.location.split(".").pop() ?? "constraint";
+      const loc = String(c.location);
+      const field = loc.split(".").pop() ?? "constraint";
       if (c.before === null) {
-        return `Response header constraint added at ${c.location}: ${field} is now ${c.after}. Server now guarantees this range (non-breaking for existing clients).`;
+        return `Response header constraint added at ${loc}: server now guarantees ${field} = ${c.after} (non-breaking for existing clients).`;
       }
       if (c.after === null) {
-        return `Response header constraint removed at ${c.location}: ${field} was ${c.before}. Clients relying on the server enforcing this limit may be affected.`;
+        return `Response header constraint removed at ${loc}: ${field} was ${c.before}. Server may now exceed the former limit; clients relying on this guarantee will break.`;
       }
-      return `Response header constraint changed at ${c.location}: ${field} changed from ${c.before} to ${c.after}.`;
+      const kind = constraintKind(loc);
+      const bNum = c.before as number;
+      const aNum = c.after as number;
+      const loosened = kind === "min-sense" ? aNum < bNum : aNum > bNum;
+      return loosened
+        ? `Response header constraint loosened at ${loc}: ${field} changed from ${c.before} to ${c.after}. Server may now return values outside the former range; clients relying on this constraint will break.`
+        : `Response header constraint tightened at ${loc}: ${field} changed from ${c.before} to ${c.after}. Server now guarantees a stricter range (non-breaking for existing clients).`;
     },
   },
 
