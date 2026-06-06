@@ -288,4 +288,129 @@ info:
     expect(param?.in).toBe("query");
     expect(param?.required).toBe(false);
   });
+
+  it("resolves $ref to #/components/parameters (OAS 3.x shared parameters)", () => {
+    const spec = parseOapiSpec(`
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/limitParam"
+        - $ref: "#/components/parameters/pageParam"
+      responses:
+        "200":
+          description: ok
+components:
+  parameters:
+    limitParam:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+    pageParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+`);
+    expect(spec.operations[0]?.parameters).toHaveLength(2);
+    const limit = spec.operations[0]?.parameters.find((p) => p.name === "limit");
+    const page = spec.operations[0]?.parameters.find((p) => p.name === "page");
+    expect(limit?.in).toBe("query");
+    expect(limit?.schema.type).toBe("integer");
+    expect(page?.in).toBe("query");
+    expect(page?.schema.type).toBe("integer");
+  });
+
+  it("resolves $ref parameter mixed with inline parameters", () => {
+    const spec = parseOapiSpec(`
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items/{id}:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/idParam"
+        - name: include
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ok
+components:
+  parameters:
+    idParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+`);
+    expect(spec.operations[0]?.parameters).toHaveLength(2);
+    const id = spec.operations[0]?.parameters.find((p) => p.name === "id");
+    expect(id?.in).toBe("path");
+    expect(id?.required).toBe(true);
+  });
+
+  it("silently drops an unresolvable $ref in parameters (unknown component)", () => {
+    const spec = parseOapiSpec(`
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/doesNotExist"
+      responses:
+        "200":
+          description: ok
+`);
+    expect(spec.operations[0]?.parameters).toHaveLength(0);
+  });
+
+  it("resolves path-level $ref parameters into all operations on that path", () => {
+    const spec = parseOapiSpec(`
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items/{id}:
+    parameters:
+      - $ref: "#/components/parameters/idParam"
+    get:
+      responses:
+        "200":
+          description: ok
+    put:
+      responses:
+        "200":
+          description: ok
+components:
+  parameters:
+    idParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+`);
+    expect(spec.operations).toHaveLength(2);
+    for (const op of spec.operations) {
+      expect(op.parameters).toHaveLength(1);
+      expect(op.parameters[0]?.name).toBe("id");
+    }
+  });
 });

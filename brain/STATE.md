@@ -90,14 +90,14 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **663/663 tests** (BidDiff 567/567 + openapi-lens 96/96).
+- **Build green:** **667/667 tests** (BidDiff 567/567 + openapi-lens 100/100).
   BidDiff: was 490 at session start; current context window brought 504→567 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
   1 sign-before-dollar + 1 classify precedence pin + 3 bare-paren page-limit +
   46 DiffView component + 12 SamAttachments + 4 N-A21 filter counter).
-  OpenAPI-lens: Phase 0 engine, 68 new tests (parser 17 + diff 20 + classify 22 + integration 9).
-  All typecheck clean; full CI gate verified green end-to-end.
+  OpenAPI-lens: Phase 0 engine 96/96 (critique panel) + 4 more (5.7.5 bug-hunt:
+  $ref parameter resolution). All typecheck clean; full CI gate verified green.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`
   red-teams every stop against the real clock IN THE HUMAN'S TIMEZONE

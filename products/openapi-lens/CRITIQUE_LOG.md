@@ -6,6 +6,54 @@
 
 ---
 
+## Phase 0 — 5.7.5 continuous bug-hunt (2026-06-06, post-panel)
+
+**Pass type:** 5.7.5 continuous bug-hunt — new adversarial inputs invented AFTER the
+Phase 0 critique panel passed. Scope: the complete engine with fresh attack angles.
+
+**Critics run:** Correctness #1, Adversarial Tester #2, Domain-Expert #5.
+
+**Finding (real, fixed same session):**
+
+#### Bug-hunt-1 — Correctness: `$ref` parameters in `components/parameters` silently dropped
+
+**Location:** `src/engine/parser.ts` — `parseParameter` + `parseParameters`
+
+**Defect:** When a parameter is specified as a `$ref` (e.g., `- $ref: "#/components/parameters/limitParam"`),
+`parseParameter` receives an object with no `name` or `in` keys. The `if (!name || !inVal) return null`
+guard silently drops the parameter. A spec that uses `components/parameters` for shared parameters
+(a common pattern in real-world APIs) produces **zero parameters** on those operations —
+making the diff engine miss all additions, removals, and type changes for those parameters.
+
+This affects:
+- OAS 3.x `#/components/parameters/X`
+- Swagger 2.0 `#/parameters/X` (top-level)
+- Path-level parameter arrays containing `$ref` entries
+
+**Impact:** High. Real-world APIs that DRY up shared parameters (e.g., pagination parameters
+`limit`/`page`/`cursor`, path parameters shared across GET/PUT/DELETE on the same resource)
+would produce entirely wrong diffs — parameter changes would be invisible.
+
+**Fix:** Added `parseSharedParameters()` that builds a lookup from both `components/parameters`
+(OAS 3.x) and top-level `parameters` (Swagger 2.0). Updated `parseParameter` to resolve `$ref`
+against this lookup before falling through to inline parsing. Updated `parseParameters` and
+`parseOperations` to thread the lookup through.
+
+4 new tests:
+- OAS 3.x `$ref` parameters resolved (2 parameters, correct types)
+- Mixed `$ref` + inline parameters on same operation
+- Unresolvable `$ref` → silently dropped (no crash, 0 parameters)
+- Path-level `$ref` parameters resolved into all operations on the path
+
+**Status:** Fixed (same session as found). **100/100 tests pass.**
+
+**5.7.5 lesson:** The critique panel tested inline parameters exhaustively but did not probe
+`$ref`-based parameters. Checklist addition for Adversarial Tester #2: "Test both inline and
+`$ref`-based forms of any schema/parameter entity — `$ref` is the primary reuse mechanism
+in real-world OpenAPI specs and is easily missed when tests only use inline forms."
+
+---
+
 ## Phase 0 pass 1 — full 14-critic panel (2026-06-06)
 
 **Scope:** `src/engine/` — parser, diff, classify, index. 91/91 tests.

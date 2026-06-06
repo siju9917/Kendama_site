@@ -33,12 +33,16 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   (BREAKING / INFO) and a human-readable `message`
 - [x] **`src/engine/index.ts`**: Public API — `analyzeOpenApiDiff()`,
   `breakingOnly()`, all type exports
-- [x] **96/96 tests** — parser (17), diff (20), classify (22), integration (9),
+- [x] **100/100 tests** — parser (21), diff (20), classify (22), integration (9),
   adversarial (19), property-diff (9)
 - [x] Typecheck clean
 - [x] **Full 14-critic panel passed** (2026-06-06) — P1 circular-ref fix,
   P2 `request-schema-property-added` type gap fixed, P2 pin tests for allOf/remote-$ref.
   See `CRITIQUE_LOG.md`. 5.7.2 escalating critique passed.
+- [x] **5.7.5 bug-hunt (2026-06-06)** — found and fixed `$ref` parameter resolution gap:
+  parameters specified via `$ref: "#/components/parameters/X"` were silently dropped.
+  Fixed `parseSharedParameters()` + updated `parseParameter`/`parseParameters`/`parseOperations`.
+  4 new tests.
 
 ### Breaking-change rules implemented (Phase 0)
 
@@ -120,8 +124,9 @@ _Begins when Proposal #3 auto-proceeds (2026-06-13) or human approves._
 
 - **No remote `$ref` resolution.** References to external files or URLs are
   silently resolved to empty schema `{}`. Only `#/components/schemas/X` and
-  `#/definitions/X` local refs are supported. Tested behavior: a remote $ref
-  produces a `null` response schema (no type, no properties).
+  `#/definitions/X` local refs are supported (for schemas). Parameters use
+  `#/components/parameters/X` (OAS 3.x) and `#/parameters/X` (Swagger 2.0)
+  — both now resolved. Remote/file refs still silently ignored. Tested behavior.
 - **Circular `$ref` terminates at depth 2.** A self-referential schema (e.g.,
   `Node.properties.next.$ref = "Node"`) is resolved one level deep; the
   second-level back-edge returns `{}`. No stack overflow. Tested behavior.

@@ -129,23 +129,43 @@ function extractContentSchema(content: unknown, lookup: Record<string, unknown>)
   return normalizeSchema(preferredMedia["schema"], lookup);
 }
 
-/** Parse a single parameter object. */
-function parseParameter(raw: unknown, lookup: Record<string, unknown>): OapiParameter | null {
+/** Parse a single parameter object. Resolves $ref to components/parameters if paramLookup provided. */
+function parseParameter(raw: unknown, schemaLookup: Record<string, unknown>, paramLookup?: Record<string, OapiParameter>): OapiParameter | null {
   if (!isObject(raw)) return null;
+  const ref = asString(raw["$ref"]);
+  if (ref && paramLookup) {
+    const match = /^#\/(components\/parameters|parameters)\/(.+)$/.exec(ref);
+    if (match && match[2]) return paramLookup[match[2]] ?? null;
+    return null;
+  }
   const name = asString(raw["name"]);
   const inVal = asString(raw["in"]);
   if (!name || !inVal) return null;
   if (!["path", "query", "header", "cookie"].includes(inVal)) return null;
   const required = asBoolean(raw["required"]) ?? (inVal === "path");
-  const schema = normalizeSchema(raw["schema"] ?? raw, lookup);
+  const schema = normalizeSchema(raw["schema"] ?? raw, schemaLookup);
   return { name, in: inVal as OapiParameter["in"], required, schema };
 }
 
+/** Parse components/parameters (OAS 3.x) and top-level parameters (Swagger 2.0) into a lookup map. */
+function parseSharedParameters(raw: Record<string, unknown>, schemaLookup: Record<string, unknown>): Record<string, OapiParameter> {
+  const result: Record<string, OapiParameter> = {};
+  const components = isObject(raw["components"]) ? raw["components"] : {};
+  const compParams = isObject(components["parameters"]) ? components["parameters"] : {};
+  const topLevelParams = isObject(raw["parameters"]) ? raw["parameters"] : {};
+  const all = { ...topLevelParams, ...compParams };
+  for (const [name, def] of Object.entries(all)) {
+    const p = parseParameter(def, schemaLookup);
+    if (p) result[name] = p;
+  }
+  return result;
+}
+
 /** Parse the parameters array, merging path-level and operation-level. */
-function parseParameters(pathLevelParams: unknown[], opLevelParams: unknown[], lookup: Record<string, unknown>): OapiParameter[] {
+function parseParameters(pathLevelParams: unknown[], opLevelParams: unknown[], schemaLookup: Record<string, unknown>, paramLookup: Record<string, OapiParameter>): OapiParameter[] {
   const merged = new Map<string, OapiParameter>();
   for (const raw of [...pathLevelParams, ...opLevelParams]) {
-    const p = parseParameter(raw, lookup);
+    const p = parseParameter(raw, schemaLookup, paramLookup);
     if (p) merged.set(`${p.in}:${p.name}`, p);
   }
   return [...merged.values()];
@@ -183,7 +203,8 @@ function buildSwagger2RequestBody(parameters: unknown[], lookup: Record<string, 
 }
 
 /** Parse the paths object into a flat list of operations. */
-function parseOperations(raw: Record<string, unknown>, lookup: Record<string, unknown>, version: OapiSpec["version"]): OapiOperation[] {
+function parseOperations(raw: Record<string, unknown>, schemaLookup: Record<string, unknown>, version: OapiSpec["version"]): OapiOperation[] {
+  const paramLookup = parseSharedParameters(raw, schemaLookup);
   const paths = isObject(raw["paths"]) ? raw["paths"] : {};
   const ops: OapiOperation[] = [];
 
@@ -196,15 +217,15 @@ function parseOperations(raw: Record<string, unknown>, lookup: Record<string, un
       if (!isObject(opRaw)) continue;
 
       const opLevelParams = asArray(opRaw["parameters"]);
-      const parameters = parseParameters(pathLevelParams, opLevelParams, lookup);
+      const parameters = parseParameters(pathLevelParams, opLevelParams, schemaLookup, paramLookup);
       const nonBodyParams = parameters.filter((p) => p.in !== ("body" as never));
 
       const requestBody =
         version === "2.0"
-          ? buildSwagger2RequestBody(opLevelParams, lookup)
-          : parseRequestBody(opRaw["requestBody"], lookup);
+          ? buildSwagger2RequestBody(opLevelParams, schemaLookup)
+          : parseRequestBody(opRaw["requestBody"], schemaLookup);
 
-      const responses = parseResponses(opRaw["responses"], lookup);
+      const responses = parseResponses(opRaw["responses"], schemaLookup);
       const deprecated = asBoolean(opRaw["deprecated"]);
 
       ops.push({
