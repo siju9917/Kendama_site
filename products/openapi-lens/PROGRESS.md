@@ -276,6 +276,35 @@ _Begins when Proposal #3 auto-proceeds (2026-06-13) or human approves._
 - [ ] Edge cases: `$ref` chains, `allOf`/`oneOf`/`anyOf` resolution,
   circular refs, remote refs (stubbed out)
 
+### Phase 2 engine additions (identified in "nothing is done" review 2026-06-06)
+
+- [ ] **Response `headers` diff** — response headers (e.g., `X-Rate-Limit`, `Location`,
+  `Retry-After`) are part of the API contract but completely absent from the Phase 0 engine.
+  Removing a documented response header is BREAKING for clients that parse it; adding a
+  required response header is BREAKING for clients that must handle it. Requires parsing
+  `responses[status].headers` and diffing per-header (name removed = BREAKING, schema
+  type changed = BREAKING).
+
+- [ ] **Security scheme / scope changes** — `security:` changes on individual operations
+  are invisible. Adding a new required OAuth scope to an endpoint breaks clients that
+  request the old token without that scope. Removing a supported scheme (e.g., `apiKey`)
+  breaks clients using that auth type. Both directions can be BREAKING depending on
+  whether the change adds a requirement or removes a supported path. Requires parsing
+  operation-level `security:` and diffing against baseline.
+
+- [ ] **`servers` array changes** — base URL changes are breaking for clients that
+  construct full URLs. Removing a server entry (e.g., dropping a regional URL) breaks
+  clients that hard-coded that base path. Changing the base path prefix (e.g.,
+  `/api/v1` → `/api/v2`) silently breaks all clients even if no operations changed.
+  Requires diffing the `servers:` array at the top-level spec.
+
+- [ ] **`operationId` changes** — SDK generators (openapi-generator, autorest, kiota)
+  use `operationId` as the generated method name. Renaming `getUser` → `fetchUser`
+  regenerates the SDK and breaks calling code at compile time. INFO in the engine
+  (it's not a wire-protocol break) but highly impactful for typed-client consumers;
+  classify as BREAKING for SDK-generated clients, INFO otherwise. Requires parsing
+  `operationId` per operation and diffing.
+
 ## Phase 3 — Monetization gate (at 1,000 installs)
 
 - [ ] LemonSqueezy license key validation (same pattern as BidDiff)
@@ -333,3 +362,10 @@ _Begins when Proposal #3 auto-proceeds (2026-06-13) or human approves._
 - **No media-type coverage.** The engine uses the first `content` entry returned
   by the YAML parser. An endpoint that dropped `application/xml` support while
   keeping `application/json` will show no change. Phase 2.
+- **Response `headers` not diffed.** Response headers (`X-Rate-Limit`, `Location`,
+  etc.) are part of the API contract but not yet parsed or compared. Phase 2.
+- **Security scheme / scope changes not detected.** Operation-level `security:`
+  changes (new required scope, removed auth scheme) are invisible. Phase 2.
+- **`servers` array not compared.** Base URL changes are not detected. Phase 2.
+- **`operationId` changes not detected.** SDK-generator method-name renames are
+  invisible; high impact for typed-client consumers. Phase 2.

@@ -274,6 +274,34 @@ This is the kind of derivative/portfolio reasoning PART 3.1 asks for: it turns
 an enumerable list into one compounding product line, and it is a deliberate
 *de*-proliferation of the backlog — resisting the easy dilution.
 
+#### Breaking-Change Lens — format-pack roadmap candidates (first-principles, 2026-06-06)
+
+Per the meta-synthesis above, format candidates below are NOT new D-series ideas
+— they are candidates for BCL's format-pack roadmap. Scored on: pain acuity (P),
+gap genuineness (G), parser cost (C=1 easy→10 hard), BCL model fit (F). Each is
+a first-principles cap-independent estimate; no cited research yet.
+
+| Format | P | G | C | F | Gap assessment | Verdict |
+|---|---|---|---|---|---|---|
+| **SQL migration diff** | 9 | Strong | 5 | 8 | `sqlfluff` lints SQL, does NOT compare two schema versions for breaking DDL changes. `ADD COLUMN NOT NULL` without DEFAULT breaks inserts. `DROP COLUMN` breaks reads. `ALTER COLUMN type` breaks wire contract. No VS Code extension classifies this. Dialect complexity (psql/mysql/sqlite) is the parser tax. | **STRONG — top pack-2 candidate after OpenAPI/Terraform beachhead** |
+| **K8s YAML diff** | 8 | Strong | 2 | 9 | `kubectl diff` shows the diff but does NOT classify risk level. No VS Code extension detects BREAKING k8s changes on-device. Key BREAKING classes: immutable field change (e.g., label selector on Deployment), resource type change, apiVersion deprecation, RBAC broadening. Parser is plain YAML with well-documented k8s JSON schema. On-device trust: k8s configs reference secrets, service accounts, IAM bindings — sensitive infra. | **STRONG — easiest new format-pack after beachhead ships** |
+| **GraphQL schema diff** | 7 | Moderate | 2 | 9 | `graphql-inspector` CLI (1.6k stars, actively maintained) proves the demand. But: no VS Code extension with on-device inline squiggles. If no extension exists, the gap mirrors D5's oasdiff-has-no-VS-Code situation. BREAKING rules are well-defined (field removal, type change, nullable removed, enum values removed). GraphQL-js parses SDL trivially. | **MEDIUM — gap depends on whether graphql-inspector has a VS Code extension (research-gated)** |
+| **CloudFormation diff** | 7 | Moderate | 3 | 8 | AWS CDK diff classifies changes for CDK users. Raw CFN users have AWS Console change sets but no VS Code on-device classifier. AWS Toolkit for VS Code exists but does not classify change risk level. BREAKING pattern: `RequiresReplacement` (delete+create vs in-place update). Parser is YAML/JSON. Audience limited to AWS-native shops. | **MEDIUM — CDK diff weakens gap for serious AWS users** |
+| **Avro schema diff** | 6 | Strong | 2 | 9 | Strong gap — no VS Code extension for Avro schema change risk. Avro has well-defined compatibility modes (BACKWARD/FORWARD/FULL) with clear BREAKING rules. Parser is JSON. Niche audience (Kafka/event streaming shops). | **LOW-MEDIUM — strong gap but small addressable market** |
+| **Docker image diff** | 5 | N/A | 10 | 1 | NOT a BCL format-pack fit. Docker image diff requires binary layer analysis, not structured text comparison. The BCL model (parse structured text → compare versions → classify) does not apply. `dive` exists as a CLI layer inspector. Different problem category entirely. | **DROP — not a BCL format-pack** |
+
+**Sequencing implication:** Once the beachhead format ships (Phase 1 of OpenAPI/D5 or
+Phase 1 of Terraform/D6), K8s YAML is the cheapest next pack (easy parser, strong gap,
+minimal rule-pack). SQL migration is the highest-value next pack (universal pain, strong
+gap). GraphQL and CloudFormation warrant a quick gap check (whether `graphql-inspector`
+has a VS Code extension, whether CDK diff covers the audience) before committing.
+
+**Note on the beachhead itself:** The meta-synthesis says "pick the BEACHHEAD by cited
+deep-eval." As of 2026-06-06, D5 (OpenAPI) Phase 0 engine is complete (345/345 tests);
+D6 (Terraform) and D3 (protobuf) have not yet started. The proposal auto-proceeds
+2026-06-13, making OpenAPI the de-facto beachhead by timing. K8s YAML as pack-2 is a
+natural first expansion since the parser is ~30 lines of js-yaml + k8s schema types.
+
 ### Standing candidate categories to populate via research
 
 The seeded backlog above is a starting point. On every RESEARCH
