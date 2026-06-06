@@ -353,7 +353,15 @@ if a proposal mentions a smaller count than the current headline, it is stale).
 
 **Strengthens or weakens?** stronger.
 
-**Status:** proposed.
+**Status:** **done (2026-06-06).** Extended `state-count-sanity.mjs` to also scan the
+Open proposals section of `human/APPROVALS.md` for the specific Phase-0-complete claim
+pattern (`**NNN/NNN tests** passing (N adversarial hardening rounds...`). Compares against
+the openapi-lens per-product count from STATE.md (not the global total, to avoid
+false-positives from product-scoped vs. global counts — a simple `< global_total`
+heuristic was tried and rejected because it flagged "345/345 tests" as stale when the
+global total is 931; the real fix is product-scoped comparison). 65/65 check tests green;
+real repo passes; the detection pattern correctly fires on "91/91 tests" and passes on
+"345/345 tests" (the current correct count). Logged in DECISIONS.md 2026-06-06.
 
 **Reasoning trace:** 5.7.8 audit finding from items 70-71 continuation
 (META_LESSONS.md 2026-06-06 — "items 70-71" entry). The `state-count-sanity` check's scope

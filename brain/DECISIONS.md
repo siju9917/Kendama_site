@@ -530,3 +530,33 @@ the real accessors and deleting the six tests.
 
 **Where applied:** `ops/checks/brain-integrity.mjs`, `ops/checks/no-github-actions.mjs`,
 `ops/checks/checks.test.mjs` (+6 tests; also corrected the run instruction).
+
+## 2026-06-06 — SELF_IMPROVEMENT #12: extend state-count-sanity to catch stale APPROVALS.md Phase-0 counts
+
+**Decision:** Extend `ops/checks/state-count-sanity.mjs` to cross-validate Phase-0-complete
+test-count claims in the Open proposals section of `human/APPROVALS.md` against the current
+openapi-lens per-product count extracted from `brain/STATE.md`.
+
+**Why scoped to Phase-0 pattern, not global total:** A naive "any count < STATE.md total is
+stale" approach was tried and rejected. It flags "345/345 tests" (openapi-lens Phase 0 count,
+correct) as stale because 345 < 931 (global total). Proposals are product-scoped; the correct
+comparison is product-scoped. The check uses the specific `**NNN/NNN tests** passing (N
+adversarial hardening rounds` pattern that uniquely identifies Phase-0-complete claims, then
+compares against the openapi-lens breakdown count in STATE.md.
+
+**Alternatives considered:**
+- **Cross-validate against global total.** Rejected — false positives on product-scoped counts
+  (the very pattern we care about for openapi-lens).
+- **A separate check file.** Rejected — this is a minor extension to an existing check that
+  guards related data. Staying in `state-count-sanity.mjs` keeps related logic together.
+
+**Reasoning:** The 5.7.8 audit on items 70-71 found a real stale count in APPROVALS.md that
+persisted across multiple context windows undetected. The check makes the detection automatic.
+Correctly handles the CLOSED section (historical counts are excluded from detection).
+
+**Reversibility:** Remove the `APPROVALS.md` cross-validation block from `state-count-sanity.mjs`
+and delete the 4 new tests.
+
+**Where applied:** `ops/checks/state-count-sanity.mjs` (new cross-validation block),
+`ops/checks/checks.test.mjs` (+4 tests), `brain/SELF_IMPROVEMENT.md` (#12 marked done),
+`brain/DECISIONS.md` (this entry).

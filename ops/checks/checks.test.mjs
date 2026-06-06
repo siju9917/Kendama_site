@@ -263,6 +263,33 @@ test('state-count-sanity: duplicate headlines are flagged', () => {
   assert.ok(f.some((x) => /\d+ .*headlines/.test(x.message)));
 });
 
+// APPROVALS.md stale Phase-0-complete count cross-validation (SELF_IMPROVEMENT #12)
+// The check looks for "**NNN/NNN tests** passing (N adversarial hardening rounds" pattern
+// in open proposals and flags if NNN < the openapi-lens count in STATE.md.
+const STATE_WITH_OL = '- **Build green:** **931/931 tests** (BidDiff 586 + openapi-lens 345/345)\n';
+
+test('state-count-sanity: stale Phase-0-complete count in open proposal is flagged P2', () => {
+  const approvals = '## Open proposals\n### Proposal #3\n**COMPLETED 2026-06-06.** **91/91 tests** passing (8 adversarial hardening rounds; all covered).\n## Closed proposals\n';
+  const f = analyzeStateCount(STATE_WITH_OL, approvals);
+  assert.ok(f.some((x) => x.level === 'P2' && /stale.*count|drift/i.test(x.message)));
+});
+
+test('state-count-sanity: current Phase-0 count in open proposal does NOT flag', () => {
+  const approvals = '## Open proposals\n### Proposal #3\n**COMPLETED 2026-06-06.** **345/345 tests** passing (8 adversarial hardening rounds; all covered).\n## Closed proposals\n';
+  const f = analyzeStateCount(STATE_WITH_OL, approvals);
+  assert.equal(blocking(f).length, 0);
+});
+
+test('state-count-sanity: stale Phase-0 count in CLOSED section does NOT flag', () => {
+  const approvals = '## Open proposals\n(none)\n## Closed proposals\n### Proposal #3 (closed)\n**91/91 tests** passing (8 adversarial hardening rounds).\n';
+  const f = analyzeStateCount(STATE_WITH_OL, approvals);
+  assert.equal(blocking(f).length, 0);
+});
+
+test('state-count-sanity: missing APPROVALS.md does not throw', () => {
+  assert.doesNotThrow(() => analyzeStateCount(STATE_WITH_OL, undefined));
+});
+
 const APPROVALS_DOC = `## Open proposals
 ### Proposal #1 — test
 - Auto-proceed window: defaults to REPOSITION if no response by 2026-06-03

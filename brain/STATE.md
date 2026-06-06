@@ -744,6 +744,16 @@ all green; check tests 16/16.
     oasdiff wrapper; corrected to our own Phase 0 engine API). Fixed Proposal #3 stale
     "91/91 tests" → "345/345 tests" in APPROVALS.md.
 
+72. **SELF_IMPROVEMENT #12 done** (extend state-count-sanity to detect stale APPROVALS.md
+    Phase-0-complete counts): Extended `ops/checks/state-count-sanity.mjs` to cross-validate
+    the `**NNN/NNN tests** passing (N adversarial hardening rounds` pattern in APPROVALS.md
+    open proposals against the openapi-lens per-product count from STATE.md. Scoped narrowly
+    to avoid false-positives on product-scoped counts vs. global total. 4 new unit tests
+    (stale flags P2, current passes, closed section exempt, undefined approvalsText safe).
+    65/65 check tests green; all 11 factory checks pass. DECISIONS.md entry added.
+    5.7.7 META audit for items 70-71 written in META_LESSONS.md (including 5.7.8 finding
+    that produced this task). SELF_IMPROVEMENT.md #12 marked done.
+
 71. **D6 Phase 1 pre-design** (pre-work before 2026-06-13 Proposal #4 auto-proceed):
     Detailed Phase 1 architecture specification for the Terraform Plan Destructive-Change
     Classifier VS Code extension. New file `brain/PLAYBOOKS/terraform-lens-phase1-design.md`
