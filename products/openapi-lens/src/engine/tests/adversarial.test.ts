@@ -13471,3 +13471,84 @@ paths:
     expect(locs.some((l) => l.includes("name"))).toBe(true);
   });
 });
+
+// ─── Round 106: top-level body schema format — three untested directions ──────
+// The "top-level body schema format and enum" describe block (line ~1446) only
+// tests request format→format (BREAKING) and response null→format (INFO).
+// Three additional directions were never directly covered:
+//   1. request-schema-format-changed: null→format → BREAKING (server adds format restriction)
+//   2. response-schema-format-changed: format→null → BREAKING (server drops guarantee; clients may break)
+//   3. response-schema-format-changed: format→format → BREAKING (server changes format contract)
+
+describe("adversarial round 106 — top-level body schema format untested directions", () => {
+  function makeRequestSpec(format: string | null): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /data:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              ${format !== null ? `format: ${format}` : ""}
+      responses:
+        "201":
+          description: created
+`;
+  }
+
+  function makeResponseSpec(format: string | null): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /data:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+                ${format !== null ? `format: ${format}` : ""}
+`;
+  }
+
+  it("(R106-1) request body format added (null→date) is BREAKING — server now validates date format", () => {
+    // Classify rule: request-schema-format-changed with after !== null → BREAKING.
+    // Untested direction: null → format (format being ADDED to a previously unformatted field).
+    const changes = analyzeOpenApiDiff(makeRequestSpec(null), makeRequestSpec("date"));
+    const c = changes.find((x) => x.type === "request-schema-format-changed");
+    expect(c).toBeDefined();
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe("date");
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("(R106-2) response body format removed (date→null) is BREAKING — clients relying on date format lose the guarantee", () => {
+    // Classify rule: response-schema-format-changed with before !== null → BREAKING.
+    // Untested direction: format → null (format being REMOVED; server no longer constrains format).
+    const changes = analyzeOpenApiDiff(makeResponseSpec("date"), makeResponseSpec(null));
+    const c = changes.find((x) => x.type === "response-schema-format-changed");
+    expect(c).toBeDefined();
+    expect(c?.before).toBe("date");
+    expect(c?.after).toBeNull();
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("(R106-3) response body format changed (date→date-time) is BREAKING — clients parsing date string will now receive datetime", () => {
+    // Classify rule: response-schema-format-changed with before !== null → BREAKING.
+    // Untested direction: format → format (changing from one format to another in a response body).
+    const changes = analyzeOpenApiDiff(makeResponseSpec("date"), makeResponseSpec("date-time"));
+    const c = changes.find((x) => x.type === "response-schema-format-changed");
+    expect(c).toBeDefined();
+    expect(c?.before).toBe("date");
+    expect(c?.after).toBe("date-time");
+    expect(c?.severity).toBe("BREAKING");
+  });
+});
