@@ -63,7 +63,7 @@ describe("findLineForLocation", () => {
     expect(findLineForLocation(doc, "paths./nonexistent.get")).toBe(0);
   });
 
-  it("finds the line containing the last path segment key", () => {
+  it("finds the line containing the last path segment key (progressive search)", () => {
     const doc = makeMockDocument([
       "openapi: 3.0.0",
       "paths:",
@@ -71,17 +71,17 @@ describe("findLineForLocation", () => {
       "    get:",
       "      summary: get users",
     ]);
-    // Location "paths./users.get" — last segment "get" matches line 3
+    // Location "paths./users.get" — progressive: paths→line1, /users→line2, get→line3
     expect(findLineForLocation(doc, "paths./users.get")).toBe(3);
   });
 
-  it("falls back to parent segment when leaf is not found", () => {
+  it("falls back to last successfully located segment when leaf not found", () => {
     const doc = makeMockDocument([
       "openapi: 3.0.0",
       "info:",
       "  title: My API",
     ]);
-    // "info.title.nonexistent" — "nonexistent" not found, falls back to "title" on line 2
+    // "info.title.nonexistent" — info→1, title→2, nonexistent→not found → returns 2
     expect(findLineForLocation(doc, "info.title.nonexistent")).toBe(2);
   });
 
@@ -91,6 +91,72 @@ describe("findLineForLocation", () => {
       '  {"title":"T"}}',
     ]);
     expect(findLineForLocation(doc, "info.title")).toBeGreaterThanOrEqual(0);
+  });
+
+  // N3 improvements: numeric index skipping + progressive search
+  it("(N3) skips numeric array indices and finds the surrounding key", () => {
+    const doc = makeMockDocument([
+      "openapi: 3.0.0",
+      "paths:",
+      "  /users:",
+      "    get:",
+      "      parameters:",
+      "        - name: userId",
+      "          in: query",
+      "          schema:",
+      "            type: string",
+      "            minLength: 3",
+    ]);
+    // "parameters[0].schema.minLength" — old code searched for "0:" (fails, falls back)
+    // N3 code: skip "0", search schema from parameters line → minLength found at line 9
+    const line = findLineForLocation(doc, "parameters[0].schema.minLength");
+    expect(line).toBe(9);
+  });
+
+  it("(N3) progressive search finds correct key in second operation (not first)", () => {
+    const doc = makeMockDocument([
+      "openapi: 3.0.0",
+      "paths:",
+      "  /users:",
+      "    get:",
+      "      parameters:",
+      "        - name: limit",
+      "          schema:",
+      "            minimum: 1",   // line 7: /users minimum
+      "  /posts:",
+      "    get:",
+      "      parameters:",
+      "        - name: page",
+      "          schema:",
+      "            minimum: 0",   // line 13: /posts minimum
+    ]);
+    // Location targeting /posts minimum should land at line 13, not line 7
+    const line = findLineForLocation(doc, "paths./posts.get.parameters.schema.minimum");
+    // Progressive: paths→1, /posts→8, get→9, parameters→10, schema→12, minimum→13
+    expect(line).toBe(13);
+  });
+
+  it("(N3) handles server URL bracket syntax: servers[https://api.example.com]", () => {
+    const doc = makeMockDocument([
+      "openapi: 3.0.0",
+      "servers:",
+      "  - url: https://api.example.com",
+    ]);
+    // location "servers[https://api.example.com]" → segments: ["servers", "https://api.example.com"]
+    // servers found at line 1; url with the full URL won't match as key, so returns line 1
+    const line = findLineForLocation(doc, "servers[https://api.example.com]");
+    expect(line).toBe(1); // at least the "servers:" line
+  });
+
+  it("(N3) returns 0 when document is empty", () => {
+    const doc = makeMockDocument([]);
+    expect(findLineForLocation(doc, "paths./users.get")).toBe(0);
+  });
+
+  it("(N3) handles location with only numeric segments (no YAML keys to find)", () => {
+    const doc = makeMockDocument(["openapi: 3.0.0", "paths:"]);
+    // All segments are numeric after filtering — nothing to search, returns 0
+    expect(findLineForLocation(doc, "[0][1][2]")).toBe(0);
   });
 });
 
