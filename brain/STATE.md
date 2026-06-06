@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **833/833 tests** (BidDiff 586/586 + openapi-lens 247/247).
+- **Build green:** **840/840 tests** (BidDiff 586/586 + openapi-lens 254/254).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -633,6 +633,19 @@ all green; check tests 16/16.
     Parameters with `deprecated: true` were parsed with `undefined.deprecated`. Fix: extract
     in parser, diff in `diffParameters`, new `parameter-deprecated-changed` OapiChangeType,
     two INFO classify rules, parser+diff+classify tests. 5 new tests. 226→231. Total: **817/817**.
+
+59. **5.7.4 "nothing is done" / allOf composition flattening** — adversarial "nothing is done"
+    review identified allOf flattening as the next highest-value Phase 0 improvement: real-world
+    OpenAPI specs use `allOf` heavily for schema inheritance, and breaking changes inside `allOf`
+    base schemas (added required fields, type changes) were completely invisible. Implemented
+    `flattenAllOf()` in parser.ts: merges allOf members' `required[]` (union/dedup), `properties`
+    (parent wins on conflict), and scalar fields (`type`, `format`, `nullable`, etc.) into the parent
+    schema before diff. Updated the P2-3 "known limitation" pin test (adversarial.test.ts) to assert
+    the new correct behavior. Added 7 new tests: 3 parser unit tests (allOf+$ref, multi-member
+    required union, parent precedence) + 4 adversarial/integration tests (properties visible,
+    required-added detected, property-type-change BREAKING detected, oneOf still unflattened).
+    Updated PROGRESS.md known limitations (allOf resolved; oneOf/anyOf still Phase 2).
+    247→254 openapi-lens. Total: **840/840 tests**.
 
 58. **5.7.4 "nothing is done" review: readOnly/writeOnly gap + documentation hardening** —
     adversarial review called readOnly/writeOnly "the single most embarrassing Phase 0 gap":

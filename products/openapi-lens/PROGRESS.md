@@ -202,12 +202,18 @@ _Begins when Proposal #3 auto-proceeds (2026-06-13) or human approves._
 - **Circular `$ref` terminates at depth 2.** A self-referential schema (e.g.,
   `Node.properties.next.$ref = "Node"`) is resolved one level deep; the
   second-level back-edge returns `{}`. No stack overflow. Tested behavior.
-- **No `allOf`/`oneOf`/`anyOf` schema merging.** If your spec uses composition
-  (`allOf: [{$ref: "#/components/schemas/Base"}, {properties: {...}}]`), only the
-  top-level `type`, `required[]`, and `properties` keys are compared. The composed
-  members are **ignored in the diff**. A breaking change introduced entirely inside
-  an `allOf` member will not be detected. Phase 2 adds composition flattening.
-  Tested behavior.
+- **`allOf` composition is flattened (Phase 0, 2026-06-06).** `allOf` members are
+  merged into the parent schema before diffing: `required[]` arrays are unioned,
+  `properties` maps are merged (parent takes precedence on key conflict), and scalar
+  fields (`type`, `format`, `nullable`, etc.) are inherited from members when not
+  set by the parent. Breaking changes introduced in `allOf` base schemas (e.g. an
+  inherited field becoming required, or an inherited property's type changing) are
+  now correctly detected. Tested behavior (7 new tests).
+- **`oneOf`/`anyOf` composition is NOT merged.** `oneOf: [{$ref: "A"}, {$ref: "B"}]`
+  semantics require per-variant comparison (which variant did the client use?);
+  that analysis is genuinely complex. `oneOf`/`anyOf` members remain stored but not
+  flattened. A breaking change inside only one `oneOf` variant will not be detected.
+  Phase 2. Tested behavior.
 - **Property diff is one level deep only.** `properties.fieldName.type` changes
   are detected. Nested objects (`user.address.zipCode`) are not recursively diffed;
   the outer property (`user`) is compared but its sub-properties are not. Phase 2

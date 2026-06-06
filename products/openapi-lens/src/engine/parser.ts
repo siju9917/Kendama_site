@@ -76,6 +76,44 @@ function resolveLocalRef(ref: string, lookup: Record<string, unknown>, visited: 
   return result;
 }
 
+/**
+ * Flatten allOf members into the parent schema.
+ *
+ * JSON Schema semantics: allOf means the instance must validate against ALL member schemas.
+ * Merging: union of required[] (deduplicated), union of properties (parent wins on key
+ * conflict since parent schemas override base schemas in typical inheritance patterns),
+ * and fill-in of missing scalar fields (type, format, nullable, etc.) from members in order.
+ *
+ * oneOf/anyOf are intentionally NOT flattened — they require per-variant analysis (Phase 2).
+ */
+function flattenAllOf(schema: OapiSchema): OapiSchema {
+  const members = schema.allOf ?? [];
+  if (members.length === 0) return schema;
+
+  const result: OapiSchema = { ...schema };
+  delete result.allOf;
+
+  for (const member of members) {
+    if (member.required?.length) {
+      const base = result.required ?? [];
+      result.required = [...new Set([...base, ...member.required])];
+    }
+    if (member.properties) {
+      // Spread member first so parent properties take precedence on key conflict.
+      result.properties = { ...member.properties, ...(result.properties ?? {}) };
+    }
+    if (result.type === undefined && member.type !== undefined) result.type = member.type;
+    if (result.format === undefined && member.format !== undefined) result.format = member.format;
+    if (result.nullable === undefined && member.nullable !== undefined) result.nullable = member.nullable;
+    if (result.readOnly === undefined && member.readOnly !== undefined) result.readOnly = member.readOnly;
+    if (result.writeOnly === undefined && member.writeOnly !== undefined) result.writeOnly = member.writeOnly;
+    if (result.items === undefined && member.items !== undefined) result.items = member.items;
+    if (result.enum === undefined && member.enum !== undefined) result.enum = member.enum;
+  }
+
+  return result;
+}
+
 /** Normalize a raw schema node, resolving $ref if local. */
 function normalizeSchema(raw: unknown, lookup: Record<string, unknown>, visited: Set<string> = new Set()): OapiSchema {
   if (!isObject(raw)) return {};
@@ -118,6 +156,13 @@ function normalizeSchema(raw: unknown, lookup: Record<string, unknown>, visited:
     if (arr.length > 0) {
       schema[key] = arr.map((s) => normalizeSchema(s, lookup, visited));
     }
+  }
+
+  // Flatten allOf into the parent schema so the diff engine sees a single flat schema.
+  // Breaking changes inside allOf members (e.g. an inherited required field becoming required)
+  // are now detectable. oneOf/anyOf remain unflattened (Phase 2).
+  if (schema.allOf && schema.allOf.length > 0) {
+    return flattenAllOf(schema);
   }
 
   return schema;

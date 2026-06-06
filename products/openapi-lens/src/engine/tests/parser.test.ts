@@ -443,4 +443,105 @@ paths:
     expect(legacyParam?.deprecated).toBe(true);
     expect(activeParam?.deprecated).toBeUndefined();
   });
+
+  it("allOf flattening: $ref base schema properties are merged into top-level", () => {
+    const spec = parseOapiSpec(`
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Base"
+                  - type: object
+                    properties:
+                      extra:
+                        type: string
+components:
+  schemas:
+    Base:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+`);
+    const schema = spec.operations[0]?.responses["200"]?.schema;
+    expect(schema?.allOf).toBeUndefined();
+    expect(schema?.type).toBe("object");
+    expect(schema?.required).toContain("id");
+    expect(schema?.properties?.["id"]?.type).toBe("string");
+    expect(schema?.properties?.["extra"]?.type).toBe("string");
+  });
+
+  it("allOf flattening: required fields from multiple allOf members are unioned", () => {
+    const spec = parseOapiSpec(`
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - required: [name]
+                  properties:
+                    name:
+                      type: string
+                - required: [email]
+                  properties:
+                    email:
+                      type: string
+      responses:
+        "201":
+          description: created
+`);
+    const schema = spec.operations[0]?.requestBody?.schema;
+    expect(schema?.allOf).toBeUndefined();
+    expect(schema?.required).toContain("name");
+    expect(schema?.required).toContain("email");
+    expect(schema?.properties?.["name"]?.type).toBe("string");
+    expect(schema?.properties?.["email"]?.type).toBe("string");
+  });
+
+  it("allOf flattening: parent schema properties take precedence over member properties", () => {
+    const spec = parseOapiSpec(`
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                allOf:
+                  - properties:
+                      id:
+                        type: string
+components:
+  schemas: {}
+`);
+    const schema = spec.operations[0]?.responses["200"]?.schema;
+    expect(schema?.properties?.["id"]?.type).toBe("integer");
+  });
 });

@@ -540,7 +540,7 @@ components:
     expect(nextNextProp?.type).toBeUndefined();
   });
 
-  it("allOf/oneOf composition schemas are stored but NOT merged for diffing (P2-3 pin)", () => {
+  it("allOf composition is flattened — base properties are visible at top level (P2-3 resolved)", () => {
     const spec = parseOapiSpec(`
 openapi: "3.0.0"
 info:
@@ -567,19 +567,195 @@ components:
         id:
           type: string
 `);
-    // allOf is parsed; base properties are NOT merged into the top-level schema
+    // allOf is flattened: base properties AND inline member properties are merged
     const op = spec.operations[0]!;
     const schema = op.responses["200"]?.schema;
-    expect(schema?.allOf).toBeDefined();
-    expect(schema?.allOf).toHaveLength(2);
-    // No top-level 'id' or 'extra' property (merging is a known limitation, not performed)
-    expect(schema?.properties?.["id"]).toBeUndefined();
-    expect(schema?.properties?.["extra"]).toBeUndefined();
-    // Diffing two identical allOf specs produces no changes
+    // allOf is consumed during flattening
+    expect(schema?.allOf).toBeUndefined();
+    // Both 'id' (from Base via allOf) and 'extra' (from inline member) are now visible
+    expect(schema?.properties?.["id"]).toBeDefined();
+    expect(schema?.properties?.["extra"]).toBeDefined();
+    expect(schema?.type).toBe("object");
+    // Diffing two identical allOf specs still produces no changes
     expect(analyzeOpenApiDiff(
       `openapi: "3.0.0"\ninfo:\n  title: T\n  version: "1"\npaths:\n  /items:\n    get:\n      responses:\n        "200":\n          content:\n            application/json:\n              schema:\n                allOf:\n                  - type: object`,
       `openapi: "3.0.0"\ninfo:\n  title: T\n  version: "1"\npaths:\n  /items:\n    get:\n      responses:\n        "200":\n          content:\n            application/json:\n              schema:\n                allOf:\n                  - type: object`,
     )).toHaveLength(0);
+  });
+
+  it("allOf flattening: a required field added to a base schema via allOf is BREAKING", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Base"
+components:
+  schemas:
+    Base:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Base"
+components:
+  schemas:
+    Base:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+`;
+    // 'name' added to required[] inside the allOf base — previously invisible, now detected.
+    // Severity is INFO (server now guarantees the field; clients can rely on it).
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const requiredAdded = changes.filter((c) => c.type === "response-schema-field-required-added");
+    expect(requiredAdded).toHaveLength(1);
+    expect(requiredAdded[0]?.severity).toBe("INFO");
+    expect(requiredAdded[0]?.location).toMatch(/name/);
+  });
+
+  it("allOf flattening: a property type change inside a base schema is BREAKING", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/UserBase"
+components:
+  schemas:
+    UserBase:
+      type: object
+      properties:
+        age:
+          type: integer
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/UserBase"
+components:
+  schemas:
+    UserBase:
+      type: object
+      properties:
+        age:
+          type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "request-schema-property-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+    expect(typeChange?.before).toBe("integer");
+    expect(typeChange?.after).toBe("string");
+  });
+
+  it("allOf flattening: parent schema properties take precedence over allOf members", () => {
+    const spec = parseOapiSpec(`
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                allOf:
+                  - properties:
+                      id:
+                        type: string
+components:
+  schemas: {}
+`);
+    const schema = spec.operations[0]!.responses["200"]?.schema;
+    // Parent's integer takes precedence over allOf member's string
+    expect(schema?.properties?.["id"]?.type).toBe("integer");
+  });
+
+  it("oneOf schemas are stored but NOT merged (oneOf/anyOf flattening remains Phase 2)", () => {
+    const spec = parseOapiSpec(`
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    properties:
+                      kind:
+                        type: string
+components:
+  schemas: {}
+`);
+    const schema = spec.operations[0]!.responses["200"]?.schema;
+    // oneOf is NOT flattened — it's stored for potential Phase 2 use
+    expect(schema?.oneOf).toBeDefined();
+    expect(schema?.oneOf).toHaveLength(1);
+    // Properties from oneOf members are NOT merged (known limitation)
+    expect(schema?.properties?.["kind"]).toBeUndefined();
   });
 
   it("a non-local $ref (remote or relative file) silently resolves to empty schema (P2-4 pin)", () => {
