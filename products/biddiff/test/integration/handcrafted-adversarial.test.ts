@@ -382,4 +382,66 @@ describe("Hand-crafted adversarial cases", () => {
     expect(modifies).toHaveLength(0); // the shifted items are suppressed (ordinal-only change)
     expect(result.changes).toHaveLength(1); // total: 1 real change, 0 noise
   });
+
+  it("set-aside change is flagged CRITICAL end-to-end (rule 7)", () => {
+    // An amendment that changes the set-aside designation is one of the
+    // highest-impact changes: a small-business set-aside disqualifies large
+    // businesses from bidding. The SET_ASIDE anchor + critical rule 7 must
+    // fire from detection through classification to the engine output.
+    const cover = (setAside: string): StructuredDocument => ({
+      metadata: meta("cover"),
+      sections: [
+        sec({
+          letter: null,
+          heading: "Cover Page",
+          type: "OTHER",
+          ordinal: 0,
+          blocks: [
+            paragraph(
+              "cover",
+              0,
+              `Solicitation No. TEST-2026-001. NAICS Code 541511. ${setAside}. Offers due 2026-08-15.`,
+            ),
+          ],
+        }),
+      ],
+    });
+    const result = diff(
+      cover("Total Small Business Set-Aside"),
+      cover("Full and Open Competition"),
+    );
+    expect(result.changes).toHaveLength(1);
+    const chg = result.changes[0];
+    expect(chg.severity).toBe("CRITICAL");
+    expect(chg.criticalReasons.some((r) => r.includes("set-aside"))).toBe(true);
+  });
+
+  it("sub-CLIN pricing change is flagged CRITICAL via PRICING_CLINS (rule 5)", () => {
+    // A sub-CLIN change (DFARS 204.71 format: 0001AA) should be recognized as
+    // a CLIN anchor, routed to PRICING_CLINS, and flagged critical via rule 5.
+    const pricing = (subClinText: string): StructuredDocument => ({
+      metadata: meta("pricing"),
+      sections: [
+        sec({
+          letter: "B",
+          heading: "Section B - Supplies or Services",
+          type: "PRICING",
+          ordinal: 0,
+          blocks: [
+            paragraph("B", 0, "Base Period"),
+            paragraph("B", 1, "CLIN 0001 Professional Services"),
+            paragraph("B", 2, subClinText),
+          ],
+        }),
+      ],
+    });
+    const result = diff(
+      pricing("CLIN 0001AA Labor Category: Software Engineer, $200,000"),
+      pricing("CLIN 0001AA Labor Category: Software Engineer, $185,000"),
+    );
+    // The sub-CLIN text changed ($200K → $185K) — must surface as CRITICAL
+    expect(result.changes.length).toBeGreaterThanOrEqual(1);
+    const criticals = result.changes.filter((c) => c.severity === "CRITICAL");
+    expect(criticals.length).toBeGreaterThanOrEqual(1);
+  });
 });
