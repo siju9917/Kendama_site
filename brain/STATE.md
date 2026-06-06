@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **747/747 tests** (BidDiff 586/586 + openapi-lens 161/161).
+- **Build green:** **817/817 tests** (BidDiff 586/586 + openapi-lens 231/231).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -206,7 +206,7 @@ Priority order is `ops/loop.md`.
 
 **Unblocked (zero-cost):**
 7. ~~**P2** Vite/Vitest toolchain bump~~ — **DONE 2026-06-06.** Vite 6.4.3 + Vitest 4.1.8.
-8. ~~**D5 Phase 0 engine**~~ — **DONE 2026-06-06.** `products/openapi-lens/` — 91/91 tests.
+8. ~~**D5 Phase 0 engine**~~ — **DONE + hardened 2026-06-06.** `products/openapi-lens/` — 231/231 tests.
    VS Code extension scaffold (Phase 1) begins once Proposal #3 auto-proceeds 2026-06-13.
 9. Recurring: re-critique cadence, "nothing is ever done" reviews,
    ambient ideation, factory self-improvement, META audit.
@@ -612,6 +612,28 @@ all green; check tests 16/16.
     `items.format` entirely; added `response/request-schema-items-format-changed` types,
     BREAKING rules, unit+integration tests. 9 new tests (152→161). Total: **747/747**.
 
+55. **5.7.2 third-pass architectural hardening** — escalating critique found 2 issues:
+    (a) new OapiChangeType values added without classify rules fall silently to INFO;
+    (b) rule ordering convention undocumented. Fixed: added `Record<OapiChangeType,
+    [unknown,unknown]>` TYPE_STUBS completeness guard to classify.test.ts — TypeScript
+    exhaustiveness causes compile error if any OapiChangeType is missing from the map;
+    runtime test verifies each type does NOT produce the fallback "Change detected at"
+    message. Added ordering-invariant comment to CLASSIFY_RULES. +34 completeness
+    tests. 161→195 openapi-lens. Total: **781/781**.
+
+56. **5.7.5 "parsed-but-never-diffed" round 3** — continued systematic audit of
+    OapiSchema flat fields:
+    - `properties[k].nullable`: response false→true = BREAKING, request true→false = BREAKING.
+    - `items.enum`: direction-aware (response values added = BREAKING; request values removed = BREAKING).
+    - `items.nullable`: response false→true = BREAKING, request true→false = BREAKING.
+    6 new OapiChangeType values, 12 new classify rules, 31 new tests. 195→226. Total: **812/812**.
+
+57. **5.7.5: `parameter.deprecated` declared-in-type-but-not-extracted** — `OapiParameter`
+    had `deprecated?: boolean` since inception but `parseParameter` never read it from YAML.
+    Parameters with `deprecated: true` were parsed with `undefined.deprecated`. Fix: extract
+    in parser, diff in `diffParameters`, new `parameter-deprecated-changed` OapiChangeType,
+    two INFO classify rules, parser+diff+classify tests. 5 new tests. 226→231. Total: **817/817**.
+
 53. **classify.test.ts completeness pass** — added 23 direct unit tests for all new
     classify rules added in this session (property type/remove/add for both directions,
     items type all 3 directions both directions, enum polarity, format, deprecated,
@@ -678,7 +700,7 @@ all green; check tests 16/16.
   components tested). All unblocked POLISH done. Next session: privacy copy fix
   (NEED #7, when human responds), store submission prep, and D5 VS Code extension
   Phase 1 scaffold (once Proposal #3 auto-proceeds 2026-06-13).
-- **D5 Phase 0 engine is in `products/openapi-lens/`** — 161 tests, all passing.
+- **D5 Phase 0 engine is in `products/openapi-lens/`** — 231 tests, all passing.
   Phase 1 (VS Code extension scaffold) starts when Proposal #3 auto-proceeds 2026-06-13.
 - Spend cap: plan-included web tools (sub-agents, search) are FREE; $0 committed
   external spend. No cap blocker.

@@ -50,11 +50,24 @@ auto-proceeds (2026-06-13) or earlier if human approves.
     response property (BREAKING for exhaustive clients) were invisible.
   - Operation `deprecated` flag: changing `deprecated: false → true` was invisible.
   - Property-level `format` changes: `format: date → date-time` was invisible.
-  23 new tests total. **129/129 tests.** Also fixed: required-body removal classified
+  23 new tests total. Also fixed: required-body removal classified
   BREAKING (before=true,after=null previously fell to INFO); request-body nullable
   changes now detected (request-schema-nullable-changed); items type constraint
   addition/removal now direction-aware (response loses=BREAKING, gains=INFO;
   request gains=BREAKING, loses=INFO).
+- [x] **5.7.5 bug-hunt (2026-06-06, round 3)** — 5.7.2 escalating critique (3rd pass) identified
+  two architectural fragility issues + continued "parsed-but-never-diffed" audit:
+  - **Completeness guard**: Added `Record<OapiChangeType,[unknown,unknown]>` TYPE_STUBS to
+    classify.test.ts — TypeScript exhaustiveness forces stub entry for every new OapiChangeType;
+    runtime test verifies no type falls through to the silent "Change detected at" fallback.
+  - **Rule-ordering comment**: Added ordering-invariant documentation to CLASSIFY_RULES.
+  - `properties[k].nullable`: response false→true = BREAKING, request true→false = BREAKING.
+  - `items.enum`: direction-aware (response values added = BREAKING; request values removed = BREAKING).
+  - `items.nullable`: response false→true = BREAKING, request true→false = BREAKING.
+  - `parameter.deprecated`: field declared in `OapiParameter` type since inception but never
+    extracted by parser. Now parsed and diffed; both directions = INFO.
+  6 new OapiChangeType values + parameter-deprecated-changed = 7 total. 70 new tests.
+  **231/231 tests.**
 
 ### Breaking-change rules implemented (Phase 0)
 
@@ -100,6 +113,20 @@ auto-proceeds (2026-06-13) or earlier if human approves.
 | Required request body removed from spec | BREAKING |
 | Request body schema nullable true→false | BREAKING |
 | Request body schema nullable false→true | INFO |
+| Response property became nullable (false→true) | BREAKING |
+| Response property became non-nullable (true→false) | INFO |
+| Request property became non-nullable (true→false) | BREAKING |
+| Request property became nullable (false→true) | INFO |
+| Response array items enum values added | BREAKING |
+| Response array items enum values removed | INFO |
+| Request array items enum values removed | BREAKING |
+| Request array items enum values added | INFO |
+| Response array items became nullable (false→true) | BREAKING |
+| Response array items became non-nullable (true→false) | INFO |
+| Request array items became non-nullable (true→false) | BREAKING |
+| Request array items became nullable (false→true) | INFO |
+| Parameter deprecated (false→true) | INFO |
+| Parameter un-deprecated (true→false) | INFO |
 
 ---
 
