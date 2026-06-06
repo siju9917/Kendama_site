@@ -271,9 +271,13 @@ the Ambition Critic as an ideation gap.
 **Initial size estimate:** Each is medium scope. D7 (K8s) and D8 (CloudFormation)
 share the most with D6 (IaC focus); D9 (Docker) is most orthogonal.
 
-**Promoted to backlog?** Not yet — requires deep evaluation (cap-gated web
-research to verify gap + comparable revenue). Logged as D7/D8/D9 candidates.
-Add to IDEA_BACKLOG on the next research cycle.
+**Promoted to backlog?** First-principles format-pack scoring done (2026-06-06)
+— added to `brain/IDEA_BACKLOG.md` "BCL format-pack roadmap candidates" section
+(per meta-synthesis: not D7/D8/D9 as separate products; instead format-packs for
+the Breaking-Change Lens product line). SQL migration (STRONG), K8s YAML (STRONG),
+GraphQL (MEDIUM), CloudFormation (MEDIUM), Avro (LOW-MEDIUM), Docker image diff
+(DROPPED — binary layer analysis doesn't fit the BCL model). Cap-gated cited
+deep-eval still pending for top format-packs.
 
 ---
 
@@ -369,9 +373,12 @@ per-variant comparison. If extracted into a library, useful to any API tooling
 case requires per-variant analysis, which is genuinely complex (n² comparisons).
 Ship `allOf` first; leave `oneOf`/`anyOf` for a follow-up.
 
-**Promoted to backlog?** Not yet — logged as a Phase 2 candidate for
-openapi-lens. Cross-referenced from `products/openapi-lens/PROGRESS.md`
-Phase 2 known limitation.
+**Promoted to backlog?** **Partially resolved in Phase 0 (2026-06-06):** `allOf`
+flattening was implemented in Phase 0 (`flattenAllOf()` in `parser.ts`, merging
+`required[]` + `properties` + scalar fields including constraint fields). `oneOf`
+and `anyOf` remain Phase 2 — members are stored but not merged; breaking changes
+inside composed variants are invisible. Remaining work tracked in
+`products/openapi-lens/PROGRESS.md` Phase 2 known limitations.
 
 ---
 
@@ -396,8 +403,10 @@ complexity is circular reference detection (a schema property that $refs back to
 a parent type — common with tree/linked-list schemas). With a `seen: Set<object>`
 guard, the recursion is straightforward.
 
-**Promoted to backlog?** Not yet — logged as a Phase 2 enhancement for
-openapi-lens. Cross-referenced from `products/openapi-lens/PROGRESS.md` Phase 2.
+**Promoted to backlog?** **Resolved in Phase 0 (2026-06-06):** `diffSchemaProperties()`
+now recurses to `MAX_PROPERTY_DEPTH = 5` levels using a `depth` parameter. Cycle-safe
+(stops at 5, no crash). Full dotted path in `location` (e.g., `properties.user.properties.address.properties.zipCode`). 5 new tests. The original WISHLIST concern
+is closed; the known limitation is now only at depth > 5 (rare in real specs).
 
 ---
 
