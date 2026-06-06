@@ -256,12 +256,42 @@ tagged with its gate. Promising ones become POLISH/BUILD tasks.
 | N15 | **Sign-before-dollar in `aggressiveNormalize`** (5.7.5 bug-hunt, 2026-06-06): `"-$5,000"` and `"$5,000"` normalized to the same string because `isLeadingSign` only fired when `next` was a digit, not `"$"`. Consequence: `isListOrdinalOnlyChange("2. Pay -$5,000.", "3. Pay $5,000.")` incorrectly returned `true` — a real value change (sign removed from a dollar amount) was silently suppressed. | none | **DONE (2026-06-06).** `isLeadingSign` extended: `next === "$"` added alongside `/\d/.test(next)`. Now `"-$5,000"` → `"-$5000"` (sign preserved) ≠ `"$5,000"` → `"$5000"`. Red test added first, then fix; 35/35 suppress tests pass, 488/488 full suite green. |
 | N16 | **Page-limit bare-paren form missed** (5.7.5 bug-hunt, 2026-06-06): `PAGE_LIMIT_RE` had `(?:[a-z]+\s+\()?(\d{1,4})\)?` — the opening `\(` was inside the "spelled-out word" optional group, so `"not to exceed (30) pages"` (no spelled-out word before paren) produced no PAGE_LIMIT anchor. The change was still CRITICAL via SUBMISSION_INSTRUCTIONS, but with the generic "Submission instructions changed." reason rather than the specific "A page limit changed." reason. | none | **DONE (2026-06-06).** `PAGE_LIMIT_RE` split group: `(?:[a-z]+\s+)?\(?(\d{1,4})\)?` — word-group and opening-paren are now independent optionals. "not to exceed (30) pages", "limited to (50) pages", "page limit: (75) pages" all now produce PAGE_LIMIT anchors. Red test → fix; 3 new test cases, 490/490 full suite green. |
 
-Net: the unblocked items remain zero-cost. **Done:** N1, N2, N6, N8, N9, N11, N15, N16
+**5.7.4 "nothing is done" session (2026-06-06):** 20 POLISH findings from full
+product re-review. Implemented immediately (7 tiny/small, no human gate):
+- **N-A2**: Unified copy-feedback flash duration (`COPY_FEEDBACK_FLASH_MS = 2000ms`
+  constant; was 1500ms in ChangeCard vs 2500ms in Summary). 490 tests.
+- **N-A4**: Context-aware empty-state when Critical filter active → "No critical
+  changes match the current filters. Switch to 'All'..."
+- **N-A5**: SAM.gov download errors categorized: timeout (AbortError) → retry hint;
+  4xx → "file may have been removed"; 5xx → "server returned an error".
+- **N-A8**: LicenseChip grace-period countdown: "Trial expired · 5d grace left"
+  or "Grace period ends today" when <24h. Uses existing gracePeriodSecondsLeft.
+- **N-A9**: Dynamic aria-label on "Mark reviewed" toggle: "Unmark as reviewed"
+  when aria-pressed=true (was "✓ Reviewed" — screen readers couldn't tell the action).
+  Test updated to use the new accessible name.
+- **N-A11**: File-format error conversion hints: .doc → "File → Save As → .docx";
+  .txt → "upload the PDF directly". Test pins the conversion hint text.
+- **N-A13**: Copy Markdown tooltip expanded to name Teams and "any markdown-aware
+  app" instead of just Slack/GitHub/Notion.
+- **N-A20**: Onboarding card gains a "Ready?" CTA paragraph pointing to sample diff.
+- **N-A14**: FAQ entry added: "BidDiff flagged something as critical but my team
+  doesn't think it matters" — use Mark reviewed; report false positives.
+
+**Queued POLISH (5.7.4 findings, for next session):** N14 (solicitation mismatch guard),
+N17 (redline DOCX disclaimer on both first+last page), N18 (History keyboard nav + replace
+confirm modal), N-A10 (keyboard hint context-awareness when Critical filter active).
+Still gated: N-A3 (reviewed card visual contrast — browser), N-A7 (OCR consent
+requires OCR implementation), N-A12 (contrast verification — browser), N-A16
+(store listing accuracy — human), N-A19 (section jump mini-nav — optional).
+
+Net: the unblocked items remain zero-cost. **Done:** N1, N2, N6, N8, N9, N11, N15, N16,
+N-A2, N-A4, N-A5, N-A8, N-A9, N-A11, N-A13, N-A14, N-A20.
 (+ N10 characterized, two edge cases logged). **Downgraded** (the capability
 already exists or the delta is marginal, verified by self-audit): N12, N13.
 **Queued POLISH:** N3 (generator done; human-gated Word-render verify before
 the button is wired — NEED #9), N5 (speculative virtualization), N10 (money
-edge cases), **N14 (solicitation-number mismatch guard — new 2026-05-31)**.
+edge cases), **N14 (solicitation-number mismatch guard — new 2026-05-31)**,
+N17, N18, N-A10.
 **Gated:** N7 (positioning decision). N4 dropped. "Done" remains
 provisional — the list grew this session rather than shrank, which is the
 point of 5.7.4. (Reconciled 2026-05-31: the N1 row and this summary had

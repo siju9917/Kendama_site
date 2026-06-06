@@ -82,6 +82,9 @@ export function buildRedlineDocumentXml(result: DiffResult): string {
   const normal = result.changes.filter((c) => c.severity !== "CRITICAL");
   const body: string[] = [];
   body.push(para("BidDiff — Solicitation Amendment Redline", { heading: true }));
+  // Disclaimer at the top so reviewers see it regardless of document length.
+  body.push(para(DISCLAIMER_TEXT, { color: "595959" }));
+  body.push(para(""));
   body.push(
     para(
       `Compared: ${result.currentDoc.sourceFileName} vs. ${result.priorDoc.sourceFileName}`,
