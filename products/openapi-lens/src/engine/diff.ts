@@ -3,6 +3,7 @@ import type {
   OapiOperation,
   OapiParameter,
   OapiRawChange,
+  OapiResponseHeader,
   OapiSchema,
   OapiSpec,
 } from "./types.js";
@@ -10,11 +11,6 @@ import type {
 /** Key used to look up operations: "METHOD /path" */
 function opKey(op: OapiOperation): string {
   return `${op.method} ${op.path}`;
-}
-
-/** Deep-equal check for two JSON-serializable values. */
-function deepEqual(a: unknown, b: unknown): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 /** Compare two enum arrays as sets (order-insensitive). Reordering enum values is not a change. */
@@ -649,6 +645,47 @@ function diffNullable(
   }
 }
 
+/**
+ * Compare content-type sets between baseline and current for a request body or response.
+ * Only active when at least one side has an explicit content map (OAS 3.x `content:` field).
+ * Swagger 2.0 objects have `contentTypes: []` and are skipped to avoid false positives.
+ */
+function diffContentTypes(
+  path: string,
+  method: HttpMethod,
+  location: string,
+  bTypes: string[],
+  cTypes: string[],
+  isRequest: boolean,
+  changes: OapiRawChange[],
+): void {
+  if (bTypes.length === 0 && cTypes.length === 0) return;
+  const bSet = new Set(bTypes);
+  const cSet = new Set(cTypes);
+  for (const t of bSet) {
+    if (!cSet.has(t)) {
+      changes.push({
+        type: isRequest ? "request-media-type-removed" : "response-media-type-removed",
+        path, method,
+        location: `${location}.content[${t}]`,
+        before: t,
+        after: null,
+      });
+    }
+  }
+  for (const t of cSet) {
+    if (!bSet.has(t)) {
+      changes.push({
+        type: isRequest ? "request-media-type-added" : "response-media-type-added",
+        path, method,
+        location: `${location}.content[${t}]`,
+        before: null,
+        after: t,
+      });
+    }
+  }
+}
+
 /** Compare requestBody objects. */
 function diffRequestBody(
   path: string,
@@ -680,6 +717,7 @@ function diffRequestBody(
     if (bb.required && !cb.required) {
       changes.push({ type: "request-body-required-changed", path, method, location: "requestBody.required", before: true, after: false });
     }
+    diffContentTypes(path, method, "requestBody", bb.contentTypes, cb.contentTypes, true, changes);
     diffSchemaType(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffSchemaRequiredFields(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffSchemaProperties(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
@@ -689,6 +727,79 @@ function diffRequestBody(
     diffSchemaTopLevelFields(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffAdditionalProperties(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffSchemaTopLevelReadOnlyWriteOnly(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
+  }
+}
+
+/** Compare response header maps for a single status code. */
+function diffResponseHeaders(
+  path: string,
+  method: HttpMethod,
+  statusCode: string,
+  baseline: Record<string, OapiResponseHeader>,
+  current: Record<string, OapiResponseHeader>,
+  changes: OapiRawChange[],
+): void {
+  const bKeys = new Set(Object.keys(baseline));
+  const cKeys = new Set(Object.keys(current));
+
+  for (const name of bKeys) {
+    const bHdr = baseline[name]!;
+    const cHdr = current[name];
+    const loc = `responses[${statusCode}].headers.${name}`;
+    if (!cHdr) {
+      changes.push({
+        type: "response-header-removed",
+        path, method,
+        location: loc,
+        before: bHdr.schema?.type ?? null,
+        after: null,
+      });
+      continue;
+    }
+    const bType = bHdr.schema?.type ?? null;
+    const cType = cHdr.schema?.type ?? null;
+    if (bType !== cType) {
+      changes.push({
+        type: "response-header-type-changed",
+        path, method,
+        location: `${loc}.schema.type`,
+        before: bType,
+        after: cType,
+      });
+    }
+    if (bHdr.required !== cHdr.required) {
+      changes.push({
+        type: "response-header-required-changed",
+        path, method,
+        location: `${loc}.required`,
+        before: bHdr.required,
+        after: cHdr.required,
+      });
+    }
+    const bFmt = bHdr.schema?.format ?? null;
+    const cFmt = cHdr.schema?.format ?? null;
+    if (bFmt !== cFmt) {
+      changes.push({
+        type: "response-header-format-changed",
+        path, method,
+        location: `${loc}.schema.format`,
+        before: bFmt,
+        after: cFmt,
+      });
+    }
+  }
+
+  for (const name of cKeys) {
+    if (!bKeys.has(name)) {
+      const cHdr = current[name]!;
+      changes.push({
+        type: "response-header-added",
+        path, method,
+        location: `responses[${statusCode}].headers.${name}`,
+        before: null,
+        after: cHdr.schema?.type ?? null,
+      });
+    }
   }
 }
 
@@ -709,6 +820,7 @@ function diffResponses(
       changes.push({ type: "response-status-removed", path, method, location: `responses[${code}]`, before: code, after: null });
       continue;
     }
+    diffContentTypes(path, method, `responses[${code}]`, br.contentTypes, cr.contentTypes, false, changes);
     const loc = `responses[${code}].content.schema`;
     diffSchemaType(path, method, loc, br.schema, cr.schema, false, changes);
     diffSchemaRequiredFields(path, method, loc, br.schema, cr.schema, false, changes);
@@ -719,11 +831,114 @@ function diffResponses(
     diffSchemaTopLevelFields(path, method, loc, br.schema, cr.schema, false, changes);
     diffAdditionalProperties(path, method, loc, br.schema, cr.schema, false, changes);
     diffSchemaTopLevelReadOnlyWriteOnly(path, method, loc, br.schema, cr.schema, false, changes);
+    diffResponseHeaders(path, method, code, br.headers, cr.headers, changes);
   }
 
   for (const code of Object.keys(cMap)) {
     if (!bMap[code]) {
       changes.push({ type: "response-status-added", path, method, location: `responses[${code}]`, before: null, after: code });
+    }
+  }
+}
+
+/** Compare operation-level security requirements and emit scheme/scope changes. */
+function diffOperationSecurity(
+  path: string,
+  method: HttpMethod,
+  baseline: OapiOperation,
+  current: OapiOperation,
+  changes: OapiRawChange[],
+): void {
+  const bSec = baseline.security;
+  const cSec = current.security;
+  // Both absent: no security declared (global or absent) — no change.
+  if (!bSec && !cSec) return;
+  // Both present as empty array `security: []` is a valid "override global with none" in OAS.
+  const bSchemes = bSec ?? {};
+  const cSchemes = cSec ?? {};
+
+  const bKeys = new Set(Object.keys(bSchemes));
+  const cKeys = new Set(Object.keys(cSchemes));
+
+  for (const scheme of bKeys) {
+    if (!cKeys.has(scheme)) {
+      changes.push({
+        type: "operation-security-scheme-removed",
+        path, method,
+        location: `security.${scheme}`,
+        before: scheme,
+        after: null,
+      });
+      continue;
+    }
+    // Compare scopes for this scheme.
+    const bScopes = new Set(bSchemes[scheme] ?? []);
+    const cScopes = new Set(cSchemes[scheme] ?? []);
+    for (const scope of cScopes) {
+      if (!bScopes.has(scope)) {
+        changes.push({
+          type: "operation-security-scope-added",
+          path, method,
+          location: `security.${scheme}[${scope}]`,
+          before: null,
+          after: scope,
+        });
+      }
+    }
+    for (const scope of bScopes) {
+      if (!cScopes.has(scope)) {
+        changes.push({
+          type: "operation-security-scope-removed",
+          path, method,
+          location: `security.${scheme}[${scope}]`,
+          before: scope,
+          after: null,
+        });
+      }
+    }
+  }
+
+  for (const scheme of cKeys) {
+    if (!bKeys.has(scheme)) {
+      changes.push({
+        type: "operation-security-scheme-added",
+        path, method,
+        location: `security.${scheme}`,
+        before: null,
+        after: scheme,
+      });
+    }
+  }
+}
+
+/** Compare servers arrays and emit server-removed / server-added changes. */
+function diffServers(baseline: OapiSpec, current: OapiSpec, changes: OapiRawChange[]): void {
+  const bSet = new Set(baseline.servers);
+  const cSet = new Set(current.servers);
+
+  for (const url of bSet) {
+    if (!cSet.has(url)) {
+      changes.push({
+        type: "server-removed",
+        path: "/",
+        method: "get",
+        location: `servers[${url}]`,
+        before: url,
+        after: null,
+      });
+    }
+  }
+
+  for (const url of cSet) {
+    if (!bSet.has(url)) {
+      changes.push({
+        type: "server-added",
+        path: "/",
+        method: "get",
+        location: `servers[${url}]`,
+        before: null,
+        after: url,
+      });
     }
   }
 }
@@ -734,6 +949,8 @@ function diffResponses(
  */
 export function diffSpecs(baseline: OapiSpec, current: OapiSpec): OapiRawChange[] {
   const changes: OapiRawChange[] = [];
+
+  diffServers(baseline, current, changes);
 
   const bMap = new Map(baseline.operations.map((op) => [opKey(op), op]));
   const cMap = new Map(current.operations.map((op) => [opKey(op), op]));
@@ -754,6 +971,7 @@ export function diffSpecs(baseline: OapiSpec, current: OapiSpec): OapiRawChange[
     diffParameters(bOp.path, bOp.method, bOp.parameters, cOp.parameters, changes);
     diffRequestBody(bOp.path, bOp.method, bOp, cOp, changes);
     diffResponses(bOp.path, bOp.method, bOp, cOp, changes);
+    diffOperationSecurity(bOp.path, bOp.method, bOp, cOp, changes);
     const bDep = bOp.deprecated ?? false;
     const cDep = cOp.deprecated ?? false;
     if (bDep !== cDep) {
@@ -764,6 +982,18 @@ export function diffSpecs(baseline: OapiSpec, current: OapiSpec): OapiRawChange[
         location: `${bOp.method.toUpperCase()} ${bOp.path}.deprecated`,
         before: bDep,
         after: cDep,
+      });
+    }
+    const bId = bOp.operationId ?? null;
+    const cId = cOp.operationId ?? null;
+    if (bId !== cId) {
+      changes.push({
+        type: "operation-id-changed",
+        path: bOp.path,
+        method: bOp.method,
+        location: `${bOp.method.toUpperCase()} ${bOp.path}.operationId`,
+        before: bId,
+        after: cId,
       });
     }
   }

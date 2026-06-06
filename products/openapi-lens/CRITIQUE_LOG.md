@@ -253,3 +253,204 @@ inputs and the explicit assumption that something was missed._
 
 **Verdict:** No new P0/P1 findings. Phase 0 engine passes the 5.7.2 escalating critique.
 **Phase 0 is cleared.**
+
+---
+
+## D5 Phase 1 + D6 Phase 1 — First critique pass (2026-06-06, build session)
+
+**Phase scope:** VS Code extension scaffold (D5) + Terraform Lens classifier (D6).
+Includes: `openApiDetector.ts`, `diagnosticProvider.ts`, `codeLensProvider.ts`,
+`changeWebviewProvider.ts`, `extension.ts`, `baseline/gitBaseline.ts`,
+`baseline/fileBaseline.ts`, `commands.ts`, `terraformExtension.ts`,
+`terraform/{types,resources,classify,parser,webview}.ts`, and all their test suites.
+
+**Critics run:** Full 14-critic panel.
+
+**P1 Findings (found and fixed same session):**
+
+#### D5-P1-1 — Correctness: SAFE changes passed to `buildDiagnostics`
+
+The engine emits three severities: BREAKING, INFO, SAFE. Before this fix, ALL non-BREAKING
+changes were mapped to `DiagnosticSeverity.Information`, including SAFE structural diffs
+that don't affect API consumers (like description changes). This created spurious info
+diagnostics cluttering the Problems panel with noise.
+
+**Fix:** `extension.ts` filters `allChanges.filter((c) => c.severity !== "SAFE")` before
+passing to `buildDiagnostics` and `codeLensProvider.update`. Both providers now see only
+BREAKING and INFO changes.
+
+**P2 Findings (found and fixed same session):**
+
+#### D5-P2-1 — Design: Global baseline variable shared across all open specs
+
+`manualBaselineContent` was a single `let` variable (module-level), shared across ALL open
+OpenAPI files. Setting a baseline for `spec-v2.yaml` would affect the diff shown for
+`spec-v3.yaml`. This is wrong — each file should have its own baseline.
+
+**Fix:** Replaced with `Map<string, string>` keyed by `document.uri.toString()`. Selecting
+a baseline now scopes to the active document. The map entry is cleaned up in
+`onDidCloseTextDocument`.
+
+#### D5-P2-2 — UX: "No changes detected" CodeLens when baseline is absent
+
+When no baseline existed (git HEAD not available, no file configured), the CodeLens showed
+"No changes detected" — a false negative that looks like success. Users would not know they
+need to set a baseline.
+
+**Fix:** Added `setNoBaseline()` method with a new `{ kind: "no-baseline" }` discriminated
+union state. When baseline is null, CodeLens shows "Set baseline to enable diff" with
+command `openapi-lens.selectBaseline` — directly actionable.
+
+#### D5-P2-3 — Interface: `onBaselineSelected` had unused `label` parameter
+
+**Fix:** Removed `label` from the `CommandContext` interface and call site.
+
+**Verdict (pass 1):** All P1 and P2 findings fixed within the same session. No P0 findings.
+
+---
+
+## D5 Phase 1 + D6 Phase 1 — Escalating critique pass 5.7.2 (2026-06-06, post-compaction)
+
+**Pass type:** 5.7.2 second independent hard pass — explicit assumption that something was
+missed. Scope: full extension code + terraform classifier after P1/P2 fixes.
+
+**Critics run:** All 14 critics with adversarial inputs.
+
+**New findings discovered in this pass:**
+
+#### D6-EC-1 (P1 — Correctness): Data source "read" actions misclassified as CRITICAL
+
+**Location:** `terraform/parser.ts` — `isResourceChange` filter
+
+**Defect:** Terraform plan JSON files include both managed resources (mode: "managed") and
+data sources (mode: "data") in the `resource_changes` array. Data sources have
+`actions: ["read"]` — they are read-only refreshes of external state, not infrastructure
+modifications. The `isResourceChange` filter had no check for `mode`, so data sources were
+included in classification. For a data source whose `type` is a DATA_STORE_TYPE (e.g.,
+`data.aws_s3_bucket.artifacts` with `type: "aws_s3_bucket"`):
+- `isNoOp(["read"])` → false (not "no-op") → no early return
+- `isDataStoreType("aws_s3_bucket") && !isCreateOnly(["read"])` → **true** → severity = CRITICAL
+
+A plan containing a data source read on any S3 bucket, RDS instance, DynamoDB table, or
+other data store type would incorrectly show CRITICAL findings for benign state refreshes.
+
+**Fix:** Added `if (r["mode"] === "data") return false;` as the first check in
+`isResourceChange`. Data sources are categorically excluded from classification.
+
+**Tests added:** 4 new adversarial tests in `adversarial.test.ts` — data source on
+data-store type, data source on IAM type, mixed plan (managed + data), mode-absent entry
+still included. **693→697 tests.**
+
+#### D5-EC-2 (P2 — Correctness): `selectBaseline` command clears `baselineFile` workspace setting
+
+**Location:** `commands.ts` — `openapi-lens.selectBaseline` handler
+
+**Defect:** After calling `pickBaselineFile()` and getting the content, the handler called:
+```typescript
+await config.update("baselineFile", "", vscode.ConfigurationTarget.Workspace);
+```
+This CLEARS the `baselineFile` workspace setting. If a user had carefully configured
+`openapi-lens.baselineFile` to a stable path in their workspace settings, running
+`selectBaseline` (via picker) would silently delete that configuration. The comment said
+"Persist the choice" but the code did the opposite.
+
+**Fix:** Removed the `config.update` call entirely. The in-memory per-document baseline
+(`manualBaselineByUri`) is set correctly; workspace settings are not touched.
+
+#### D6-EC-3 (P2 — Reliability): `openapi-lens.showTerraformPanel` command referenced but never registered
+
+**Location:** `terraformExtension.ts` — `updateStatusBar`
+
+**Defect:** `statusBarItem.command = "openapi-lens.showTerraformPanel"` sets the status bar
+button's command, but this command was never registered with VS Code. Clicking the status
+bar button would produce a VS Code error: "command 'openapi-lens.showTerraformPanel' not
+found." The Terraform panel was auto-shown on active editor switch, but there was no way
+to re-open it after the user closed it (which is the primary use case for the status bar
+button).
+
+**Fix:** Added `lastKnownSummary` and `lastKnownPlanUri` module-level variables.
+Registered `openapi-lens.showTerraformPanel` in `activateTerraformSupport`:
+```typescript
+context.subscriptions.push(
+  vscode.commands.registerCommand("openapi-lens.showTerraformPanel", () => {
+    if (lastKnownSummary && lastKnownPlanUri) {
+      showWebviewPanel(lastKnownSummary, lastKnownPlanUri);
+    }
+  }),
+);
+```
+Both variables are cleared in `deactivateTerraformSupport()`.
+
+#### D5-EC-4 (P3 — Robustness): Diagnostic range start column may be -1 for empty fallback lines
+
+**Location:** `diagnosticProvider.ts` — `buildDiagnostics`
+
+**Defect:** `lineText.search(/\S/)` returns -1 if the line is entirely whitespace.
+For the fallback case (line 0), if line 0 is an empty line, `new vscode.Range(0, -1, 0, 0)`
+would be created. VS Code typically clamps this but the behavior is undefined.
+
+**Fix:** `Math.max(0, lineText.search(/\S/))` clamps the start column.
+
+**Post-fix state:** 697/697 tests pass. Typecheck clean (both engine and extension tsconfigs).
+
+**5.7.2 verdict:** 4 findings (1×P1, 2×P2, 1×P3) found and fixed. All fixed within same pass.
+A third clean independent re-read is warranted per 5.7.2 ("clean pass is a hypothesis to attack").
+
+---
+
+## D5 Phase 1 + D6 Phase 1 — Hard second re-attack (5.7.2 confirmation pass)
+
+**Mandate:** After the first escalating pass found real bugs, a second clean independent
+hard pass is required before the phase is declared clear.
+
+**Adversarial angles probed (fresh, not from the fix checklist):**
+
+1. **`classifyChange` rule interaction with `isDataStoreType` + `isIamOrSecurityType` overlap:**
+   A resource type that is BOTH a data store AND (hypothetically) in the IAM list would
+   generate two CRITICAL reasons. Verified: DATA_STORE_TYPES and IAM_TYPES have no overlap
+   (data stores are DBS/storage; IAM_TYPES are policy/role/sg resources). No collision. ✓
+
+2. **`hasReplacePattern` on empty actions array:** `classifyChange` receives `actions: []`.
+   `isNoOp([])` → `[].length > 0` → false → no early return. Rule 2: `[].includes("delete")`
+   → false. Rule 3: `hasReplacePattern([])` → false. Rule 4: `!isCreateOnly([])` → true for
+   data stores → CRITICAL severity set. Rule 5: IAM types similarly. Default: `isCreateOnly([])`
+   → false; severity=CRITICAL from rule 4/5 or NORMAL (no rules fired). For a plain
+   `aws_instance` with `actions: []`: severity stays NORMAL (no rules fire), reasons empty,
+   but returns `{ severity: "NORMAL", reasons: [] }`. This is a degenerate input (Terraform
+   never emits empty actions arrays) but the behavior is: silently returns NORMAL. Acceptable
+   for Phase 1; the parser only accepts valid-structure entries, and empty-actions plans don't
+   occur in practice. Documented as a known edge case, not a P1.
+
+3. **Template-literal XSS audit (`esc()` completeness):** Grep `${` in both webview files:
+   - `terraform/webview.ts`: 8 interpolation sites — `esc(summary.terraformVersion)`,
+     `esc(c.change.address)`, `esc(c.change.type)`, `esc(c.change.actions.join(", "))`,
+     `esc(r)` (each reason), `c.severity.toLowerCase()` (TypeScript union — hardcoded
+     constant, no user data). Hardcoded counts and lengths are numeric literals. All ✓
+   - `extension/providers/changeWebviewProvider.ts`: 5 interpolation sites — `esc(change.path)`,
+     `esc(change.method)`, `esc(change.message)`, `esc(change.location)`, badge HTML
+     (hardcoded string). All ✓
+   No unescaped user-data interpolation found. ✓
+
+4. **`deactivateTerraformSupport` completeness after Bug 3 fix:** The new `lastKnownSummary`
+   and `lastKnownPlanUri` variables are cleared to `undefined` in `deactivateTerraformSupport`.
+   Verified: yes, both lines were added in the fix. ✓
+
+5. **`resolveBaseline` race: two `analyzeDocument` calls interleaved for same document:**
+   If the user saves rapidly, two concurrent `analyzeDocument` calls may both call
+   `resolveBaseline` simultaneously. `manualBaselineByUri.get()` is synchronous and reads
+   the same Map — both reads would succeed identically. `fetchGitHeadContent` is async;
+   two concurrent calls to `repo.show("HEAD", relPath)` for the same file would both
+   succeed and return the same content. The two `codeLensProvider.update()` calls fire in
+   an unspecified order but both carry correct data. This is harmless (no state corruption).
+   The VS Code extension host is single-threaded (Node.js event loop), so concurrent
+   awaits interleave between await points only. ✓
+
+6. **`findLineForLocation` with numeric array index in location string:** Input
+   `"paths./users.get.parameters[0]"`. Split: `["paths", "/users", "get", "parameters", "0"]`.
+   Search starts at depth=4 looking for `0:` or `"0":` in YAML/JSON — unlikely to match.
+   Falls to depth=3 (`parameters:`), then depth=2 (`get:`), etc. Falls back to line 0.
+   This is correct and expected behavior for the heuristic — line 0 fallback is the
+   documented behavior. ✓
+
+**Verdict:** No new P0/P1 findings. Second independent hard pass confirms clean.
+**D5 Phase 1 + D6 Phase 1 are cleared. Phase gate passed.**

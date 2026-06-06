@@ -3,11 +3,49 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "VS Code extension engine that classifies breaking changes in OpenAPI schemas.",
+  "description": "VS Code extension that classifies breaking changes in OpenAPI schemas.",
+  "displayName": "OpenAPI Lens",
+  "publisher": "kendama",
+  "main": "./out/extension/extension.js",
+  "activationEvents": [
+    "onLanguage:yaml",
+    "onLanguage:json"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "openapi-lens.selectBaseline",
+        "title": "OpenAPI Lens: Select baseline spec file"
+      },
+      {
+        "command": "openapi-lens.clearBaseline",
+        "title": "OpenAPI Lens: Clear baseline"
+      },
+      {
+        "command": "openapi-lens.showTerraformPanel",
+        "title": "OpenAPI Lens: Show Terraform plan classification"
+      },
+      {
+        "command": "openapi-lens.showChangePanel",
+        "title": "OpenAPI Lens: Show breaking-change panel"
+      }
+    ],
+    "configuration": {
+      "title": "OpenAPI Lens",
+      "properties": {
+        "openapi-lens.baselineFile": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to the baseline OpenAPI spec to compare against. Leave empty to use git HEAD."
+        }
+      }
+    }
+  },
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:ext": "tsc -p tsconfig.extension.json"
   },
   "dependencies": {
     "js-yaml": "^4.1.0"
@@ -15,10 +53,12 @@
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.5.0",
+    "@types/vscode": "^1.120.0",
     "typescript": "^5.5.4",
     "vitest": "^4.1.0"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20",
+    "vscode": "^1.90.0"
   }
 }

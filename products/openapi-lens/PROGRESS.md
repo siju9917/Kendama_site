@@ -273,6 +273,22 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   rules (direction-aware): request readOnly false→true = BREAKING; response writeOnly false→true
   = BREAKING; all other directions = INFO (mirrors property/items rules). TYPE_STUBS updated
   (+4 entries). +10 tests (4 TYPE_STUBS completeness + 6 adversarial integration). **495/495 tests.**
+- [x] **5.7.5 round 26 — `response-schema-nullable-changed` BREAKING/INFO polarity inverted** —
+  Post-round-25 escalating critique (5.7.2 second independent hard pass) found that the
+  `response-schema-nullable-changed` (top-level body schema) had inverted BREAKING/INFO
+  classification vs the property-level and items-level rules (which were both correct):
+  - **Was** (wrong): `before=true, after=false` = BREAKING; `before=false, after=true` = INFO.
+  - **Correct**: `before=false, after=true` = BREAKING (server may now return null where clients
+    assumed non-null — crash on null dereference); `before=true, after=false` = INFO (server
+    tightens guarantee, clients benefit from non-null guarantee — no client breakage).
+  The message for the BREAKING case was also wrong ("Clients handling null values will need to be
+  updated" — implies dead code, not crash risk). Fixed: swapped the two rules; updated messages to
+  accurately describe the breaking scenario (clients that assume non-null will crash) and the info
+  scenario (server now guarantees non-null). Fixed two classify unit tests that were asserting the
+  wrong expected severity. Updated TYPE_STUBS to use the BREAKING case (false→true). Added 4
+  adversarial integration tests: BREAKING direction, INFO direction, plus 2 contrast tests
+  confirming property and items levels are consistently BREAKING for false→true.
+  +4 adversarial tests, +0 new types. **521/521 tests.**
 - [x] **5.7.5 round 25 — `minProperties`/`maxProperties` constraints missing** — OpenAPI defines
   `minProperties` (minimum number of object properties required) and `maxProperties` (maximum
   allowed) as standard constraint fields. Neither was in `OapiSchema`, the parser, `flattenAllOf`,
@@ -391,14 +407,14 @@ auto-proceeds (2026-06-13) or earlier if human approves.
 | Response status code removed | BREAKING |
 | Required response field removed | BREAKING |
 | Response field type changed | BREAKING |
-| Response field nullable: true→false | BREAKING |
+| Response body schema nullable: true→false | INFO |
+| Response body schema nullable: false→true | BREAKING |
 | Endpoint added | INFO |
 | Optional parameter added | INFO |
 | Parameter required: true→false | INFO |
 | Request schema field required→optional | INFO |
 | Response status code added | INFO |
 | Response field guaranteed as required | INFO |
-| Response field nullable: false→true | INFO |
 | Response property type changed | BREAKING |
 | Response property removed | BREAKING |
 | Request property type changed | BREAKING |
@@ -478,16 +494,174 @@ auto-proceeds (2026-06-13) or earlier if human approves.
 
 ---
 
-## Phase 1 — VS Code extension scaffold (PLANNED)
+## Phase 1 — VS Code extension scaffold (COMPLETE — 2026-06-06)
 
-_Begins when Proposal #3 auto-proceeds (2026-06-13) or human approves._
+_Built 2026-06-06, ahead of the Proposal #3 auto-proceed date (2026-06-13). All Phase 1
+checklist items complete; 573 tests passing; typecheck clean; build:ext clean._
 
-- [ ] VS Code extension manifest (`package.json` extensions fields)
-- [ ] Activation on YAML/JSON file open (`onLanguage:yaml`)
-- [ ] Diagnostic provider (inline squiggles for BREAKING changes)
-- [ ] CodeLens provider (summary above `openapi:` declaration)
-- [ ] Git HEAD baseline comparison (via VS Code git API)
-- [ ] Manual baseline file selection (file picker)
+### Architecture (designed 2026-06-06, before build window)
+
+**Directory structure:**
+```
+products/openapi-lens/
+  package.json           ← add VS Code extension manifest fields
+  src/
+    engine/              ← existing Phase 0 code (no changes)
+    extension/
+      extension.ts       ← activation + deactivation entry point
+      providers/
+        diagnosticProvider.ts  ← converts BreakingChange[] → vscode.Diagnostic[]
+        codeLensProvider.ts    ← "X BREAKING, Y INFO" above openapi: declaration
+      baseline/
+        gitBaseline.ts         ← fetch spec at git HEAD via git extension API
+        fileBaseline.ts        ← manual baseline via file picker
+      openApiDetector.ts       ← detects if a document is an OpenAPI spec
+      commands.ts              ← registerCommand bindings
+```
+
+**Activation flow:**
+1. Activate on `onLanguage:yaml` and `onLanguage:json`.
+2. `extension.ts` calls `openApiDetector.isOpenApiDocument(doc)` before doing any work.
+3. If true, fetch baseline (git HEAD first, then configured fallback).
+4. Parse baseline + current with `parseOapiSpec`, diff, classify.
+5. Map `BreakingChange[]` to `vscode.Diagnostic[]` (BREAKING → error; INFO → information).
+6. Push to `DiagnosticCollection`.
+
+**Key VS Code APIs:**
+- `vscode.languages.createDiagnosticCollection("openapi-lens")` — manage squiggles
+- `vscode.languages.registerCodeLensProvider({language: 'yaml'}, provider)` — CodeLens
+- `vscode.workspace.onDidSaveTextDocument(handler)` — re-analyze on save (not on keystroke)
+- `vscode.extensions.getExtension('vscode.git')` — access git API for HEAD comparison
+- `vscode.commands.registerCommand('openapi-lens.selectBaseline', handler)` — manual baseline
+- `vscode.window.showInformationMessage(msg)` — status feedback
+
+**Diagnostic mapping:**
+```typescript
+// BREAKING → vscode.DiagnosticSeverity.Error (red squiggle)
+// INFO → vscode.DiagnosticSeverity.Information (blue squiggle)
+// Map location string to Range using YAML/JSON AST node lookup
+```
+
+**Baseline strategy (priority order):**
+1. If `settings.openapi-lens.baselineFile` is set → use that file.
+2. Else if git extension is available → `git show HEAD:<rel-path>` for the spec at HEAD.
+3. Else → show "Set baseline" CodeLens prompt (no diff without a baseline).
+
+**Location → Range mapping:**
+The engine's `location` field is a dotted path string (e.g.,
+`responses[200].content.schema.properties.name.type`). To convert to a VS Code Range,
+use `js-yaml` with `onMark` or `yaml-ast-parser` to build an AST node map during parse,
+then look up the nearest ancestor key whose path matches the location prefix.
+
+**Checklist:**
+- [x] VS Code extension manifest (`package.json` extensions fields: `main`, `activationEvents`,
+  `contributes.commands`, `contributes.configuration`, `engines.vscode`)
+- [x] Activation on YAML/JSON file open (`onLanguage:yaml`, `onLanguage:json`)
+- [x] `openApiDetector.ts`: check for `openapi:` or `swagger:` top-level key in document text
+- [x] `diagnosticProvider.ts`: `BreakingChange[]` → `vscode.Diagnostic[]` with Range lookup
+- [x] `codeLensProvider.ts`: "X BREAKING, Y INFO" CodeLens at line 0; "No changes" if clean
+- [x] `gitBaseline.ts`: git extension API → `git show HEAD:<path>` → baseline string
+- [x] `fileBaseline.ts`: `vscode.window.showOpenDialog` → read file → baseline string
+- [x] `commands.ts`: register `openapi-lens.selectBaseline` and `openapi-lens.clearBaseline`
+- [x] `extension.ts`: wire all providers; dispose on deactivate; filter SAFE changes before
+  passing to providers (P1 critique fix: SAFE changes must not appear as diagnostics)
+- [x] Vitest unit tests for diagnosticProvider (BreakingChange → Diagnostic mapping, 11 cases)
+- [x] Vitest unit tests for openApiDetector (YAML/JSON with and without openapi: key, 10 cases)
+- [ ] VS Code extension test (`@vscode/test-electron`) for end-to-end activation → Phase 2
+
+**Critique-panel findings (post-Phase-1, 2026-06-06) — ALL FIXED:**
+
+P1 — Correctness: SAFE changes mapped to Information diagnostics. Fixed: `extension.ts`
+  now filters `c.severity !== "SAFE"` before passing to providers. ✓
+
+P2 — UX: When no baseline is available, CodeLens showed "No changes detected" (misleading).
+  Fixed: `OpenApiCodeLensProvider` now uses a discriminated union with `no-baseline | clean |
+  changes` states. No-baseline state shows "Set baseline to enable diff" with `selectBaseline`
+  command; clean state shows "No breaking changes"; changes state shows counts. ✓
+
+P2 — Design: `manualBaselineContent` was a global variable. Fixed: replaced with
+  `Map<string, string>` keyed by `document.uri.toString()` (per-document baseline). ✓
+
+P2 — Interface: `onBaselineSelected` had unused `label` parameter. Removed. ✓
+
+**5.7.2 escalating critique findings (2026-06-06) — ALL FIXED:**
+
+P1 — Terraform: data source entries (mode:"data", actions:["read"]) were misclassified as
+  CRITICAL for data store types like `aws_s3_bucket`. Fixed: `isResourceChange` now filters
+  `mode === "data"` entries. +4 adversarial tests. ✓
+
+P2 — commands.ts: `selectBaseline` cleared the `baselineFile` workspace setting. Fixed:
+  removed the incorrect `config.update` call. ✓
+
+P2 — terraformExtension.ts: `openapi-lens.showTerraformPanel` command was referenced in
+  the status bar but never registered. Fixed: registered in `activateTerraformSupport`
+  with `lastKnownSummary`/`lastKnownPlanUri`; cleared in `deactivateTerraformSupport`. ✓
+
+P3 — diagnosticProvider.ts: `lineText.search(/\S/)` returned -1 for empty lines, producing
+  negative Range column. Fixed: `Math.max(0, ...)` clamp. ✓
+
+**Phase 1 gate: CLEARED (2026-06-06, 697/697 tests, typecheck clean).**
+
+**5.7.5 continuous bug-hunt (post-gate, 2026-06-06) — findings and fixes:**
+
+- `parseOutputChanges`: sensitive output only detected boolean `true` — missed object-form
+  `after_sensitive: {fieldName: true}`. Fixed: added `typeof entry["after_sensitive"] === "object"`
+  check. 2 tests added. 715→715 (was 713).
+
+- `parseResponses`: response-level `$ref` (e.g., `$ref: "#/components/responses/SuccessResponse"`)
+  was silently dropped — schema never extracted, changes to shared responses undetected.
+  Fixed: `parseSharedResponses` builds a lookup from `#/components/responses`; `parseResponses`
+  resolves `$ref` entries before extracting schema. 3 adversarial tests added. 718 tests.
+
+- `clearBaseline` command: `config.update(ConfigurationTarget.Workspace)` throws when no
+  workspace folder is open. Fixed: wrapped in try/catch; in-memory baseline now always
+  clears even if workspace setting can't be persisted. `commands.test.ts` added (3 tests). 721 tests.
+
+### 5.7.4 "Nothing is done" review — D5 Phase 1 extension (2026-06-06)
+
+What would make D5 Phase 1 materially better? What would a top-tier team add?
+
+- [ ] **POLISH N1 — Baseline persistence across reload.** The in-memory
+  `manualBaselineByUri` map is cleared on VS Code reload. Selecting a baseline via
+  the picker sets it for the session only. A robust implementation persists the
+  *file path* (not content) to workspace settings so baselines survive reload.
+  Phase 2: `config.update("baselineFile", selectedPath, ConfigurationTarget.Workspace)`.
+
+- [x] **POLISH N2 — Real-time analysis (debounced).** DONE (2026-06-06). Subscribed to
+  `onDidChangeTextDocument` with 400ms debounce alongside `onDidSaveTextDocument`.
+  `ReturnType<typeof setTimeout>` used for type safety. ✓
+
+- [ ] **POLISH N3 — Semantic line location for diagnostics.** `findLineForLocation` is
+  a text-search heuristic — it finds the first line matching the last path segment as a
+  key string. For JSON paths like `parameters[0]`, it falls back to line 0. A Phase 2
+  implementation would parse the YAML/JSON AST and walk the path for precise line numbers.
+
+- [x] **POLISH N4 — "Comparing vs:" in WebView panel header.** DONE (2026-06-06).
+  `resolveBaseline` now returns `{content, label}` — label is "git HEAD", "selected file",
+  or "workspace: <filename>". Meta line in WebView shows `· baseline: <label>`. ✓
+
+- [x] **POLISH N5 — Diagnostic message source prefix.** DONE (existing). `diag.source =
+  "openapi-lens"` is set, which is the correct VS Code convention (source appears in
+  Problems panel next to the message). No code change needed. ✓
+
+### 5.7.4 "Nothing is done" review — D6 Terraform Lens Phase 1 (2026-06-06)
+
+- [ ] **POLISH T1 — Direction-aware IAM policy diff (Phase 2 known limitation).** All
+  IAM/security-group changes are conservatively flagged CRITICAL. Adding a more restrictive
+  IAM policy (fewer permissions = smaller blast radius) should be INFO. Phase 2: compare
+  before/after policy documents and classify the direction.
+
+- [x] **POLISH T2 — `output_changes` classification.** DONE (2026-06-06). Parser extracts
+  `output_changes` map from plan JSON; sensitive detection handles boolean AND object
+  `after_sensitive`; no-op outputs filtered; WebView renders Output Changes section. ✓
+
+- [x] **POLISH T3 — `create_before_destroy` vs `destroy_before_create` distinction.** DONE
+  (2026-06-06). `replaceOrderDetail()` in classify.ts distinguishes `["create","delete"]`
+  (create_before_destroy, lower downtime risk) from `["delete","create"]` (destroy_before_create,
+  downtime window) from `["replace"]` (single action, Terraform 0.15+). ✓
+
+- [x] **POLISH T4 — WebView plan context header.** DONE (2026-06-06). Meta line shows
+  `N resource changes (K CRITICAL · M NORMAL · J NO-OP)` when changes > 0. ✓
 
 ## Phase 2 — Full UI + hardening (PLANNED)
 
@@ -499,32 +673,30 @@ _Begins when Proposal #3 auto-proceeds (2026-06-13) or human approves._
 
 ### Phase 2 engine additions (identified in "nothing is done" review 2026-06-06)
 
-- [ ] **Response `headers` diff** — response headers (e.g., `X-Rate-Limit`, `Location`,
-  `Retry-After`) are part of the API contract but completely absent from the Phase 0 engine.
-  Removing a documented response header is BREAKING for clients that parse it; adding a
-  required response header is BREAKING for clients that must handle it. Requires parsing
-  `responses[status].headers` and diffing per-header (name removed = BREAKING, schema
-  type changed = BREAKING).
+- [x] **Response `headers` diff** — DONE (2026-06-06). Parser parses
+  `responses[code].headers` with `$ref→#/components/headers` resolution. Diff engine
+  emits `response-header-removed` (BREAKING), `response-header-added` (INFO),
+  `response-header-type-changed` (BREAKING when before≠null, INFO when before=null).
+  3 new `OapiChangeType` values; classify rules + TYPE_STUBS exhaustiveness test
+  updated; 5 adversarial tests. ✓
 
-- [ ] **Security scheme / scope changes** — `security:` changes on individual operations
-  are invisible. Adding a new required OAuth scope to an endpoint breaks clients that
-  request the old token without that scope. Removing a supported scheme (e.g., `apiKey`)
-  breaks clients using that auth type. Both directions can be BREAKING depending on
-  whether the change adds a requirement or removes a supported path. Requires parsing
-  operation-level `security:` and diffing against baseline.
+- [x] **Security scheme / scope changes** — DONE (2026-06-06). Parses operation-level
+  `security:` array (scopes unioned across OR'd entries). Diff engine emits:
+  `operation-security-scheme-removed` (BREAKING), `operation-security-scope-added`
+  (BREAKING — existing tokens lack new scope), `operation-security-scheme-added` (INFO),
+  `operation-security-scope-removed` (INFO — more permissive). 4 new OapiChangeType
+  values; classify rules; TYPE_STUBS updated; 5 adversarial tests. ✓
 
-- [ ] **`servers` array changes** — base URL changes are breaking for clients that
-  construct full URLs. Removing a server entry (e.g., dropping a regional URL) breaks
-  clients that hard-coded that base path. Changing the base path prefix (e.g.,
-  `/api/v1` → `/api/v2`) silently breaks all clients even if no operations changed.
-  Requires diffing the `servers:` array at the top-level spec.
+- [x] **`servers` array changes** — DONE (2026-06-06). `servers` field parsed at spec
+  level (OAS 3.x `servers[].url`; Swagger 2.0 `host+basePath+schemes` computed).
+  Diff engine emits `server-removed` (BREAKING) and `server-added` (INFO) changes.
+  Classify rules + TYPE_STUBS + 5 adversarial tests (including base-URL swap and no-servers
+  graceful handling). ✓
 
-- [ ] **`operationId` changes** — SDK generators (openapi-generator, autorest, kiota)
-  use `operationId` as the generated method name. Renaming `getUser` → `fetchUser`
-  regenerates the SDK and breaks calling code at compile time. INFO in the engine
-  (it's not a wire-protocol break) but highly impactful for typed-client consumers;
-  classify as BREAKING for SDK-generated clients, INFO otherwise. Requires parsing
-  `operationId` per operation and diffing.
+- [x] **`operationId` changes** — DONE (2026-06-06). `operationId` parsed per operation;
+  diff engine emits `operation-id-changed` (INFO — not wire-breaking). Message explicitly
+  warns about SDK generator impact (openapi-generator, autorest, kiota rename generated
+  method). Classify rule + TYPE_STUBS + 4 adversarial tests. ✓
 
 ## Phase 3 — Monetization gate (at 1,000 installs)
 
@@ -532,11 +704,35 @@ _Begins when Proposal #3 auto-proceeds (2026-06-13) or human approves._
 - [ ] Free tier (50 analyses/day) vs Pro (unlimited + multi-branch + team)
 - [ ] Marketplace listing: animated GIF demo, keywords, categories
 
-## Phase 4 — Terraform pack (PLANNED)
+## Phase 4 — Terraform pack (COMPLETE — 2026-06-06 as D6 Phase 1)
 
-- [ ] `terraform show -json` plan parser
-- [ ] Destructive-change classifier (replace/destroy/IAM-widening = CRITICAL)
-- [ ] Extension re-labeled "Breaking-Change Lens" with format picker
+Built as D6 alongside D5 (same extension, two format classifiers):
+
+- [x] `terraform show -json` plan parser (`src/terraform/parser.ts`)
+- [x] Destructive-change classifier (`src/terraform/classify.ts`):
+  - Rule 1: no-op → NO-OP
+  - Rule 2: delete (without replace) → CRITICAL with "DELETED" message
+  - Rule 3: replace (Terraform 0.15+ `replace` or `['delete','create']` or
+    `['create','delete']` for create_before_destroy) → CRITICAL with "REPLACED" message
+  - Rule 4: data store modification → CRITICAL (data tables in `resources.ts`)
+  - Rule 5: IAM/security-group change (Phase 1 conservative — any change flagged)
+  - Rule 6: pure create → NORMAL; in-place update → NORMAL
+- [x] `resources.ts`: DATA_STORE_TYPES + IAM_TYPES data-driven tables with prefix matching
+- [x] `webview.ts`: self-contained HTML WebView with CSP, VS Code CSS vars, HTML escaping
+- [x] `terraformExtension.ts`: VS Code wiring — status bar "TF: X CRITICAL · Y NORMAL",
+  WebView panel auto-opens beside editor, reuses on subsequent activations
+- [x] 94 tests (classify + resources + parser + adversarial + webview)
+- [x] Extension re-labeled "Breaking-Change Lens" with both formats active
+- [x] 14-critic panel (first pass) — 0 P0 found
+- [x] 5.7.2 escalating critique — found P1 (data source "read" → false CRITICAL) + P2
+  (showTerraformPanel command unregistered); both fixed; +4 adversarial tests → 97 tf tests
+- [x] Phase 4 gate: CLEARED (2026-06-06)
+
+**Phase 4 Phase 2 backlog (planned):**
+- [ ] Before/after IAM policy document diff (move beyond conservative "any change flagged")
+- [ ] `output_changes` and `variable_changes` classification
+- [ ] Provider-specific heuristics (RDS parameter group replacement, SG ingress direction)
+- [ ] `create_before_destroy` vs `destroy_before_create` distinction (both currently CRITICAL)
 
 ---
 
@@ -579,14 +775,30 @@ _Begins when Proposal #3 auto-proceeds (2026-06-13) or human approves._
   throwing. Tested behavior (5 new tests).
 - **`uniqueItems`, `default`, `exclusiveMinimum`, `exclusiveMaximum`, `multipleOf` not diffed.**
   JSON Schema / OAS 3.1 draft-07 fields `uniqueItems`, `default`, `exclusiveMinimum`,
-  `exclusiveMaximum`, `multipleOf` are not parsed or compared. Phase 2.
-- **No media-type coverage.** The engine uses the first `content` entry returned
-  by the YAML parser. An endpoint that dropped `application/xml` support while
-  keeping `application/json` will show no change. Phase 2.
-- **Response `headers` not diffed.** Response headers (`X-Rate-Limit`, `Location`,
-  etc.) are part of the API contract but not yet parsed or compared. Phase 2.
-- **Security scheme / scope changes not detected.** Operation-level `security:`
-  changes (new required scope, removed auth scheme) are invisible. Phase 2.
-- **`servers` array not compared.** Base URL changes are not detected. Phase 2.
-- **`operationId` changes not detected.** SDK-generator method-name renames are
-  invisible; high impact for typed-client consumers. Phase 2.
+  `exclusiveMaximum`, `multipleOf` are not parsed or compared. Phase 3 candidate.
+  Note: `exclusiveMinimum`/`exclusiveMaximum` have different semantics in OAS 3.0 (boolean)
+  vs OAS 3.1 (number), making cross-version comparison complex.
+- ~~**No media-type coverage.**~~ **FIXED (2026-06-06, round 34).** `response-media-type-removed`
+  (BREAKING) and `request-media-type-removed` (BREAKING) now emitted when content-type
+  keys are removed from `content:` maps. Added `contentTypes: string[]` to `OapiRequestBody`
+  and `OapiResponse`.
+- ~~**Response `headers` not diffed.**~~ **FIXED (2026-06-06, rounds 24–28).** Response headers
+  fully parsed and diffed: `response-header-removed` (BREAKING), `response-header-added` (INFO),
+  `response-header-type-changed`, `response-header-required-changed`, `response-header-format-changed`.
+  Handles OAS 3.x (`schema:` wrapper) and Swagger 2.0 (bare `type:`).
+- ~~**Security scheme / scope changes not detected.**~~ **FIXED (2026-06-06, round 27).**
+  `operation-security-scheme-removed` (BREAKING), `operation-security-scheme-added` (BREAKING),
+  `operation-security-scope-added` (BREAKING), `operation-security-scope-removed` (INFO) all detected.
+- ~~**`servers` array not compared.**~~ **FIXED (2026-06-06, round 26).**
+  `server-removed` (BREAKING) and `server-added` (INFO) emitted. WebView shows "Spec-level"
+  label for server changes (not tied to a specific operation path/method).
+- ~~**`operationId` changes not detected.**~~ **FIXED (2026-06-06, round 25).**
+  `operation-id-changed` (INFO) with SDK-generator context in message.
+- **OAS 3.1 type arrays partially supported.** `type: ["string", "null"]` is normalised to
+  `type: "string" + nullable: true`. Multi-type arrays without null (e.g. `["integer", "string"]`)
+  produce only the first non-null type; the polymorphic aspect is not surfaced. Phase 3.
+- **Global (root-level) `security:` not diffed.** Changes to the spec-level `security:`
+  array (which applies to all operations by default) are not detected. Only operation-level
+  `security:` overrides are compared. Phase 3.
+- **`oneOf`/`anyOf` composition NOT merged.** A breaking change inside a single oneOf variant
+  will not be detected (tested behaviour). Phase 3.

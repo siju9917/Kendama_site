@@ -180,6 +180,17 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     matches: (c) => c.type === "response-status-removed" ? "BREAKING" : null,
     message: (c) => `Response status code removed: ${c.location}. Clients expecting this status code will not handle the new response correctly.`,
   },
+  // ─── Media type changes ───────────────────────────────────────────────────
+  // Removing application/json from a response is BREAKING — JSON clients will not receive the expected format.
+  {
+    matches: (c) => c.type === "response-media-type-removed" ? "BREAKING" : null,
+    message: (c) => `Response media type removed: ${c.location}. Clients that accept ${String(c.before)} will no longer receive a response body in that format.`,
+  },
+  // Removing a request media type is BREAKING — clients that send that content-type will fail.
+  {
+    matches: (c) => c.type === "request-media-type-removed" ? "BREAKING" : null,
+    message: (c) => `Request media type removed: ${c.location}. Clients that send ${String(c.before)} request bodies will now receive a 415 Unsupported Media Type.`,
+  },
   {
     matches: (c) => c.type === "response-schema-field-required-removed" ? "BREAKING" : null,
     message: (c) => `Required response field removed: ${c.location}. Clients that depend on this field being present will break.`,
@@ -197,12 +208,23 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     matches: (c) => c.type === "response-schema-type-changed" && c.before === null ? "INFO" : null,
     message: (c) => `Response body type added: ${c.location}. Server now guarantees type ${c.after} (previously unspecified).`,
   },
+  // response-schema-nullable-changed: loosening (false→true) = BREAKING, tightening (true→false) = INFO.
+  // Mirrors direction-aware logic for response-schema-property-nullable-changed and
+  // response-schema-items-nullable-changed. false→true means the server may now return null where
+  // it previously guaranteed a value — clients that assumed non-null will crash.
+  {
+    matches: (c) =>
+      c.type === "response-schema-nullable-changed" && c.before === false && c.after === true
+        ? "BREAKING"
+        : null,
+    message: (c) => `Response body field can now be null: ${c.location}. Clients that assume this field is never null will break when they receive a null.`,
+  },
   {
     matches: (c) =>
       c.type === "response-schema-nullable-changed" && c.before === true && c.after === false
-        ? "BREAKING"
+        ? "INFO"
         : null,
-    message: (c) => `Response field became non-nullable: ${c.location}. Clients handling null values will need to be updated.`,
+    message: (c) => `Response body field is no longer nullable: ${c.location}. Server now guarantees this field is never null (non-breaking for clients).`,
   },
   {
     matches: (c) =>
@@ -750,6 +772,86 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => `Response array items schema opened: ${c.location}. Server may now return array elements with extra properties beyond what is documented. Clients should handle unknown fields in elements gracefully.`,
   },
 
+  // ─── Security scheme / scope changes ─────────────────────────────────────
+  {
+    matches: (c) => c.type === "operation-security-scheme-removed" ? "BREAKING" : null,
+    message: (c) => `Security scheme removed: ${c.location}. Clients authenticating only with this scheme will no longer be able to access the endpoint.`,
+  },
+  {
+    matches: (c) => c.type === "operation-security-scope-added" ? "BREAKING" : null,
+    message: (c) => `OAuth scope required: ${c.location}. Clients with existing tokens that lack this scope will receive 403.`,
+  },
+  {
+    matches: (c) => c.type === "operation-security-scheme-added" ? "INFO" : null,
+    message: (c) => `Security scheme added: ${c.location}. A new authentication option is available; existing clients are unaffected.`,
+  },
+  {
+    matches: (c) => c.type === "operation-security-scope-removed" ? "INFO" : null,
+    message: (c) => `OAuth scope no longer required: ${c.location}. Clients may use tokens without this scope (non-breaking for existing clients).`,
+  },
+
+  // ─── Server URL changes ───────────────────────────────────────────────────
+  {
+    matches: (c) => c.type === "server-removed" ? "BREAKING" : null,
+    message: (c) => `Server URL removed: ${c.location}. Clients hard-coded to this base URL will no longer be able to reach the API.`,
+  },
+  {
+    matches: (c) => c.type === "server-added" ? "INFO" : null,
+    message: (c) => `Server URL added: ${c.location}. Clients may use this new base URL; existing clients are unaffected.`,
+  },
+
+  // ─── Response headers ────────────────────────────────────────────────────
+  {
+    matches: (c) => c.type === "response-header-removed" ? "BREAKING" : null,
+    message: (c) => `Response header removed: ${c.location}. Clients that read this header will no longer receive it.`,
+  },
+  // response-header-format-changed: direction-aware.
+  // before non-null: format changed or removed → BREAKING (clients parsing old format fail).
+  {
+    matches: (c) => c.type === "response-header-format-changed" && c.before !== null ? "BREAKING" : null,
+    message: (c) => c.after === null
+      ? `Response header format constraint removed: ${c.location}. Clients that parse this header with format '${c.before}' may receive unexpected values.`
+      : `Response header format changed: ${c.location} (${c.before} → ${c.after}). Clients deserializing this header with the old format will fail.`,
+  },
+  {
+    matches: (c) => c.type === "response-header-format-changed" && c.before === null && c.after !== null ? "INFO" : null,
+    message: (c) => `Response header format documented: ${c.location}. Server now specifies format '${c.after}' for this header value (non-breaking for clients).`,
+  },
+  // response-header-type-changed: direction-aware.
+  // before non-null: type changed or removed → BREAKING (clients parsing old type will fail).
+  {
+    matches: (c) => c.type === "response-header-type-changed" && c.before !== null ? "BREAKING" : null,
+    message: (c) => c.after === null
+      ? `Response header type constraint removed: ${c.location}. Clients parsing this header as ${c.before} will receive unspecified values.`
+      : `Response header type changed: ${c.location} (${c.before} → ${c.after}). Clients parsing this header with the old type will fail.`,
+  },
+  // before null: type added → INFO (server now documents the type, non-breaking for clients).
+  {
+    matches: (c) => c.type === "response-header-type-changed" && c.before === null ? "INFO" : null,
+    message: (c) => `Response header type documented: ${c.location}. Server now specifies type '${c.after}' for this header (non-breaking for clients).`,
+  },
+  {
+    matches: (c) => c.type === "response-header-added" ? "INFO" : null,
+    message: (c) => `Response header added: ${c.location}. Clients that understand this header may use it; others are unaffected.`,
+  },
+  // response-header-required-changed: direction-aware.
+  // required true→false: BREAKING (server no longer guarantees header presence; clients that assumed it will fail).
+  {
+    matches: (c) =>
+      c.type === "response-header-required-changed" && c.before === true && c.after === false
+        ? "BREAKING"
+        : null,
+    message: (c) => `Response header guarantee removed: ${c.location}. Header was previously guaranteed to be present; server may now omit it. Clients that read this header unconditionally will fail.`,
+  },
+  // required false→true: INFO (server strengthens guarantee; clients benefit).
+  {
+    matches: (c) =>
+      c.type === "response-header-required-changed" && c.before === false && c.after === true
+        ? "INFO"
+        : null,
+    message: (c) => `Response header now guaranteed: ${c.location}. Server now always sends this header (non-breaking for existing clients).`,
+  },
+
   // ─── SAFE / INFO ────────────────────────────────────────────────────────
   {
     matches: (c) => c.type === "endpoint-added" ? "INFO" : null,
@@ -789,16 +891,18 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     matches: (c) => c.type === "response-status-added" ? "INFO" : null,
     message: (c) => `New response status code added: ${c.location}. Clients should handle this new status.`,
   },
+  // Media type additions are INFO — clients that use existing media types are unaffected.
+  {
+    matches: (c) => c.type === "response-media-type-added" ? "INFO" : null,
+    message: (c) => `Response media type added: ${c.location}. Clients may now also accept ${String(c.after)} format responses.`,
+  },
+  {
+    matches: (c) => c.type === "request-media-type-added" ? "INFO" : null,
+    message: (c) => `Request media type added: ${c.location}. The server now also accepts ${String(c.after)} request bodies.`,
+  },
   {
     matches: (c) => c.type === "response-schema-field-required-added" ? "INFO" : null,
     message: (c) => `Response now guarantees a required field: ${c.location}. Clients can now rely on this field being present.`,
-  },
-  {
-    matches: (c) =>
-      c.type === "response-schema-nullable-changed" && c.before === false && c.after === true
-        ? "INFO"
-        : null,
-    message: (c) => `Response field can now be null: ${c.location}. Clients should handle null values for this field.`,
   },
   {
     matches: (c) =>
@@ -806,6 +910,18 @@ const CLASSIFY_RULES: ClassifyRule[] = [
         ? "INFO"
         : null,
     message: (c) => `Request body field can now be null: ${c.location}. Clients may optionally send null for this field.`,
+  },
+  {
+    matches: (c) => c.type === "operation-id-changed" ? "INFO" : null,
+    message: (c) => {
+      if (c.before === null) {
+        return `operationId added: ${c.location} → '${c.after}'. SDK generators will now use this name for the generated method.`;
+      }
+      if (c.after === null) {
+        return `operationId removed: ${c.location} (was '${c.before}'). SDK generators may revert to a path-derived method name.`;
+      }
+      return `operationId renamed: ${c.location} ('${c.before}' → '${c.after}'). SDK-generated clients (openapi-generator, autorest, kiota) will rename the generated method — breaking calling code at compile time.`;
+    },
   },
   {
     matches: (c) => c.type === "operation-deprecated-changed" && c.after === true ? "INFO" : null,

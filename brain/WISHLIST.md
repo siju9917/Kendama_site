@@ -532,3 +532,49 @@ only the Sets, not all 6 rules. New field categories (boolean) can be added once
 of truth; missing a field from a set is the new failure mode. Need a matching test.
 
 **Promoted to backlog?** Not yet. Log as openapi-lens Phase 1 internal refactor candidate.
+
+---
+
+## 2026-06-06 — Bidirectional classify rule exhaustiveness test (round 26 lesson)
+
+**Friction encountered:** Round 26 found that `response-schema-nullable-changed` had
+inverted BREAKING/INFO polarity at the top-level body level while property and items
+levels were both correct. The bug was present for 25 rounds without being caught by
+any automated test. The classify unit tests actually ASSERTED the wrong behavior,
+locking the bug in. The test checking "nullable changed (true→false) is BREAKING"
+was testing the wrong expectation.
+
+**Where it came up:** openapi-lens 5.7.5 round 26 adversarial pass.
+
+**Proposed test pattern:** For every OapiChangeType that has direction-aware
+BREAKING/INFO semantics (nullable, type, format, enum, etc.), write a
+"bidirectional exhaustiveness" test that:
+1. Checks both `before/after` combinations for the BREAKING case (assert BREAKING).
+2. Checks both `before/after` combinations for the INFO case (assert INFO).
+3. Asserts that the BREAKING message does NOT contain phrases from the INFO message
+   (and vice versa) — catching message/severity mismatch.
+
+This could be implemented as a parametric `it.each` test:
+```typescript
+const NULLABLE_CASES = [
+  // Response: loosening = BREAKING, tightening = INFO
+  { type: "response-schema-nullable-changed",  before: false, after: true,  expected: "BREAKING" },
+  { type: "response-schema-nullable-changed",  before: true,  after: false, expected: "INFO" },
+  // Per-property same semantics
+  { type: "response-schema-property-nullable-changed", before: false, after: true,  expected: "BREAKING" },
+  { type: "response-schema-property-nullable-changed", before: true,  after: false, expected: "INFO" },
+  // Items same semantics
+  { type: "response-schema-items-nullable-changed",    before: false, after: true,  expected: "BREAKING" },
+  { type: "response-schema-items-nullable-changed",    before: true,  after: false, expected: "INFO" },
+];
+```
+
+If all three levels are in the same table, a polarity inversion at one level while
+the others are correct will immediately fail.
+
+**Initial size estimate:** Very small — a single `it.each` block. The main value is
+the CONSISTENCY check: the same property (nullable false→true) should have the same
+expected severity at ALL nesting levels.
+
+**Promoted to backlog?** Strong candidate for next openapi-lens session — add to
+classify.test.ts as a cross-level consistency guard.

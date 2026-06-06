@@ -100,6 +100,36 @@ Checklist:
   no diagnostic. Added 2026-06-06 (openapi-lens `classifyChanges` fallback
   pattern caught by 5.7.2 third adversarial pass; fixed by TYPE_STUBS
   exhaustiveness guard in classify.test.ts).
+- **Direction-aware polarity rules must be verified consistent across ALL
+  nesting levels.** A system that classifies `X false→true` as BREAKING at
+  the property level MUST classify it BREAKING at the body level and items
+  level too — same direction semantics, same entity. Cross-level polarity
+  inversion (correct at one level, inverted at another) is a silent bug
+  because the tests at each level check independently without comparing
+  across levels. Guard with a parametric cross-level consistency table that
+  asserts both the BREAKING and INFO cases for every direction-aware
+  property across all nesting levels in one test. Added 2026-06-06
+  (openapi-lens round 26: `response-schema-nullable-changed` top-level body
+  was BREAKING for true→false and INFO for false→true — INVERTED vs. the
+  property and items levels which were both correct; fix + 30-case cross-
+  level table added to classify.test.ts).
+- **When a parser helper (e.g. `asString`) returns `undefined` for a non-string
+  type, check every caller where the raw field might legitimately arrive as a
+  non-string.** JSON Schema and OAS 3.1 allow the `type` field to be an array
+  (`["string", "null"]`); a parser that calls `asString(raw["type"])` silently
+  loses the type info for all array-typed schemas. Audit parser fields with the
+  question: "could this value be legitimately non-string in newer spec versions?"
+  Added 2026-06-06 (openapi-lens round 32: OAS 3.1 `type: ["string", "null"]`
+  produced `type: undefined` because `asString(array)` returned undefined).
+- **"Prefer first available" media-type extraction creates false negatives when
+  the preferred media type disappears.** `application/json` preferred → first
+  other entry fallback. If baseline has `application/json` and current only has
+  `application/xml`, the fallback picks two DIFFERENT schemas and compares them
+  — falsely attributing any difference to a schema change rather than a media-type
+  removal. The fix: track content type keys explicitly and compare sets; a missing
+  preferred type is a `media-type-removed` event, not a schema change. Added
+  2026-06-06 (openapi-lens round 34: removing `application/json` while adding
+  `application/xml` produced no change events; fixed by content-type set diffing).
 
 ### 2. Adversarial Tester
 
@@ -173,6 +203,16 @@ Checklist:
   one must NOT overwrite the other. Added 2026-06-06 (openapi-lens
   D5 Phase 0: a map keyed only by `name` would merge `path:id` and
   `query:id`; fixed at design-time to use `${p.in}:${p.name}`).
+- **For diff engines that compare API specs: probe cross-version semantics
+  (OAS 3.0 vs 3.1) explicitly.** OAS 3.1 changed several fields from OAS 3.0:
+  `type` is now an array; `exclusiveMinimum`/`exclusiveMaximum` are numbers
+  not booleans; `nullable` is replaced by adding "null" to the type array.
+  A diff engine comparing a 3.0 baseline to a 3.1 current (or vice versa)
+  must normalise both sides to the same representation before comparing.
+  Probe: baseline OAS 3.0 (`type: string, nullable: true`) vs current OAS 3.1
+  (`type: ["string", "null"]`) — should produce no false positive. Added
+  2026-06-06 (openapi-lens round 32: OAS 3.1 type arrays silently lost type
+  info; round 36: non-null union arrays lose secondary types).
 
 ### 3. Security Critic
 
@@ -205,6 +245,15 @@ Checklist:
   live XSS vector if injected raw into the WebView HTML. Added
   2026-06-06 (D6 terraform-lens Phase 1 pre-design: `webview.ts`
   generates classification HTML from plan data).
+- **Every `${...}` template interpolation in WebView HTML generators
+  must be wrapped with an `esc()` call.** Review: grep for `${`
+  in webview generator files and verify each occurrence is either
+  a numeric literal, a hardcoded constant, or wrapped in `esc()`.
+  A single unwrapped interpolation of user-visible data (resource
+  address, operation path, message text) is a full XSS. Added
+  2026-06-06 (D5 OpenAPI WebView + D6 Terraform WebView both use
+  template-literal HTML generation — pattern requires systematic
+  audit, not spot-check).
 
 ### 4. Professional-Polish Critic
 
@@ -676,3 +725,5 @@ with no growth is a warning sign flagged in the weekly digest.
 | 2026-06-06 (round 23) | Correctness Critic (#1) / Domain-Expert Critic (#5) | Added: for every classify rule that handles a null-transition (before=array, after=null), audit the message function separately from the matches function. The severity may be correct (BREAKING) while the message says the wrong direction ("values may be added" when values were removed). Pattern: split `!before || !after` catch-all into `!before && after` (truly added), `before && !after` (truly removed), `!before && !after` (null-null edge) and give each a specific message. For response enum removal (before=array, after=null): severity=BREAKING, message must say "removed" / "exhaustive clients break" — not "may be added". | openapi-lens: `response-schema-property-enum-changed` with before=array, after=null → message said "values may be added" (WRONG — enum was REMOVED). `response-schema-items-enum-changed` same case → generic "changed:" message. Both split into explicit `before && !after` branch with correct removal message. +2 classify unit tests (message content assertion). **485/485 tests.** |
 | 2026-06-06 (round 24) | Correctness Critic (#1) / Domain-Expert Critic (#5) | Added: `readOnly` and `writeOnly` schema fields must be compared at ALL three schema nesting levels — top-level body schema, per-property level, and items level. Rounds 10 and 5.7.4 added readOnly/writeOnly at property level and items level; but the top-level body schema had no such comparison. A request body schema acquiring `readOnly: true` (server will ignore/reject the body) and a response body schema acquiring `writeOnly: true` (payload disappears from responses) are both BREAKING and were completely invisible. Probe: POST endpoint with `requestBody.content.schema.readOnly` changing false→true — must produce BREAKING finding. Direction semantics: request readOnly false→true = BREAKING, true→false = INFO; response writeOnly false→true = BREAKING, true→false = INFO; response readOnly (both) = INFO; request writeOnly (both) = INFO. | openapi-lens `diff.ts`/`classify.ts`: `diffRequestBody` and `diffResponses` had no readOnly/writeOnly comparison at the top-level schema. Added `diffSchemaTopLevelReadOnlyWriteOnly()` helper wired into both entry points. 4 new OapiChangeType values, 6 classify rules. TYPE_STUBS updated (+4 entries). +10 tests (4 TYPE_STUBS completeness + 6 adversarial integration). **495/495 tests.** |
 | 2026-06-06 (round 25) | Domain-Expert Critic (#5) / Correctness Critic (#1) | Added: `minProperties` and `maxProperties` are standard OpenAPI constraint fields (JSON Schema draft-07) and MUST be tracked alongside the existing 7 constraint fields. `minProperties` increase on a request schema = BREAKING (server rejects objects with fewer properties); `maxProperties` increase on a response schema = BREAKING (server may return more properties than clients expected/tolerated). These follow the same direction-aware severity logic as `minimum`/`maximum`: for request schemas, higher min or lower max = tightening = BREAKING; for response schemas, lower min or higher max = loosening = BREAKING. All 5 constraint field arrays in diff.ts and all 6 classify rule `loc.endsWith` checks must include both fields. | openapi-lens: `minProperties`/`maxProperties` absent from `OapiSchema`, parser, `flattenAllOf`, constraint arrays, and classify rules. Request schema `minProperties: 0→2` was completely invisible. Fixed: added to all layers. +6 adversarial integration tests. **501/501 tests.** |
+| 2026-06-06 (D5/D6 Phase 1 build) | Security Critic (#3) | Added: WebView HTML generators that use template-literal interpolation MUST apply the `esc()` call at EVERY `${...}` site in HTML context. Audit method: grep for `\$\{` in every `*webview.ts` or `*WebviewProvider.ts` file and check each site for an `esc()` wrapper. Numeric/constant values may skip escaping; any string from file content, user input, or external APIs must be wrapped. A single unwrapped site converts the WebView from a display panel into an XSS vector. Both `createPlanWebviewContent` and `createChangeWebviewContent` built in D6/D5 Phase 1 use this pattern — all 8 dynamic interpolation sites were verified wrapped. | D5 OpenAPI WebView (`changeWebviewProvider.ts`) + D6 Terraform WebView (`webview.ts`): both use template-literal HTML generation; 2026-06-06 build. `esc()` applied to message, path, method, location (OpenAPI) and address, type, actions, reasons (Terraform). Webview tests verify escaping via malicious-string test cases. |
+| 2026-06-06 (D5 Phase 1 critique) | Reliability Critic (#7) / Correctness Critic (#1) | Added: every module-level mutable variable in a VS Code extension (`let lastKnownChanges`, `let changeWebviewPanel`, `const manualBaselineByUri`) MUST be cleared/disposed in `deactivate()`. VS Code extension host may reuse the module across activation cycles in some environments. Any uncleared state carries over and corrupts the new session. Checklist: enumerate all `let` and `const ... = new Map()` at module scope; verify each has a corresponding `dispose()`, `.clear()`, or `= undefined/null/[]` in `deactivate()`. | openapi-lens `extension.ts`: `lastKnownChanges`, `changeWebviewPanel`, `manualBaselineByUri` are all cleared in `deactivate()`. Pattern identified during D5 Phase 1 critique panel as requiring explicit verification on every extension code review. |

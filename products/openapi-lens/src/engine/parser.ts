@@ -5,6 +5,7 @@ import type {
   OapiParameter,
   OapiRequestBody,
   OapiResponse,
+  OapiResponseHeader,
   OapiSchema,
   OapiSpec,
 } from "./types.js";
@@ -132,8 +133,17 @@ function normalizeSchema(raw: unknown, lookup: Record<string, unknown>, visited:
   if (ref) return resolveLocalRef(ref, lookup, visited);
 
   const schema: OapiSchema = {};
-  const type = asString(raw["type"]);
-  if (type) schema.type = type;
+  // OAS 3.1 allows type to be an array (e.g. ["string", "null"]).  Extract the primary
+  // non-null type and synthesize `nullable: true` when "null" is present, so the diff engine
+  // sees a normalised OAS-3.0-style schema regardless of spec version.
+  const rawType = raw["type"];
+  if (typeof rawType === "string") {
+    if (rawType) schema.type = rawType;
+  } else if (Array.isArray(rawType)) {
+    const nonNullType = rawType.find((t): t is string => typeof t === "string" && t !== "null");
+    if (nonNullType) schema.type = nonNullType;
+    if (rawType.includes("null")) schema.nullable = true;
+  }
   const format = asString(raw["format"]);
   if (format) schema.format = format;
   const nullable = asBoolean(raw["nullable"]);
@@ -255,24 +265,109 @@ function parseParameters(pathLevelParams: unknown[], opLevelParams: unknown[], s
   return [...merged.values()];
 }
 
-/** Parse a requestBody object (OAS 3.x). */
-function parseRequestBody(raw: unknown, lookup: Record<string, unknown>): OapiRequestBody | null {
+/** Parse #/components/requestBodies into a lookup map for $ref resolution. */
+function parseSharedRequestBodies(raw: Record<string, unknown>): Record<string, unknown> {
+  const components = isObject(raw["components"]) ? raw["components"] : {};
+  return isObject(components["requestBodies"]) ? components["requestBodies"] : {};
+}
+
+/** Parse a requestBody object (OAS 3.x). Resolves $ref to #/components/requestBodies. */
+function parseRequestBody(raw: unknown, lookup: Record<string, unknown>, requestBodyLookup: Record<string, unknown> = {}): OapiRequestBody | null {
   if (!isObject(raw)) return null;
-  const required = asBoolean(raw["required"]) ?? false;
-  const schema = extractContentSchema(raw["content"], lookup);
-  return { required, schema };
+  const ref = asString(raw["$ref"]);
+  const effective: Record<string, unknown> = ref
+    ? ((): Record<string, unknown> => {
+        const match = /^#\/components\/requestBodies\/(.+)$/.exec(ref);
+        if (!match || !match[1]) return {};
+        const target = requestBodyLookup[match[1]];
+        return isObject(target) ? target : {};
+      })()
+    : raw;
+  const required = asBoolean(effective["required"]) ?? false;
+  const content = isObject(effective["content"]) ? effective["content"] : {};
+  const contentTypes = Object.keys(content);
+  const schema = extractContentSchema(effective["content"], lookup);
+  return { required, schema, contentTypes };
+}
+
+/** Parse #/components/responses into a lookup map for $ref resolution. */
+function parseSharedResponses(raw: Record<string, unknown>): Record<string, unknown> {
+  const components = isObject(raw["components"]) ? raw["components"] : {};
+  return isObject(components["responses"]) ? components["responses"] : {};
+}
+
+/** Parse #/components/headers into a lookup map for $ref resolution. */
+function parseSharedHeaders(raw: Record<string, unknown>): Record<string, unknown> {
+  const components = isObject(raw["components"]) ? raw["components"] : {};
+  return isObject(components["headers"]) ? components["headers"] : {};
+}
+
+/** Parse a response headers map (OAS 3.x `responses[code].headers`). */
+function parseResponseHeaders(
+  raw: unknown,
+  schemaLookup: Record<string, unknown>,
+  headerLookup: Record<string, unknown>,
+): Record<string, OapiResponseHeader> {
+  if (!isObject(raw)) return {};
+  const result: Record<string, OapiResponseHeader> = {};
+  for (const [name, hdr] of Object.entries(raw)) {
+    if (!isObject(hdr)) continue;
+    const ref = asString(hdr["$ref"]);
+    const effective: Record<string, unknown> = ref
+      ? ((): Record<string, unknown> => {
+          const match = /^#\/components\/headers\/(.+)$/.exec(ref);
+          if (!match || !match[1]) return {};
+          const target = headerLookup[match[1]];
+          return isObject(target) ? target : {};
+        })()
+      : hdr;
+    const required = asBoolean(effective["required"]) ?? false;
+    // Swagger 2.0 headers declare `type` directly (no `schema` wrapper); OAS 3.x wraps in `schema`.
+    const schema = normalizeSchema(effective["schema"] ?? (effective["type"] ? effective : undefined), schemaLookup);
+    const resolved: OapiResponseHeader = {
+      name,
+      required,
+      schema: Object.keys(schema).length > 0 ? schema : null,
+    };
+    result[name] = resolved;
+  }
+  return result;
 }
 
 /** Parse responses into a status-code-keyed map (OAS 3.x and Swagger 2.0). */
-function parseResponses(raw: unknown, lookup: Record<string, unknown>): Record<string, OapiResponse> {
+function parseResponses(
+  raw: unknown,
+  lookup: Record<string, unknown>,
+  responseLookup: Record<string, unknown> = {},
+  headerLookup: Record<string, unknown> = {},
+): Record<string, OapiResponse> {
   if (!isObject(raw)) return {};
   const result: Record<string, OapiResponse> = {};
   for (const [statusCode, resp] of Object.entries(raw)) {
     if (!isObject(resp)) continue;
+    // Resolve response-level $ref (e.g. $ref: "#/components/responses/SuccessResponse").
+    const ref = asString(resp["$ref"]);
+    const resolved = ref
+      ? ((): Record<string, unknown> | null => {
+          const match = /^#\/components\/responses\/(.+)$/.exec(ref);
+          if (!match || !match[1]) return null;
+          const target = responseLookup[match[1]];
+          return isObject(target) ? target : null;
+        })()
+      : null;
+    const effective = resolved ?? resp;
     const schema =
-      extractContentSchema(resp["content"], lookup) ??
-      normalizeSchema(resp["schema"], lookup);
-    result[statusCode] = { statusCode, schema: schema && Object.keys(schema).length > 0 ? schema : null };
+      extractContentSchema(effective["content"], lookup) ??
+      normalizeSchema(effective["schema"], lookup);
+    const headers = parseResponseHeaders(effective["headers"], lookup, headerLookup);
+    const responseContent = isObject(effective["content"]) ? effective["content"] : {};
+    const contentTypes = Object.keys(responseContent);
+    result[statusCode] = {
+      statusCode,
+      schema: schema && Object.keys(schema).length > 0 ? schema : null,
+      headers,
+      contentTypes,
+    };
   }
   return result;
 }
@@ -283,17 +378,62 @@ function buildSwagger2RequestBody(parameters: unknown[], lookup: Record<string, 
   if (!isObject(bodyParam)) return null;
   const required = asBoolean(bodyParam["required"]) ?? false;
   const schema = normalizeSchema(bodyParam["schema"], lookup);
-  return { required, schema: Object.keys(schema).length > 0 ? schema : null };
+  return { required, schema: Object.keys(schema).length > 0 ? schema : null, contentTypes: [] };
+}
+
+/**
+ * Parse operation-level `security:` array into a flat scheme→scopes map.
+ * The security array is an OR of objects; each object is an AND of scheme→scopes pairs.
+ * We union scopes across all entries per scheme to get the broadest view of requirements.
+ * Returns null if the field is absent (inherit from global security, not tracked here).
+ */
+function parseSecurityRequirements(raw: unknown): Record<string, string[]> | null {
+  if (!Array.isArray(raw)) return null;
+  const result: Record<string, string[]> = {};
+  for (const entry of raw) {
+    if (!isObject(entry)) continue;
+    for (const [scheme, scopes] of Object.entries(entry)) {
+      const scopeList = Array.isArray(scopes) ? scopes.filter((s): s is string => typeof s === "string") : [];
+      if (!result[scheme]) {
+        result[scheme] = [...scopeList];
+      } else {
+        for (const s of scopeList) {
+          if (!result[scheme]!.includes(s)) result[scheme]!.push(s);
+        }
+      }
+    }
+  }
+  return result;
+}
+
+/** Parse #/components/pathItems (OAS 3.1) into a lookup map for path-item $ref resolution. */
+function parseSharedPathItems(raw: Record<string, unknown>): Record<string, unknown> {
+  const components = isObject(raw["components"]) ? raw["components"] : {};
+  return isObject(components["pathItems"]) ? components["pathItems"] : {};
 }
 
 /** Parse the paths object into a flat list of operations. */
 function parseOperations(raw: Record<string, unknown>, schemaLookup: Record<string, unknown>, version: OapiSpec["version"]): OapiOperation[] {
   const paramLookup = parseSharedParameters(raw, schemaLookup);
+  const responseLookup = parseSharedResponses(raw);
+  const headerLookup = parseSharedHeaders(raw);
+  const requestBodyLookup = parseSharedRequestBodies(raw);
+  const pathItemLookup = parseSharedPathItems(raw);
   const paths = isObject(raw["paths"]) ? raw["paths"] : {};
   const ops: OapiOperation[] = [];
 
-  for (const [path, pathItem] of Object.entries(paths)) {
-    if (!isObject(pathItem)) continue;
+  for (const [path, rawPathItem] of Object.entries(paths)) {
+    if (!isObject(rawPathItem)) continue;
+    // Resolve path-item $ref (OAS 3.1 `$ref: "#/components/pathItems/X"`).
+    const pathItemRef = asString(rawPathItem["$ref"]);
+    const pathItem: Record<string, unknown> = pathItemRef
+      ? ((): Record<string, unknown> => {
+          const match = /^#\/components\/pathItems\/(.+)$/.exec(pathItemRef);
+          if (!match || !match[1]) return rawPathItem;
+          const target = pathItemLookup[match[1]];
+          return isObject(target) ? target : rawPathItem;
+        })()
+      : rawPathItem;
     const pathLevelParams = asArray(pathItem["parameters"]);
 
     for (const method of HTTP_METHODS) {
@@ -311,14 +451,18 @@ function parseOperations(raw: Record<string, unknown>, schemaLookup: Record<stri
       const requestBody =
         version === "2.0"
           ? buildSwagger2RequestBody([...opLevelParams, ...pathLevelParams], schemaLookup)
-          : parseRequestBody(opRaw["requestBody"], schemaLookup);
+          : parseRequestBody(opRaw["requestBody"], schemaLookup, requestBodyLookup);
 
-      const responses = parseResponses(opRaw["responses"], schemaLookup);
+      const responses = parseResponses(opRaw["responses"], schemaLookup, responseLookup, headerLookup);
       const deprecated = asBoolean(opRaw["deprecated"]);
+      const operationId = asString(opRaw["operationId"]);
+      const security = parseSecurityRequirements(opRaw["security"]);
 
       ops.push({
         path,
         method,
+        ...(operationId ? { operationId } : {}),
+        ...(security ? { security } : {}),
         parameters: nonBodyParams,
         requestBody,
         responses,
@@ -354,6 +498,29 @@ export function parseOapiSpec(input: string): OapiSpec {
   const schemas =
     version === "2.0" ? parseDefinitions(raw) : parseSchemas(raw);
   const operations = parseOperations(raw, schemas, version);
+  const servers = parseServers(raw, version);
 
-  return { version, operations, schemas };
+  return { version, operations, schemas, servers };
+}
+
+/** Parse the servers list to a flat array of URL strings. */
+function parseServers(raw: Record<string, unknown>, version: OapiSpec["version"]): string[] {
+  if (version === "2.0") {
+    // Swagger 2.0 — compute a single base URL from host + basePath.
+    const host = asString(raw["host"]);
+    if (!host) return [];
+    const basePath = asString(raw["basePath"]) ?? "/";
+    const schemes = asArray(raw["schemes"]).filter((s): s is string => typeof s === "string");
+    const scheme = schemes[0] ?? "https";
+    return [`${scheme}://${host}${basePath}`];
+  }
+  // OAS 3.x — servers array.
+  const rawServers = asArray(raw["servers"]);
+  const urls: string[] = [];
+  for (const s of rawServers) {
+    if (!isObject(s)) continue;
+    const url = asString(s["url"]);
+    if (url) urls.push(url);
+  }
+  return urls;
 }

@@ -138,14 +138,20 @@ describe("classifyChanges — classification rules", () => {
     expect(result[0]?.message).toMatch(/added/i);
   });
 
-  it("classifies nullable changed (true→false) as BREAKING", () => {
-    const result = classifyChanges([raw("response-schema-nullable-changed", true, false)]);
+  it("classifies response-schema-nullable-changed (false→true) as BREAKING — server may now return null", () => {
+    // Direction-aware: loosening a RESPONSE constraint = BREAKING.
+    // Clients that assumed this field is never null will crash when they receive a null.
+    const result = classifyChanges([raw("response-schema-nullable-changed", false, true)]);
     expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/null/i);
   });
 
-  it("classifies nullable changed (false→true) as INFO", () => {
-    const result = classifyChanges([raw("response-schema-nullable-changed", false, true)]);
+  it("classifies response-schema-nullable-changed (true→false) as INFO — server guarantees non-null", () => {
+    // Direction-aware: tightening a RESPONSE constraint = INFO.
+    // Server now guarantees the field is never null; clients benefit.
+    const result = classifyChanges([raw("response-schema-nullable-changed", true, false)]);
     expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/no longer nullable|never null/i);
   });
 
   it("classifies request-body-required-changed (true→null, body removed) as BREAKING", () => {
@@ -746,7 +752,7 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "response-schema-field-required-added":    [false, true],
     "response-schema-field-required-removed":  [true, false],
     "response-schema-type-changed":            ["string", "object"],
-    "response-schema-nullable-changed":        [true, false],
+    "response-schema-nullable-changed":        [false, true],
     "response-schema-property-type-changed":   ["string", "integer"],
     "response-schema-property-removed":        ["string", null],
     "response-schema-property-added":          [null, "string"],
@@ -803,6 +809,22 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "response-schema-readonly-changed":                      [false, true],
     "request-schema-writeonly-changed":                      [false, true],
     "response-schema-writeonly-changed":                     [false, true],
+    "response-header-removed":                               ["string", null],
+    "response-header-added":                                 [null, "string"],
+    "response-header-type-changed":                          ["string", "integer"],
+    "operation-id-changed":                                  ["getUser", "fetchUser"],
+    "server-removed":                                        ["https://api.example.com", null],
+    "server-added":                                          [null, "https://api.example.com"],
+    "operation-security-scheme-removed":                     ["OAuth2", null],
+    "operation-security-scheme-added":                       [null, "apiKey"],
+    "operation-security-scope-added":                        [null, "write:users"],
+    "operation-security-scope-removed":                      ["write:users", null],
+    "response-header-required-changed":                      [true, false],
+    "response-header-format-changed":                        ["uuid", "uri"],
+    "response-media-type-removed":                           ["application/json", null],
+    "response-media-type-added":                             [null, "application/xml"],
+    "request-media-type-removed":                            ["application/json", null],
+    "request-media-type-added":                              [null, "application/xml"],
   };
 
   it.each(Object.keys(TYPE_STUBS) as OapiChangeType[])(
@@ -1219,5 +1241,78 @@ describe("classify — items-level additionalProperties (5.7.5 round 18)", () =>
     expect(result[0]?.severity).toBe("INFO");
     expect(result[0]?.message).not.toMatch(/^Change detected at/);
     expect(result[0]?.message).toMatch(/extra|unknown|graceful/i);
+  });
+});
+
+// ─── Cross-level nullable consistency guard (round 26 lesson) ────────────────
+// Verifies that the same nullable direction (false→true = BREAKING, true→false = INFO)
+// is consistent across ALL nesting levels: top-level body, per-property, and items.
+// A polarity inversion at one level (like the round 26 bug) will fail this table.
+
+describe("nullable direction — cross-level consistency", () => {
+  const NULLABLE_CASES: Array<{ type: OapiChangeType; before: boolean; after: boolean; expected: "BREAKING" | "INFO"; label: string }> = [
+    // Response: loosening (false→true) = BREAKING at all levels.
+    { type: "response-schema-nullable-changed",          before: false, after: true,  expected: "BREAKING", label: "response body false→true" },
+    { type: "response-schema-property-nullable-changed", before: false, after: true,  expected: "BREAKING", label: "response property false→true" },
+    { type: "response-schema-items-nullable-changed",    before: false, after: true,  expected: "BREAKING", label: "response items false→true" },
+    // Response: tightening (true→false) = INFO at all levels.
+    { type: "response-schema-nullable-changed",          before: true, after: false, expected: "INFO", label: "response body true→false" },
+    { type: "response-schema-property-nullable-changed", before: true, after: false, expected: "INFO", label: "response property true→false" },
+    { type: "response-schema-items-nullable-changed",    before: true, after: false, expected: "INFO", label: "response items true→false" },
+    // Request: tightening (true→false) = BREAKING at all levels.
+    { type: "request-schema-nullable-changed",           before: true, after: false, expected: "BREAKING", label: "request body true→false" },
+    { type: "request-schema-property-nullable-changed",  before: true, after: false, expected: "BREAKING", label: "request property true→false" },
+    { type: "request-schema-items-nullable-changed",     before: true, after: false, expected: "BREAKING", label: "request items true→false" },
+    // Request: loosening (false→true) = INFO at all levels.
+    { type: "request-schema-nullable-changed",           before: false, after: true, expected: "INFO", label: "request body false→true" },
+    { type: "request-schema-property-nullable-changed",  before: false, after: true, expected: "INFO", label: "request property false→true" },
+    { type: "request-schema-items-nullable-changed",     before: false, after: true, expected: "INFO", label: "request items false→true" },
+  ];
+
+  it.each(NULLABLE_CASES)("$label ($type $before→$after) → $expected", ({ type, before, after, expected }) => {
+    const result = classifyChanges([raw(type, before, after, "test.nullable")]);
+    expect(result[0]?.severity).toBe(expected);
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+});
+
+// ─── Cross-level readOnly/writeOnly consistency guard ─────────────────────────
+// Verifies consistent direction-aware semantics across body, property, and items levels.
+// Request readOnly false→true = BREAKING at all levels (clients blocked from sending).
+// Response writeOnly false→true = BREAKING at all levels (payload disappears).
+// All other directions = INFO.
+
+describe("readOnly/writeOnly direction — cross-level consistency", () => {
+  const RO_WO_CASES: Array<{ type: OapiChangeType; before: boolean; after: boolean; expected: "BREAKING" | "INFO"; label: string }> = [
+    // Request readOnly false→true: BREAKING at body, property, items.
+    { type: "request-schema-readonly-changed",           before: false, after: true, expected: "BREAKING", label: "request body readOnly false→true" },
+    { type: "request-schema-property-readonly-changed",  before: false, after: true, expected: "BREAKING", label: "request property readOnly false→true" },
+    { type: "request-schema-items-readonly-changed",     before: false, after: true, expected: "BREAKING", label: "request items readOnly false→true" },
+    // Request readOnly true→false: INFO at all levels.
+    { type: "request-schema-readonly-changed",           before: true, after: false, expected: "INFO", label: "request body readOnly true→false" },
+    { type: "request-schema-property-readonly-changed",  before: true, after: false, expected: "INFO", label: "request property readOnly true→false" },
+    { type: "request-schema-items-readonly-changed",     before: true, after: false, expected: "INFO", label: "request items readOnly true→false" },
+    // Response readOnly both directions: INFO (annotation only, no payload change).
+    { type: "response-schema-readonly-changed",          before: false, after: true, expected: "INFO", label: "response body readOnly false→true" },
+    { type: "response-schema-property-readonly-changed", before: false, after: true, expected: "INFO", label: "response property readOnly false→true" },
+    { type: "response-schema-items-readonly-changed",    before: false, after: true, expected: "INFO", label: "response items readOnly false→true" },
+    // Response writeOnly false→true: BREAKING at body, property, items (payload disappears).
+    { type: "response-schema-writeonly-changed",          before: false, after: true, expected: "BREAKING", label: "response body writeOnly false→true" },
+    { type: "response-schema-property-writeonly-changed", before: false, after: true, expected: "BREAKING", label: "response property writeOnly false→true" },
+    { type: "response-schema-items-writeonly-changed",    before: false, after: true, expected: "BREAKING", label: "response items writeOnly false→true" },
+    // Response writeOnly true→false: INFO at all levels (payload now appears — non-breaking).
+    { type: "response-schema-writeonly-changed",          before: true, after: false, expected: "INFO", label: "response body writeOnly true→false" },
+    { type: "response-schema-property-writeonly-changed", before: true, after: false, expected: "INFO", label: "response property writeOnly true→false" },
+    { type: "response-schema-items-writeonly-changed",    before: true, after: false, expected: "INFO", label: "response items writeOnly true→false" },
+    // Request writeOnly both directions: INFO (annotation only).
+    { type: "request-schema-writeonly-changed",           before: false, after: true, expected: "INFO", label: "request body writeOnly false→true" },
+    { type: "request-schema-property-writeonly-changed",  before: false, after: true, expected: "INFO", label: "request property writeOnly false→true" },
+    { type: "request-schema-items-writeonly-changed",     before: false, after: true, expected: "INFO", label: "request items writeOnly false→true" },
+  ];
+
+  it.each(RO_WO_CASES)("$label → $expected", ({ type, before, after, expected }) => {
+    const result = classifyChanges([raw(type, before, after, "test.field")]);
+    expect(result[0]?.severity).toBe(expected);
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
   });
 });

@@ -48,18 +48,31 @@ export interface OapiParameter {
 export interface OapiRequestBody {
   required: boolean;
   schema: OapiSchema | null;
+  contentTypes: string[];
+}
+
+/** A single documented response header. */
+export interface OapiResponseHeader {
+  name: string;
+  required: boolean;
+  schema: OapiSchema | null;
 }
 
 /** A single response by status code. */
 export interface OapiResponse {
   statusCode: string;
   schema: OapiSchema | null;
+  headers: Record<string, OapiResponseHeader>;
+  contentTypes: string[];
 }
 
 /** One HTTP operation: a path + method + its inputs/outputs. */
 export interface OapiOperation {
   path: string;
   method: HttpMethod;
+  operationId?: string;
+  /** Normalized security requirements: scheme → union of required scopes across all OR'd entries. */
+  security?: Record<string, string[]>;
   parameters: OapiParameter[];
   requestBody: OapiRequestBody | null;
   responses: Record<string, OapiResponse>;
@@ -71,6 +84,7 @@ export interface OapiSpec {
   version: "3.0" | "3.1" | "2.0";
   operations: OapiOperation[];
   schemas: Record<string, OapiSchema>;
+  servers: string[];
 }
 
 // ─── Diff types ────────────────────────────────────────────────────────────
@@ -149,7 +163,23 @@ export type OapiChangeType =
   | "request-schema-readonly-changed"
   | "response-schema-readonly-changed"
   | "request-schema-writeonly-changed"
-  | "response-schema-writeonly-changed";
+  | "response-schema-writeonly-changed"
+  | "response-header-removed"
+  | "response-header-added"
+  | "response-header-type-changed"
+  | "operation-id-changed"
+  | "server-removed"
+  | "server-added"
+  | "operation-security-scheme-removed"
+  | "operation-security-scheme-added"
+  | "operation-security-scope-added"
+  | "operation-security-scope-removed"
+  | "response-header-required-changed"
+  | "response-header-format-changed"
+  | "response-media-type-removed"
+  | "response-media-type-added"
+  | "request-media-type-removed"
+  | "request-media-type-added";
 
 /** A raw structural difference between two specs before classification. */
 export interface OapiRawChange {

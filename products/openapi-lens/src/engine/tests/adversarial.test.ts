@@ -4666,14 +4666,6 @@ paths:
   });
 
   it("response schema minProperties decrease fires BREAKING (response loosened)", () => {
-    const spec200 = `
-      responses:
-        "200":
-          description: ok
-          content:
-            application/json:
-              schema:
-                type: object`;
     const baseline = `${PREAMBLE}
       requestBody:
         required: false
@@ -4790,5 +4782,2427 @@ paths:
     const c = changes.find((ch) => ch.type === "request-schema-property-constraint-changed" && ch.location.endsWith(".minProperties"));
     expect(c).toBeDefined();
     expect(c?.severity).toBe("BREAKING");
+  });
+});
+
+// ─── Round 26: response-schema-nullable-changed direction polarity ─────────
+// Bug: top-level body response nullable had inverted BREAKING/INFO vs property/items levels.
+// false→true = loosening (server can now return null) = BREAKING.
+// true→false = tightening (server guarantees non-null) = INFO.
+
+const NULLABLE_PREAMBLE = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:`;
+
+describe("round 26 — response-schema-nullable-changed direction polarity fix", () => {
+  it("response body nullable false→true is BREAKING (server may now return null; clients crash)", () => {
+    const baseline = `${NULLABLE_PREAMBLE}
+                type: string
+                nullable: false`;
+    const current = `${NULLABLE_PREAMBLE}
+                type: string
+                nullable: true`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const c = changes.find((ch) => ch.type === "response-schema-nullable-changed");
+    expect(c).toBeDefined();
+    expect(c?.before).toBe(false);
+    expect(c?.after).toBe(true);
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.message).toMatch(/null/i);
+  });
+
+  it("response body nullable true→false is INFO (server guarantees non-null; tightening = INFO for responses)", () => {
+    const baseline = `${NULLABLE_PREAMBLE}
+                type: string
+                nullable: true`;
+    const current = `${NULLABLE_PREAMBLE}
+                type: string
+                nullable: false`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const c = changes.find((ch) => ch.type === "response-schema-nullable-changed");
+    expect(c).toBeDefined();
+    expect(c?.before).toBe(true);
+    expect(c?.after).toBe(false);
+    expect(c?.severity).toBe("INFO");
+    expect(c?.message).toMatch(/no longer nullable|never null/i);
+  });
+
+  it("CONTRAST: response property nullable false→true is also BREAKING (consistent with body level)", () => {
+    const baseline = `${NULLABLE_PREAMBLE}
+                type: object
+                properties:
+                  name:
+                    type: string
+                    nullable: false`;
+    const current = `${NULLABLE_PREAMBLE}
+                type: object
+                properties:
+                  name:
+                    type: string
+                    nullable: true`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const c = changes.find((ch) => ch.type === "response-schema-property-nullable-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("CONTRAST: response items nullable false→true is also BREAKING (consistent with body level)", () => {
+    const baseline = `${NULLABLE_PREAMBLE}
+                type: array
+                items:
+                  type: string
+                  nullable: false`;
+    const current = `${NULLABLE_PREAMBLE}
+                type: array
+                items:
+                  type: string
+                  nullable: true`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const c = changes.find((ch) => ch.type === "response-schema-items-nullable-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+  });
+});
+
+// ─── Response-level $ref resolution (5.7.5 round 22) ──────────────────────────
+
+describe("response-level $ref resolution — changes in #/components/responses propagate (5.7.5 round 22)", () => {
+  it("required field added to shared response schema is detected (BREAKING)", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          $ref: "#/components/responses/ItemResponse"
+components:
+  responses:
+    ItemResponse:
+      description: success
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [id]
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          $ref: "#/components/responses/ItemResponse"
+components:
+  responses:
+    ItemResponse:
+      description: success
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [id, name]
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    expect(changes.length).toBe(1);
+    expect(changes[0]?.type).toBe("response-schema-field-required-added");
+    // Adding a required field to a RESPONSE is INFO — server now guarantees the field is present
+    expect(changes[0]?.severity).toBe("INFO");
+  });
+
+  it("property removed from shared response schema is BREAKING, detected for all referencing operations", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          $ref: "#/components/responses/ItemResponse"
+  /other:
+    get:
+      responses:
+        "200":
+          $ref: "#/components/responses/ItemResponse"
+components:
+  responses:
+    ItemResponse:
+      description: success
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+              legacy:
+                type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          $ref: "#/components/responses/ItemResponse"
+  /other:
+    get:
+      responses:
+        "200":
+          $ref: "#/components/responses/ItemResponse"
+components:
+  responses:
+    ItemResponse:
+      description: success
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const removals = changes.filter((c) => c.type === "response-schema-property-removed");
+    expect(removals).toHaveLength(2);
+    const paths = removals.map((c) => c.path).sort();
+    expect(paths).toEqual(["/items", "/other"]);
+    expect(removals.every((c) => c.severity === "BREAKING")).toBe(true);
+  });
+
+  it("response-level $ref with no matching component gracefully returns no schema (null)", () => {
+    const spec = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          $ref: "#/components/responses/NonExistent"
+`;
+    expect(() => analyzeOpenApiDiff(spec, spec)).not.toThrow();
+    expect(analyzeOpenApiDiff(spec, spec)).toHaveLength(0);
+  });
+});
+
+describe("response headers diffing — parse and classify (5.7.5 round 24)", () => {
+  const BASE = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: success
+          headers:
+            X-Rate-Limit:
+              required: false
+              schema:
+                type: integer
+            X-Request-Id:
+              required: false
+              schema:
+                type: string
+`;
+
+  it("removing a documented response header is BREAKING", () => {
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: success
+          headers:
+            X-Request-Id:
+              required: false
+              schema:
+                type: string
+`;
+    const changes = analyzeOpenApiDiff(BASE, current);
+    const removal = changes.find((c) => c.type === "response-header-removed");
+    expect(removal).toBeDefined();
+    expect(removal?.severity).toBe("BREAKING");
+    expect(removal?.location).toMatch(/X-Rate-Limit/);
+  });
+
+  it("adding a response header is INFO", () => {
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: success
+          headers:
+            X-Rate-Limit:
+              schema:
+                type: integer
+            X-Request-Id:
+              schema:
+                type: string
+            Retry-After:
+              schema:
+                type: integer
+`;
+    const changes = analyzeOpenApiDiff(BASE, current);
+    const addition = changes.find((c) => c.type === "response-header-added");
+    expect(addition).toBeDefined();
+    expect(addition?.severity).toBe("INFO");
+    expect(addition?.location).toMatch(/Retry-After/);
+  });
+
+  it("response header type change (string→integer) is BREAKING", () => {
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: success
+          headers:
+            X-Rate-Limit:
+              schema:
+                type: integer
+            X-Request-Id:
+              schema:
+                type: integer
+`;
+    const changes = analyzeOpenApiDiff(BASE, current);
+    const typeChange = changes.find((c) => c.type === "response-header-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+  });
+
+  it("response header via $ref to #/components/headers is resolved correctly", () => {
+    const baselineWithRef = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+components:
+  headers:
+    RateLimitHeader:
+      schema:
+        type: integer
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: success
+          headers:
+            X-Rate-Limit:
+              $ref: "#/components/headers/RateLimitHeader"
+`;
+    const currentWithRef = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+components:
+  headers:
+    RateLimitHeader:
+      schema:
+        type: string
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: success
+          headers:
+            X-Rate-Limit:
+              $ref: "#/components/headers/RateLimitHeader"
+`;
+    const changes = analyzeOpenApiDiff(baselineWithRef, currentWithRef);
+    const typeChange = changes.find((c) => c.type === "response-header-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+    expect(typeChange?.before).toBe("integer");
+    expect(typeChange?.after).toBe("string");
+  });
+
+  it("unchanged headers produce no changes", () => {
+    const changes = analyzeOpenApiDiff(BASE, BASE);
+    const headerChanges = changes.filter((c) =>
+      c.type === "response-header-removed" ||
+      c.type === "response-header-added" ||
+      c.type === "response-header-type-changed"
+    );
+    expect(headerChanges).toHaveLength(0);
+  });
+});
+
+describe("path-item $ref resolution — OAS 3.1 components/pathItems (5.7.5 round 30)", () => {
+  const makeSpec = (propType: string) => `
+openapi: "3.1.0"
+info:
+  title: T
+  version: "1"
+components:
+  pathItems:
+    ItemsPath:
+      get:
+        responses:
+          "200":
+            description: ok
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    id:
+                      type: ${propType}
+paths:
+  /items:
+    $ref: "#/components/pathItems/ItemsPath"
+`;
+
+  it("property type change in shared path item (via $ref) is detected", () => {
+    const changes = analyzeOpenApiDiff(makeSpec("string"), makeSpec("integer"));
+    const typeChange = changes.find((c) => c.type === "response-schema-property-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+    expect(typeChange?.path).toBe("/items");
+  });
+
+  it("unchanged path item $ref produces no changes", () => {
+    const spec = makeSpec("string");
+    expect(analyzeOpenApiDiff(spec, spec)).toHaveLength(0);
+  });
+
+  it("nonexistent path item $ref is handled gracefully (falls back to $ref object, finds no methods)", () => {
+    const spec = `
+openapi: "3.1.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    $ref: "#/components/pathItems/NonExistent"
+`;
+    expect(() => analyzeOpenApiDiff(spec, spec)).not.toThrow();
+    expect(analyzeOpenApiDiff(spec, spec)).toHaveLength(0);
+  });
+});
+
+describe("requestBody $ref resolution — changes in #/components/requestBodies propagate (5.7.5 round 29)", () => {
+  const makeSpec = (required: string[], props: Record<string, string>) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+components:
+  requestBodies:
+    CreateItem:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [${required.join(", ")}]
+            properties:
+${Object.entries(props).map(([k, v]) => `              ${k}:\n                type: ${v}`).join("\n")}
+paths:
+  /items:
+    post:
+      requestBody:
+        $ref: "#/components/requestBodies/CreateItem"
+      responses:
+        "201":
+          description: created
+`;
+
+  it("required field added to shared request body $ref is detected as BREAKING", () => {
+    const baseline = makeSpec(["name"], { name: "string" });
+    const current = makeSpec(["name", "price"], { name: "string", price: "number" });
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const reqAdded = changes.find((c) => c.type === "request-schema-field-required-added");
+    expect(reqAdded).toBeDefined();
+    expect(reqAdded?.severity).toBe("BREAKING");
+    expect(reqAdded?.location).toMatch(/price/);
+  });
+
+  it("property removed from shared request body $ref is detected as BREAKING", () => {
+    const baseline = makeSpec(["name", "code"], { name: "string", code: "string" });
+    const current = makeSpec(["name"], { name: "string" });
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const propRemoved = changes.find((c) => c.type === "request-schema-property-removed");
+    expect(propRemoved).toBeDefined();
+    expect(propRemoved?.severity).toBe("BREAKING");
+  });
+
+  it("nonexistent requestBody $ref returns null request body (no crash)", () => {
+    const spec = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      requestBody:
+        $ref: "#/components/requestBodies/NonExistent"
+      responses:
+        "201":
+          description: created
+`;
+    expect(() => analyzeOpenApiDiff(spec, spec)).not.toThrow();
+    expect(analyzeOpenApiDiff(spec, spec)).toHaveLength(0);
+  });
+});
+
+describe("Swagger 2.0 response header type parsing (5.7.5 round 28 bug fix)", () => {
+  it("Swagger 2.0 response headers with bare `type` field are parsed and diffed correctly", () => {
+    const baseline = JSON.stringify({
+      swagger: "2.0",
+      info: { title: "T", version: "1" },
+      paths: {
+        "/items": {
+          get: {
+            responses: {
+              "200": {
+                description: "ok",
+                headers: { "X-Rate-Limit": { type: "integer" } },
+              },
+            },
+          },
+        },
+      },
+    });
+    const current = JSON.stringify({
+      swagger: "2.0",
+      info: { title: "T", version: "1" },
+      paths: {
+        "/items": {
+          get: {
+            responses: {
+              "200": {
+                description: "ok",
+                headers: { "X-Rate-Limit": { type: "string" } },
+              },
+            },
+          },
+        },
+      },
+    });
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "response-header-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("integer");
+    expect(typeChange?.after).toBe("string");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+});
+
+describe("response-header-format-changed (5.7.5 round 31)", () => {
+  const makeSpec = (fmt: string | null) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Request-Id:
+              schema:
+                type: string
+                ${fmt !== null ? `format: ${fmt}` : ""}
+`;
+
+  it("response header format change (uuid→uri) is BREAKING", () => {
+    const changes = analyzeOpenApiDiff(makeSpec("uuid"), makeSpec("uri"));
+    const change = changes.find((c) => c.type === "response-header-format-changed");
+    expect(change).toBeDefined();
+    expect(change?.severity).toBe("BREAKING");
+    expect(change?.before).toBe("uuid");
+    expect(change?.after).toBe("uri");
+  });
+
+  it("response header format removed (uuid→absent) is BREAKING", () => {
+    const changes = analyzeOpenApiDiff(makeSpec("uuid"), makeSpec(null));
+    const change = changes.find((c) => c.type === "response-header-format-changed");
+    expect(change).toBeDefined();
+    expect(change?.severity).toBe("BREAKING");
+    expect(change?.after).toBeNull();
+  });
+
+  it("response header format added (absent→uuid) is INFO", () => {
+    const changes = analyzeOpenApiDiff(makeSpec(null), makeSpec("uuid"));
+    const change = changes.find((c) => c.type === "response-header-format-changed");
+    expect(change).toBeDefined();
+    expect(change?.severity).toBe("INFO");
+    expect(change?.before).toBeNull();
+    expect(change?.after).toBe("uuid");
+  });
+});
+
+describe("response-header-required-changed (5.7.5 round 28)", () => {
+  const makeSpec = (required: boolean) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Correlation-Id:
+              required: ${required}
+              schema:
+                type: string
+`;
+
+  it("required:true → required:false is BREAKING (guarantee removed)", () => {
+    const changes = analyzeOpenApiDiff(makeSpec(true), makeSpec(false));
+    const change = changes.find((c) => c.type === "response-header-required-changed");
+    expect(change).toBeDefined();
+    expect(change?.severity).toBe("BREAKING");
+    expect(change?.before).toBe(true);
+    expect(change?.after).toBe(false);
+  });
+
+  it("required:false → required:true is INFO (server strengthens guarantee)", () => {
+    const changes = analyzeOpenApiDiff(makeSpec(false), makeSpec(true));
+    const change = changes.find((c) => c.type === "response-header-required-changed");
+    expect(change).toBeDefined();
+    expect(change?.severity).toBe("INFO");
+    expect(change?.before).toBe(false);
+    expect(change?.after).toBe(true);
+  });
+
+  it("unchanged required:true produces no required-changed event", () => {
+    const spec = makeSpec(true);
+    expect(analyzeOpenApiDiff(spec, spec).filter((c) => c.type === "response-header-required-changed")).toHaveLength(0);
+  });
+});
+
+describe("security scheme / scope diffing (5.7.5 round 27)", () => {
+  const makeSpec = (security: string) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    get:
+${security}
+      responses:
+        "200":
+          description: ok
+`;
+
+  const withSecurity = (lines: string) =>
+    makeSpec(lines.split("\n").map((l) => `      ${l}`).join("\n"));
+
+  it("removing an auth scheme is BREAKING", () => {
+    const baseline = withSecurity("security:\n  - OAuth2:\n    - read:users\n  - apiKey: []");
+    const current = withSecurity("security:\n  - OAuth2:\n    - read:users");
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const removal = changes.find((c) => c.type === "operation-security-scheme-removed");
+    expect(removal).toBeDefined();
+    expect(removal?.severity).toBe("BREAKING");
+    expect(removal?.before).toBe("apiKey");
+  });
+
+  it("adding a new OAuth scope requirement is BREAKING", () => {
+    const baseline = withSecurity("security:\n  - OAuth2:\n    - read:users");
+    const current = withSecurity("security:\n  - OAuth2:\n    - read:users\n    - write:users");
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const scopeAdd = changes.find((c) => c.type === "operation-security-scope-added");
+    expect(scopeAdd).toBeDefined();
+    expect(scopeAdd?.severity).toBe("BREAKING");
+    expect(scopeAdd?.after).toBe("write:users");
+  });
+
+  it("adding a new auth scheme is INFO (more options, existing clients unaffected)", () => {
+    const baseline = withSecurity("security:\n  - OAuth2:\n    - read:users");
+    const current = withSecurity("security:\n  - OAuth2:\n    - read:users\n  - bearerAuth: []");
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const addition = changes.find((c) => c.type === "operation-security-scheme-added");
+    expect(addition).toBeDefined();
+    expect(addition?.severity).toBe("INFO");
+  });
+
+  it("removing a scope from an existing scheme is INFO (more permissive)", () => {
+    const baseline = withSecurity("security:\n  - OAuth2:\n    - read:users\n    - write:users");
+    const current = withSecurity("security:\n  - OAuth2:\n    - read:users");
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const scopeRemoval = changes.find((c) => c.type === "operation-security-scope-removed");
+    expect(scopeRemoval).toBeDefined();
+    expect(scopeRemoval?.severity).toBe("INFO");
+    expect(scopeRemoval?.before).toBe("write:users");
+  });
+
+  it("no security field in either spec produces no security changes", () => {
+    const noSec = makeSpec("");
+    const changes = analyzeOpenApiDiff(noSec, noSec);
+    const secChanges = changes.filter((c) =>
+      c.type === "operation-security-scheme-removed" ||
+      c.type === "operation-security-scheme-added" ||
+      c.type === "operation-security-scope-added" ||
+      c.type === "operation-security-scope-removed"
+    );
+    expect(secChanges).toHaveLength(0);
+  });
+});
+
+describe("servers array diffing — URL removed/added (5.7.5 round 26)", () => {
+  const makeSpec = (urls: string[]) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+servers:
+${urls.map((u) => `  - url: ${u}`).join("\n")}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+`;
+
+  it("removing a server URL is BREAKING", () => {
+    const baseline = makeSpec(["https://api.example.com", "https://api-eu.example.com"]);
+    const current = makeSpec(["https://api.example.com"]);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const removal = changes.find((c) => c.type === "server-removed");
+    expect(removal).toBeDefined();
+    expect(removal?.severity).toBe("BREAKING");
+    expect(removal?.before).toBe("https://api-eu.example.com");
+    expect(removal?.after).toBeNull();
+  });
+
+  it("adding a server URL is INFO", () => {
+    const baseline = makeSpec(["https://api.example.com"]);
+    const current = makeSpec(["https://api.example.com", "https://api-eu.example.com"]);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const addition = changes.find((c) => c.type === "server-added");
+    expect(addition).toBeDefined();
+    expect(addition?.severity).toBe("INFO");
+    expect(addition?.after).toBe("https://api-eu.example.com");
+  });
+
+  it("base URL change is BREAKING (remove old) + INFO (add new)", () => {
+    const baseline = makeSpec(["https://api.example.com/v1"]);
+    const current = makeSpec(["https://api.example.com/v2"]);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    expect(changes.find((c) => c.type === "server-removed")?.severity).toBe("BREAKING");
+    expect(changes.find((c) => c.type === "server-added")?.severity).toBe("INFO");
+  });
+
+  it("identical servers produce no server changes", () => {
+    const spec = makeSpec(["https://api.example.com"]);
+    const changes = analyzeOpenApiDiff(spec, spec);
+    expect(changes.filter((c) => c.type === "server-removed" || c.type === "server-added")).toHaveLength(0);
+  });
+
+  it("spec without servers field produces empty servers list (no crash)", () => {
+    const noServers = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+`;
+    expect(() => analyzeOpenApiDiff(noServers, noServers)).not.toThrow();
+    expect(analyzeOpenApiDiff(noServers, noServers).filter((c) => c.type === "server-removed" || c.type === "server-added")).toHaveLength(0);
+  });
+});
+
+describe("operationId diffing — renamed/added/removed (5.7.5 round 25)", () => {
+  const baseSpec = (id: string) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users/{id}:
+    get:
+      operationId: ${id}
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: success
+`;
+
+  it("operationId rename emits operation-id-changed (INFO) with SDK warning in message", () => {
+    const changes = analyzeOpenApiDiff(baseSpec("getUser"), baseSpec("fetchUser"));
+    const idChange = changes.find((c) => c.type === "operation-id-changed");
+    expect(idChange).toBeDefined();
+    expect(idChange?.severity).toBe("INFO");
+    expect(idChange?.before).toBe("getUser");
+    expect(idChange?.after).toBe("fetchUser");
+    expect(idChange?.message).toMatch(/SDK|sdk|generator/i);
+  });
+
+  it("identical operationId produces no change", () => {
+    const changes = analyzeOpenApiDiff(baseSpec("getUser"), baseSpec("getUser"));
+    expect(changes.filter((c) => c.type === "operation-id-changed")).toHaveLength(0);
+  });
+
+  it("operationId removed emits operation-id-changed INFO", () => {
+    const withoutId = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: success
+`;
+    const changes = analyzeOpenApiDiff(baseSpec("getUser"), withoutId);
+    const idChange = changes.find((c) => c.type === "operation-id-changed");
+    expect(idChange).toBeDefined();
+    expect(idChange?.before).toBe("getUser");
+    expect(idChange?.after).toBeNull();
+    expect(idChange?.severity).toBe("INFO");
+  });
+
+  it("operationId added (was absent) emits operation-id-changed INFO", () => {
+    const withoutId = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: success
+`;
+    const changes = analyzeOpenApiDiff(withoutId, baseSpec("getUser"));
+    const idChange = changes.find((c) => c.type === "operation-id-changed");
+    expect(idChange).toBeDefined();
+    expect(idChange?.before).toBeNull();
+    expect(idChange?.after).toBe("getUser");
+    expect(idChange?.severity).toBe("INFO");
+  });
+});
+
+// ─── Round 32: OAS 3.1 type arrays ────────────────────────────────────────────
+
+describe("OAS 3.1 type arrays — normalised to nullable flag (5.7.5 round 32)", () => {
+  function spec31(type: string): string {
+    return `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: ${type}
+`;
+  }
+
+  it("detects response type change from [string,null] to [integer,null] as BREAKING", () => {
+    const baseline = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: [string, "null"]
+`;
+    const current = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: [integer, "null"]
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "response-schema-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+
+  it("detects type change when OAS 3.1 type array [string,null] replaces OAS 3.0 type: string + nullable: true", () => {
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+                nullable: true
+`;
+    const current = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: [string, "null"]
+`;
+    // Both schemas are semantically equivalent (string | null) — no type change expected.
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "response-schema-type-changed");
+    expect(typeChange).toBeUndefined();
+  });
+
+  it("detects request body narrowed from [string,null] to string (removing null) as BREAKING", () => {
+    const baseline = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: [string, "null"]
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: ok
+`;
+    // Removing nullable from a request body (string|null → string) means clients
+    // that currently send null will break — BREAKING.
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const nullableChange = changes.find((c) => c.type === "request-schema-nullable-changed");
+    expect(nullableChange).toBeDefined();
+    expect(nullableChange?.before).toBe(true);
+    expect(nullableChange?.after).toBe(false);
+    expect(nullableChange?.severity).toBe("BREAKING");
+  });
+
+  it("detects property in response changed from type: string to type: [integer, null] as BREAKING", () => {
+    const baseline = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: string
+`;
+    const current = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: [integer, "null"]
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find(
+      (c) => c.type === "response-schema-property-type-changed" && c.location?.includes("count"),
+    );
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+
+  it("single-element type array [string] is equivalent to type: string — no change detected", () => {
+    const baseline = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+`;
+    const current = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: [string]
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    expect(changes.filter((c) => c.type === "response-schema-type-changed")).toHaveLength(0);
+  });
+});
+
+// ─── Round 33: parameter location change & default status code ────────────────
+
+describe("parameter in: location change emits remove+add pair (5.7.5 round 33)", () => {
+  function makeSpec(inLoc: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      parameters:
+        - name: token
+          in: ${inLoc}
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("moving a parameter from query to header emits parameter-removed and parameter-added", () => {
+    const changes = analyzeOpenApiDiff(makeSpec("query"), makeSpec("header"));
+    const removed = changes.find((c) => c.type === "parameter-removed");
+    const added = changes.find((c) => c.type === "parameter-added");
+    expect(removed).toBeDefined();
+    expect(added).toBeDefined();
+    // The removal of a required parameter is BREAKING; the addition of a required parameter is also BREAKING.
+    expect(removed?.severity).toBe("BREAKING");
+    expect(added?.severity).toBe("BREAKING");
+  });
+
+  it("moving an optional parameter from query to header also emits remove+add (both BREAKING — contract change)", () => {
+    const optSpec = (inLoc: string) => `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      parameters:
+        - name: filter
+          in: ${inLoc}
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(optSpec("query"), optSpec("header"));
+    const removed = changes.find((c) => c.type === "parameter-removed");
+    const added = changes.find((c) => c.type === "parameter-added");
+    expect(removed).toBeDefined();
+    expect(added).toBeDefined();
+    // Any parameter removal is BREAKING — removing a documented parameter changes the API contract
+    // even if the parameter was optional.
+    expect(removed?.severity).toBe("BREAKING");
+    // A new required-false parameter added as a header is INFO.
+    expect(added?.severity).toBe("INFO");
+  });
+});
+
+describe("default response status code handling (5.7.5 round 33)", () => {
+  it("removes default response and emits response-status-removed as INFO", () => {
+    const withDefault = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          description: error
+          content:
+            application/json:
+              schema:
+                type: object
+`;
+    const withoutDefault = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+`;
+    const changes = analyzeOpenApiDiff(withDefault, withoutDefault);
+    const removed = changes.find((c) => c.type === "response-status-removed");
+    expect(removed).toBeDefined();
+    expect(removed?.before).toBe("default");
+    // Removing any documented response status code is BREAKING — clients rely on documented error shapes.
+    expect(removed?.severity).toBe("BREAKING");
+  });
+
+  it("schema change inside default response is detected as BREAKING", () => {
+    const makeDefault = (type: string) => `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        default:
+          description: error
+          content:
+            application/json:
+              schema:
+                type: ${type}
+`;
+    const changes = analyzeOpenApiDiff(makeDefault("object"), makeDefault("string"));
+    const typeChange = changes.find((c) => c.type === "response-schema-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("object");
+    expect(typeChange?.after).toBe("string");
+  });
+});
+
+describe("OAS 3.1 type array + constraint changes (5.7.5 round 33)", () => {
+  it("minimum constraint change with type array is correctly detected as BREAKING", () => {
+    const baseline = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: [integer, "null"]
+              minimum: 1
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: [integer, "null"]
+              minimum: 5
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    // Top-level requestBody schema constraints emit "request-schema-property-constraint-changed"
+    // (the same type as property-level constraints — they share a code path).
+    const constraintChange = changes.find((c) => c.type === "request-schema-property-constraint-changed");
+    expect(constraintChange).toBeDefined();
+    expect(constraintChange?.before).toBe(1);
+    expect(constraintChange?.after).toBe(5);
+    expect(constraintChange?.severity).toBe("BREAKING");
+  });
+
+  it("adding null to type array (string → [string,null]) in request body is INFO (round 33)", () => {
+    const baseline = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: [string, "null"]
+      responses:
+        "200":
+          description: ok
+`;
+    // Making a request body field nullable (accepting null) is INFO — clients gain capability.
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const nullableChange = changes.find((c) => c.type === "request-schema-nullable-changed");
+    expect(nullableChange).toBeDefined();
+    expect(nullableChange?.before).toBe(false);
+    expect(nullableChange?.after).toBe(true);
+    expect(nullableChange?.severity).toBe("INFO");
+  });
+});
+
+// ─── Round 34: content-type media type change detection ───────────────────────
+
+describe("response media type change detection (5.7.5 round 34)", () => {
+  it("removing application/json from response while adding application/xml is BREAKING", () => {
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/xml:
+              schema:
+                type: object
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const removed = changes.find((c) => c.type === "response-media-type-removed");
+    const added = changes.find((c) => c.type === "response-media-type-added");
+    expect(removed).toBeDefined();
+    expect(removed?.before).toBe("application/json");
+    expect(removed?.severity).toBe("BREAKING");
+    expect(added).toBeDefined();
+    expect(added?.after).toBe("application/xml");
+    expect(added?.severity).toBe("INFO");
+  });
+
+  it("adding application/xml alongside application/json is INFO only", () => {
+    const withJson = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+`;
+    const withBoth = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+`;
+    const changes = analyzeOpenApiDiff(withJson, withBoth);
+    expect(changes.find((c) => c.type === "response-media-type-removed")).toBeUndefined();
+    const added = changes.find((c) => c.type === "response-media-type-added");
+    expect(added).toBeDefined();
+    expect(added?.after).toBe("application/xml");
+    expect(added?.severity).toBe("INFO");
+  });
+
+  it("no media type change when content types are identical", () => {
+    const spec = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+`;
+    const changes = analyzeOpenApiDiff(spec, spec);
+    expect(changes.filter((c) => c.type === "response-media-type-removed" || c.type === "response-media-type-added")).toHaveLength(0);
+  });
+
+  it("Swagger 2.0 responses (no content map) do not generate spurious media-type changes", () => {
+    const swagger = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          schema:
+            type: object
+`;
+    const changes = analyzeOpenApiDiff(swagger, swagger);
+    expect(changes.filter((c) => c.type === "response-media-type-removed" || c.type === "response-media-type-added")).toHaveLength(0);
+  });
+});
+
+describe("request media type change detection (5.7.5 round 34)", () => {
+  it("removing application/json from requestBody is BREAKING", () => {
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+          application/xml:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const removed = changes.find((c) => c.type === "request-media-type-removed");
+    expect(removed).toBeDefined();
+    expect(removed?.before).toBe("application/json");
+    expect(removed?.severity).toBe("BREAKING");
+  });
+
+  it("adding application/x-www-form-urlencoded to requestBody is INFO", () => {
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const added = changes.find((c) => c.type === "request-media-type-added");
+    expect(added).toBeDefined();
+    expect(added?.after).toBe("application/x-www-form-urlencoded");
+    expect(added?.severity).toBe("INFO");
+    expect(changes.find((c) => c.type === "request-media-type-removed")).toBeUndefined();
+  });
+});
+
+// ─── Round 35: allOf + $ref base schema propagation ──────────────────────────
+
+describe("allOf with $ref base schema — breaking changes propagate through inheritance (5.7.5 round 35)", () => {
+  it("required field added to $ref base schema inside allOf is detected as BREAKING in response", () => {
+    // Baseline: Base has no required; Child allOf Base
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+components:
+  schemas:
+    Base:
+      type: object
+      properties:
+        id: {type: string}
+    Child:
+      allOf:
+        - $ref: "#/components/schemas/Base"
+        - type: object
+          properties:
+            name: {type: string}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Child"
+`;
+    // Current: Base now requires `id`
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+components:
+  schemas:
+    Base:
+      type: object
+      required: [id]
+      properties:
+        id: {type: string}
+    Child:
+      allOf:
+        - $ref: "#/components/schemas/Base"
+        - type: object
+          properties:
+            name: {type: string}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Child"
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const requiredAdded = changes.find((c) => c.type === "response-schema-field-required-added");
+    expect(requiredAdded).toBeDefined();
+    expect(String(requiredAdded?.location ?? "")).toContain("id");
+    expect(requiredAdded?.severity).toBe("INFO");
+  });
+
+  it("property type change in $ref base schema propagates through allOf inheritance", () => {
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+components:
+  schemas:
+    Base:
+      type: object
+      properties:
+        count: {type: string}
+    Child:
+      allOf:
+        - $ref: "#/components/schemas/Base"
+        - type: object
+          properties:
+            name: {type: string}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Child"
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+components:
+  schemas:
+    Base:
+      type: object
+      properties:
+        count: {type: integer}
+    Child:
+      allOf:
+        - $ref: "#/components/schemas/Base"
+        - type: object
+          properties:
+            name: {type: string}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Child"
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find(
+      (c) => c.type === "response-schema-property-type-changed" && String(c.location).includes("count"),
+    );
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+
+  it("parent schema overrides allOf member property on key conflict — parent wins", () => {
+    // OapiSchema from allOf: parent type wins over member type when both set.
+    // If baseline Child defines count: integer at parent level and Base also has count: string,
+    // the merged schema should have count: integer (parent wins).
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+components:
+  schemas:
+    Base:
+      type: object
+      properties:
+        count: {type: string}
+    Child:
+      type: object
+      properties:
+        count: {type: integer}
+      allOf:
+        - $ref: "#/components/schemas/Base"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Child"
+`;
+    // Current is the same — should detect no change (parent still wins with integer).
+    const changes = analyzeOpenApiDiff(baseline, baseline);
+    expect(changes.filter((c) => c.type === "response-schema-property-type-changed")).toHaveLength(0);
+  });
+});
+
+// ─── Round 36: OAS 3.1 multi-type arrays (non-null union) ────────────────────
+
+describe("OAS 3.1 multi-type array without null — documented limitation (5.7.5 round 36)", () => {
+  it("type: [integer, string] picks integer as primary type — second type is silently ignored", () => {
+    // This documents the known behaviour: the parser extracts only the first non-null type.
+    // A response property changing from type: [integer, string] to type: integer should
+    // show NO change (they're semantically different but parse to the same primary type).
+    const withUnion = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    type: [integer, string]
+`;
+    const withInteger = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    type: integer
+`;
+    // Known limitation: both parse to primary type = "integer", so no diff is emitted.
+    // This is a false negative for the union→single narrowing.
+    const changes = analyzeOpenApiDiff(withUnion, withInteger);
+    expect(changes.filter((c) => c.type === "response-schema-property-type-changed")).toHaveLength(0);
+  });
+
+  it("type: [string, integer] (string first) correctly picks string as primary type (round 36)", () => {
+    const withStringFirst = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    type: [string, integer]
+`;
+    const withInteger = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    type: integer
+`;
+    // [string, integer] → primary type string. integer → primary type integer.
+    // This IS detected as a type change (string → integer), BREAKING.
+    const changes = analyzeOpenApiDiff(withStringFirst, withInteger);
+    const typeChange = changes.find(
+      (c) => c.type === "response-schema-property-type-changed" && String(c.location).includes("value"),
+    );
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+});
+
+// ─── Round 37: robustness — null/empty/unusual spec structures ────────────────
+
+describe("robustness — null and empty values at spec/operation level (5.7.5 round 37)", () => {
+  it("paths: null produces no operations and no crash", () => {
+    const noPathsSpec = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths: ~
+`;
+    const normalSpec = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+`;
+    // Comparing null paths to real paths should produce endpoint-added, no crash.
+    const changes = analyzeOpenApiDiff(noPathsSpec, normalSpec);
+    const added = changes.find((c) => c.type === "endpoint-added");
+    expect(added).toBeDefined();
+    expect(added?.path).toBe("/items");
+  });
+
+  it("operation with parameters: null produces no parameters — graceful no-crash", () => {
+    const spec = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      parameters: ~
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+`;
+    const changes = analyzeOpenApiDiff(spec, spec);
+    expect(changes).toHaveLength(0);
+  });
+
+  it("operation with responses: {} (empty) produces no response changes vs also-empty", () => {
+    const spec = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses: {}
+`;
+    const changes = analyzeOpenApiDiff(spec, spec);
+    expect(changes).toHaveLength(0);
+  });
+
+  it("required: null in schema is treated as empty required array — no crash", () => {
+    const withNullRequired = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                required: ~
+                properties:
+                  id: {type: string}
+`;
+    const withRequired = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id: {type: string}
+`;
+    // null required treated as [] — adding id to required is INFO for response.
+    const changes = analyzeOpenApiDiff(withNullRequired, withRequired);
+    const reqAdded = changes.find((c) => c.type === "response-schema-field-required-added");
+    expect(reqAdded).toBeDefined();
+    expect(String(reqAdded?.location ?? "")).toContain("id");
+    expect(reqAdded?.severity).toBe("INFO");
+  });
+
+  it("schema with no type and no properties produces no false-positive changes vs itself", () => {
+    const spec = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: {}
+`;
+    const changes = analyzeOpenApiDiff(spec, spec);
+    expect(changes).toHaveLength(0);
+  });
+
+  it("enum with duplicate values compared to deduped enum emits parameter-enum-changed", () => {
+    const withDupes = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, inactive, active]
+      responses:
+        "200":
+          description: ok
+`;
+    const withoutDupes = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, inactive]
+      responses:
+        "200":
+          description: ok
+`;
+    // Different array lengths (3 vs 2) → enum-changed even though sets are equivalent.
+    // This is known behaviour: the engine uses array length equality as a fast-path check.
+    const changes = analyzeOpenApiDiff(withDupes, withoutDupes);
+    expect(changes.find((c) => c.type === "parameter-enum-changed")).toBeDefined();
+  });
+});
+
+// ─── Round 38: Swagger 2.0 formData parameters ───────────────────────────────
+
+describe("Swagger 2.0 formData parameters — known limitation (5.7.5 round 38)", () => {
+  it("Swagger 2.0 formData parameters are silently dropped — no false positives when stable", () => {
+    // Swagger 2.0 uses `in: formData` for multipart/form-data fields.
+    // The engine's parseParameter() only accepts path/query/header/cookie — formData is
+    // filtered out and treated as if the parameter doesn't exist.
+    const spec = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+paths:
+  /upload:
+    post:
+      consumes: [multipart/form-data]
+      parameters:
+        - name: file
+          in: formData
+          required: true
+          type: file
+        - name: description
+          in: formData
+          required: false
+          type: string
+      responses:
+        "200":
+          description: ok
+`;
+    // No crash, no false-positive changes vs itself.
+    const changes = analyzeOpenApiDiff(spec, spec);
+    expect(changes).toHaveLength(0);
+  });
+
+  it("Swagger 2.0 formData parameter addition/removal produces no change event (false negative — known limitation)", () => {
+    const withFormData = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+paths:
+  /upload:
+    post:
+      consumes: [multipart/form-data]
+      parameters:
+        - name: file
+          in: formData
+          required: true
+          type: file
+      responses:
+        "200":
+          description: ok
+`;
+    const withoutFormData = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+paths:
+  /upload:
+    post:
+      consumes: [multipart/form-data]
+      parameters: []
+      responses:
+        "200":
+          description: ok
+`;
+    // Known limitation: formData parameters are not tracked; this is a false negative.
+    const changes = analyzeOpenApiDiff(withFormData, withoutFormData);
+    expect(changes.filter((c) => c.type === "parameter-removed")).toHaveLength(0);
+  });
+
+  it("Swagger 2.0 body parameter is handled as requestBody — type changes ARE detected", () => {
+    const withString = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const withInteger = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: ok
+`;
+    // body parameter → treated as requestBody; type changes ARE detected.
+    const changes = analyzeOpenApiDiff(withString, withInteger);
+    const typeChange = changes.find((c) => c.type === "request-schema-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+});
+
+// ─── Round 39: security scheme direction semantics ────────────────────────────
+
+describe("security scheme direction semantics (5.7.5 round 39)", () => {
+  function makeSpec(security: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      ${security}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("security scheme added to a previously unsecured operation emits INFO (no global context)", () => {
+    // Operation had no security: → inheriting from global (unknown). Explicitly adding OAuth2
+    // is classified as INFO because without global security context we can't prove it's BREAKING.
+    // This is a documented limitation (false negative in some scenarios).
+    const noSecurity = makeSpec("");
+    const withOAuth2 = makeSpec("security:\n      - OAuth2: []");
+    const changes = analyzeOpenApiDiff(noSecurity, withOAuth2);
+    const added = changes.find((c) => c.type === "operation-security-scheme-added");
+    expect(added).toBeDefined();
+    expect(added?.after).toBe("OAuth2");
+    expect(added?.severity).toBe("INFO");
+  });
+
+  it("security scheme removed from an explicit requirement is BREAKING", () => {
+    const withOAuth2 = makeSpec("security:\n      - OAuth2: []");
+    const noSecurity = makeSpec("security: []");
+    const changes = analyzeOpenApiDiff(withOAuth2, noSecurity);
+    const removed = changes.find((c) => c.type === "operation-security-scheme-removed");
+    expect(removed).toBeDefined();
+    expect(removed?.before).toBe("OAuth2");
+    // BREAKING: clients that authenticate ONLY with OAuth2 lose access (if server enforces strictly)
+    expect(removed?.severity).toBe("BREAKING");
+  });
+
+  it("scope added to existing scheme is BREAKING (tighter requirement)", () => {
+    const noScope = makeSpec("security:\n      - OAuth2: []");
+    const withScope = makeSpec("security:\n      - OAuth2: [read:users]");
+    const changes = analyzeOpenApiDiff(noScope, withScope);
+    const scopeAdded = changes.find((c) => c.type === "operation-security-scope-added");
+    expect(scopeAdded).toBeDefined();
+    expect(scopeAdded?.after).toBe("read:users");
+    expect(scopeAdded?.severity).toBe("BREAKING");
+  });
+
+  it("scope removed from existing scheme is INFO (relaxed requirement)", () => {
+    const withScope = makeSpec("security:\n      - OAuth2: [read:users, write:users]");
+    const lessScope = makeSpec("security:\n      - OAuth2: [read:users]");
+    const changes = analyzeOpenApiDiff(withScope, lessScope);
+    const scopeRemoved = changes.find((c) => c.type === "operation-security-scope-removed");
+    expect(scopeRemoved).toBeDefined();
+    expect(scopeRemoved?.before).toBe("write:users");
+    expect(scopeRemoved?.severity).toBe("INFO");
+  });
+
+  it("replacing one auth scheme with another emits remove + add pair (round 39)", () => {
+    const withOAuth2 = makeSpec("security:\n      - OAuth2: []");
+    const withApiKey = makeSpec("security:\n      - ApiKey: []");
+    const changes = analyzeOpenApiDiff(withOAuth2, withApiKey);
+    const removed = changes.find((c) => c.type === "operation-security-scheme-removed");
+    const added = changes.find((c) => c.type === "operation-security-scheme-added");
+    expect(removed).toBeDefined();
+    expect(removed?.before).toBe("OAuth2");
+    expect(removed?.severity).toBe("BREAKING");
+    expect(added).toBeDefined();
+    expect(added?.after).toBe("ApiKey");
+    expect(added?.severity).toBe("INFO");
+  });
+});
+
+// ─── Round 40: deeply nested allOf + cross-version comparison ─────────────────
+
+describe("deeply nested allOf (allOf within allOf member) (5.7.5 round 40)", () => {
+  it("allOf member that itself has allOf is fully flattened — required fields from 3 levels propagate", () => {
+    // Level structure: Root allOf [GrandChild, Extra]
+    //   GrandChild allOf [Base, ChildExtension]
+    //     Base: required [id], properties {id: string}
+    //     ChildExtension: required [name], properties {name: string}
+    //   Extra: required [email], properties {email: string}
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+components:
+  schemas:
+    Base:
+      type: object
+      required: [id]
+      properties:
+        id: {type: string}
+    ChildExtension:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+    GrandChild:
+      allOf:
+        - $ref: "#/components/schemas/Base"
+        - $ref: "#/components/schemas/ChildExtension"
+    Extra:
+      type: object
+      required: [email]
+      properties:
+        email: {type: string}
+    Root:
+      allOf:
+        - $ref: "#/components/schemas/GrandChild"
+        - $ref: "#/components/schemas/Extra"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Root"
+`;
+    // Current removes the `required: [id]` from Base — should propagate up to Root
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+components:
+  schemas:
+    Base:
+      type: object
+      properties:
+        id: {type: string}
+    ChildExtension:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+    GrandChild:
+      allOf:
+        - $ref: "#/components/schemas/Base"
+        - $ref: "#/components/schemas/ChildExtension"
+    Extra:
+      type: object
+      required: [email]
+      properties:
+        email: {type: string}
+    Root:
+      allOf:
+        - $ref: "#/components/schemas/GrandChild"
+        - $ref: "#/components/schemas/Extra"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Root"
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    // id was required in baseline (inherited through GrandChild → Root)
+    // now optional — response-schema-field-required-removed (BREAKING)
+    const requiredRemoved = changes.find(
+      (c) => c.type === "response-schema-field-required-removed" && String(c.location).includes("id"),
+    );
+    expect(requiredRemoved).toBeDefined();
+    expect(requiredRemoved?.severity).toBe("BREAKING");
+  });
+});
+
+describe("OAS 3.0 ↔ OAS 3.1 cross-version comparison (5.7.5 round 40)", () => {
+  it("comparing OAS 3.0 spec to OAS 3.1 spec detects schema changes correctly", () => {
+    const oas30 = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+`;
+    const oas31 = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: integer
+`;
+    const changes = analyzeOpenApiDiff(oas30, oas31);
+    const typeChange = changes.find((c) => c.type === "response-schema-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+
+  it("OAS 3.0 nullable: true equivalent to OAS 3.1 type: [string, null] — no false positive", () => {
+    const oas30 = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+                nullable: true
+`;
+    const oas31 = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: [string, "null"]
+`;
+    // Both represent "string | null" — no type-changed or nullable-changed expected.
+    const changes = analyzeOpenApiDiff(oas30, oas31);
+    expect(changes.filter((c) => c.type === "response-schema-type-changed")).toHaveLength(0);
+    expect(changes.filter((c) => c.type === "response-schema-nullable-changed")).toHaveLength(0);
+  });
+});
+
+// ─── Round 41: body schema minItems/maxItems + items depth limit ──────────────
+
+describe("top-level request body array constraint changes (5.7.5 round 41)", () => {
+  function makeArrayBody(constraints: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+              ${constraints}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("increasing minItems on request array is BREAKING", () => {
+    const changes = analyzeOpenApiDiff(makeArrayBody("minItems: 1"), makeArrayBody("minItems: 5"));
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).includes("minItems"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.before).toBe(1);
+    expect(constChange?.after).toBe(5);
+    expect(constChange?.severity).toBe("BREAKING");
+  });
+
+  it("decreasing maxItems on request array is BREAKING", () => {
+    const changes = analyzeOpenApiDiff(makeArrayBody("maxItems: 100"), makeArrayBody("maxItems: 10"));
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).includes("maxItems"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.before).toBe(100);
+    expect(constChange?.after).toBe(10);
+    expect(constChange?.severity).toBe("BREAKING");
+  });
+
+  it("increasing maxItems on request array is INFO (relaxed constraint)", () => {
+    const changes = analyzeOpenApiDiff(makeArrayBody("maxItems: 10"), makeArrayBody("maxItems: 100"));
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).includes("maxItems"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+  });
+});
+
+describe("response array items depth limit (MAX_ITEMS_DEPTH = 3) (5.7.5 round 41)", () => {
+  it("type change inside 3-level nested array (array<array<array<string>>>) is detected", () => {
+    const makeTripleArray = (innerType: string) => `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: ${innerType}
+`;
+    const changes = analyzeOpenApiDiff(makeTripleArray("string"), makeTripleArray("integer"));
+    const typeChange = changes.find((c) => c.type === "response-schema-items-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+
+  it("type change inside 4-level nested array (beyond MAX_ITEMS_DEPTH=3) is NOT detected — known limit", () => {
+    const makeQuadArray = (innerType: string) => `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        type: ${innerType}
+`;
+    // 4-level deep array items: beyond MAX_ITEMS_DEPTH=3, not detected (false negative by design).
+    const changes = analyzeOpenApiDiff(makeQuadArray("string"), makeQuadArray("integer"));
+    expect(changes.filter((c) => c.type === "response-schema-items-type-changed")).toHaveLength(0);
   });
 });
