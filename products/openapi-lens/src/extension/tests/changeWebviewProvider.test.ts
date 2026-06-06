@@ -175,3 +175,52 @@ describe("createChangeWebviewContent", () => {
     expect(html).not.toContain("Spec-level");
   });
 });
+
+describe("adversarial round 69 — esc() double-quote coverage + location escaping + SPEC_LEVEL_TYPES", () => {
+  it("double-quote in message is escaped to &quot;", () => {
+    const html = createChangeWebviewContent([
+      makeBreaking({ message: 'Type changed to "string" from integer' }),
+    ]);
+    expect(html).toContain("&quot;string&quot;");
+    expect(html).not.toContain('"string"');
+  });
+
+  it("double-quote in path is escaped to &quot;", () => {
+    const html = createChangeWebviewContent([
+      makeBreaking({ path: '/users/"admin"/profile' }),
+    ]);
+    expect(html).toContain("&quot;admin&quot;");
+    expect(html).not.toContain('"admin"');
+  });
+
+  it("HTML-special chars in location field are escaped (first location-injection test)", () => {
+    const html = createChangeWebviewContent([
+      makeBreaking({ location: "paths./users.get.responses[<200>]" }),
+    ]);
+    expect(html).toContain("&lt;200&gt;");
+    expect(html).not.toContain("<200>");
+  });
+
+  it("single-quote in message passes through unchanged (safe in element content)", () => {
+    const html = createChangeWebviewContent([
+      makeBreaking({ message: "Property 'name' was removed" }),
+    ]);
+    expect(html).toContain("Property 'name' was removed");
+  });
+
+  it("server-added type shows Spec-level label (second SPEC_LEVEL_TYPES entry)", () => {
+    const serverAdded: BreakingChange = {
+      severity: "INFO",
+      type: "server-added",
+      path: "/",
+      method: "get",
+      location: "servers[https://api.example.com]",
+      message: "Server URL added",
+      before: null,
+      after: "https://api.example.com",
+    };
+    const html = createChangeWebviewContent([serverAdded]);
+    expect(html).toContain("Spec-level");
+    expect(html).not.toContain("GET /");
+  });
+});

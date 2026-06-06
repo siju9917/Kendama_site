@@ -782,9 +782,10 @@ Built as D6 alongside D5 (same extension, two format classifiers):
   (BREAKING) and `request-media-type-removed` (BREAKING) now emitted when content-type
   keys are removed from `content:` maps. Added `contentTypes: string[]` to `OapiRequestBody`
   and `OapiResponse`.
-- ~~**Response `headers` not diffed.**~~ **FIXED (2026-06-06, rounds 24–28).** Response headers
+- ~~**Response `headers` not diffed.**~~ **FIXED (2026-06-06, rounds 24–28, 31, 43).** Response headers
   fully parsed and diffed: `response-header-removed` (BREAKING), `response-header-added` (INFO),
-  `response-header-type-changed`, `response-header-required-changed`, `response-header-format-changed`.
+  `response-header-type-changed`, `response-header-required-changed`, `response-header-format-changed`,
+  `response-header-enum-changed`, `response-header-nullable-changed`.
   Handles OAS 3.x (`schema:` wrapper) and Swagger 2.0 (bare `type:`).
 - ~~**Security scheme / scope changes not detected.**~~ **FIXED (2026-06-06, round 27).**
   `operation-security-scheme-removed` (BREAKING), `operation-security-scheme-added` (BREAKING),

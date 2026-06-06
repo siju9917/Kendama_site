@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **1401/1401 tests** (BidDiff 586/586 + openapi-lens 815/815).
+- **Build green:** **1769/1769 tests** (BidDiff 586/586 + openapi-lens 1183/1183). Rounds 54-60: cross-level matrices + security gap + OAS-3.1 normalization + cross-version comparison. Round 61: +25 tests (Terraform resource expansion). Round 62–95: continuous 5.7.5 bug-hunt adding end-to-end adversarial coverage across all constraint scopes (property, top-level body, items, parameter), all HTTP methods (GET/POST/PUT/PATCH), all parameter locations (query/header/path/cookie), and all null-transition + value-change + isolation scenarios.
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +

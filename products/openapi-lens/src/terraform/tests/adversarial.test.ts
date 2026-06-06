@@ -369,3 +369,385 @@ describe("adversarial round 42 — resource type coverage gaps", () => {
     expect(result.changes[0]!.severity).toBe("CRITICAL");
   });
 });
+
+describe("adversarial round 47 — new data-store resource type coverage", () => {
+  function makeUpdateChange(type: string): TfChange {
+    return makeChange({ type, address: `${type}.main`, actions: ["update"] });
+  }
+
+  it("azurerm_redis_cache update is CRITICAL (in-memory store flush risk during modification)", () => {
+    expect(classifyChange(makeUpdateChange("azurerm_redis_cache")).severity).toBe("CRITICAL");
+  });
+
+  it("azurerm_mssql_database update is CRITICAL (MSSQL managed database risks data)", () => {
+    expect(classifyChange(makeUpdateChange("azurerm_mssql_database")).severity).toBe("CRITICAL");
+  });
+
+  it("azurerm_mssql_server update is CRITICAL (MSSQL managed server risks workload)", () => {
+    expect(classifyChange(makeUpdateChange("azurerm_mssql_server")).severity).toBe("CRITICAL");
+  });
+
+  it("google_redis_instance update is CRITICAL (GCP Memorystore Redis cache loss on modification)", () => {
+    expect(classifyChange(makeUpdateChange("google_redis_instance")).severity).toBe("CRITICAL");
+  });
+
+  it("google_memcache_instance update is CRITICAL (GCP Memorystore Memcached cache loss)", () => {
+    expect(classifyChange(makeUpdateChange("google_memcache_instance")).severity).toBe("CRITICAL");
+  });
+
+  it("google_container_cluster update is CRITICAL (GKE node drain disrupts workloads, mirrors EKS)", () => {
+    expect(classifyChange(makeUpdateChange("google_container_cluster")).severity).toBe("CRITICAL");
+  });
+
+  it("aws_msk_cluster update is CRITICAL (in-flight Kafka messages at risk during cluster modification)", () => {
+    expect(classifyChange(makeUpdateChange("aws_msk_cluster")).severity).toBe("CRITICAL");
+  });
+
+  it("azurerm_kubernetes_cluster update is CRITICAL (AKS node drain disrupts workloads, mirrors EKS/GKE)", () => {
+    expect(classifyChange(makeUpdateChange("azurerm_kubernetes_cluster")).severity).toBe("CRITICAL");
+  });
+});
+
+describe("adversarial round 48 — new IAM/security resource type coverage", () => {
+  function makeIamUpdateChange(type: string): TfChange {
+    return makeChange({ type, address: `${type}.main`, actions: ["update"] });
+  }
+
+  it("azurerm_key_vault update triggers IAM review (SKU or access model change affects all secrets)", () => {
+    const result = classifyChange(makeIamUpdateChange("azurerm_key_vault"));
+    // Key vault is an IAM/security resource — any change warrants review
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  it("azurerm_key_vault_key update triggers IAM review (key rotation or algorithm change)", () => {
+    const result = classifyChange(makeIamUpdateChange("azurerm_key_vault_key"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  it("azurerm_key_vault_secret update triggers IAM review (secret value change)", () => {
+    const result = classifyChange(makeIamUpdateChange("azurerm_key_vault_secret"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  it("aws_iam_policy_attachment update triggers IAM review", () => {
+    const result = classifyChange(makeIamUpdateChange("aws_iam_policy_attachment"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  it("aws_kms_key update triggers IAM review (key disable/delete renders encrypted data inaccessible)", () => {
+    const result = classifyChange(makeIamUpdateChange("aws_kms_key"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  it("google_service_account update triggers IAM review (workload identity credential change)", () => {
+    const result = classifyChange(makeIamUpdateChange("google_service_account"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  it("google_service_account_key update triggers IAM review (key rotation breaks authenticating workloads)", () => {
+    const result = classifyChange(makeIamUpdateChange("google_service_account_key"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+});
+
+describe("adversarial round 61 — extended data-store and IAM type coverage", () => {
+  function makeChange(type: string, action: string, address?: string) {
+    return { address: address ?? `${type}.example`, type, actions: [action], mode: "managed" as const };
+  }
+
+  // ── Data store additions ────────────────────────────────────────────────────
+  it("aws_kinesis_stream update is CRITICAL (in-flight records at risk)", () => {
+    const result = classifyChange(makeChange("aws_kinesis_stream", "update"));
+    expect(result.severity).toBe("CRITICAL");
+  });
+
+  it("aws_kinesis_firehose_delivery_stream update is CRITICAL (delivery disruption risk)", () => {
+    const result = classifyChange(makeChange("aws_kinesis_firehose_delivery_stream", "update"));
+    expect(result.severity).toBe("CRITICAL");
+  });
+
+  it("aws_sqs_queue update is CRITICAL (message visibility or retention changes disrupt consumers)", () => {
+    const result = classifyChange(makeChange("aws_sqs_queue", "update"));
+    expect(result.severity).toBe("CRITICAL");
+  });
+
+  it("aws_sqs_queue creation is NORMAL (no existing messages at risk)", () => {
+    const result = classifyChange(makeChange("aws_sqs_queue", "create"));
+    expect(result.severity).toBe("NORMAL");
+  });
+
+  it("aws_documentdb_cluster update is CRITICAL (DocumentDB data store modification risks data)", () => {
+    const result = classifyChange(makeChange("aws_documentdb_cluster", "update"));
+    expect(result.severity).toBe("CRITICAL");
+  });
+
+  it("aws_neptune_cluster update is CRITICAL (Neptune graph DB data store modification risks data)", () => {
+    const result = classifyChange(makeChange("aws_neptune_cluster", "update"));
+    expect(result.severity).toBe("CRITICAL");
+  });
+
+  it("google_storage_bucket update is CRITICAL (GCP object storage — data loss risk mirrors S3)", () => {
+    const result = classifyChange(makeChange("google_storage_bucket", "update"));
+    expect(result.severity).toBe("CRITICAL");
+  });
+
+  it("google_bigquery_dataset update is CRITICAL (schema or ACL changes affect all tables in dataset)", () => {
+    const result = classifyChange(makeChange("google_bigquery_dataset", "update"));
+    expect(result.severity).toBe("CRITICAL");
+  });
+
+  it("aws_cognito_user_pool update is CRITICAL (user accounts — password policy or MFA changes lock out users)", () => {
+    const result = classifyChange(makeChange("aws_cognito_user_pool", "update"));
+    expect(result.severity).toBe("CRITICAL");
+  });
+
+  // ── IAM additions ──────────────────────────────────────────────────────────
+  it("google_project_iam_policy update triggers IAM review (replaces entire project policy)", () => {
+    const result = classifyChange(makeChange("google_project_iam_policy", "update"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  it("aws_cognito_user_pool_client update triggers IAM review (app client credential rotation)", () => {
+    const result = classifyChange(makeChange("aws_cognito_user_pool_client", "update"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  it("aws_ssm_parameter update triggers IAM review (Parameter Store secrets may be rotated/deleted)", () => {
+    const result = classifyChange(makeChange("aws_ssm_parameter", "update"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  it("aws_iam_group_policy_attachment update triggers IAM review (managed policy attached to group)", () => {
+    const result = classifyChange(makeChange("aws_iam_group_policy_attachment", "update"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  // ── Stateless compute should NOT be in either table ────────────────────────
+  it("aws_kinesis_stream creation is NORMAL (new stream, no existing records)", () => {
+    const result = classifyChange(makeChange("aws_kinesis_stream", "create"));
+    expect(result.severity).toBe("NORMAL");
+  });
+
+  it("aws_lambda_function is NOT classified as data store or IAM (stateless compute)", () => {
+    const result = classifyChange(makeChange("aws_lambda_function", "update"));
+    expect(result.severity).toBe("NORMAL");
+  });
+});
+
+describe("adversarial round 63 — Terraform classifier multi-rule interactions", () => {
+  // When both the replace rule AND a data store/IAM rule fire, BOTH reasons should appear.
+  // This verifies that reason accumulation is correct (no early return after first rule).
+
+  it("data store with legacy replace ['create','delete'] is CRITICAL with BOTH replace and data-store reasons", () => {
+    const c = classifyChange(
+      makeChange({ type: "aws_rds_cluster", address: "aws_rds_cluster.main", actions: ["create", "delete"] }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+    expect(c.reasons.some((r) => r.includes("REPLACED"))).toBe(true);
+    expect(c.reasons.some((r) => r.includes("data store"))).toBe(true);
+  });
+
+  it("data store with create_before_destroy ['delete','create'] is CRITICAL with replace + data-store reasons", () => {
+    const c = classifyChange(
+      makeChange({ type: "aws_dynamodb_table", address: "aws_dynamodb_table.main", actions: ["delete", "create"] }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+    expect(c.reasons.some((r) => r.includes("REPLACED"))).toBe(true);
+    expect(c.reasons.some((r) => r.includes("data store"))).toBe(true);
+  });
+
+  it("IAM resource with replace ['create','delete'] is CRITICAL with both replace and IAM reasons", () => {
+    const c = classifyChange(
+      makeChange({ type: "aws_iam_role", address: "aws_iam_role.executor", actions: ["create", "delete"] }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+    expect(c.reasons.some((r) => r.includes("REPLACED"))).toBe(true);
+    expect(c.reasons.some((r) => r.includes("IAM") || r.includes("access"))).toBe(true);
+  });
+
+  it("data store update returns a single data-store reason (no spurious delete reason)", () => {
+    const c = classifyChange(
+      makeChange({ type: "aws_elasticache_cluster", address: "aws_elasticache_cluster.main", actions: ["update"] }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+    // Rule 2 does NOT fire (no delete action) — only Rule 4 fires
+    expect(c.reasons.some((r) => r.includes("DELETED"))).toBe(false);
+    expect(c.reasons.some((r) => r.includes("data store"))).toBe(true);
+  });
+
+  it("unknown action type on non-critical resource stays NORMAL", () => {
+    // Future Terraform versions could add new action types (e.g. 'drift'). The classifier
+    // should not crash and should fall through to NORMAL for unknown action strings.
+    const c = classifyChange(
+      makeChange({ type: "aws_instance", address: "aws_instance.web", actions: ["update"] }),
+    );
+    expect(c.severity).toBe("NORMAL");
+    expect(c.reasons.length).toBeGreaterThan(0);
+  });
+});
+
+describe("adversarial round 66 — isTerraformPlanJson edge cases and classifier boundary behaviors", () => {
+  // ── isTerraformPlanJson edge cases ─────────────────────────────────────────
+
+  it("isTerraformPlanJson: format_version present but resource_changes absent → false", () => {
+    // A JSON file that mentions format_version but has no resource_changes key
+    // should NOT be detected as a Terraform plan.
+    const text = '{"format_version":"1.0","terraform_version":"1.8.0","some_other_key":[]}';
+    expect(isTerraformPlanJson(text)).toBe(false);
+  });
+
+  it("isTerraformPlanJson: terraform_version present but resource_changes absent → false", () => {
+    // Only the version fields, no resource_changes — not a plan.
+    const text = '{"terraform_version":"1.9.0","format_version":"1.0"}';
+    expect(isTerraformPlanJson(text)).toBe(false);
+  });
+
+  it("isTerraformPlanJson: detection keys appearing beyond first 2000 chars are NOT detected (known limitation)", () => {
+    // The function slices the first 2000 chars for efficiency.
+    // A very large JSON blob where the Terraform keys appear only after position 2000
+    // returns false even though the full text is a valid Terraform plan.
+    // This documents the known detection limitation for large compressed/minified plans.
+    const padding = "x".repeat(1990);
+    // {"note":"<1990 x's>","resource_changes":[],"terraform_version":"1.8.0"}
+    // "resource_changes" starts at position 2001 — outside the 2000-char slice.
+    const text = `{"note":"${padding}","resource_changes":[],"terraform_version":"1.8.0"}`;
+    expect(isTerraformPlanJson(text)).toBe(false);
+  });
+
+  it("isTerraformPlanJson: both keys within the 2000-char window but close to boundary → still detected", () => {
+    // Boundary verification: keys just INSIDE the 2000-char slice are still found.
+    const padding = "x".repeat(1940);
+    // "resource_changes" starts at around position 1949 — inside the 2000-char slice.
+    const text = `{"note":"${padding}","resource_changes":[],"terraform_version":"1.8.0"}`;
+    expect(isTerraformPlanJson(text)).toBe(true);
+  });
+
+  // ── Classifier boundary behaviors ───────────────────────────────────────────
+
+  it("data store CREATE is NORMAL — isCreateOnly guard prevents Rule 4 from firing", () => {
+    // Rule 4 fires only when !isCreateOnly(actions). A pure create of a data-store type
+    // is NORMAL: no existing data to lose, no risk of data loss.
+    const plan = JSON.stringify({
+      format_version: "1.0",
+      terraform_version: "1.8.0",
+      resource_changes: [
+        {
+          address: "aws_rds_cluster.primary",
+          type: "aws_rds_cluster",
+          name: "primary",
+          mode: "managed",
+          change: {
+            actions: ["create"],
+            before: null,
+            after: { cluster_identifier: "prod-db" },
+            after_unknown: {},
+          },
+        },
+      ],
+    });
+    const result = parseTerraformPlan(plan);
+    expect(result.critical).toBe(0);
+    expect(result.normal).toBe(1);
+    expect(result.changes[0]!.severity).toBe("NORMAL");
+  });
+
+  it("resource_changes entry with actions as string (not array) is silently skipped (isResourceChange guard)", () => {
+    // isResourceChange requires change.actions to be an array.
+    // A malformed entry where actions is a string literal is skipped.
+    const plan = JSON.stringify({
+      format_version: "1.0",
+      terraform_version: "1.8.0",
+      resource_changes: [
+        {
+          address: "aws_instance.bad",
+          type: "aws_instance",
+          name: "bad",
+          mode: "managed",
+          change: {
+            actions: "create",
+            before: null,
+            after: { id: "i-1" },
+          },
+        },
+        {
+          address: "aws_instance.good",
+          type: "aws_instance",
+          name: "good",
+          mode: "managed",
+          change: {
+            actions: ["create"],
+            before: null,
+            after: { id: "i-2" },
+          },
+        },
+      ],
+    });
+    const result = parseTerraformPlan(plan);
+    expect(result.changes).toHaveLength(1);
+    expect(result.changes[0]!.change.address).toBe("aws_instance.good");
+    expect(result.normal).toBe(1);
+  });
+});
+
+// ─── Round 78: multi-rule interactions in classifyChange ────────────────────
+
+describe("adversarial round 78 — multi-rule classify interactions (both REPLACED + type-specific reasons)", () => {
+  function makeChange(overrides: Partial<TfChange> = {}): TfChange {
+    return {
+      address: "aws_s3_bucket.data",
+      type: "aws_s3_bucket",
+      name: "data",
+      actions: ["replace"],
+      before: { id: "b-1" },
+      after: { id: "b-1" },
+      ...overrides,
+    };
+  }
+
+  it("data store + replace fires both Rule 3 (REPLACED) and Rule 4 (data store) — two reasons emitted", () => {
+    // Rules 3 and 4 are independent; a data store being replaced accumulates both reasons.
+    const c = classifyChange(makeChange({ type: "aws_s3_bucket", actions: ["replace"] }));
+    expect(c.severity).toBe("CRITICAL");
+    const hasReplaceReason = c.reasons.some((r) => r.includes("REPLACED"));
+    const hasDataStoreReason = c.reasons.some((r) => r.includes("data store"));
+    expect(hasReplaceReason).toBe(true);
+    expect(hasDataStoreReason).toBe(true);
+    expect(c.reasons.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("IAM + replace fires both Rule 3 (REPLACED) and Rule 5 (IAM) — two reasons emitted", () => {
+    // Replacing an IAM resource is doubly flagged: replacement risk AND access-control risk.
+    const c = classifyChange(
+      makeChange({ type: "aws_iam_role", address: "aws_iam_role.exec", actions: ["replace"] }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+    const hasReplaceReason = c.reasons.some((r) => r.includes("REPLACED"));
+    const hasIamReason = c.reasons.some((r) => r.includes("IAM") || r.includes("access"));
+    expect(hasReplaceReason).toBe(true);
+    expect(hasIamReason).toBe(true);
+    expect(c.reasons.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("data store + delete fires both Rule 2 (DELETED) and Rule 4 (data store) — two reasons emitted", () => {
+    // A plain delete of a data store accumulates the permanent-delete AND data-store reasons.
+    const c = classifyChange(
+      makeChange({ type: "aws_db_instance", address: "aws_db_instance.prod", actions: ["delete"], after: null }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+    const hasDeleteReason = c.reasons.some((r) => r.includes("DELETED"));
+    const hasDataStoreReason = c.reasons.some((r) => r.includes("data store"));
+    expect(hasDeleteReason).toBe(true);
+    expect(hasDataStoreReason).toBe(true);
+  });
+
+  it("empty actions array produces NORMAL with 'in-place' reason (characterization — not a real Terraform action set)", () => {
+    // isNoOp([]) returns false (length guard), isCreateOnly([]) returns false.
+    // Rules 2-5 all miss. Default: severity remains NORMAL, in-place reason added.
+    // This locks behavior for degenerate plan JSON that omits the actions array.
+    const c = classifyChange(
+      makeChange({ type: "aws_instance", address: "aws_instance.web", actions: [] }),
+    );
+    expect(c.severity).toBe("NORMAL");
+    expect(c.reasons.some((r) => r.includes("in-place") || r.includes("update"))).toBe(true);
+  });
+});

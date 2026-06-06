@@ -190,4 +190,35 @@ describe("createPlanWebviewContent", () => {
     // 1 header tr (<tr>) + 3 data rows (<tr class="...">) = 4
     expect(trCount).toBe(4);
   });
+
+  it("round 69: output change actions with HTML-special chars are correctly escaped once, not double-escaped", () => {
+    // renderOutputRow previously called esc(actionText) inside the template literal AND
+    // then esc(valueText) again — causing &lt; to become &amp;lt; (double-escape).
+    const html = createPlanWebviewContent(
+      makeSummary({
+        outputChanges: [{ name: "test_output", actions: ["create<xss>"], sensitive: false }],
+      }),
+    );
+    expect(html).toContain("create&lt;xss&gt;");
+    expect(html).not.toContain("create&amp;lt;");
+  });
+
+  it("round 70: HTML-special chars in resource type field are escaped", () => {
+    const html = createPlanWebviewContent(
+      makeSummary({
+        changes: [makeClassification("CRITICAL", { type: "aws_instance<xss>" })],
+        critical: 1,
+      }),
+    );
+    expect(html).toContain("aws_instance&lt;xss&gt;");
+    expect(html).not.toContain("aws_instance<xss>");
+  });
+
+  it("round 70: HTML-special chars in terraformVersion are escaped", () => {
+    const html = createPlanWebviewContent(
+      makeSummary({ terraformVersion: '1.8.0"injected' }),
+    );
+    expect(html).toContain("1.8.0&quot;injected");
+    expect(html).not.toContain('1.8.0"injected');
+  });
 });

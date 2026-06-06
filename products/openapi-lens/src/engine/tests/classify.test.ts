@@ -821,6 +821,8 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "operation-security-scope-removed":                      ["write:users", null],
     "response-header-required-changed":                      [true, false],
     "response-header-format-changed":                        ["uuid", "uri"],
+    "response-header-enum-changed":                          [["a","b","c"], ["a","b"]],
+    "response-header-nullable-changed":                      [false, true],
     "response-media-type-removed":                           ["application/json", null],
     "response-media-type-added":                             [null, "application/xml"],
     "request-media-type-removed":                            ["application/json", null],
@@ -1314,5 +1316,314 @@ describe("readOnly/writeOnly direction — cross-level consistency", () => {
     const result = classifyChanges([raw(type, before, after, "test.field")]);
     expect(result[0]?.severity).toBe(expected);
     expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+});
+
+// ─── Cross-level enum direction consistency guard (round 43/53 lesson) ────────
+// Verifies that the enum polarity is correct and consistent across ALL nesting
+// levels: top-level body, per-property, items, and response headers.
+//
+// Direction semantics:
+//   Response enum (body/property/items/header): ADD values = BREAKING (exhaustive
+//     client switch/match statements fail on unknown variants).
+//   Request enum (body/property/items): REMOVE values = BREAKING (client sends
+//     a value the server no longer accepts → 422/400).
+//
+// A polarity inversion at any one level (like the round-43 response-header bug)
+// will fail the corresponding row in this table.
+
+describe("enum direction — cross-level consistency", () => {
+  const SMALL = ["a", "b"];        // fewer values
+  const LARGE = ["a", "b", "c"];   // more values (SMALL + "c" added)
+
+  type EnumCase = {
+    type: OapiChangeType;
+    before: unknown;
+    after: unknown;
+    expected: "BREAKING" | "INFO";
+    label: string;
+  };
+
+  const ENUM_CASES: EnumCase[] = [
+    // ── Response: ADD values = BREAKING ──────────────────────────────────────
+    { type: "response-schema-enum-changed",          before: SMALL, after: LARGE, expected: "BREAKING", label: "response body enum values added" },
+    { type: "response-schema-property-enum-changed", before: SMALL, after: LARGE, expected: "BREAKING", label: "response property enum values added" },
+    { type: "response-schema-items-enum-changed",    before: SMALL, after: LARGE, expected: "BREAKING", label: "response items enum values added" },
+    { type: "response-header-enum-changed",          before: SMALL, after: LARGE, expected: "BREAKING", label: "response header enum values added" },
+    // ── Response: REMOVE values = INFO ───────────────────────────────────────
+    { type: "response-schema-enum-changed",          before: LARGE, after: SMALL, expected: "INFO", label: "response body enum values removed" },
+    { type: "response-schema-property-enum-changed", before: LARGE, after: SMALL, expected: "INFO", label: "response property enum values removed" },
+    { type: "response-schema-items-enum-changed",    before: LARGE, after: SMALL, expected: "INFO", label: "response items enum values removed" },
+    { type: "response-header-enum-changed",          before: LARGE, after: SMALL, expected: "INFO", label: "response header enum values removed" },
+    // ── Request: REMOVE values = BREAKING ────────────────────────────────────
+    { type: "request-schema-enum-changed",           before: LARGE, after: SMALL, expected: "BREAKING", label: "request body enum values removed" },
+    { type: "request-schema-property-enum-changed",  before: LARGE, after: SMALL, expected: "BREAKING", label: "request property enum values removed" },
+    { type: "request-schema-items-enum-changed",     before: LARGE, after: SMALL, expected: "BREAKING", label: "request items enum values removed" },
+    // ── Request: ADD values = INFO ────────────────────────────────────────────
+    { type: "request-schema-enum-changed",           before: SMALL, after: LARGE, expected: "INFO", label: "request body enum values added" },
+    { type: "request-schema-property-enum-changed",  before: SMALL, after: LARGE, expected: "INFO", label: "request property enum values added" },
+    { type: "request-schema-items-enum-changed",     before: SMALL, after: LARGE, expected: "INFO", label: "request items enum values added" },
+    // ── Parameter (always request-side): REMOVE = BREAKING, ADD = INFO ───────
+    { type: "parameter-enum-changed",                before: LARGE, after: SMALL, expected: "BREAKING", label: "parameter enum values removed" },
+    { type: "parameter-items-enum-changed",          before: LARGE, after: SMALL, expected: "BREAKING", label: "parameter items enum values removed" },
+    { type: "parameter-enum-changed",                before: SMALL, after: LARGE, expected: "INFO",     label: "parameter enum values added" },
+    { type: "parameter-items-enum-changed",          before: SMALL, after: LARGE, expected: "INFO",     label: "parameter items enum values added" },
+  ];
+
+  it.each(ENUM_CASES)("$label ($type) → $expected", ({ type, before, after, expected }) => {
+    const result = classifyChanges([raw(type, before, after, "test.enum")]);
+    expect(result[0]?.severity).toBe(expected);
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+});
+
+// ─── Cross-level constraint direction consistency guard ────────────────────────
+// Verifies that numeric/pattern constraint polarity is correct and consistent
+// across all nesting levels (property, items) and locations (request body,
+// response body, parameters).
+//
+// Direction semantics:
+//   Request (tightening constraint = more restrictive for client → BREAKING):
+//     min-sense (minLength, minimum, …): increased = BREAKING; decreased = INFO
+//     max-sense (maxLength, maximum, …): decreased = BREAKING; increased = INFO
+//     pattern: added or changed = BREAKING; removed = INFO
+//   Response (loosening constraint = weaker guarantee → BREAKING):
+//     min-sense: decreased = BREAKING; increased = INFO
+//     max-sense: increased = BREAKING; decreased = INFO
+//     pattern: removed or changed = BREAKING; added = INFO
+//   Parameter (always request-side, same semantics as request):
+//     min-sense: increased = BREAKING; decreased = INFO
+//     max-sense: decreased = BREAKING; increased = INFO
+//     pattern: added/changed = BREAKING; removed = INFO
+
+describe("constraint direction — cross-level consistency", () => {
+  type ConstraintCase = {
+    type: OapiChangeType;
+    before: unknown;
+    after: unknown;
+    location: string;
+    expected: "BREAKING" | "INFO";
+    label: string;
+  };
+
+  const CONSTRAINT_CASES: ConstraintCase[] = [
+    // ── Request property: tightening = BREAKING ────────────────────────────────
+    { type: "request-schema-property-constraint-changed", before: 5,  after: 10, location: "req.prop.minLength",  expected: "BREAKING", label: "request property minLength increased" },
+    { type: "request-schema-property-constraint-changed", before: 100, after: 50, location: "req.prop.maxLength", expected: "BREAKING", label: "request property maxLength decreased" },
+    { type: "request-schema-property-constraint-changed", before: null, after: "^[a-z]+$", location: "req.prop.pattern", expected: "BREAKING", label: "request property pattern added" },
+    // ── Request property: loosening = INFO ────────────────────────────────────
+    { type: "request-schema-property-constraint-changed", before: 10,  after: 5,  location: "req.prop.minLength",  expected: "INFO", label: "request property minLength decreased" },
+    { type: "request-schema-property-constraint-changed", before: 50, after: 100, location: "req.prop.maxLength",  expected: "INFO", label: "request property maxLength increased" },
+    { type: "request-schema-property-constraint-changed", before: "^[a-z]+$", after: null, location: "req.prop.pattern", expected: "INFO", label: "request property pattern removed" },
+    // ── Request items: tightening = BREAKING ──────────────────────────────────
+    { type: "request-schema-items-constraint-changed", before: 5,  after: 10, location: "req.items.minLength",  expected: "BREAKING", label: "request items minLength increased" },
+    { type: "request-schema-items-constraint-changed", before: 100, after: 50, location: "req.items.maxLength", expected: "BREAKING", label: "request items maxLength decreased" },
+    // ── Request items: loosening = INFO ───────────────────────────────────────
+    { type: "request-schema-items-constraint-changed", before: 10,  after: 5,  location: "req.items.minLength",  expected: "INFO", label: "request items minLength decreased" },
+    { type: "request-schema-items-constraint-changed", before: 50, after: 100, location: "req.items.maxLength",  expected: "INFO", label: "request items maxLength increased" },
+    // ── Response property: loosening = BREAKING ───────────────────────────────
+    { type: "response-schema-property-constraint-changed", before: 10, after: 5,  location: "res.prop.minLength", expected: "BREAKING", label: "response property minLength decreased" },
+    { type: "response-schema-property-constraint-changed", before: 50, after: 100, location: "res.prop.maxLength", expected: "BREAKING", label: "response property maxLength increased" },
+    { type: "response-schema-property-constraint-changed", before: "^[a-z]+$", after: null, location: "res.prop.pattern", expected: "BREAKING", label: "response property pattern removed" },
+    // ── Response property: tightening = INFO ──────────────────────────────────
+    { type: "response-schema-property-constraint-changed", before: 5, after: 10, location: "res.prop.minLength",  expected: "INFO", label: "response property minLength increased" },
+    { type: "response-schema-property-constraint-changed", before: 100, after: 50, location: "res.prop.maxLength", expected: "INFO", label: "response property maxLength decreased" },
+    { type: "response-schema-property-constraint-changed", before: null, after: "^[a-z]+$", location: "res.prop.pattern", expected: "INFO", label: "response property pattern added" },
+    // ── Response items: loosening = BREAKING ──────────────────────────────────
+    { type: "response-schema-items-constraint-changed", before: 10, after: 5,  location: "res.items.minLength", expected: "BREAKING", label: "response items minLength decreased" },
+    { type: "response-schema-items-constraint-changed", before: 50, after: 100, location: "res.items.maxLength", expected: "BREAKING", label: "response items maxLength increased" },
+    // ── Response items: tightening = INFO ─────────────────────────────────────
+    { type: "response-schema-items-constraint-changed", before: 5, after: 10, location: "res.items.minLength",  expected: "INFO", label: "response items minLength increased" },
+    { type: "response-schema-items-constraint-changed", before: 100, after: 50, location: "res.items.maxLength", expected: "INFO", label: "response items maxLength decreased" },
+    // ── Parameter (request-side): tightening = BREAKING ───────────────────────
+    { type: "parameter-constraint-changed",      before: 5,  after: 10, location: "param.minLength",       expected: "BREAKING", label: "parameter minLength increased" },
+    { type: "parameter-constraint-changed",      before: 100, after: 50, location: "param.maxLength",      expected: "BREAKING", label: "parameter maxLength decreased" },
+    { type: "parameter-constraint-changed",      before: null, after: "^\\d+$", location: "param.pattern", expected: "BREAKING", label: "parameter pattern added" },
+    { type: "parameter-items-constraint-changed", before: 5, after: 10, location: "param.items.minLength", expected: "BREAKING", label: "parameter items minLength increased" },
+    { type: "parameter-items-constraint-changed", before: 100, after: 50, location: "param.items.maxLength", expected: "BREAKING", label: "parameter items maxLength decreased" },
+    // ── Parameter (request-side): loosening = INFO ───────────────────────────
+    { type: "parameter-constraint-changed",      before: 10, after: 5,  location: "param.minLength",       expected: "INFO", label: "parameter minLength decreased" },
+    { type: "parameter-constraint-changed",      before: 50, after: 100, location: "param.maxLength",      expected: "INFO", label: "parameter maxLength increased" },
+    { type: "parameter-constraint-changed",      before: "^\\d+$", after: null, location: "param.pattern", expected: "INFO", label: "parameter pattern removed" },
+    { type: "parameter-items-constraint-changed", before: 10, after: 5,  location: "param.items.minLength", expected: "INFO", label: "parameter items minLength decreased" },
+    { type: "parameter-items-constraint-changed", before: 50, after: 100, location: "param.items.maxLength", expected: "INFO", label: "parameter items maxLength increased" },
+  ];
+
+  it.each(CONSTRAINT_CASES)("$label ($type) → $expected", ({ type, before, after, location, expected }) => {
+    const result = classifyChanges([raw(type, before, after, location)]);
+    expect(result[0]?.severity).toBe(expected);
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+});
+
+// ─── Cross-level additionalProperties consistency guard ──────────────────────
+// Verifies that the additionalProperties polarity is correct and consistent
+// across all nesting levels (body, property, items) and sides (request, response).
+//
+// Semantics:
+//   Request (body/property/items): closing (→false) = BREAKING (extra fields rejected);
+//     opening (→true) = INFO.
+//   Response (body/property/items): BOTH directions = INFO (schema annotation only;
+//     closing just adds a stricter guarantee, opening just advises graceful handling).
+
+describe("additionalProperties direction — cross-level consistency", () => {
+  type APCase = {
+    type: OapiChangeType;
+    before: boolean;
+    after: boolean;
+    expected: "BREAKING" | "INFO";
+    label: string;
+  };
+
+  const AP_CASES: APCase[] = [
+    // ── Request: closing (→false) = BREAKING ─────────────────────────────────
+    { type: "request-schema-additional-properties-changed",          before: true, after: false, expected: "BREAKING", label: "request body AP closes (→false)" },
+    { type: "request-schema-property-additional-properties-changed", before: true, after: false, expected: "BREAKING", label: "request property AP closes (→false)" },
+    { type: "request-schema-items-additional-properties-changed",    before: true, after: false, expected: "BREAKING", label: "request items AP closes (→false)" },
+    // ── Request: opening (→true) = INFO ───────────────────────────────────────
+    { type: "request-schema-additional-properties-changed",          before: false, after: true, expected: "INFO", label: "request body AP opens (→true)" },
+    { type: "request-schema-property-additional-properties-changed", before: false, after: true, expected: "INFO", label: "request property AP opens (→true)" },
+    { type: "request-schema-items-additional-properties-changed",    before: false, after: true, expected: "INFO", label: "request items AP opens (→true)" },
+    // ── Response: both directions = INFO ─────────────────────────────────────
+    { type: "response-schema-additional-properties-changed",          before: true,  after: false, expected: "INFO", label: "response body AP closes (→false)" },
+    { type: "response-schema-additional-properties-changed",          before: false, after: true,  expected: "INFO", label: "response body AP opens (→true)" },
+    { type: "response-schema-property-additional-properties-changed", before: true,  after: false, expected: "INFO", label: "response property AP closes (→false)" },
+    { type: "response-schema-property-additional-properties-changed", before: false, after: true,  expected: "INFO", label: "response property AP opens (→true)" },
+    { type: "response-schema-items-additional-properties-changed",    before: true,  after: false, expected: "INFO", label: "response items AP closes (→false)" },
+    { type: "response-schema-items-additional-properties-changed",    before: false, after: true,  expected: "INFO", label: "response items AP opens (→true)" },
+  ];
+
+  it.each(AP_CASES)("$label ($type) → $expected", ({ type, before, after, expected }) => {
+    const result = classifyChanges([raw(type, before, after, "test.ap")]);
+    expect(result[0]?.severity).toBe(expected);
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+});
+
+// ─── Cross-level format direction consistency guard ────────────────────────────
+// Verifies that format-changed polarity is correct and consistent across all
+// levels (body, property, items, header) and sides (request, response, parameter).
+//
+// Direction semantics:
+//   Request / parameter (constraint on what client sends):
+//     format added or changed (after ≠ null) = BREAKING; removed (after = null) = INFO
+//   Response / response-header (guarantee from server to client):
+//     format removed or changed (before ≠ null) = BREAKING; newly added (before = null) = INFO
+
+describe("format direction — cross-level consistency", () => {
+  type FmtCase = {
+    type: OapiChangeType;
+    before: string | null;
+    after: string | null;
+    expected: "BREAKING" | "INFO";
+    label: string;
+  };
+
+  const FMT_CASES: FmtCase[] = [
+    // ── Request body: format added or changed = BREAKING; removed = INFO ───────
+    { type: "request-schema-format-changed",          before: null,     after: "date-time", expected: "BREAKING", label: "request body format added (null→date-time)" },
+    { type: "request-schema-format-changed",          before: "date",   after: "date-time", expected: "BREAKING", label: "request body format changed (date→date-time)" },
+    { type: "request-schema-format-changed",          before: "date",   after: null,        expected: "INFO",     label: "request body format removed (date→null)" },
+    // ── Request property: same semantics ─────────────────────────────────────
+    { type: "request-schema-property-format-changed", before: null,     after: "uuid",      expected: "BREAKING", label: "request property format added (null→uuid)" },
+    { type: "request-schema-property-format-changed", before: "uri",    after: "uuid",      expected: "BREAKING", label: "request property format changed (uri→uuid)" },
+    { type: "request-schema-property-format-changed", before: "uuid",   after: null,        expected: "INFO",     label: "request property format removed (uuid→null)" },
+    // ── Request items: same semantics ─────────────────────────────────────────
+    { type: "request-schema-items-format-changed",    before: null,     after: "date",      expected: "BREAKING", label: "request items format added (null→date)" },
+    { type: "request-schema-items-format-changed",    before: "date",   after: "date-time", expected: "BREAKING", label: "request items format changed (date→date-time)" },
+    { type: "request-schema-items-format-changed",    before: "date",   after: null,        expected: "INFO",     label: "request items format removed (date→null)" },
+    // ── Parameter: same semantics as request ─────────────────────────────────
+    { type: "parameter-format-changed",               before: null,     after: "int32",     expected: "BREAKING", label: "parameter format added (null→int32)" },
+    { type: "parameter-format-changed",               before: "int32",  after: "int64",     expected: "BREAKING", label: "parameter format changed (int32→int64)" },
+    { type: "parameter-format-changed",               before: "int32",  after: null,        expected: "INFO",     label: "parameter format removed (int32→null)" },
+    // ── Parameter items: same semantics as request ────────────────────────────
+    { type: "parameter-items-format-changed",         before: null,     after: "date",      expected: "BREAKING", label: "parameter items format added (null→date)" },
+    { type: "parameter-items-format-changed",         before: "date",   after: "date-time", expected: "BREAKING", label: "parameter items format changed (date→date-time)" },
+    { type: "parameter-items-format-changed",         before: "date",   after: null,        expected: "INFO",     label: "parameter items format removed (date→null)" },
+    // ── Response body: format removed/changed = BREAKING; newly added = INFO ──
+    { type: "response-schema-format-changed",         before: null,     after: "uuid",      expected: "INFO",     label: "response body format added (null→uuid)" },
+    { type: "response-schema-format-changed",         before: "uuid",   after: "uri",       expected: "BREAKING", label: "response body format changed (uuid→uri)" },
+    { type: "response-schema-format-changed",         before: "uuid",   after: null,        expected: "BREAKING", label: "response body format removed (uuid→null)" },
+    // ── Response property: same semantics ─────────────────────────────────────
+    { type: "response-schema-property-format-changed", before: null,    after: "date",      expected: "INFO",     label: "response property format added (null→date)" },
+    { type: "response-schema-property-format-changed", before: "date",  after: "date-time", expected: "BREAKING", label: "response property format changed (date→date-time)" },
+    { type: "response-schema-property-format-changed", before: "date",  after: null,        expected: "BREAKING", label: "response property format removed (date→null)" },
+    // ── Response items: same semantics ────────────────────────────────────────
+    { type: "response-schema-items-format-changed",   before: null,     after: "int32",     expected: "INFO",     label: "response items format added (null→int32)" },
+    { type: "response-schema-items-format-changed",   before: "int32",  after: "int64",     expected: "BREAKING", label: "response items format changed (int32→int64)" },
+    { type: "response-schema-items-format-changed",   before: "int32",  after: null,        expected: "BREAKING", label: "response items format removed (int32→null)" },
+    // ── Response header: same semantics as response body ─────────────────────
+    { type: "response-header-format-changed",         before: null,     after: "uuid",      expected: "INFO",     label: "response header format added (null→uuid)" },
+    { type: "response-header-format-changed",         before: "uuid",   after: "uri",       expected: "BREAKING", label: "response header format changed (uuid→uri)" },
+    { type: "response-header-format-changed",         before: "uuid",   after: null,        expected: "BREAKING", label: "response header format removed (uuid→null)" },
+  ];
+
+  it.each(FMT_CASES)("$label ($type) → $expected", ({ type, before, after, expected }) => {
+    const result = classifyChanges([raw(type, before, after, "test.format")]);
+    expect(result[0]?.severity).toBe(expected);
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+});
+
+describe("classify round 62 — operation-id-changed all directions + edge cases", () => {
+  // The completeness test only checks the rename case. Verify all three transitions explicitly.
+  it("operation-id-changed: operationId added (null→id) is INFO with 'added' in message", () => {
+    const result = classifyChanges([raw("operation-id-changed", null, "getItems", "GET /items.operationId")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/added/i);
+  });
+
+  it("operation-id-changed: operationId removed (id→null) is INFO with 'removed' in message", () => {
+    const result = classifyChanges([raw("operation-id-changed", "getItems", null, "GET /items.operationId")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/removed/i);
+  });
+
+  it("operation-id-changed: operationId renamed includes old and new names in message", () => {
+    const result = classifyChanges([raw("operation-id-changed", "getItems", "listItems", "GET /items.operationId")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/getItems/);
+    expect(result[0]?.message).toMatch(/listItems/);
+  });
+
+  it("parameter-added: required:false is still INFO (falsy required does not trigger BREAKING adjustment)", () => {
+    // adjustAddedRequiredParam checks param?.required (truthy) — false is falsy, stays INFO.
+    const result = classifyChanges([raw("parameter-added", null, { name: "q", in: "query", required: false })]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("parameter-added: required field absent (undefined) is INFO (treated as optional)", () => {
+    const result = classifyChanges([raw("parameter-added", null, { name: "q", in: "query" })]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("parameter-added: required:true upgrades severity to BREAKING", () => {
+    const result = classifyChanges([raw("parameter-added", null, { name: "apiKey", in: "query", required: true })]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+});
+
+describe("round 80 — constraintKind 'other' dead-code fallback (classify unit test)", () => {
+  it("request-schema-property-constraint-changed with unrecognized constraint field name falls back to INFO", () => {
+    // constraintKind(loc) returns 'other' when the field suffix is not in MIN_SENSE, MAX_SENSE, or 'pattern'.
+    // requestConstraintSeverity: kind === 'other' → return 'INFO'.
+    // This branch is unreachable from engine output (engine only emits the 9 known fields)
+    // but the fallback exists for future extensibility. Locking it as INFO.
+    const result = classifyChanges([
+      raw("request-schema-property-constraint-changed", null, "some-value", "requestBody.content.schema.properties.foo.unknownConstraint"),
+    ]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("response-schema-property-constraint-changed with unrecognized constraint field name falls back to INFO", () => {
+    // responseConstraintSeverity: kind === 'other' → return 'INFO'.
+    // Identical fallback for response path — also dead code from engine output.
+    const result = classifyChanges([
+      raw("response-schema-property-constraint-changed", "old-value", null, "responses[200].content.schema.properties.bar.unknownConstraint"),
+    ]);
+    expect(result[0]?.severity).toBe("INFO");
   });
 });

@@ -852,6 +852,54 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => `Response header now guaranteed: ${c.location}. Server now always sends this header (non-breaking for existing clients).`,
   },
 
+  // response-header-enum-changed: enum values ADDED = BREAKING (exhaustive client handlers fail on unknown values).
+  // Enum values REMOVED = INFO (server narrows output; dead code in client).
+  {
+    matches: (c) =>
+      c.type === "response-header-enum-changed" && c.before !== null && c.after !== null
+        ? ((c.before as unknown[]).length < (c.after as unknown[]).length ? "BREAKING" : "INFO")
+        : null,
+    message: (c) => {
+      const before = c.before as unknown[] | null;
+      const after  = c.after  as unknown[] | null;
+      const added   = (after  ?? []).filter((v) => !(before ?? []).includes(v));
+      const removed = (before ?? []).filter((v) => !(after  ?? []).includes(v));
+      if (added.length > 0) {
+        return `Response header enum values added at ${c.location}: [${added.join(", ")}] added. Clients with exhaustive handling may fail on new values.`;
+      }
+      return `Response header enum values removed at ${c.location}: [${removed.join(", ")}] removed. Server narrows output (non-breaking — dead code in client).`;
+    },
+  },
+  // Catch-all for header enum change with null before (newly added enum) or null after (enum removed).
+  {
+    matches: (c) =>
+      c.type === "response-header-enum-changed" && (c.before === null || c.after === null)
+        ? (c.before !== null && c.after === null ? "BREAKING" : "INFO")
+        : null,
+    message: (c) =>
+      c.after === null
+        ? `Response header enum removed at ${c.location}. Header values are no longer constrained — clients that relied on the value set may break.`
+        : `Response header enum added at ${c.location}. Header values are now constrained to a defined set (non-breaking).`,
+  },
+
+  // response-header-nullable-changed: direction-aware (mirrors response-schema-nullable rules).
+  // false→true: BREAKING (server may now return null in the header → client null deref).
+  {
+    matches: (c) =>
+      c.type === "response-header-nullable-changed" && c.before === false && c.after === true
+        ? "BREAKING"
+        : null,
+    message: (c) => `Response header nullable changed at ${c.location}: was non-nullable, now nullable. Clients that assume a non-null header value will crash on null.`,
+  },
+  // true→false: INFO (server now guarantees non-null → clients benefit).
+  {
+    matches: (c) =>
+      c.type === "response-header-nullable-changed" && c.before === true && c.after === false
+        ? "INFO"
+        : null,
+    message: (c) => `Response header nullable changed at ${c.location}: was nullable, now non-nullable. Server guarantees a non-null value (non-breaking for existing clients).`,
+  },
+
   // ─── SAFE / INFO ────────────────────────────────────────────────────────
   {
     matches: (c) => c.type === "endpoint-added" ? "INFO" : null,
@@ -920,7 +968,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       if (c.after === null) {
         return `operationId removed: ${c.location} (was '${c.before}'). SDK generators may revert to a path-derived method name.`;
       }
-      return `operationId renamed: ${c.location} ('${c.before}' → '${c.after}'). SDK-generated clients (openapi-generator, autorest, kiota) will rename the generated method — breaking calling code at compile time.`;
+      return `operationId renamed: ${c.location} ('${c.before}' → '${c.after}'). SDK-generated clients (openapi-generator, autorest, kiota) will use the new method name; regenerate and update any call sites that reference the old name.`;
     },
   },
   {

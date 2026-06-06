@@ -122,3 +122,78 @@ describe("resource tables are non-empty and contain expected anchors", () => {
     expect(IAM_TYPES.length).toBeGreaterThanOrEqual(10);
   });
 });
+
+describe("new resource types added in rounds 47-48 are in the correct tables", () => {
+  // Data stores (rounds 47 + fix)
+  it("azurerm_redis_cache is in DATA_STORE_TYPES", () => {
+    expect(DATA_STORE_TYPES).toContain("azurerm_redis_cache");
+  });
+  it("google_redis_instance is in DATA_STORE_TYPES", () => {
+    expect(DATA_STORE_TYPES).toContain("google_redis_instance");
+  });
+  it("google_container_cluster is in DATA_STORE_TYPES", () => {
+    expect(DATA_STORE_TYPES).toContain("google_container_cluster");
+  });
+  it("azurerm_kubernetes_cluster is in DATA_STORE_TYPES", () => {
+    expect(DATA_STORE_TYPES).toContain("azurerm_kubernetes_cluster");
+  });
+  it("aws_msk_cluster is in DATA_STORE_TYPES", () => {
+    expect(DATA_STORE_TYPES).toContain("aws_msk_cluster");
+  });
+
+  // IAM/security types (round 48)
+  it("azurerm_key_vault is in IAM_TYPES", () => {
+    expect(IAM_TYPES).toContain("azurerm_key_vault");
+  });
+  it("aws_kms_key is in IAM_TYPES", () => {
+    expect(IAM_TYPES).toContain("aws_kms_key");
+  });
+  it("google_service_account is in IAM_TYPES", () => {
+    expect(IAM_TYPES).toContain("google_service_account");
+  });
+
+  // Negative: stateless compute not in either list
+  it("aws_lambda_function is in neither DATA_STORE_TYPES nor IAM_TYPES", () => {
+    expect(DATA_STORE_TYPES).not.toContain("aws_lambda_function");
+    expect(IAM_TYPES).not.toContain("aws_lambda_function");
+  });
+});
+
+describe("new resource types added in round 61 are in the correct tables", () => {
+  // Data store additions (round 61)
+  it("aws_kinesis_stream is in DATA_STORE_TYPES", () => {
+    expect(DATA_STORE_TYPES).toContain("aws_kinesis_stream");
+  });
+  it("aws_sqs_queue is in DATA_STORE_TYPES", () => {
+    expect(DATA_STORE_TYPES).toContain("aws_sqs_queue");
+  });
+  it("aws_documentdb_cluster is in DATA_STORE_TYPES", () => {
+    expect(DATA_STORE_TYPES).toContain("aws_documentdb_cluster");
+  });
+  it("google_storage_bucket is in DATA_STORE_TYPES", () => {
+    expect(DATA_STORE_TYPES).toContain("google_storage_bucket");
+  });
+  it("google_bigquery_dataset is in DATA_STORE_TYPES", () => {
+    expect(DATA_STORE_TYPES).toContain("google_bigquery_dataset");
+  });
+  it("aws_cognito_user_pool is in DATA_STORE_TYPES", () => {
+    expect(DATA_STORE_TYPES).toContain("aws_cognito_user_pool");
+  });
+
+  // IAM additions (round 61)
+  it("google_project_iam_policy is in IAM_TYPES", () => {
+    expect(IAM_TYPES).toContain("google_project_iam_policy");
+  });
+  it("aws_ssm_parameter is in IAM_TYPES", () => {
+    expect(IAM_TYPES).toContain("aws_ssm_parameter");
+  });
+  it("aws_iam_group_policy_attachment is in IAM_TYPES", () => {
+    expect(IAM_TYPES).toContain("aws_iam_group_policy_attachment");
+  });
+
+  // Stateless compute still not in either list
+  it("aws_lambda_function is still in neither table after round 61 additions", () => {
+    expect(DATA_STORE_TYPES).not.toContain("aws_lambda_function");
+    expect(IAM_TYPES).not.toContain("aws_lambda_function");
+  });
+});
