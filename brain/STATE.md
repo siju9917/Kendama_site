@@ -9,44 +9,24 @@
 ## Session
 
 - **Last session date:** 2026-06-06 (Saturday, Mountain Time) — **IN PROGRESS**
-  (stop guard returns REFUSED at 12:24 AM MDT; still the Saturday work window).
+  (stop guard returns REFUSED at ~4:00 PM MDT; still deep in the Saturday work window).
   Previous session 2026-05-30 ended cleanly at Sunday 12:00 AM MDT.
-- **Session arc (cumulative, this long Saturday):** the early continuation built
-  the never-stop **technical interlock** (the `Stop` hook + `ops/checks/stop-guard.mjs`,
-  Mountain-Time-evaluated after a UTC-bug fix) + the `governance-integrity` check,
-  and ran bug-hunt passes 8–25 (335 tests). **The final continuation
-  (2026-05-31, passes 60–77 + 3 verified-negative batches) reached genuine
-  saturation:** one real latent bug fixed (redline DOCX control-char corruption,
-  pass 61), ~15 untested failure-mode/branch/invariant locks (orchestration hook,
-  both exports, storage, SAM, license, options, duplicates, clause-revision,
-  low-confidence warning, move+modify, summary-count consistency, unicode dashes,
-  zero-change export), the factory's own checks made violation-testable + the
-  stop-guard midnight boundary locked, three ship-gate closures (threat model,
-  ship critical path, release-runbook blockers) + a verified-buildable artifact,
-  five gated coverage-obs (#5–9) + N14 for the next cycle, strategy/ideation +
-  the "consequence-aware diff" forward concept, and an honest 5.7.7/5.7.8 audit.
-  226 → **455 tests**, full gate green throughout, all pushed. Brain + digest
-  kept current continuously.
+- **Session arc (cumulative, this long Saturday):** Built D5 (VS Code OpenAPI Breaking-Change
+  Lens) Phase 0 engine (1183 tests across engine + D5 extension + D6 Terraform classifier).
+  Bug-hunt rounds 1–95 on openapi-lens engine covering all constraint scopes, HTTP methods
+  (GET/POST/PUT/PATCH), parameter locations (query/header/path/cookie), null-transitions,
+  value-changes, and isolation properties. Branches merged: `claude/problematic-approach-dBgrn`
+  (D5/D6 Phase 1 extension code) + `claude/intelligent-faraday-FnmJn` (rounds 81-95) → main.
+  Main is current at `e933d99`. Kill-switch was placed mid-session due to Render build emails;
+  human re-enabled by direct message ("On main branch. Run the operating loop.").
 - **Session type:** Saturday Routine cadence (manually invoked by
   the human — the Routine itself still does not exist; see
   `human/NEED_FROM_HUMAN.md` item 2).
-- **Session status:** **ENDED 2026-05-31 12:00 AM MDT** — the authorized stop
-  ("no longer Saturday in Mountain Time"), confirmed by `ops/checks/stop-guard.mjs`
-  flipping from REFUSED to PERMIT exactly at the Mountain-midnight boundary. The
-  full Saturday work window was worked end-to-end (never stopped early, never
-  handed control back to ask permission — every approval-need was logged to
-  `NEED_FROM_HUMAN`/`PROGRESS` and the loop continued). The earlier UTC-bug that
-  once caused a false "Sunday" stop on Saturday evening is fixed + regression-
-  tested (the guard evaluates the weekday in America/Denver). **Next session:**
-  start at "Every session" in CLAUDE.md; read this STATE first; the top
-  non-gated POLISH is the list-renumbering noise (PROGRESS coverage-obs #8); the
-  binding blockers are all human/cap-gated (see `NEED_FROM_HUMAN.md`, led by the
-  spend cap).
-- **Tooling caveat for next session:** interactive tool output (Bash/Read)
-  was intermittently unreliable this session. Several brain-file edits
-  failed silently on stale anchors and were re-applied from ground-truth.
-  Verify source via `grep -n` and new tests by *running* them; confirm git
-  state from `git log`/push exit codes. Full lesson in `brain/META_LESSONS.md`.
+- **Session status:** **IN PROGRESS** (4:00 PM MDT, Saturday June 6) — operating loop
+  running under human direct instruction. Kill-switch (`human/ROUTINE_DISABLED.md`) present
+  but human explicitly authorized this session via live message. Stop guard: REFUSED.
+  Factory checks: 12/12 PASS (APPROVALS.md stale count fixed). Hooks installed.
+- **Branch status:** `main` is current at `e933d99`. All feature branches merged.
 
 > **★ OPERATING PRIORITY (set by the human 2026-06-01 — read before doing
 > anything) ★** Exhaustive polish is GOOD — the human wants every app
@@ -90,7 +70,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **1769/1769 tests** (BidDiff 586/586 + openapi-lens 1183/1183). Rounds 54-60: cross-level matrices + security gap + OAS-3.1 normalization + cross-version comparison. Round 61: +25 tests (Terraform resource expansion). Round 62–95: continuous 5.7.5 bug-hunt adding end-to-end adversarial coverage across all constraint scopes (property, top-level body, items, parameter), all HTTP methods (GET/POST/PUT/PATCH), all parameter locations (query/header/path/cookie), and all null-transition + value-change + isolation scenarios.
+- **Build green:** **1792/1792 tests** (BidDiff 586/586 + openapi-lens 1206/1206). Rounds 54-95: continuous 5.7.5 bug-hunt + Phase 2 POLISH items. **POLISH N1 DONE** (baseline persistence across VS Code reloads; +3 tests). **POLISH N3 DONE** (progressive semantic line location; +5 tests). **POLISH T1 DONE** (direction-aware IAM/SG classification; +15 tests). All 5.7.4 POLISH items now complete.
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +

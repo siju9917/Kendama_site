@@ -621,20 +621,20 @@ P3 — diagnosticProvider.ts: `lineText.search(/\S/)` returned -1 for empty line
 
 What would make D5 Phase 1 materially better? What would a top-tier team add?
 
-- [ ] **POLISH N1 — Baseline persistence across reload.** The in-memory
-  `manualBaselineByUri` map is cleared on VS Code reload. Selecting a baseline via
-  the picker sets it for the session only. A robust implementation persists the
-  *file path* (not content) to workspace settings so baselines survive reload.
-  Phase 2: `config.update("baselineFile", selectedPath, ConfigurationTarget.Workspace)`.
+- [x] **POLISH N1 — Baseline persistence across reload.** DONE (2026-06-06). `pickBaselineFile()`
+  now returns `{path, content}`. `selectBaseline` command persists the file path to workspace
+  settings (`ConfigurationTarget.Workspace`) so `resolveBaseline` step 2 restores the baseline
+  on any VS Code reload. Degrades gracefully when no workspace is open. +3 tests. ✓
 
 - [x] **POLISH N2 — Real-time analysis (debounced).** DONE (2026-06-06). Subscribed to
   `onDidChangeTextDocument` with 400ms debounce alongside `onDidSaveTextDocument`.
   `ReturnType<typeof setTimeout>` used for type safety. ✓
 
-- [ ] **POLISH N3 — Semantic line location for diagnostics.** `findLineForLocation` is
-  a text-search heuristic — it finds the first line matching the last path segment as a
-  key string. For JSON paths like `parameters[0]`, it falls back to line 0. A Phase 2
-  implementation would parse the YAML/JSON AST and walk the path for precise line numbers.
+- [x] **POLISH N3 — Semantic line location for diagnostics.** DONE (2026-06-06). `findLineForLocation`
+  now uses progressive left-to-right segment search (each segment searched from where the
+  previous was found, not from line 0). Pure numeric array-index segments (e.g., "0" in
+  `parameters[0]`) are filtered out — they don't appear as YAML keys and caused fall-back to
+  line 0. 300-line sliding window per segment; falls back to full remaining document. +5 tests. ✓
 
 - [x] **POLISH N4 — "Comparing vs:" in WebView panel header.** DONE (2026-06-06).
   `resolveBaseline` now returns `{content, label}` — label is "git HEAD", "selected file",
@@ -646,10 +646,12 @@ What would make D5 Phase 1 materially better? What would a top-tier team add?
 
 ### 5.7.4 "Nothing is done" review — D6 Terraform Lens Phase 1 (2026-06-06)
 
-- [ ] **POLISH T1 — Direction-aware IAM policy diff (Phase 2 known limitation).** All
-  IAM/security-group changes are conservatively flagged CRITICAL. Adding a more restrictive
-  IAM policy (fewer permissions = smaller blast radius) should be INFO. Phase 2: compare
-  before/after policy documents and classify the direction.
+- [x] **POLISH T1 — Direction-aware IAM policy diff.** DONE (2026-06-06). `analyzeIamDirection()`
+  parses IAM policy JSON (Statement count + wildcard Action `*` detection) and security-group
+  CIDR arrays to determine widening vs. narrowing. Rule 5 in `classifyChange` now classifies
+  narrowing changes (fewer Allow statements, fewer CIDRs) as NORMAL instead of CRITICAL.
+  Unknown direction or no parseable policy stays CRITICAL (conservative). Rule 3/replace still
+  overrides narrowing — replaced IAM policy is always CRITICAL. +15 tests. ✓
 
 - [x] **POLISH T2 — `output_changes` classification.** DONE (2026-06-06). Parser extracts
   `output_changes` map from plan JSON; sensitive detection handles boolean AND object
