@@ -9752,3 +9752,61 @@ paths:
     expect(enumChange?.after).toBeNull();
   });
 });
+
+// ─── Round 71: response-header-type-changed null transitions ────────────────
+
+describe("adversarial round 71 — response-header-type-changed null-transition paths", () => {
+  function makeTypedHeaderSpec(typeDecl: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /jobs/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Correlation-Id:
+              required: true
+              schema:
+                ${typeDecl}
+          content:
+            application/json:
+              schema: {type: object}
+`;
+  }
+
+  it("response header type removed (string→absent) is BREAKING — clients parsing header as string will get unspecified values", () => {
+    // classify rule: c.before !== null → BREAKING (regardless of after value)
+    // Removing the type constraint loosens the server contract; clients that
+    // parse the header value as string may receive unexpected data.
+    const withType    = makeTypedHeaderSpec("type: string");
+    const withoutType = makeTypedHeaderSpec("description: no-type-field");
+    const changes = analyzeOpenApiDiff(withType, withoutType);
+    const typeChange = changes.find((c) => c.type === "response-header-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBeNull();
+  });
+
+  it("response header type added (absent→string) is INFO — server now documents type, clients benefit", () => {
+    // classify rule: c.before === null → INFO
+    // Adding a type constraint tightens the server contract; existing clients
+    // that were already treating the header value as a string are unaffected.
+    const withoutType = makeTypedHeaderSpec("description: no-type-field");
+    const withType    = makeTypedHeaderSpec("type: string");
+    const changes = analyzeOpenApiDiff(withoutType, withType);
+    const typeChange = changes.find((c) => c.type === "response-header-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("INFO");
+    expect(typeChange?.before).toBeNull();
+    expect(typeChange?.after).toBe("string");
+  });
+});
