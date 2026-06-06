@@ -7563,3 +7563,107 @@ paths:
     expect(String(typeChange?.location)).toContain("401");
   });
 });
+
+// ─── Round 46: headers inside shared $ref responses + allOf required conflict ──
+
+describe("response headers inside shared $ref response objects (5.7.5 round 46)", () => {
+  function makeSharedResponseSpec(headerType: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+components:
+  responses:
+    RateLimitedResponse:
+      description: ok with rate-limit info
+      headers:
+        X-RateLimit-Remaining:
+          required: true
+          schema:
+            type: ${headerType}
+      content:
+        application/json:
+          schema: {type: object}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          $ref: "#/components/responses/RateLimitedResponse"
+`;
+  }
+
+  it("type change in header inside shared $ref response is detected as BREAKING", () => {
+    // The header lives in #/components/responses/RateLimitedResponse, not inline.
+    // The parser must resolve the $ref and still diff the header.
+    const changes = analyzeOpenApiDiff(
+      makeSharedResponseSpec("integer"),
+      makeSharedResponseSpec("string"),
+    );
+    const typeChange = changes.find((c) => c.type === "response-header-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+    expect(typeChange?.before).toBe("integer");
+    expect(typeChange?.after).toBe("string");
+  });
+
+  it("removing a header from a shared $ref response is BREAKING", () => {
+    const withHeader = makeSharedResponseSpec("integer");
+    // Without the header — rebuild spec without the header
+    const withoutHeader = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+components:
+  responses:
+    RateLimitedResponse:
+      description: ok
+      content:
+        application/json:
+          schema: {type: object}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          $ref: "#/components/responses/RateLimitedResponse"
+`;
+    const changes = analyzeOpenApiDiff(withHeader, withoutHeader);
+    const removed = changes.find((c) => c.type === "response-header-removed");
+    expect(removed).toBeDefined();
+    expect(removed?.severity).toBe("BREAKING");
+  });
+});
+
+describe("allOf required field conflict — parent non-required overrides member required (5.7.5 round 46)", () => {
+  // Per JSON Schema: allOf = instance must satisfy ALL constraints.
+  // If any member says required: [x], then x IS required in the merged schema.
+  // flattenAllOf() unions required arrays, which is semantically correct.
+  it("allOf member making a field required propagates to merged schema (BREAKING when added)", () => {
+    const makeSpec = (memberRequired: boolean) => `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: {type: string}
+              allOf:
+                - type: object
+                  ${memberRequired ? "required: [name]" : "properties:\n                    name: {type: string}"}
+      responses:
+        "200":
+          description: ok
+`;
+    const before = makeSpec(false);
+    const after  = makeSpec(true);
+    const changes = analyzeOpenApiDiff(before, after);
+    const reqChange = changes.find((c) => c.type === "request-schema-field-required-added");
+    expect(reqChange).toBeDefined();
+    expect(reqChange?.severity).toBe("BREAKING");
+  });
+});
