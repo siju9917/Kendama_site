@@ -14078,3 +14078,112 @@ ${enumLine}
     expect(c?.severity).toBe("BREAKING");
   });
 });
+
+// ─── Round 111: schema-property-enum-changed missing directions ────────────────
+// Prior tests for property-level enum:
+//   response: null→enum (INFO), enum→null (BREAKING) — 2 covered.
+//   request:  enum→null (INFO) — 1 covered.
+// Five untested property-level enum directions:
+//   response: value added (BREAKING), value removed (INFO)
+//   request:  null→enum (BREAKING), value added (INFO), value removed (BREAKING)
+
+describe("adversarial round 111 — schema-property-enum-changed missing directions", () => {
+  function makeResponsePropEnumSpec(enumValues: string[]): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [${enumValues.map((v) => `"${v}"`).join(", ")}]
+`;
+  }
+
+  function makeRequestPropEnumSpec(enumValues: string[] | null): string {
+    const enumLine = enumValues !== null
+      ? `                  enum: [${enumValues.map((v) => `"${v}"`).join(", ")}]`
+      : "";
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+${enumLine}
+      responses:
+        "201":
+          description: created
+`;
+  }
+
+  it("(R111-1) response property enum value added is BREAKING — exhaustive clients break", () => {
+    const changes = analyzeOpenApiDiff(
+      makeResponsePropEnumSpec(["active", "inactive"]),
+      makeResponsePropEnumSpec(["active", "inactive", "suspended"]),
+    );
+    const c = changes.find((x) => x.type === "response-schema-property-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("(R111-2) response property enum value removed is INFO — server sends fewer values", () => {
+    const changes = analyzeOpenApiDiff(
+      makeResponsePropEnumSpec(["active", "inactive", "suspended"]),
+      makeResponsePropEnumSpec(["active", "inactive"]),
+    );
+    const c = changes.find((x) => x.type === "response-schema-property-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+  });
+
+  it("(R111-3) request property enum added (null→enum) is BREAKING — server now restricts property values", () => {
+    const changes = analyzeOpenApiDiff(
+      makeRequestPropEnumSpec(null),
+      makeRequestPropEnumSpec(["active", "inactive"]),
+    );
+    const c = changes.find((x) => x.type === "request-schema-property-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.before).toBeUndefined();
+    expect(c?.after).toEqual(["active", "inactive"]);
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("(R111-4) request property enum value added is INFO — new accepted values, existing clients still work", () => {
+    const changes = analyzeOpenApiDiff(
+      makeRequestPropEnumSpec(["active", "inactive"]),
+      makeRequestPropEnumSpec(["active", "inactive", "suspended"]),
+    );
+    const c = changes.find((x) => x.type === "request-schema-property-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+  });
+
+  it("(R111-5) request property enum value removed is BREAKING — clients sending removed value get 422", () => {
+    const changes = analyzeOpenApiDiff(
+      makeRequestPropEnumSpec(["active", "inactive", "suspended"]),
+      makeRequestPropEnumSpec(["active", "inactive"]),
+    );
+    const c = changes.find((x) => x.type === "request-schema-property-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+  });
+});
