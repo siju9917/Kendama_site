@@ -728,6 +728,45 @@ components:
     expect(schema?.properties?.["id"]?.type).toBe("integer");
   });
 
+  it("nested allOf (allOf within allOf) — inner allOf is flattened recursively", () => {
+    // Spec has outer allOf with one member that itself has inner allOf.
+    // normalizeSchema recurses into each allOf member and flattens them too.
+    const spec = parseOapiSpec(`
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - allOf:
+                      - type: object
+                        required: [id]
+                        properties:
+                          id:
+                            type: string
+                  - properties:
+                      name:
+                        type: string
+components:
+  schemas: {}
+`);
+    const schema = spec.operations[0]!.responses["200"]?.schema;
+    // Outer allOf consumed; inner allOf also consumed during normalizeSchema recursion
+    expect(schema?.allOf).toBeUndefined();
+    // 'id' (from inner allOf member) and 'name' (from outer inline member) both visible
+    expect(schema?.properties?.["id"]?.type).toBe("string");
+    expect(schema?.properties?.["name"]).toBeDefined();
+    // required from inner allOf member bubbles up
+    expect(schema?.required).toContain("id");
+  });
+
   it("oneOf schemas are stored but NOT merged (oneOf/anyOf flattening remains Phase 2)", () => {
     const spec = parseOapiSpec(`
 openapi: "3.0.0"
@@ -928,5 +967,149 @@ components:
     expect(typeChange?.before).toBe("string");
     expect(typeChange?.after).toBe("integer");
     expect(typeChange?.severity).toBe("BREAKING");
+  });
+});
+
+// ─── Constraint diffing adversarial (5.7.2 second independent hard pass) ────
+
+describe("constraint diffing — adversarial probes", () => {
+  const baseSpec = (minLength?: number, maxLength?: number, pattern?: string) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string${minLength !== undefined ? `\n                  minLength: ${minLength}` : ""}${maxLength !== undefined ? `\n                  maxLength: ${maxLength}` : ""}${pattern !== undefined ? `\n                  pattern: "${pattern}"` : ""}
+      responses:
+        "200":
+          description: ok
+`;
+
+  it("zero-value minLength: 0→5 is BREAKING (0 is NOT null, must be treated as a real constraint)", () => {
+    const changes = analyzeOpenApiDiff(baseSpec(0), baseSpec(5));
+    const constraint = changes.find((c) => c.type === "request-schema-property-constraint-changed");
+    expect(constraint).toBeDefined();
+    expect(constraint?.before).toBe(0);
+    expect(constraint?.after).toBe(5);
+    expect(constraint?.severity).toBe("BREAKING");
+    expect(constraint?.location).toMatch(/minLength/);
+  });
+
+  it("zero-value minLength: 5→0 is INFO (loosening, 0 is NOT null — constraint not removed, just lowered)", () => {
+    const changes = analyzeOpenApiDiff(baseSpec(5), baseSpec(0));
+    const constraint = changes.find((c) => c.type === "request-schema-property-constraint-changed");
+    expect(constraint).toBeDefined();
+    expect(constraint?.before).toBe(5);
+    expect(constraint?.after).toBe(0);
+    expect(constraint?.severity).toBe("INFO");
+  });
+
+  it("constraint removed (minLength 5→undefined) is INFO for request — loosening", () => {
+    const changes = analyzeOpenApiDiff(baseSpec(5), baseSpec());
+    const constraint = changes.find((c) => c.type === "request-schema-property-constraint-changed");
+    expect(constraint).toBeDefined();
+    expect(constraint?.before).toBe(5);
+    expect(constraint?.after).toBeNull();
+    expect(constraint?.severity).toBe("INFO");
+    expect(constraint?.message).toMatch(/removed/i);
+  });
+
+  it("constraint added (undefined→minLength 5) is BREAKING for request — tightening", () => {
+    const changes = analyzeOpenApiDiff(baseSpec(), baseSpec(5));
+    const constraint = changes.find((c) => c.type === "request-schema-property-constraint-changed");
+    expect(constraint).toBeDefined();
+    expect(constraint?.before).toBeNull();
+    expect(constraint?.after).toBe(5);
+    expect(constraint?.severity).toBe("BREAKING");
+    expect(constraint?.message).toMatch(/added/i);
+  });
+
+  it("pattern change is BREAKING for request — any regex change may reject previously valid values", () => {
+    const changes = analyzeOpenApiDiff(baseSpec(undefined, undefined, "^[a-z]+$"), baseSpec(undefined, undefined, "^[A-Z]+$"));
+    const constraint = changes.find((c) => c.type === "request-schema-property-constraint-changed");
+    expect(constraint).toBeDefined();
+    expect(constraint?.before).toBe("^[a-z]+$");
+    expect(constraint?.after).toBe("^[A-Z]+$");
+    expect(constraint?.severity).toBe("BREAKING");
+    expect(constraint?.location).toMatch(/pattern/);
+  });
+
+  it("identical constraints produce no constraint-changed events", () => {
+    const changes = analyzeOpenApiDiff(baseSpec(5, 100, "^[a-z]+$"), baseSpec(5, 100, "^[a-z]+$"));
+    const constraintChanges = changes.filter((c) => c.type === "request-schema-property-constraint-changed");
+    expect(constraintChanges).toHaveLength(0);
+  });
+
+  it("response minLength loosening is BREAKING — server may now return shorter values than clients expect", () => {
+    const respSpec = (minLength?: number) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string${minLength !== undefined ? `\n                    minLength: ${minLength}` : ""}
+`;
+    const changes = analyzeOpenApiDiff(respSpec(8), respSpec(3));
+    const constraint = changes.find((c) => c.type === "response-schema-property-constraint-changed");
+    expect(constraint).toBeDefined();
+    expect(constraint?.before).toBe(8);
+    expect(constraint?.after).toBe(3);
+    expect(constraint?.severity).toBe("BREAKING");
+    expect(constraint?.location).toMatch(/minLength/);
+  });
+
+  it("constraint on deeply nested property is detected — recursive diff + constraint diffing cooperate", () => {
+    const nested = (minLength: number) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: object
+                  properties:
+                    zipCode:
+                      type: string
+                      minLength: ${minLength}
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(nested(5), nested(10));
+    const constraint = changes.find((c) => c.type === "request-schema-property-constraint-changed");
+    expect(constraint).toBeDefined();
+    expect(constraint?.before).toBe(5);
+    expect(constraint?.after).toBe(10);
+    expect(constraint?.severity).toBe("BREAKING");
+    expect(constraint?.location).toMatch(/address.*zipCode.*minLength/);
   });
 });

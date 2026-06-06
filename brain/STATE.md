@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **861/861 tests** (BidDiff 586/586 + openapi-lens 275/275).
+- **Build green:** **869/869 tests** (BidDiff 586/586 + openapi-lens 283/283).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -208,7 +208,7 @@ Priority order is `ops/loop.md`.
 
 **Unblocked (zero-cost):**
 7. ~~**P2** Vite/Vitest toolchain bump~~ — **DONE 2026-06-06.** Vite 6.4.3 + Vitest 4.1.8.
-8. ~~**D5 Phase 0 engine**~~ — **DONE + hardened 2026-06-06.** `products/openapi-lens/` — 275/275 tests.
+8. ~~**D5 Phase 0 engine**~~ — **DONE + hardened 2026-06-06.** `products/openapi-lens/` — 283/283 tests.
    VS Code extension scaffold (Phase 1) begins once Proposal #3 auto-proceeds 2026-06-13.
 9. Recurring: re-critique cadence, "nothing is ever done" reviews,
    ambient ideation, factory self-improvement, META audit.
@@ -664,6 +664,15 @@ all green; check tests 16/16.
       added to rules table.
     259→275 openapi-lens. Total: **861/861 tests**.
 
+62. **5.7.2 second independent hard pass — constraint diffing adversarial probes** — 8 new
+    adversarial integration tests in adversarial.test.ts probing the constraint diffing pipeline:
+    zero-value minLength (0 is NOT null — `??` preserves it correctly), constraint removal
+    (value→null → INFO for request), constraint addition (null→value → BREAKING for request),
+    pattern change (BREAKING regardless of direction), identical constraints (no false positives),
+    response minLength loosening (BREAKING), deeply nested property constraint (recursive diff
+    cooperates with constraint detection). All 8 pass. No bugs found.
+    275→283 openapi-lens. Total: **869/869 tests**.
+
 59. **5.7.4 "nothing is done" / allOf composition flattening** — adversarial "nothing is done"
     review identified allOf flattening as the next highest-value Phase 0 improvement: real-world
     OpenAPI specs use `allOf` heavily for schema inheritance, and breaking changes inside `allOf`
@@ -754,7 +763,7 @@ all green; check tests 16/16.
   components tested). All unblocked POLISH done. Next session: privacy copy fix
   (NEED #7, when human responds), store submission prep, and D5 VS Code extension
   Phase 1 scaffold (once Proposal #3 auto-proceeds 2026-06-13).
-- **D5 Phase 0 engine is in `products/openapi-lens/`** — 275 tests, all passing.
+- **D5 Phase 0 engine is in `products/openapi-lens/`** — 283 tests, all passing.
   Phase 1 (VS Code extension scaffold) starts when Proposal #3 auto-proceeds 2026-06-13.
 - Spend cap: plan-included web tools (sub-agents, search) are FREE; $0 committed
   external spend. No cap blocker.
