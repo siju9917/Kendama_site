@@ -687,18 +687,16 @@ What would make D5 Phase 1 materially better? What would a top-tier team add?
   whether the change adds a requirement or removes a supported path. Requires parsing
   operation-level `security:` and diffing against baseline.
 
-- [ ] **`servers` array changes** — base URL changes are breaking for clients that
-  construct full URLs. Removing a server entry (e.g., dropping a regional URL) breaks
-  clients that hard-coded that base path. Changing the base path prefix (e.g.,
-  `/api/v1` → `/api/v2`) silently breaks all clients even if no operations changed.
-  Requires diffing the `servers:` array at the top-level spec.
+- [x] **`servers` array changes** — DONE (2026-06-06). `servers` field parsed at spec
+  level (OAS 3.x `servers[].url`; Swagger 2.0 `host+basePath+schemes` computed).
+  Diff engine emits `server-removed` (BREAKING) and `server-added` (INFO) changes.
+  Classify rules + TYPE_STUBS + 5 adversarial tests (including base-URL swap and no-servers
+  graceful handling). ✓
 
-- [ ] **`operationId` changes** — SDK generators (openapi-generator, autorest, kiota)
-  use `operationId` as the generated method name. Renaming `getUser` → `fetchUser`
-  regenerates the SDK and breaks calling code at compile time. INFO in the engine
-  (it's not a wire-protocol break) but highly impactful for typed-client consumers;
-  classify as BREAKING for SDK-generated clients, INFO otherwise. Requires parsing
-  `operationId` per operation and diffing.
+- [x] **`operationId` changes** — DONE (2026-06-06). `operationId` parsed per operation;
+  diff engine emits `operation-id-changed` (INFO — not wire-breaking). Message explicitly
+  warns about SDK generator impact (openapi-generator, autorest, kiota rename generated
+  method). Classify rule + TYPE_STUBS + 4 adversarial tests. ✓
 
 ## Phase 3 — Monetization gate (at 1,000 installs)
 

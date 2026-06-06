@@ -761,6 +761,16 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => `Response array items schema opened: ${c.location}. Server may now return array elements with extra properties beyond what is documented. Clients should handle unknown fields in elements gracefully.`,
   },
 
+  // ─── Server URL changes ───────────────────────────────────────────────────
+  {
+    matches: (c) => c.type === "server-removed" ? "BREAKING" : null,
+    message: (c) => `Server URL removed: ${c.location}. Clients hard-coded to this base URL will no longer be able to reach the API.`,
+  },
+  {
+    matches: (c) => c.type === "server-added" ? "INFO" : null,
+    message: (c) => `Server URL added: ${c.location}. Clients may use this new base URL; existing clients are unaffected.`,
+  },
+
   // ─── Response headers ────────────────────────────────────────────────────
   {
     matches: (c) => c.type === "response-header-removed" ? "BREAKING" : null,
@@ -833,6 +843,18 @@ const CLASSIFY_RULES: ClassifyRule[] = [
         ? "INFO"
         : null,
     message: (c) => `Request body field can now be null: ${c.location}. Clients may optionally send null for this field.`,
+  },
+  {
+    matches: (c) => c.type === "operation-id-changed" ? "INFO" : null,
+    message: (c) => {
+      if (c.before === null) {
+        return `operationId added: ${c.location} → '${c.after}'. SDK generators will now use this name for the generated method.`;
+      }
+      if (c.after === null) {
+        return `operationId removed: ${c.location} (was '${c.before}'). SDK generators may revert to a path-derived method name.`;
+      }
+      return `operationId renamed: ${c.location} ('${c.before}' → '${c.after}'). SDK-generated clients (openapi-generator, autorest, kiota) will rename the generated method — breaking calling code at compile time.`;
+    },
   },
   {
     matches: (c) => c.type === "operation-deprecated-changed" && c.after === true ? "INFO" : null,

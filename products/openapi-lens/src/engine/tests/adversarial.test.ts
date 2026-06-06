@@ -5188,3 +5188,163 @@ paths:
     expect(headerChanges).toHaveLength(0);
   });
 });
+
+describe("servers array diffing — URL removed/added (5.7.5 round 26)", () => {
+  const makeSpec = (urls: string[]) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+servers:
+${urls.map((u) => `  - url: ${u}`).join("\n")}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+`;
+
+  it("removing a server URL is BREAKING", () => {
+    const baseline = makeSpec(["https://api.example.com", "https://api-eu.example.com"]);
+    const current = makeSpec(["https://api.example.com"]);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const removal = changes.find((c) => c.type === "server-removed");
+    expect(removal).toBeDefined();
+    expect(removal?.severity).toBe("BREAKING");
+    expect(removal?.before).toBe("https://api-eu.example.com");
+    expect(removal?.after).toBeNull();
+  });
+
+  it("adding a server URL is INFO", () => {
+    const baseline = makeSpec(["https://api.example.com"]);
+    const current = makeSpec(["https://api.example.com", "https://api-eu.example.com"]);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const addition = changes.find((c) => c.type === "server-added");
+    expect(addition).toBeDefined();
+    expect(addition?.severity).toBe("INFO");
+    expect(addition?.after).toBe("https://api-eu.example.com");
+  });
+
+  it("base URL change is BREAKING (remove old) + INFO (add new)", () => {
+    const baseline = makeSpec(["https://api.example.com/v1"]);
+    const current = makeSpec(["https://api.example.com/v2"]);
+    const changes = analyzeOpenApiDiff(baseline, current);
+    expect(changes.find((c) => c.type === "server-removed")?.severity).toBe("BREAKING");
+    expect(changes.find((c) => c.type === "server-added")?.severity).toBe("INFO");
+  });
+
+  it("identical servers produce no server changes", () => {
+    const spec = makeSpec(["https://api.example.com"]);
+    const changes = analyzeOpenApiDiff(spec, spec);
+    expect(changes.filter((c) => c.type === "server-removed" || c.type === "server-added")).toHaveLength(0);
+  });
+
+  it("spec without servers field produces empty servers list (no crash)", () => {
+    const noServers = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+`;
+    expect(() => analyzeOpenApiDiff(noServers, noServers)).not.toThrow();
+    expect(analyzeOpenApiDiff(noServers, noServers).filter((c) => c.type === "server-removed" || c.type === "server-added")).toHaveLength(0);
+  });
+});
+
+describe("operationId diffing — renamed/added/removed (5.7.5 round 25)", () => {
+  const baseSpec = (id: string) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users/{id}:
+    get:
+      operationId: ${id}
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: success
+`;
+
+  it("operationId rename emits operation-id-changed (INFO) with SDK warning in message", () => {
+    const changes = analyzeOpenApiDiff(baseSpec("getUser"), baseSpec("fetchUser"));
+    const idChange = changes.find((c) => c.type === "operation-id-changed");
+    expect(idChange).toBeDefined();
+    expect(idChange?.severity).toBe("INFO");
+    expect(idChange?.before).toBe("getUser");
+    expect(idChange?.after).toBe("fetchUser");
+    expect(idChange?.message).toMatch(/SDK|sdk|generator/i);
+  });
+
+  it("identical operationId produces no change", () => {
+    const changes = analyzeOpenApiDiff(baseSpec("getUser"), baseSpec("getUser"));
+    expect(changes.filter((c) => c.type === "operation-id-changed")).toHaveLength(0);
+  });
+
+  it("operationId removed emits operation-id-changed INFO", () => {
+    const withoutId = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: success
+`;
+    const changes = analyzeOpenApiDiff(baseSpec("getUser"), withoutId);
+    const idChange = changes.find((c) => c.type === "operation-id-changed");
+    expect(idChange).toBeDefined();
+    expect(idChange?.before).toBe("getUser");
+    expect(idChange?.after).toBeNull();
+    expect(idChange?.severity).toBe("INFO");
+  });
+
+  it("operationId added (was absent) emits operation-id-changed INFO", () => {
+    const withoutId = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: success
+`;
+    const changes = analyzeOpenApiDiff(withoutId, baseSpec("getUser"));
+    const idChange = changes.find((c) => c.type === "operation-id-changed");
+    expect(idChange).toBeDefined();
+    expect(idChange?.before).toBeNull();
+    expect(idChange?.after).toBe("getUser");
+    expect(idChange?.severity).toBe("INFO");
+  });
+});

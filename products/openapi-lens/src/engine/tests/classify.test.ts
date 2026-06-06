@@ -812,6 +812,9 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "response-header-removed":                               ["string", null],
     "response-header-added":                                 [null, "string"],
     "response-header-type-changed":                          ["string", "integer"],
+    "operation-id-changed":                                  ["getUser", "fetchUser"],
+    "server-removed":                                        ["https://api.example.com", null],
+    "server-added":                                          [null, "https://api.example.com"],
   };
 
   it.each(Object.keys(TYPE_STUBS) as OapiChangeType[])(

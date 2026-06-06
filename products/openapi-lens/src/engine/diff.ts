@@ -778,12 +778,46 @@ function diffResponses(
   }
 }
 
+/** Compare servers arrays and emit server-removed / server-added changes. */
+function diffServers(baseline: OapiSpec, current: OapiSpec, changes: OapiRawChange[]): void {
+  const bSet = new Set(baseline.servers);
+  const cSet = new Set(current.servers);
+
+  for (const url of bSet) {
+    if (!cSet.has(url)) {
+      changes.push({
+        type: "server-removed",
+        path: "/",
+        method: "get",
+        location: `servers[${url}]`,
+        before: url,
+        after: null,
+      });
+    }
+  }
+
+  for (const url of cSet) {
+    if (!bSet.has(url)) {
+      changes.push({
+        type: "server-added",
+        path: "/",
+        method: "get",
+        location: `servers[${url}]`,
+        before: null,
+        after: url,
+      });
+    }
+  }
+}
+
 /**
  * Compute the structural diff between a baseline and current OpenAPI spec.
  * Returns a flat list of raw changes (not yet classified).
  */
 export function diffSpecs(baseline: OapiSpec, current: OapiSpec): OapiRawChange[] {
   const changes: OapiRawChange[] = [];
+
+  diffServers(baseline, current, changes);
 
   const bMap = new Map(baseline.operations.map((op) => [opKey(op), op]));
   const cMap = new Map(current.operations.map((op) => [opKey(op), op]));
@@ -814,6 +848,18 @@ export function diffSpecs(baseline: OapiSpec, current: OapiSpec): OapiRawChange[
         location: `${bOp.method.toUpperCase()} ${bOp.path}.deprecated`,
         before: bDep,
         after: cDep,
+      });
+    }
+    const bId = bOp.operationId ?? null;
+    const cId = cOp.operationId ?? null;
+    if (bId !== cId) {
+      changes.push({
+        type: "operation-id-changed",
+        path: bOp.path,
+        method: bOp.method,
+        location: `${bOp.method.toUpperCase()} ${bOp.path}.operationId`,
+        before: bId,
+        after: cId,
       });
     }
   }

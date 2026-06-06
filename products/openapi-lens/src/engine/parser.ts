@@ -382,10 +382,12 @@ function parseOperations(raw: Record<string, unknown>, schemaLookup: Record<stri
 
       const responses = parseResponses(opRaw["responses"], schemaLookup, responseLookup, headerLookup);
       const deprecated = asBoolean(opRaw["deprecated"]);
+      const operationId = asString(opRaw["operationId"]);
 
       ops.push({
         path,
         method,
+        ...(operationId ? { operationId } : {}),
         parameters: nonBodyParams,
         requestBody,
         responses,
@@ -421,6 +423,29 @@ export function parseOapiSpec(input: string): OapiSpec {
   const schemas =
     version === "2.0" ? parseDefinitions(raw) : parseSchemas(raw);
   const operations = parseOperations(raw, schemas, version);
+  const servers = parseServers(raw, version);
 
-  return { version, operations, schemas };
+  return { version, operations, schemas, servers };
+}
+
+/** Parse the servers list to a flat array of URL strings. */
+function parseServers(raw: Record<string, unknown>, version: OapiSpec["version"]): string[] {
+  if (version === "2.0") {
+    // Swagger 2.0 — compute a single base URL from host + basePath.
+    const host = asString(raw["host"]);
+    if (!host) return [];
+    const basePath = asString(raw["basePath"]) ?? "/";
+    const schemes = asArray(raw["schemes"]).filter((s): s is string => typeof s === "string");
+    const scheme = schemes[0] ?? "https";
+    return [`${scheme}://${host}${basePath}`];
+  }
+  // OAS 3.x — servers array.
+  const rawServers = asArray(raw["servers"]);
+  const urls: string[] = [];
+  for (const s of rawServers) {
+    if (!isObject(s)) continue;
+    const url = asString(s["url"]);
+    if (url) urls.push(url);
+  }
+  return urls;
 }

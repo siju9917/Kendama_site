@@ -68,6 +68,7 @@ export interface OapiResponse {
 export interface OapiOperation {
   path: string;
   method: HttpMethod;
+  operationId?: string;
   parameters: OapiParameter[];
   requestBody: OapiRequestBody | null;
   responses: Record<string, OapiResponse>;
@@ -79,6 +80,7 @@ export interface OapiSpec {
   version: "3.0" | "3.1" | "2.0";
   operations: OapiOperation[];
   schemas: Record<string, OapiSchema>;
+  servers: string[];
 }
 
 // ─── Diff types ────────────────────────────────────────────────────────────
@@ -160,7 +162,10 @@ export type OapiChangeType =
   | "response-schema-writeonly-changed"
   | "response-header-removed"
   | "response-header-added"
-  | "response-header-type-changed";
+  | "response-header-type-changed"
+  | "operation-id-changed"
+  | "server-removed"
+  | "server-added";
 
 /** A raw structural difference between two specs before classification. */
 export interface OapiRawChange {
