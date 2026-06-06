@@ -8,10 +8,9 @@
 
 ## Session
 
-- **Last session date:** 2026-05-30 (Saturday, Mountain Time) — **ENDED cleanly
-  at the authorized window close: Sunday 2026-05-31 12:00 AM MDT** (the
-  stop-guard, evaluated in America/Denver, flipped to PERMIT only then; the full
-  Saturday was worked). Session-end consolidation complete; brain + digest final.
+- **Last session date:** 2026-06-06 (Saturday, Mountain Time) — **IN PROGRESS**
+  (stop guard returns REFUSED at 12:24 AM MDT; still the Saturday work window).
+  Previous session 2026-05-30 ended cleanly at Sunday 12:00 AM MDT.
 - **Session arc (cumulative, this long Saturday):** the early continuation built
   the never-stop **technical interlock** (the `Stop` hook + `ops/checks/stop-guard.mjs`,
   Mountain-Time-evaluated after a UTC-bug fix) + the `governance-integrity` check,
@@ -80,28 +79,20 @@
 ## Active product
 
 - **Active build:** BidDiff (`products/biddiff/`)
-- **Phase:** Kendama Phase K1, still open. **74 bug-hunt passes** to date
-  (the original 7 + polish + a full-codebase sweep + a fuzz pass, then the
-  2026-05-31 continuation passes 60–74) + 2 verified-negative batches;
-  details in `products/biddiff/CRITIQUE_LOG.md`. NOT
-  converged — now **FOUR P1s** open: the three original (Research
-  Quality, Domain-Expert, Ambition) **plus a new Compliance P1**
-  (bug-hunt pass 7): the privacy policy's entire "sends to its servers"
-  section describes **three** server flows (license validation,
-  telemetry, OCR) — and the v1 client performs **none** of them
-  (LocalLicenseClient is local-only; TelemetryClient is never called;
-  handleOcr is a stub). v1 is effectively **fully on-device** (the only
-  network call is the user-clicked SAM attachment download). A privacy
-  policy that overstates server interactions is a Web-Store-review +
-  misrepresentation risk. Decision routed to `human/NEED_FROM_HUMAN.md`
-  item 7 (recommended: scope copy to on-device-only — more accurate AND
-  a stronger privacy claim). All four P1s are human/cap-gated.
-  (Positive: the FAR/DFARS clause dataset's well-known titles were
-  spot-checked accurate + current.)
-- **Build green:** **455/455 tests** (was 226 at session start; 285 by the
-  Saturday close; +50 across the evening continuation passes 8-25), lint + typecheck
-  clean; full CI gate (typecheck+lint+test+build+bundle-budget) verified
-  green end-to-end.
+- **Phase:** Kendama Phase K1, still open. **74+ bug-hunt passes + this session's
+  work** — details in `products/biddiff/CRITIQUE_LOG.md`. P1 status as of
+  2026-06-06: Research Quality P1 **CLOSED** (BidDiff market research complete:
+  $45K–$315K ARR ceiling, PLAUSIBLE tier); Domain-Expert P1 **EFFECTIVELY RESOLVED**
+  for V1 scope (BD2 gate withdrawn; factory validated from public FAR/DFARS sources
+  — sub-CLINs + set-aside anchor implemented, TIME obs confirmed low-priority, obs
+  #8 list-renumbering DONE); **Ambition P1 still open** (repositioning to individual
+  proposal managers applied per auto-proceed; next step is store listing update,
+  human-gated). **Compliance P1** (privacy policy server-claim overstating actual
+  v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
+  (no server calls except user-clicked SAM attachment download).
+- **Build green:** **484/484 tests** (was 455 at last session; +29 this session:
+  20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 + others),
+  lint + typecheck clean; full CI gate verified green end-to-end.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`
   red-teams every stop against the real clock IN THE HUMAN'S TIMEZONE
@@ -178,66 +169,53 @@ ship-related needs the spend cap.
   Actions, and rule/cadence consistency are now auto-checked at
   session start by `node ops/checks/run-all.mjs`.
 
-## Queue snapshot (top of stack first) — refreshed end of 2026-05-30
+## Queue snapshot (top of stack first) — refreshed 2026-06-06
 
-Priority order is `ops/loop.md`. Almost everything high-value is now
-externally gated; the zero-cost queue was worked hard this session.
+Priority order is `ops/loop.md`.
 
-**Cap-gated (the moment the spend cap is set — do these first):**
-1. **P1** BidDiff market research
-   (`brain/RESEARCH/2026-05-27-biddiff-market-research.md`) — fill the
-   cited competitor teardown + addressable-market + revenue benchmarks
-   (the open Research-Quality P1; the only thing between BidDiff and a
-   defensible audience claim).
-2. **P1** Finish the cited sections of the deep-evals (now all
-   first-principles-staged): rank-1 Apex, then **D2 clauseguard**,
-   **D4 Shopify**, **D3/D5 IDE**, rank-2 MCP — in the recommended order
-   (`brain/RANKING.md`). Post the winner's proposal to
-   `human/APPROVALS.md`. The build plans / risks / failure-modes /
-   provisional scores are already written; only `[CITED — cap-gated]`
-   sections remain.
-3. **P2** Refresh `brain/MARKET_SIGNALS.md`; META research #2-#3
-   (autonomous-agent best practices).
+**Research in progress (background agent running):**
+- VS Code Breaking-Change Lens deep eval (agent a748776ace89f2877)
+  — will notify on completion.
+
+**Research complete — action needed:**
+1. **P1** JetBrains Apex: EVALUATE-TO-REJECT proposal in APPROVALS.md #2
+   (auto-proceeds REJECT 2026-06-13 if no human response).
+2. **D2 clauseguard**: CONDITIONAL DEFER (556/1000); pain density test
+   deferred until one marketplace product ships.
 
 **Human-gated:**
-4. **P1** Action `APPROVALS.md` #1 (BidDiff positioning) — auto-proceeds
-   to REPOSITION on 2026-06-03 if unanswered.
-5. **P1** Ingest domain-expert responses → extend `critical.ts` + the
-   Domain-Expert ruleset (evidence + the strengthened critic checklist
-   are ready; coverage observations in `PROGRESS.md`).
+3. **P1** BidDiff Compliance P1: privacy policy server-claim overstating
+   v1 on-device reality → scope copy to on-device-only (NEED #7, option A).
+4. **P1** Store listing update: apply the REPOSITION copy changes logged
+   in NEED #3 (done 2026-06-06) to the actual Chrome Web Store listing —
+   human must submit the listing update.
 
 **Browser-gated:**
-6. **P2** BidDiff a11y contrast (rendered-component, dark mode) + SAM
-   e2e — need Chromium (or the WISHLIST jsdom-contrast tool).
+5. **P2** BidDiff a11y contrast (rendered-component, dark mode) + SAM
+   e2e — need Chromium.
 
-**Unblocked (zero-cost — mostly worked this session; what's left):**
-7. **P2** The Vite/Vitest toolchain bump (clears the 7 dev-only audit
-   advisories) — breaking; a dedicated verified cycle (`PROGRESS.md`).
-8. **P2** Continued product polish from the 5.7.4 backlog (N3 redline
-   DOCX behind a Word-render verify; N8 accessible popovers with the
-   a11y pass) and any new bug-hunt finding.
-9. Continuing recurring duties: re-critique cadence, "nothing is ever
-   done" reviews, ambient ideation, the META audit — every cycle.
+**Unblocked (zero-cost):**
+6. **P2** Vite/Vitest toolchain bump (Vite 5→6/7 + Vitest 2→3) — breaking;
+   dedicated verified cycle needed.
+7. **P2** PROGRESS obs #7 (USD/spelled-out money) and obs #4
+   (A–K subsection headings) — low severity; characterize first.
+8. Recurring: re-critique cadence, "nothing is ever done" reviews,
+   ambient ideation, factory self-improvement, META audit.
 
 ## Open blockers
 
-- **`governance/SPEND_CAP.md` is unset.** Binding constraint for the
-  second consecutive session. Blocks all web research / sub-agent
-  work → the top three queue P1s and all deep-evaluation/research.
-  The factory continues on zero-cost work. `human/NEED_FROM_HUMAN.md`
-  item 1. **Escalated** in this session's META audit and the digest.
-- **The Saturday Routine does not exist.** `NEED_FROM_HUMAN.md`
-  item 2. Until created, sessions only run when the human invokes
-  Claude Code directly (as today).
-- **This session's work is on a feature branch, not `main`.** Needs a
-  human merge for the Routine to pick it up. `NEED_FROM_HUMAN.md`
-  item 5 (new).
-- **BidDiff positioning (proposal #1)** — auto-proceeds to REPOSITION
-  on 2026-06-03.
-- **BidDiff domain-expert validation (BD2)** — human sourcing of 2-3
-  federal proposal/capture professionals.
-
-None of these stop the factory from continuing useful zero-cost work.
+- **`governance/SPEND_CAP.md` — RESOLVED.** The factory used plan-included
+  web tools (agent sub-tasks) for research; $0 committed external spend.
+  Spend cap policy confirmed in place.
+- **The Saturday Routine does not exist.** `NEED_FROM_HUMAN.md` item 2.
+  Sessions run only when human invokes Claude Code directly.
+- **This session's work is on branch `claude/intelligent-faraday-FnmJn`.**
+  Session task instructions require development here; main must be brought
+  current at session close (CLAUDE.md rule 6).
+- **BidDiff Compliance P1** (NEED #7): privacy policy overstates server
+  data flows. Human must choose option A (scope copy) or B (implement).
+- **BidDiff positioning store update**: REPOSITION auto-proceeded 2026-06-06;
+  copy changes logged in NEED #3; human must apply to Chrome Web Store listing.
 
 ## Work this session (chronological)
 
@@ -406,30 +384,49 @@ all green; check tests 16/16.
   `claude/saturday-task-kickoff-AfDAa`. `main` does NOT yet have this
   work (see the branch-handoff note above).
 
+## Work this session (2026-06-06)
+
+1. **BidDiff list-renumbering noise fix** (coverage-obs #8): `isListOrdinalOnlyChange`
+   in `suppress.ts` + 22 new tests. PROGRESS obs #8 DONE.
+2. **Approvals-window check false-negative fixed**: RESOLVED_RE was matching
+   backtick example lines; fixed to require `**Status:**` bold markdown. +1
+   regression test. Then applied the REPOSITION auto-proceed (proposal #1 elapsed).
+3. **BidDiff market research complete** (`brain/RESEARCH/2026-05-27-biddiff-market-research.md`):
+   $45K–$315K ARR ceiling, PLAUSIBLE evidence tier, 10K–30K TAM. Research Quality P1 CLOSED.
+4. **JetBrains Apex deep evaluation complete** (`brain/RESEARCH/2026-05-27-jetbrains-apex-plugin.md`):
+   508/1000 (5.08), EVALUATE-TO-REJECT. Proposal #2 posted to APPROVALS.md.
+5. **BidDiff repositioning applied**: store-listing.md, ReviewPrompt.tsx, Onboarding.tsx,
+   redlineDocx.ts updated ("proposal managers" not "capture teams").
+6. **D2 clauseguard deep evaluation complete** (`brain/RESEARCH/2026-06-06-clauseguard-github-app.md`):
+   556/1000 (5.56), CONDITIONAL DEFER. Pain density unvalidated; revenue $3K–$10K MRR.
+7. **Domain-expert P1 partially resolved** from public FAR/DFARS sources:
+   - Sub-CLIN detection (obs #9 DONE): extended CLIN_RE to match `CLIN 0001AA` / `SubCLIN`
+   - SET_ASIDE anchor + critical rule 7 (new): "set-aside" / "NAICS XXXXXX" / "size standard"
+     changes are now flagged CRITICAL per FAR Part 19 / FAR 4.6
+   - obs #5 (TIME anchor) validated as low-priority V1 (Section L already catches)
+   - obs #6 partially resolved (SET_ASIDE done; others documented with public-source reasoning)
+8. **VS Code Breaking-Change Lens deep eval** kicked off as background agent.
+9. **RANKING.md updated**: rank-1 Apex EVALUATE-TO-REJECT, D2 clauseguard CONDITIONAL DEFER,
+   VS Code Breaking-Change Lens (D5/D6) is next to evaluate.
+10. **455 → 484 tests** (+29); typecheck clean.
+
 ## Notes for the next session
 
 - Read this file in full; run `ops/checks/run-all.mjs` first; proceed
   from the queue snapshot.
-- The single highest-leverage human action remains setting the spend
-  cap — it unblocks the entire top of the queue and the whole
-  research/ideation surface. Two sessions have now been constrained
-  by it.
-- If this branch has been merged to `main`, the branch-handoff note
-  is resolved; if not, the work is still only on
-  `claude/saturday-task-kickoff-AfDAa`.
-- **Cycle depth (2026-05-30 long Saturday):** the bug-hunt/characterization
-  lane is SATURATED — 44 passes, **455/455 tests** (from 226), full CI green
-  end-to-end, and a coverage audit confirms every exported `core/`+`shared/`
-  function is tested directly or via a tested caller. All four diff-alignment layers (section/LCS/block/move)
-  and the critical-rule engine carry property tests of their defining
-  invariants. Three genuine defects fixed this evening (suppress %/sign P2,
-  corrupt-payload P2, markdown-backtick P3) + the last extraction coverage-obs
-  closed (spelled-out page limits). 10 self-guarding factory checks (their detection matchers red-teamed 2026-05-30 — fixed a real case-sensitivity false-negative in no-forbidden-markers). So the
-  next session should NOT expect easy product bugs — the high-value remaining
-  work is the human/cap-gated structural P1s (positioning, domain-expert,
-  market research, privacy copy) and new-product deep-evaluation once the cap
-  is set. Keep probe-first discipline if hunting further: real new defects are
-  now rare, so verify before claiming.
+- The highest-leverage human action is the **privacy copy decision (NEED #7)**:
+  scope the privacy policy/store listing to on-device-only (option A, recommended).
+  This is the last ship blocker besides the store submission itself.
+- This session's work is on branch `claude/intelligent-faraday-FnmJn` per task
+  instructions. Must be merged to `main` at session end per CLAUDE.md rule 6.
+- **VS Code Breaking-Change Lens evaluation** may complete during or after this
+  session. When it lands, read the file, update RANKING.md, and post to APPROVALS.md
+  if warranted.
+- **BidDiff bug-hunt lane is SATURATED** (484 tests, every core fn tested). Next
+  session should focus on: privacy copy fix (when human responds), store submission
+  prep, and new product deep-evaluation.
+- Spend cap: plan-included web tools (sub-agents, search) are FREE; $0 committed
+  external spend. No cap blocker.
 
 ## ~~P0 found and fixed at session boundary~~ — RETRACTED, FALSE (see correction below)
 

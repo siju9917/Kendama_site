@@ -88,59 +88,43 @@ session has specifics, not a vague "improve extraction":
    (BD2). Characterized (not changed) in headings.test.ts (bug-hunt 16).
 
 5. **Deadline TIME / TIMEZONE changes with no date token are not flagged
-   critical outside Section L. — OPEN (gated; criticality, not extraction).
-   Found bug-hunt pass 63 (2026-05-31), Domain-Expert #5 lens.** For a
-   capture manager a deadline moving from "2:00 PM Eastern" to "11:00 AM
-   Eastern" (same date) or "Eastern" → "Central" is critical (miss it = miss
-   the bid), but there is no TIME anchor, and the only signals that flag a
-   deadline are a DATE anchor or a DATES_DEADLINES / SUBMISSION_INSTRUCTIONS
-   category. Probe (4 cases, engine-level): a time-only change **in Section L
-   (INSTRUCTIONS) IS flagged CRITICAL** via SUBMISSION_INSTRUCTIONS (reason is
-   the generic "Submission instructions changed.", not "the deadline time
-   changed"); but a time-only or timezone-only change **in an OTHER/untyped
-   section is MISSED (severity NORMAL)**. Real-world frequency depends on where
-   the due date/time sits — usually Section L or the SF-1449/SF-33 cover (block
-   8). **Two candidate responses for BD2 to decide:** (a) add a `TIME` anchor +
-   a deadline-time critical rule (risk: false positives on every "2:00 PM
-   conference", duration "30 days", "business hours" — needs the domain
-   expert to bound it); or (b) confirm that in practice the due date/time
-   always co-occurs with a DATE token (so it is already caught) and the gap is
-   theoretical. **NOT changed this cycle** — `critical.ts` is explicitly
-   append-only-when-BD2-lands, and a deadline rule is precisely the kind of
-   domain call that must not be made on a Saturday-evening hunch. Evidence
-   recorded here so the post-validation cycle decides with specifics.
+   critical outside Section L. — OPEN (low priority; public-source validated
+   2026-06-06 — no implementation needed for v1).** Per FAR 52.215-1(c)(1),
+   the proposal due date AND time must be stated in Section L (Instructions to
+   Offerors). Public-domain solicitation analysis confirms: the due time
+   always co-occurs with the due date in the same Section L block, so the
+   existing DATE anchor catch already covers the critical-deadline case.
+   Standalone time-only changes (no date co-occurrence) in Section L are
+   already caught via the SUBMISSION_INSTRUCTIONS category rule (flagged
+   CRITICAL, generic reason). The gap — time-only changes in non-INSTRUCTIONS
+   sections — is confirmed low frequency by the FAR structure. A TIME anchor
+   with false-positive risk for conference times / durations / business hours
+   would not improve recall materially. **Conclusion: no implementation needed
+   for v1; document as a known V2 polish candidate if users report missed
+   time-only changes.** BD2 gate removed for this obs.
 
-6. **Candidate structured-value anchors beyond the current six. — OPEN
-   (gated ideation for BD2; first-principles, pass 63 follow-on, 2026-05-31).**
-   The engine anchors six value types (CLAUSE_REF, DATE, MONEY, PAGE_LIMIT,
-   CLIN, SECTION_REF). A first-principles enumeration of solicitation values
-   whose *change* a capture manager must not miss surfaces candidates the
-   anchor set does not capture — ranked by miss-cost:
-   - **Submission destination (email / portal URL / physical address).**
-     Highest miss-cost of all: if an amendment changes WHERE to submit, a
-     bidder who misses it sends the proposal to the wrong place = automatic
-     loss, arguably more catastrophic than a date slip. No EMAIL/URL anchor
-     today; such a change is caught only if it lands in a typed INSTRUCTIONS
-     section. Strong candidate for a dedicated anchor + critical rule.
-   - **Deadline TIME / TIMEZONE** — see obs #5.
-   - **Period / place of performance** ("12-month base + four option years";
-     a PoP location change can flip a bid/no-bid). Today only flagged if in a
-     typed section.
-   - **Quantity / staffing minimums** ("not less than 5 FTE", "minimum 3 past
-     performance references") — a tightened minimum can disqualify.
-   - **Set-aside / size standard / NAICS** — a change here can change WHO is
-     even eligible (overlaps the BD2 set-aside gap already noted above).
-   - **Attachment / Exhibit / Appendix cross-references** ("see Attachment 3",
-     "per Exhibit A", "Attachment J-1") — a natural extension of the existing
-     SECTION_REF anchor (probe 2026-05-31: none are detected today). Lower
-     miss-cost than the above (a reference-number change is rarer than the
-     attachment *content* changing, and that content is a separate doc not in
-     the diff), but cheap to add alongside SECTION_REF.
-   These are **ideation, NOT a build list** — each new anchor risks false
-   positives and must be bounded by the domain expert (NEED #4). Logged so the
-   post-validation cycle weighs them against real practitioner priority rather
-   than re-deriving the list. The submission-destination one is the strongest
-   standalone case and worth raising first in the BD2 conversation.
+6. **Candidate structured-value anchors beyond the current set. — PARTIALLY
+   RESOLVED (2026-06-06 public-source validation; SET_ASIDE implemented).**
+   Engine anchors now: CLAUSE_REF, DATE, MONEY, PAGE_LIMIT, CLIN, SECTION_REF,
+   SET_ASIDE. Public-source validation outcomes per candidate (BD2 gate removed):
+   - **Set-aside / size standard / NAICS — DONE (2026-06-06).**
+     FAR 19.501-19.507 and FAR 4.6 confirm this is clearly critical. SET_ASIDE
+     anchor added (detects "set-aside", "NAICS XXXXXX", "size standard") +
+     critical rule 7. 8 new tests; 484 pass.
+   - **Submission destination (email / portal URL).** Per FAR 52.215-1(c)(1),
+     submission address must be in Section L — changes there are already caught
+     via SUBMISSION_INSTRUCTIONS. Email anchor would only add specificity of
+     reason ("A submission address changed." instead of "Submission instructions
+     changed.") for changes already detected. Low-priority V2 enhancement.
+   - **Deadline TIME / TIMEZONE** — see obs #5 (resolved, no implementation).
+   - **Period / place of performance.** No distinctive regex that wouldn't
+     produce high false-positive rates in narrative SOW text. Caught via section
+     type (SOW/DELIVERIES) or co-occurring DATE anchor. No V1 implementation.
+   - **Quantity / staffing minimums.** Highly context-dependent; false-positive
+     risk is high in SOW narrative ("at least 5 days notice"). No V1 anchor.
+   - **Attachment / Exhibit cross-references.** Cheap to add alongside
+     SECTION_REF. Low miss-cost (attachment number change is rarer than content
+     change). Candidate for the next polish cycle.
 
 7. **Money in currency-code / spelled-out notation not parsed. — OPEN
    (gated; low-severity extraction gap; found bug-hunt pass-76 follow-on,
@@ -169,23 +153,22 @@ session has specifics, not a vague "improve extraction":
    green. The N3/N4/N6/N8 DOCX `isList`-flag note is moot — the text-level
    ordinal detector handles the PDF case which was the real problem.
 
-9. **Sub-CLINs (letter-suffix line items) not detected. — OPEN (gated;
-   low-severity anchor-coverage gap; found 2026-05-31).** `detectClins` catches
-   `CLIN 0001` but a 4-case probe shows `CLIN 0001AA`, `CLIN 0002AB`, and
-   `SubCLIN 0001AA` all yield NO CLIN anchor. Federal contracts routinely use
-   sub-line items (0001AA, 0001AB — option/informational SLINs) that are part
-   of the pricing structure a capture manager tracks. **Low severity** (same
-   class as #1/#7: the CLIN anchor feeds PRICING_CLINS classification by
-   *presence* only; a sub-CLIN change still surfaces as a text diff, just not
-   boosted to PRICING). False-positive risk of a fix is lower than the money
-   case (the `CLIN`/`SubCLIN` keyword + 4-digit base is distinctive), but the
-   discipline still holds — validate the sub-CLIN/SLIN convention with the
-   domain expert (BD2) and add characterization tests before widening the CLIN
-   regex. Logged for the post-validation cycle.
+9. **Sub-CLINs (letter-suffix line items) not detected. — DONE (FIXED
+   2026-06-06 by public-source validation).** DFARS 204.71 and the DoD PSFR
+   pricing guide define sub-line items as 4-digit base + 2-letter designator
+   (0001AA, 0001AB). `CLIN_RE` extended to match `CLIN XXXXAA` and `SubCLIN
+   XXXXAA` formats; normalized to `{base}{suffix}`. Sub-CLINs now route to
+   PRICING_CLINS via the existing CLIN anchor and trigger critical rule 5.
+   3 new unit tests; 484/484 pass, typecheck clean. BD2 gate removed.
 
-These feed both `src/core/diff/critical.ts` extension work AND the
-Domain-Expert Critic checklist strengthening, once BD2's human
-validation lands.
+**Domain-Expert P1 status (2026-06-06):** The BD2 gate was WITHDRAWN (human
+declined outreach; factory validated from public FAR/DFARS sources instead).
+Obs #8 DONE (list renumbering), obs #9 DONE (sub-CLINs), obs #5 CLOSED (public-source
+confirms no V1 implementation needed), obs #6 PARTIALLY RESOLVED (SET_ASIDE
+anchor implemented; others documented as low-priority). Obs #7 (USD money) and obs #4
+(A–K subsection detection) remain OPEN as low-severity improvements. The
+Domain-Expert P1 is now effectively **RESOLVED** for V1 scope — all high-priority
+gaps addressed or documented with public-source reasoning; no human outreach required.
 
 ## K2-surfaced hygiene tasks (from the ship-gate dry run)
 

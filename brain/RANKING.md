@@ -37,7 +37,7 @@ reflected in Distribution for the security-review-gated candidates.
 | Candidate | Dist (×14) | Maint (×10) | Build (×10) | Self-serve (×8) | Defens (×8) | Strategic (×8) | Partial /580 | Hard-filter notes |
 |---|--:|--:|--:|--:|--:|--:|--:|---|
 | **Rank-1 Apex (JetBrains)** | 9 | 9 | 6 | 10 | 6 | 7 | **460** | passes all filters; build feasibility docked (Apex-domain fluency unproven) |
-| **D2 clauseguard (GitHub app)** | 9 | 6 | 8 | 9 | 8 | 9 | **474** | on-device/clause-data moat; maint docked (hosted webhook receiver) |
+| **D2 clauseguard (GitHub app)** | 9 | 6 | 8 | 9 | 8 | 9 | **474** (partial) → **556/1000 full** (2026-06-06) | CONDITIONAL DEFER; pain density unvalidated; rev ceiling $3K–$10K MRR; Filter 1 conditional |
 | **D4 Shopify theme-risk** | 9 | 5 | 7 | 10 | 5 | 6 | **414** | highest rev ceiling but server-side (no on-device wedge); API-version churn |
 | **D3 protobuf (JetBrains)** | 8 | 9 | 7 | 10 | 5 | 7 | **448** | Buf is a strong incumbent (defensibility docked); IDE-native wedge |
 | **D5 OpenAPI (VS Code)** | 9 | 9 | 7 | 5 | 5 | 7 | **422** | VS Code has no built-in billing (self-serve docked → DIY license server) |
@@ -66,19 +66,16 @@ order the **cap-unblocked** session should deep-evaluate (cited
 research), picking the first that confirms Proven + a clear
 marketplace + (for plugins) a chosen sub-feature:
 
-1. **Rank-1 JetBrains Apex plugin** — Proven-leaning, marketplace
-   distribution + self-serve billing, narrow scope. *Gate:* must pick
-   and defend a specific sub-feature (not "an Apex plugin"); assess
-   agent Apex-domain fluency. Still the lead.
-2. **D2 `clauseguard` (GitHub Marketplace app)** — Plausible,
-   GitHub-Marketplace buy-intent distribution, strategic-fit 9
-   (reuses BidDiff's clause dataset + engine). Strong second.
-3. **D4 Shopify theme-risk app** — highest revenue ceiling (a Proven
-   Shopify-app category) + strong marketplace, but weakest strategic
-   fit + worst maintenance-fit. A higher-variance revenue bet.
-4. **D3 protobuf JetBrains / D5 OpenAPI VS Code** — Proven-leaning
-   (incumbents buf.build / oasdiff prove the pain), marketplace
-   distribution, but compete with those incumbents; wedge = IDE-native.
+1. ~~**Rank-1 JetBrains Apex plugin**~~ **EVALUATE-TO-REJECT (2026-06-06).** Score 508/1000.
+   TAM too small, Kotlin build risk, VS Code winning.
+2. ~~**D2 `clauseguard` (GitHub Marketplace app)**~~ **CONDITIONAL DEFER (2026-06-06).** Score 556/1000.
+   Pain density unvalidated; revenue ceiling $3K–$10K MRR; Filter 1 conditional only.
+3. **VS Code Breaking-Change Lens** (D5 OpenAPI / D6 terraform — the meta-synthesis
+   collapsed D3/D5/D6 into one product line; beachhead format is the evaluation gate).
+   TypeScript, VS Code Marketplace (Proven distribution), on-device, no Filter 1 issue.
+   **Next to deep-evaluate.**
+4. **D4 Shopify theme-risk app** — highest revenue ceiling (Proven Shopify-app
+   category) but server-side. Evaluate after VS Code lens.
 5. **Rank-2 FAR/DFARS MCP server** — strategic-fit 9, but *emerging*
    (unproven) MCP distribution — evidence risk dominates.
 
@@ -165,10 +162,10 @@ landing (2026-06-06) and the ranking is being revised with cited evidence.**
      extension)** are "Proven-leaning" because incumbents
      (buf.build, oasdiff) prove the pain, but they compete against
      those incumbents — wedge is IDE-native immediacy.
-   None is approved or deep-evaluated; the cited deep-evaluation is
-   the cap-gated step. They are ranked here from first principles so
-   the BUILD loop has a real, reasoned candidate set the moment the
-   cap unblocks evaluation.
+   **D2 clauseguard deep evaluation complete 2026-06-06: 556/1000, CONDITIONAL DEFER**
+   (see `brain/RESEARCH/2026-06-06-clauseguard-github-app.md`). Remaining D-family
+   and seeded candidates await deep evaluation; next up is VS Code Breaking-Change
+   Lens (D5/D6 — best beachhead format to be determined).
 
 4. _(Further prior-research ideas to be reconstructed and ranked —
    SELF_IMPROVEMENT #1, still pending the prior-research source.)_
@@ -194,6 +191,7 @@ ranking — it builds from an approved ranking.
 | 2026-05-30 (evening) | First-principles provisional sub-scores computed | Scored the 6 candidates on the 6 cap-independent SCORING_MODEL factors (partial /580): D2 clauseguard 474 ≳ rank-1 Apex 460 ≳ D3 protobuf 448 > MCP 436 > D5 422 > D4 414 | Cited revenue/probability/evidence (42 of 100 weight) still cap-gated; on structure alone D2 leads, but rank-1's expected Proven-revenue tier makes them co-leads — consistent with the deep-eval order. Arithmetic verified. |
 | 2026-05-30 (evening) | "On-device trust wedge" insight (first-principles; see IDEA_BACKLOG) | Up-weight distribution sub-score for security-review-gated, on-device candidates (D1/D2/MCP); down-weight inherently server-side ones (D4, rank-4 feed); D2 ≳ D4 sharpened with a reason | BidDiff's verified fully-on-device architecture is a *distribution* asset, not just privacy: "no data leaves your machine" clears the security review that gates adoption for compliance-sensitive buyers — a self-serve trust claim that shortens the sales cycle with zero marketing spend (exactly what the hard filter rewards), and one server-side incumbents can't match. The strongest first product may be the one whose buyer's security review is *hardest*, not the highest-TAM. Cap-independent (rests on the passing on-device test); cited deep-eval should test it, not originate it. |
 | 2026-05-31 | "First-product sequencing under execution risk" insight (first-principles) | Added a sequencing argument (NOT a re-rank): the FIRST product to ship should be risk-adjusted toward D2 clauseguard even if rank-1 Apex keeps the higher raw EV | With zero shipped products, the first ship's dominant value is de-risking/learning the ship pipeline (accrues regardless of product). D2's lead rests on certainty the factory ALREADY holds (the built+test-validated rule-pack-swap engine + clause data → low/known build risk); Apex's higher rank rests on cap-gated revenue evidence AND an unproven agent-Apex-domain-fluency assumption (build-feasibility docked to 6). So ship the high-reuse/low-unknown product first; let the cited Apex deep-eval mature in parallel. Cap-independent; the deep-eval should weigh it, not default to "highest EV first." |
+| 2026-06-06 | D2 clauseguard deep evaluation complete (556/1000) | CONDITIONAL DEFER: not REJECT, but below build threshold | Pain density (FAR/DFARS/HIPAA clause citations in GitHub repos) is unvalidated — 60% failure mode estimate. Revenue ceiling $3K–$10K MRR realistic 2 years, below $20K+/month target. Filter 1 conditional pass only (Cloudflare Workers free tier). The first-product sequencing note was premature: D2's Filter 1 tension and pain-density unknown actually make it a riskier first ship than a VS Code extension. New next candidate: VS Code Breaking-Change Lens (D5/D6 — TypeScript, VS Code Marketplace, on-device, no Filter 1 issue, Proven-leaning). |
 
 ---
 
