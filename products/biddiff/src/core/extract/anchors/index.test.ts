@@ -151,6 +151,22 @@ describe("money", () => {
     expect(detectMoney("$1.5MM").map((x) => x.normalized)).toEqual(["1500000.00"]);
     expect(detectMoney("ceiling not to exceed $2MM").map((x) => x.normalized)).toEqual(["2000000.00"]);
   });
+  it("$1K parses to 1000.00 (magnitude suffix on bare integer)", () => {
+    expect(detectMoney("$1K total").map((x) => x.normalized)).toEqual(["1000.00"]);
+    expect(detectMoney("$500K base").map((x) => x.normalized)).toEqual(["500000.00"]);
+  });
+  it("$1,500K parses to 1500000.00 (commas + magnitude)", () => {
+    // Unusual but mathematically valid: $1,500K = $1,500 × 1,000 = $1.5M
+    expect(detectMoney("award of $1,500K").map((x) => x.normalized)).toEqual(["1500000.00"]);
+  });
+  it("$1.5MMM: triple-M suffix backtracks decimal — matches only $1", () => {
+    // MM fails \b (third M is a word char); M also fails \b (second M is a word char).
+    // The regex backtracks the optional decimal group: $1 matches with \b between
+    // the digit and the subsequent '.'. The value $1 is a "best effort" partial match.
+    // This is consistent behavior: $1.5MMM is not a valid notation; the anchor signals
+    // a money amount is present without claiming the full value.
+    expect(detectMoney("$1.5MMM").map((x) => x.normalized)).toEqual(["1.00"]);
+  });
   it("KNOWN LIMITATION (PROGRESS.md obs #7): USD-prefix and spelled-out forms not parsed", () => {
     // "$"-prefixed forms work; non-dollar-sign prefixes do not.
     // Not changed: widening MONEY_RE to "USD"/"dollars" carries false-positive
