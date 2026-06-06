@@ -5189,6 +5189,76 @@ paths:
   });
 });
 
+describe("security scheme / scope diffing (5.7.5 round 27)", () => {
+  const makeSpec = (security: string) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    get:
+${security}
+      responses:
+        "200":
+          description: ok
+`;
+
+  const withSecurity = (lines: string) =>
+    makeSpec(lines.split("\n").map((l) => `      ${l}`).join("\n"));
+
+  it("removing an auth scheme is BREAKING", () => {
+    const baseline = withSecurity("security:\n  - OAuth2:\n    - read:users\n  - apiKey: []");
+    const current = withSecurity("security:\n  - OAuth2:\n    - read:users");
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const removal = changes.find((c) => c.type === "operation-security-scheme-removed");
+    expect(removal).toBeDefined();
+    expect(removal?.severity).toBe("BREAKING");
+    expect(removal?.before).toBe("apiKey");
+  });
+
+  it("adding a new OAuth scope requirement is BREAKING", () => {
+    const baseline = withSecurity("security:\n  - OAuth2:\n    - read:users");
+    const current = withSecurity("security:\n  - OAuth2:\n    - read:users\n    - write:users");
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const scopeAdd = changes.find((c) => c.type === "operation-security-scope-added");
+    expect(scopeAdd).toBeDefined();
+    expect(scopeAdd?.severity).toBe("BREAKING");
+    expect(scopeAdd?.after).toBe("write:users");
+  });
+
+  it("adding a new auth scheme is INFO (more options, existing clients unaffected)", () => {
+    const baseline = withSecurity("security:\n  - OAuth2:\n    - read:users");
+    const current = withSecurity("security:\n  - OAuth2:\n    - read:users\n  - bearerAuth: []");
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const addition = changes.find((c) => c.type === "operation-security-scheme-added");
+    expect(addition).toBeDefined();
+    expect(addition?.severity).toBe("INFO");
+  });
+
+  it("removing a scope from an existing scheme is INFO (more permissive)", () => {
+    const baseline = withSecurity("security:\n  - OAuth2:\n    - read:users\n    - write:users");
+    const current = withSecurity("security:\n  - OAuth2:\n    - read:users");
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const scopeRemoval = changes.find((c) => c.type === "operation-security-scope-removed");
+    expect(scopeRemoval).toBeDefined();
+    expect(scopeRemoval?.severity).toBe("INFO");
+    expect(scopeRemoval?.before).toBe("write:users");
+  });
+
+  it("no security field in either spec produces no security changes", () => {
+    const noSec = makeSpec("");
+    const changes = analyzeOpenApiDiff(noSec, noSec);
+    const secChanges = changes.filter((c) =>
+      c.type === "operation-security-scheme-removed" ||
+      c.type === "operation-security-scheme-added" ||
+      c.type === "operation-security-scope-added" ||
+      c.type === "operation-security-scope-removed"
+    );
+    expect(secChanges).toHaveLength(0);
+  });
+});
+
 describe("servers array diffing — URL removed/added (5.7.5 round 26)", () => {
   const makeSpec = (urls: string[]) => `
 openapi: "3.0.0"

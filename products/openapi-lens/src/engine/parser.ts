@@ -351,6 +351,31 @@ function buildSwagger2RequestBody(parameters: unknown[], lookup: Record<string, 
   return { required, schema: Object.keys(schema).length > 0 ? schema : null };
 }
 
+/**
+ * Parse operation-level `security:` array into a flat scheme→scopes map.
+ * The security array is an OR of objects; each object is an AND of scheme→scopes pairs.
+ * We union scopes across all entries per scheme to get the broadest view of requirements.
+ * Returns null if the field is absent (inherit from global security, not tracked here).
+ */
+function parseSecurityRequirements(raw: unknown): Record<string, string[]> | null {
+  if (!Array.isArray(raw)) return null;
+  const result: Record<string, string[]> = {};
+  for (const entry of raw) {
+    if (!isObject(entry)) continue;
+    for (const [scheme, scopes] of Object.entries(entry)) {
+      const scopeList = Array.isArray(scopes) ? scopes.filter((s): s is string => typeof s === "string") : [];
+      if (!result[scheme]) {
+        result[scheme] = [...scopeList];
+      } else {
+        for (const s of scopeList) {
+          if (!result[scheme]!.includes(s)) result[scheme]!.push(s);
+        }
+      }
+    }
+  }
+  return result;
+}
+
 /** Parse the paths object into a flat list of operations. */
 function parseOperations(raw: Record<string, unknown>, schemaLookup: Record<string, unknown>, version: OapiSpec["version"]): OapiOperation[] {
   const paramLookup = parseSharedParameters(raw, schemaLookup);
@@ -383,11 +408,13 @@ function parseOperations(raw: Record<string, unknown>, schemaLookup: Record<stri
       const responses = parseResponses(opRaw["responses"], schemaLookup, responseLookup, headerLookup);
       const deprecated = asBoolean(opRaw["deprecated"]);
       const operationId = asString(opRaw["operationId"]);
+      const security = parseSecurityRequirements(opRaw["security"]);
 
       ops.push({
         path,
         method,
         ...(operationId ? { operationId } : {}),
+        ...(security ? { security } : {}),
         parameters: nonBodyParams,
         requestBody,
         responses,

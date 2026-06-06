@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **1327/1327 tests** (BidDiff 586/586 + openapi-lens 741/741).
+- **Build green:** **1336/1336 tests** (BidDiff 586/586 + openapi-lens 750/750).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -131,6 +131,11 @@
   Swagger 2.0 host+basePath+schemes; diff engine emits server-removed (BREAKING) and
   server-added (INFO) at spec level; 2 new OapiChangeType values; classify rules;
   TYPE_STUBS updated; 5 adversarial tests → 741.
+  5.7.5 bug-hunt round 27: security scheme/scope diffing — parse operation-level
+  security: array (scopes unioned across OR'd entries); emit 4 new change types:
+  operation-security-scheme-removed (BREAKING), operation-security-scope-added
+  (BREAKING), operation-security-scheme-added (INFO), operation-security-scope-removed
+  (INFO); classify rules; TYPE_STUBS updated; 5 adversarial tests → 750.
   All typecheck clean; full CI gate verified green.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`

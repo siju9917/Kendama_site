@@ -778,6 +778,76 @@ function diffResponses(
   }
 }
 
+/** Compare operation-level security requirements and emit scheme/scope changes. */
+function diffOperationSecurity(
+  path: string,
+  method: HttpMethod,
+  baseline: OapiOperation,
+  current: OapiOperation,
+  changes: OapiRawChange[],
+): void {
+  const bSec = baseline.security;
+  const cSec = current.security;
+  // Both absent: no security declared (global or absent) — no change.
+  if (!bSec && !cSec) return;
+  // Both present as empty array `security: []` is a valid "override global with none" in OAS.
+  const bSchemes = bSec ?? {};
+  const cSchemes = cSec ?? {};
+
+  const bKeys = new Set(Object.keys(bSchemes));
+  const cKeys = new Set(Object.keys(cSchemes));
+
+  for (const scheme of bKeys) {
+    if (!cKeys.has(scheme)) {
+      changes.push({
+        type: "operation-security-scheme-removed",
+        path, method,
+        location: `security.${scheme}`,
+        before: scheme,
+        after: null,
+      });
+      continue;
+    }
+    // Compare scopes for this scheme.
+    const bScopes = new Set(bSchemes[scheme] ?? []);
+    const cScopes = new Set(cSchemes[scheme] ?? []);
+    for (const scope of cScopes) {
+      if (!bScopes.has(scope)) {
+        changes.push({
+          type: "operation-security-scope-added",
+          path, method,
+          location: `security.${scheme}[${scope}]`,
+          before: null,
+          after: scope,
+        });
+      }
+    }
+    for (const scope of bScopes) {
+      if (!cScopes.has(scope)) {
+        changes.push({
+          type: "operation-security-scope-removed",
+          path, method,
+          location: `security.${scheme}[${scope}]`,
+          before: scope,
+          after: null,
+        });
+      }
+    }
+  }
+
+  for (const scheme of cKeys) {
+    if (!bKeys.has(scheme)) {
+      changes.push({
+        type: "operation-security-scheme-added",
+        path, method,
+        location: `security.${scheme}`,
+        before: null,
+        after: scheme,
+      });
+    }
+  }
+}
+
 /** Compare servers arrays and emit server-removed / server-added changes. */
 function diffServers(baseline: OapiSpec, current: OapiSpec, changes: OapiRawChange[]): void {
   const bSet = new Set(baseline.servers);
@@ -838,6 +908,7 @@ export function diffSpecs(baseline: OapiSpec, current: OapiSpec): OapiRawChange[
     diffParameters(bOp.path, bOp.method, bOp.parameters, cOp.parameters, changes);
     diffRequestBody(bOp.path, bOp.method, bOp, cOp, changes);
     diffResponses(bOp.path, bOp.method, bOp, cOp, changes);
+    diffOperationSecurity(bOp.path, bOp.method, bOp, cOp, changes);
     const bDep = bOp.deprecated ?? false;
     const cDep = cOp.deprecated ?? false;
     if (bDep !== cDep) {

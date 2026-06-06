@@ -815,6 +815,10 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "operation-id-changed":                                  ["getUser", "fetchUser"],
     "server-removed":                                        ["https://api.example.com", null],
     "server-added":                                          [null, "https://api.example.com"],
+    "operation-security-scheme-removed":                     ["OAuth2", null],
+    "operation-security-scheme-added":                       [null, "apiKey"],
+    "operation-security-scope-added":                        [null, "write:users"],
+    "operation-security-scope-removed":                      ["write:users", null],
   };
 
   it.each(Object.keys(TYPE_STUBS) as OapiChangeType[])(

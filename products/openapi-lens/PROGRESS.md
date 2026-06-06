@@ -680,12 +680,12 @@ What would make D5 Phase 1 materially better? What would a top-tier team add?
   3 new `OapiChangeType` values; classify rules + TYPE_STUBS exhaustiveness test
   updated; 5 adversarial tests. ✓
 
-- [ ] **Security scheme / scope changes** — `security:` changes on individual operations
-  are invisible. Adding a new required OAuth scope to an endpoint breaks clients that
-  request the old token without that scope. Removing a supported scheme (e.g., `apiKey`)
-  breaks clients using that auth type. Both directions can be BREAKING depending on
-  whether the change adds a requirement or removes a supported path. Requires parsing
-  operation-level `security:` and diffing against baseline.
+- [x] **Security scheme / scope changes** — DONE (2026-06-06). Parses operation-level
+  `security:` array (scopes unioned across OR'd entries). Diff engine emits:
+  `operation-security-scheme-removed` (BREAKING), `operation-security-scope-added`
+  (BREAKING — existing tokens lack new scope), `operation-security-scheme-added` (INFO),
+  `operation-security-scope-removed` (INFO — more permissive). 4 new OapiChangeType
+  values; classify rules; TYPE_STUBS updated; 5 adversarial tests. ✓
 
 - [x] **`servers` array changes** — DONE (2026-06-06). `servers` field parsed at spec
   level (OAS 3.x `servers[].url`; Swagger 2.0 `host+basePath+schemes` computed).

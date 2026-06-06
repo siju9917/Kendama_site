@@ -761,6 +761,24 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => `Response array items schema opened: ${c.location}. Server may now return array elements with extra properties beyond what is documented. Clients should handle unknown fields in elements gracefully.`,
   },
 
+  // ─── Security scheme / scope changes ─────────────────────────────────────
+  {
+    matches: (c) => c.type === "operation-security-scheme-removed" ? "BREAKING" : null,
+    message: (c) => `Security scheme removed: ${c.location}. Clients authenticating only with this scheme will no longer be able to access the endpoint.`,
+  },
+  {
+    matches: (c) => c.type === "operation-security-scope-added" ? "BREAKING" : null,
+    message: (c) => `OAuth scope required: ${c.location}. Clients with existing tokens that lack this scope will receive 403.`,
+  },
+  {
+    matches: (c) => c.type === "operation-security-scheme-added" ? "INFO" : null,
+    message: (c) => `Security scheme added: ${c.location}. A new authentication option is available; existing clients are unaffected.`,
+  },
+  {
+    matches: (c) => c.type === "operation-security-scope-removed" ? "INFO" : null,
+    message: (c) => `OAuth scope no longer required: ${c.location}. Clients may use tokens without this scope (non-breaking for existing clients).`,
+  },
+
   // ─── Server URL changes ───────────────────────────────────────────────────
   {
     matches: (c) => c.type === "server-removed" ? "BREAKING" : null,

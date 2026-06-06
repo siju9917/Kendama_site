@@ -69,6 +69,8 @@ export interface OapiOperation {
   path: string;
   method: HttpMethod;
   operationId?: string;
+  /** Normalized security requirements: scheme → union of required scopes across all OR'd entries. */
+  security?: Record<string, string[]>;
   parameters: OapiParameter[];
   requestBody: OapiRequestBody | null;
   responses: Record<string, OapiResponse>;
@@ -165,7 +167,11 @@ export type OapiChangeType =
   | "response-header-type-changed"
   | "operation-id-changed"
   | "server-removed"
-  | "server-added";
+  | "server-added"
+  | "operation-security-scheme-removed"
+  | "operation-security-scheme-added"
+  | "operation-security-scope-added"
+  | "operation-security-scope-removed";
 
 /** A raw structural difference between two specs before classification. */
 export interface OapiRawChange {
