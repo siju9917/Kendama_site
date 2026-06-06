@@ -1318,3 +1318,61 @@ describe("readOnly/writeOnly direction — cross-level consistency", () => {
     expect(result[0]?.message).not.toMatch(/^Change detected at/);
   });
 });
+
+// ─── Cross-level enum direction consistency guard (round 43/53 lesson) ────────
+// Verifies that the enum polarity is correct and consistent across ALL nesting
+// levels: top-level body, per-property, items, and response headers.
+//
+// Direction semantics:
+//   Response enum (body/property/items/header): ADD values = BREAKING (exhaustive
+//     client switch/match statements fail on unknown variants).
+//   Request enum (body/property/items): REMOVE values = BREAKING (client sends
+//     a value the server no longer accepts → 422/400).
+//
+// A polarity inversion at any one level (like the round-43 response-header bug)
+// will fail the corresponding row in this table.
+
+describe("enum direction — cross-level consistency", () => {
+  const SMALL = ["a", "b"];        // fewer values
+  const LARGE = ["a", "b", "c"];   // more values (SMALL + "c" added)
+
+  type EnumCase = {
+    type: OapiChangeType;
+    before: unknown;
+    after: unknown;
+    expected: "BREAKING" | "INFO";
+    label: string;
+  };
+
+  const ENUM_CASES: EnumCase[] = [
+    // ── Response: ADD values = BREAKING ──────────────────────────────────────
+    { type: "response-schema-enum-changed",          before: SMALL, after: LARGE, expected: "BREAKING", label: "response body enum values added" },
+    { type: "response-schema-property-enum-changed", before: SMALL, after: LARGE, expected: "BREAKING", label: "response property enum values added" },
+    { type: "response-schema-items-enum-changed",    before: SMALL, after: LARGE, expected: "BREAKING", label: "response items enum values added" },
+    { type: "response-header-enum-changed",          before: SMALL, after: LARGE, expected: "BREAKING", label: "response header enum values added" },
+    // ── Response: REMOVE values = INFO ───────────────────────────────────────
+    { type: "response-schema-enum-changed",          before: LARGE, after: SMALL, expected: "INFO", label: "response body enum values removed" },
+    { type: "response-schema-property-enum-changed", before: LARGE, after: SMALL, expected: "INFO", label: "response property enum values removed" },
+    { type: "response-schema-items-enum-changed",    before: LARGE, after: SMALL, expected: "INFO", label: "response items enum values removed" },
+    { type: "response-header-enum-changed",          before: LARGE, after: SMALL, expected: "INFO", label: "response header enum values removed" },
+    // ── Request: REMOVE values = BREAKING ────────────────────────────────────
+    { type: "request-schema-enum-changed",           before: LARGE, after: SMALL, expected: "BREAKING", label: "request body enum values removed" },
+    { type: "request-schema-property-enum-changed",  before: LARGE, after: SMALL, expected: "BREAKING", label: "request property enum values removed" },
+    { type: "request-schema-items-enum-changed",     before: LARGE, after: SMALL, expected: "BREAKING", label: "request items enum values removed" },
+    // ── Request: ADD values = INFO ────────────────────────────────────────────
+    { type: "request-schema-enum-changed",           before: SMALL, after: LARGE, expected: "INFO", label: "request body enum values added" },
+    { type: "request-schema-property-enum-changed",  before: SMALL, after: LARGE, expected: "INFO", label: "request property enum values added" },
+    { type: "request-schema-items-enum-changed",     before: SMALL, after: LARGE, expected: "INFO", label: "request items enum values added" },
+    // ── Parameter (always request-side): REMOVE = BREAKING, ADD = INFO ───────
+    { type: "parameter-enum-changed",                before: LARGE, after: SMALL, expected: "BREAKING", label: "parameter enum values removed" },
+    { type: "parameter-items-enum-changed",          before: LARGE, after: SMALL, expected: "BREAKING", label: "parameter items enum values removed" },
+    { type: "parameter-enum-changed",                before: SMALL, after: LARGE, expected: "INFO",     label: "parameter enum values added" },
+    { type: "parameter-items-enum-changed",          before: SMALL, after: LARGE, expected: "INFO",     label: "parameter items enum values added" },
+  ];
+
+  it.each(ENUM_CASES)("$label ($type) → $expected", ({ type, before, after, expected }) => {
+    const result = classifyChanges([raw(type, before, after, "test.enum")]);
+    expect(result[0]?.severity).toBe(expected);
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+});
