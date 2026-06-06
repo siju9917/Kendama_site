@@ -16,9 +16,13 @@ import { readText, finding } from './lib.mjs';
 
 export const name = 'approvals-window';
 
-// A proposal is "resolved" if its Status line is anything other than the
-// awaiting/blank placeholder — APPROVED / REJECTED / REDIRECT / AUTO-PROCEEDED.
-const RESOLVED_RE = /Status:\**\s*_*\s*(APPROVED|REJECTED|REDIRECT|AUTO-PROCEEDED)/i;
+// A proposal is "resolved" if its actual metadata Status line (formatted
+// **Status:** in bold markdown) is anything other than the awaiting placeholder.
+// Must match ONLY the real status bullet — NOT the example response-format lines
+// in the proposal body, which are backtick-quoted (`Status: APPROVED ...`).
+// The bold `**Status:**` marker is the distinguishing feature; backtick examples
+// do NOT have the surrounding `**`.
+const RESOLVED_RE = /\*\*Status:\*\*\s*_*\s*(APPROVED|REJECTED|REDIRECT|AUTO-PROCEEDED)/i;
 const DEADLINE_RE = /no response by\s+(\d{4})-(\d{2})-(\d{2})/i;
 
 /** today = a Date; text = APPROVALS.md contents. */

@@ -62,7 +62,7 @@ export function ReviewPrompt(): React.ReactElement | null {
     <div className="review-prompt" role="region" aria-label="Enjoying BidDiff?">
       <div className="review-prompt__title">Enjoying BidDiff?</div>
       <div className="review-prompt__body">
-        Reviews on the Chrome Web Store help other proposal and capture teams find us.
+        Reviews on the Chrome Web Store help other proposal managers find us.
       </div>
       <div className="review-prompt__actions">
         <button

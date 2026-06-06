@@ -48,7 +48,7 @@ export function Onboarding(): React.ReactElement | null {
           Use the &lsquo;Critical&rsquo; filter chip to see just those.
         </li>
         <li>
-          <strong>Export or copy.</strong> Branded PDF report for your capture team, or a
+          <strong>Export or copy.</strong> Branded PDF report for your records, or a
           one-paste summary for Slack.
         </li>
       </ol>

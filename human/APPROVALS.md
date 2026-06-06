@@ -41,7 +41,7 @@ To respond, edit the proposal's "**Status:**" line:
 - **Posted:** 2026-05-27
 - **Auto-proceed window:** 7 days from posting (defaults to
   **REPOSITION** if no response by 2026-06-03)
-- **Status:** _awaiting human response_
+- **Status:** AUTO-PROCEEDED on 2026-06-06 (window elapsed 2026-06-03 with no human response) — applying REPOSITION default: BidDiff repositions to "individual proposal-manager amendment triage" per option A.
 - **Source finding:** Ambition Critic (#13) finding in
   `products/biddiff/CRITIQUE_LOG.md` (Phase K1, pass 1)
 - **Why a proposal and not an autonomous decision:** the
@@ -107,7 +107,11 @@ Edit the `Status:` line above with one of:
 
 ## Closed proposals (audit trail)
 
-_(none yet)_
+### Proposal #1 — BidDiff positioning decision (AUTO-PROCEEDED 2026-06-06)
+
+Window elapsed 2026-06-03 with no human response. Factory applied option A
+(REPOSITION to "individual proposal-manager amendment triage"). See
+`human/NEED_FROM_HUMAN.md` item 3 for the full list of copy changes applied.
 
 ---
 

@@ -68,29 +68,27 @@ eliminate; prefer Routines.
 
 ---
 
-## 3. **[OPEN]** Review the BidDiff positioning proposal in `APPROVALS.md`
+## 3. **[DONE on 2026-06-06 — auto-proceeded to REPOSITION]** BidDiff positioning decision
 
-**Why:** The first formal Kendama critique panel pass on BidDiff
-surfaced an Ambition Critic finding: the product's positioning
-("capture teams") doesn't match its individual-tool feature set.
-The factory has posted a proposal to `human/APPROVALS.md`
-asking you to choose between **reposition / extend scope /
-ship-as-is with documented intent**. Without your call, BidDiff
-cannot reach the ship gate.
+**Resolved 2026-06-06 via the documented auto-proceed:** The 7-day window from
+posting (2026-05-27) elapsed on 2026-06-03 with no human response. Per the
+auto-proceed rule, the factory applied the documented default: **option A —
+REPOSITION** ("Individual proposal-manager amendment triage"). The following
+copy changes were applied this session:
+- `docs/store-listing.md` title: "Proposal & Capture Teams" → "Federal Proposal Managers"
+- `docs/store-listing.md` description: "proposal managers and capture managers" → "individual proposal managers"; removed "team-wide emails" line; export step updated
+- `src/sidepanel/ReviewPrompt.tsx`: "capture teams" → "proposal managers"
+- `src/sidepanel/Onboarding.tsx`: "for your capture team" → "for your records"
+- `src/core/export/redlineDocx.ts`: minor comment updated
 
-**Time needed:** ~5-10 minutes.
+**Also fixed this session:** the `ops/checks/approvals-window.mjs` check had a
+false-negative bug — it was matching example response-format lines (`\`Status: APPROVED...\``)
+in the proposal body as if they were the actual status, causing it to report
+"no elapsed window" even though the deadline had passed. Fixed the regex to require
+`**Status:**` (bold markdown) and added a regression test (55/55 pass).
 
-**Steps:**
-
-1. Open `human/APPROVALS.md`.
-2. Read the BidDiff positioning proposal at the top.
-3. Edit the proposal's `Status:` line per the format in that
-   file — `APPROVED` / `REJECTED` / `REDIRECT` with a reason.
-
-Auto-proceed window: 7 days. Without a response, the factory
-defaults to the *reposition* option (the safest of the three —
-no multi-week scope commitment based on an agent's self-grade)
-and continues toward ship.
+**No further human action required for positioning.** The Ambition P1 is now
+closed for the reposition dimension.
 
 ---
 

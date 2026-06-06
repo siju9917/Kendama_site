@@ -295,6 +295,35 @@ test('approvals-window: dates in the Closed section never trip the check', () =>
   assert.equal(f.filter((x) => x.level === 'P1').length, 1);
 });
 
+// REGRESSION: example response-format lines inside a proposal body look like
+// `Status: APPROVED on YYYY-MM-DD by human — option A` (backtick-quoted).
+// The RESOLVED_RE must NOT match these — only the actual **Status:** metadata
+// bullet is authoritative. A prior version of the regex matched backtick
+// examples, causing a false "resolved" on the real APPROVALS.md and silently
+// missing an elapsed window.
+test('approvals-window: example Status lines in backticks do NOT count as resolved', () => {
+  const docWithExamples = `## Open proposals
+### Proposal #1 — BidDiff positioning decision
+- Auto-proceed window: defaults to REPOSITION if no response by 2026-06-03
+- **Status:** _awaiting human response_
+
+**Your response format:**
+
+Edit the \`Status:\` line above with one of:
+
+- \`Status: APPROVED on YYYY-MM-DD by human — option A (reposition)\`
+- \`Status: REDIRECT on YYYY-MM-DD by human — other\`
+
+## Closed proposals (audit trail)
+`;
+  const after = new Date('2026-06-10T12:00:00Z');
+  const f = analyzeApprovals(docWithExamples, after);
+  assert.ok(
+    f.some((x) => x.level === 'P1' && /auto-proceed window elapsed/.test(x.message)),
+    'elapsed window must be flagged even when proposal body contains example Status lines',
+  );
+});
+
 // --- Violation detection (the check must FAIL on a bad input, not just
 //     pass on the clean real repo — a check that can never fire is useless). ---
 

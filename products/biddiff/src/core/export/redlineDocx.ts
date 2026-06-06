@@ -1,5 +1,5 @@
 /**
- * Redline DOCX export (POLISH N3) — a Word document capture teams can attach
+ * Redline DOCX export (POLISH N3) — a Word document proposal managers can attach
  * to a review. A `.docx` is a zip of OOXML, built here with the existing
  * JSZip dependency (no new dep). Deletions render struck-through + red,
  * insertions underlined + green; critical changes first; the canonical
