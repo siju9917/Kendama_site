@@ -133,8 +133,17 @@ function normalizeSchema(raw: unknown, lookup: Record<string, unknown>, visited:
   if (ref) return resolveLocalRef(ref, lookup, visited);
 
   const schema: OapiSchema = {};
-  const type = asString(raw["type"]);
-  if (type) schema.type = type;
+  // OAS 3.1 allows type to be an array (e.g. ["string", "null"]).  Extract the primary
+  // non-null type and synthesize `nullable: true` when "null" is present, so the diff engine
+  // sees a normalised OAS-3.0-style schema regardless of spec version.
+  const rawType = raw["type"];
+  if (typeof rawType === "string") {
+    if (rawType) schema.type = rawType;
+  } else if (Array.isArray(rawType)) {
+    const nonNullType = rawType.find((t): t is string => typeof t === "string" && t !== "null");
+    if (nonNullType) schema.type = nonNullType;
+    if (rawType.includes("null")) schema.nullable = true;
+  }
   const format = asString(raw["format"]);
   if (format) schema.format = format;
   const nullable = asBoolean(raw["nullable"]);
