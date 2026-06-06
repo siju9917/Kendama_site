@@ -6843,3 +6843,79 @@ paths:
     expect(typeChange?.severity).toBe("BREAKING");
   });
 });
+
+// ─── Round 39: security scheme direction semantics ────────────────────────────
+
+describe("security scheme direction semantics (5.7.5 round 39)", () => {
+  function makeSpec(security: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      ${security}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("security scheme added to a previously unsecured operation emits INFO (no global context)", () => {
+    // Operation had no security: → inheriting from global (unknown). Explicitly adding OAuth2
+    // is classified as INFO because without global security context we can't prove it's BREAKING.
+    // This is a documented limitation (false negative in some scenarios).
+    const noSecurity = makeSpec("");
+    const withOAuth2 = makeSpec("security:\n      - OAuth2: []");
+    const changes = analyzeOpenApiDiff(noSecurity, withOAuth2);
+    const added = changes.find((c) => c.type === "operation-security-scheme-added");
+    expect(added).toBeDefined();
+    expect(added?.after).toBe("OAuth2");
+    expect(added?.severity).toBe("INFO");
+  });
+
+  it("security scheme removed from an explicit requirement is BREAKING", () => {
+    const withOAuth2 = makeSpec("security:\n      - OAuth2: []");
+    const noSecurity = makeSpec("security: []");
+    const changes = analyzeOpenApiDiff(withOAuth2, noSecurity);
+    const removed = changes.find((c) => c.type === "operation-security-scheme-removed");
+    expect(removed).toBeDefined();
+    expect(removed?.before).toBe("OAuth2");
+    // BREAKING: clients that authenticate ONLY with OAuth2 lose access (if server enforces strictly)
+    expect(removed?.severity).toBe("BREAKING");
+  });
+
+  it("scope added to existing scheme is BREAKING (tighter requirement)", () => {
+    const noScope = makeSpec("security:\n      - OAuth2: []");
+    const withScope = makeSpec("security:\n      - OAuth2: [read:users]");
+    const changes = analyzeOpenApiDiff(noScope, withScope);
+    const scopeAdded = changes.find((c) => c.type === "operation-security-scope-added");
+    expect(scopeAdded).toBeDefined();
+    expect(scopeAdded?.after).toBe("read:users");
+    expect(scopeAdded?.severity).toBe("BREAKING");
+  });
+
+  it("scope removed from existing scheme is INFO (relaxed requirement)", () => {
+    const withScope = makeSpec("security:\n      - OAuth2: [read:users, write:users]");
+    const lessScope = makeSpec("security:\n      - OAuth2: [read:users]");
+    const changes = analyzeOpenApiDiff(withScope, lessScope);
+    const scopeRemoved = changes.find((c) => c.type === "operation-security-scope-removed");
+    expect(scopeRemoved).toBeDefined();
+    expect(scopeRemoved?.before).toBe("write:users");
+    expect(scopeRemoved?.severity).toBe("INFO");
+  });
+
+  it("replacing one auth scheme with another emits remove + add pair", () => {
+    const withOAuth2 = makeSpec("security:\n      - OAuth2: []");
+    const withApiKey = makeSpec("security:\n      - ApiKey: []");
+    const changes = analyzeOpenApiDiff(withOAuth2, withApiKey);
+    const removed = changes.find((c) => c.type === "operation-security-scheme-removed");
+    const added = changes.find((c) => c.type === "operation-security-scheme-added");
+    expect(removed).toBeDefined();
+    expect(removed?.before).toBe("OAuth2");
+    expect(removed?.severity).toBe("BREAKING");
+    expect(added).toBeDefined();
+    expect(added?.after).toBe("ApiKey");
+    expect(added?.severity).toBe("INFO");
+  });
+});
