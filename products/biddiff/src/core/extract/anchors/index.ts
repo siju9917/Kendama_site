@@ -281,23 +281,60 @@ export function detectPageLimits(text: string): Anchor[] {
 
 // ---------- CLIN ----------
 // Conservative — emitted only when the context permits (caller controls).
-
-const CLIN_RE = /\bCLIN\s*0*(\d{1,4})\b/g;
+//
+// Sub-CLINs (per DFARS 204.71 / DoD pricing PSFR guide) use the format
+// XXXX + YY where XXXX is the 4-digit parent CLIN and YY is a 2-letter
+// sub-line-item designator (0001AA, 0001AB, ...). "SubCLIN" is also used.
+// Detecting sub-CLINs ensures that pricing-structure changes to sub-line
+// items are routed to PRICING_CLINS and flagged critical (rule 5).
+const CLIN_RE = /\b(?:Sub)?CLIN\s*0*(\d{1,4})([A-Z]{2})?\b/gi;
 
 export function detectClins(text: string): Anchor[] {
   CLIN_RE.lastIndex = 0;
   const out: Anchor[] = [];
   let m: RegExpExecArray | null;
   while ((m = CLIN_RE.exec(text)) !== null) {
+    const base = m[1].padStart(4, "0");
+    const suffix = m[2] ? m[2].toUpperCase() : "";
     out.push({
       type: "CLIN",
       raw: m[0],
-      normalized: m[1].padStart(4, "0"),
+      normalized: base + suffix,
       charStart: m.index,
       charEnd: m.index + m[0].length,
     });
   }
   return out;
+}
+
+// ---------- Set-aside / NAICS ----------
+// A set-aside change is one of the highest-impact changes a solicitation
+// amendment can make: it determines WHO is eligible to bid. FAR 19.501-19.507
+// defines the set-aside designations; FAR 4.6 governs NAICS codes. Any block
+// containing these indicators whose text changes is flagged critical (rule 7
+// in critical.ts).
+//
+// Detection is conservative: the "set-aside" keyword (with/without hyphen),
+// NAICS codes (4–6 digit), and size-standard phrases are the common indicators
+// in solicitation cover pages and Section H. False-positive risk is low because
+// these terms are distinctive in the federal procurement context.
+const SET_ASIDE_RE =
+  /\bset[- ]aside\b|\bNAICS\s+(?:code\s*[:–-]?\s*)?\d{4,6}\b|\bsize\s+standard\b/gi;
+
+export function detectSetAside(text: string): Anchor[] {
+  SET_ASIDE_RE.lastIndex = 0;
+  const out: Anchor[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = SET_ASIDE_RE.exec(text)) !== null) {
+    out.push({
+      type: "SET_ASIDE",
+      raw: m[0],
+      normalized: m[0].toLowerCase().replace(/\s+/g, " "),
+      charStart: m.index,
+      charEnd: m.index + m[0].length,
+    });
+  }
+  return dedupSpans(out);
 }
 
 // ---------- Section references ----------
@@ -356,6 +393,7 @@ export function detectAllAnchors(text: string, ctx: DetectorContext = {}): Ancho
     ...detectPageLimits(normalized),
     ...(ctx.allowClin ? detectClins(normalized) : []),
     ...detectSectionRefs(normalized),
+    ...detectSetAside(normalized),
   ];
   return sortAnchors(dedupSpans(all));
 }

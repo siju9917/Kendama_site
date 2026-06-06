@@ -7,6 +7,7 @@ import {
   detectMoney,
   detectPageLimits,
   detectSectionRefs,
+  detectSetAside,
   sortAnchors,
 } from "./index.js";
 import type { Anchor } from "../../model/types.js";
@@ -189,6 +190,52 @@ describe("CLIN", () => {
   });
   it("ignores prose without CLIN token", () => {
     expect(detectClins("0001 alone").length).toBe(0);
+  });
+  it("matches sub-CLINs with 2-letter suffix (DFARS 204.71 format)", () => {
+    const a = detectClins("CLIN 0001AA and CLIN 0001AB are sub-line items.");
+    expect(a.map((x) => x.normalized)).toEqual(["0001AA", "0001AB"]);
+  });
+  it("matches SubCLIN keyword", () => {
+    const a = detectClins("SubCLIN 0002AA is an informational sub-line item.");
+    expect(a.map((x) => x.normalized)).toEqual(["0002AA"]);
+  });
+  it("parent CLIN and sub-CLINs are both detected", () => {
+    const a = detectClins("CLIN 0001 (base) has sub-items CLIN 0001AA and CLIN 0001AB.");
+    const norms = a.map((x) => x.normalized);
+    expect(norms).toContain("0001");
+    expect(norms).toContain("0001AA");
+    expect(norms).toContain("0001AB");
+  });
+});
+
+describe("SET_ASIDE", () => {
+  it("matches 'set-aside' keyword (hyphen form)", () => {
+    const a = detectSetAside("This acquisition is a Total Small Business Set-Aside.");
+    expect(a.some((x) => x.type === "SET_ASIDE")).toBe(true);
+  });
+  it("matches 'set aside' keyword (space form)", () => {
+    const a = detectSetAside("Solicitation is set aside for 8(a) concerns.");
+    expect(a.some((x) => x.type === "SET_ASIDE")).toBe(true);
+  });
+  it("matches NAICS code with numeric code", () => {
+    const a = detectSetAside("NAICS Code 541511 applies to this solicitation.");
+    expect(a.some((x) => x.type === "SET_ASIDE")).toBe(true);
+  });
+  it("matches NAICS without 'code' keyword", () => {
+    const a = detectSetAside("NAICS 541330 (Engineering Services).");
+    expect(a.some((x) => x.type === "SET_ASIDE")).toBe(true);
+  });
+  it("matches 'size standard' phrase", () => {
+    const a = detectSetAside("Size Standard: $25 million in annual receipts.");
+    expect(a.some((x) => x.type === "SET_ASIDE")).toBe(true);
+  });
+  it("does not match unrelated text", () => {
+    expect(detectSetAside("The award amount is $1 million for the base year.").length).toBe(0);
+    expect(detectSetAside("FAR 52.204-21 is incorporated.").length).toBe(0);
+  });
+  it("is included in detectAllAnchors output for set-aside text", () => {
+    const a = detectAllAnchors("This is a NAICS 541511 Small Business Set-Aside solicitation.");
+    expect(a.some((x) => x.type === "SET_ASIDE")).toBe(true);
   });
 });
 
