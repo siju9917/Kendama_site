@@ -36,6 +36,61 @@ To respond, edit the proposal's "**Status:**" line:
 
 ## Open proposals
 
+### Proposal #3 — VS Code OpenAPI Breaking-Change Lens (factory recommendation: PROCEED)
+
+- **Posted:** 2026-06-06
+- **Auto-proceed window:** 7 days — defaults to **PROCEED** (build the free OpenAPI beachhead) if no response by 2026-06-13
+- **Status:** _awaiting human response_
+- **Source:** Deep evaluation completed 2026-06-06. Full research at `brain/RESEARCH/2026-06-06-vscode-breaking-change-lens.md`
+- **Factory recommendation: PROCEED** — score 636/1000 clears the 600 auto-proceed threshold. Build the free OpenAPI beachhead; gate paid tier on 1,000 installs.
+
+**Executive summary:**
+
+A VS Code extension that detects breaking changes in OpenAPI schemas and annotates them inline. Every changed OpenAPI endpoint, field, or response schema is classified BREAKING, SAFE, or INFO with a hover explanation — **as you edit, before CI runs, before the PR is opened.**
+
+The gap: oasdiff (the leading breaking-change library, 1,116 GitHub stars, enterprise users at Adyen/Elastic/Wiz) has no VS Code extension. Azure API Center (Microsoft) has inline breaking-change detection but only for Azure-managed APIs. The general-purpose slot is unoccupied.
+
+**Key evidence:**
+1. **IDE gap is real:** exhaustive search found zero free-standing VS Code extensions for OpenAPI breaking-change detection. The 42Crunch extension (~500K installs) focuses on security, not breaking changes. Microsoft validates the IDE-native pattern by building it for Azure — but gated it behind Azure API Center.
+2. **Demand confirmed:** oasdiff has 450+ documented breaking-change rule categories (real users filed those rules); Pro tier at $100/month/team (they offer paid → they believe in the market). SmartBear 2024: 63% of API teams use OpenAPI.
+3. **Filter compliance:** fully on-device, TypeScript, VS Code Marketplace organic discovery, LemonSqueezy license keys. All three hard filters pass cleanly.
+4. **Strategic fit:** BidDiff's "align → diff → classify" engine generalizes directly to OpenAPI. The rule pack is the only new work; the engine is reused.
+5. **Risk:** oasdiff can ship a VS Code extension in 3–6 months — install velocity matters. Build quickly.
+
+**Full scoring (SCORING_MODEL):**
+
+| Factor | Weight | Score | Weighted |
+|---|---:|---:|---:|
+| Revenue ceiling | 18 | 5 | 90 |
+| Probability | 14 | 4 | 56 |
+| Distribution | 14 | 9 | 126 |
+| Maintenance fit | 10 | 9 | 90 |
+| Build feasibility | 10 | 8 | 80 |
+| Self-serve monetization | 8 | 6 | 48 |
+| Defensibility | 8 | 4 | 32 |
+| Evidence quality | 10 | 5 | 50 |
+| Strategic fit | 8 | 8 | 64 |
+| **Total** | **100** | | **636/1000 (6.36)** |
+
+**Portfolio rule note:** All evaluated candidates (BidDiff, Apex, clauseguard, Breaking-Change Lens) are PLAUSIBLE tier — no Proven comparables exist for on-device federal solicitation or OpenAPI IDE tooling. This is an honest finding, not a gap to paper over. Building the highest-scoring Plausible candidate is correct; the portfolio rule is against majority-Speculative, not against majority-Plausible.
+
+**Build sequence (if approved):**
+- **Phase 0 (zero-cost):** Factory builds the OpenAPI rule engine + engine adapter in TypeScript. This can start before the human sets up VS Code Marketplace publisher registration.
+- **Phase 1–2:** VS Code extension scaffold + OpenAPI diff core (~6 build sessions).
+- **Gate:** Publish free on VS Code Marketplace; gate paid tier on 1,000 installs.
+- **Human gate (one-time):** VS Code Marketplace publisher registration (free personal account; or $100 org account requires approval per PRODUCT_CONSTRAINTS.md). Log to `NEED_FROM_HUMAN.md`.
+
+**Relationship to BidDiff:** BidDiff is the active build and ships first. This product enters the build queue upon BidDiff's ship. No conflict.
+
+**Your options:**
+- `Status: APPROVED on YYYY-MM-DD by human — PROCEED with OpenAPI beachhead` — factory builds after BidDiff ships.
+- `Status: REDIRECT on YYYY-MM-DD by human — use Terraform as beachhead instead of OpenAPI` — factory pivots to Terraform as the first format (smaller audience, stronger on-device trust wedge, no existing free tooling).
+- `Status: REJECTED on YYYY-MM-DD by human — reason: <why>` — factory removes and continues evaluating D4 Shopify or rank-2 FAR/DFARS MCP.
+
+**Auto-proceed default:** PROCEED (factory's recommendation). If no response by 2026-06-13, factory begins building the OpenAPI beachhead upon BidDiff's ship gate.
+
+---
+
 ### Proposal #2 — JetBrains Apex plugin: PIVOT recommended (factory recommendation: REJECT)
 
 - **Posted:** 2026-06-06

@@ -70,10 +70,13 @@ marketplace + (for plugins) a chosen sub-feature:
    TAM too small, Kotlin build risk, VS Code winning.
 2. ~~**D2 `clauseguard` (GitHub Marketplace app)**~~ **CONDITIONAL DEFER (2026-06-06).** Score 556/1000.
    Pain density unvalidated; revenue ceiling $3K–$10K MRR; Filter 1 conditional only.
-3. **VS Code Breaking-Change Lens** (D5 OpenAPI / D6 terraform — the meta-synthesis
-   collapsed D3/D5/D6 into one product line; beachhead format is the evaluation gate).
-   TypeScript, VS Code Marketplace (Proven distribution), on-device, no Filter 1 issue.
-   **Next to deep-evaluate.**
+3. **VS Code Breaking-Change Lens** — **CONDITIONAL PROCEED (2026-06-06).**
+   Full cited score: **636/1000 (6.36)** — first candidate to clear the 600 threshold.
+   Deep evaluation: `brain/RESEARCH/2026-06-06-vscode-breaking-change-lens.md`.
+   Beachhead: **OpenAPI** (oasdiff has no VS Code extension; the slot is open).
+   TypeScript/VS Code extension, fully on-device, VS Code Marketplace organic discovery.
+   Revenue ceiling realistic 2-year: $3.5K–$10K MRR. Proposal #3 posted to APPROVALS.md.
+   Auto-proceeds PROCEED 2026-06-13 if no human response.
 4. **D4 Shopify theme-risk app** — highest revenue ceiling (Proven Shopify-app
    category) but server-side. Evaluate after VS Code lens.
 5. **Rank-2 FAR/DFARS MCP server** — strategic-fit 9, but *emerging*
@@ -192,6 +195,7 @@ ranking — it builds from an approved ranking.
 | 2026-05-30 (evening) | "On-device trust wedge" insight (first-principles; see IDEA_BACKLOG) | Up-weight distribution sub-score for security-review-gated, on-device candidates (D1/D2/MCP); down-weight inherently server-side ones (D4, rank-4 feed); D2 ≳ D4 sharpened with a reason | BidDiff's verified fully-on-device architecture is a *distribution* asset, not just privacy: "no data leaves your machine" clears the security review that gates adoption for compliance-sensitive buyers — a self-serve trust claim that shortens the sales cycle with zero marketing spend (exactly what the hard filter rewards), and one server-side incumbents can't match. The strongest first product may be the one whose buyer's security review is *hardest*, not the highest-TAM. Cap-independent (rests on the passing on-device test); cited deep-eval should test it, not originate it. |
 | 2026-05-31 | "First-product sequencing under execution risk" insight (first-principles) | Added a sequencing argument (NOT a re-rank): the FIRST product to ship should be risk-adjusted toward D2 clauseguard even if rank-1 Apex keeps the higher raw EV | With zero shipped products, the first ship's dominant value is de-risking/learning the ship pipeline (accrues regardless of product). D2's lead rests on certainty the factory ALREADY holds (the built+test-validated rule-pack-swap engine + clause data → low/known build risk); Apex's higher rank rests on cap-gated revenue evidence AND an unproven agent-Apex-domain-fluency assumption (build-feasibility docked to 6). So ship the high-reuse/low-unknown product first; let the cited Apex deep-eval mature in parallel. Cap-independent; the deep-eval should weigh it, not default to "highest EV first." |
 | 2026-06-06 | D2 clauseguard deep evaluation complete (556/1000) | CONDITIONAL DEFER: not REJECT, but below build threshold | Pain density (FAR/DFARS/HIPAA clause citations in GitHub repos) is unvalidated — 60% failure mode estimate. Revenue ceiling $3K–$10K MRR realistic 2 years, below $20K+/month target. Filter 1 conditional pass only (Cloudflare Workers free tier). The first-product sequencing note was premature: D2's Filter 1 tension and pain-density unknown actually make it a riskier first ship than a VS Code extension. New next candidate: VS Code Breaking-Change Lens (D5/D6 — TypeScript, VS Code Marketplace, on-device, no Filter 1 issue, Proven-leaning). |
+| 2026-06-06 | VS Code Breaking-Change Lens deep evaluation complete (636/1000) | CONDITIONAL PROCEED — first candidate to clear the 600 auto-proceed threshold | Beachhead: OpenAPI (oasdiff has no VS Code extension; gap confirmed real). Score 636: distribution 9 (VS Code Marketplace), maintenance 9 (on-device), build 8 (TypeScript), strategic 8 (BidDiff engine reuse). Drag: revenue 5 ($3.5K–$10K MRR realistic 2yr), probability 4, defensibility 4 (oasdiff can ship VS Code ext in 3–6 months). Build sequence: free OpenAPI beachhead → 1,000-install traction gate → paid Pro tier (LemonSqueezy). Proposal #3 posted to APPROVALS.md; auto-proceeds PROCEED 2026-06-13. |
 
 ---
 

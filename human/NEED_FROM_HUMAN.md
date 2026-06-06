@@ -318,6 +318,30 @@ budget).
 
 ---
 
+## 10. **[OPEN, non-blocking]** VS Code Marketplace publisher registration (for Breaking-Change Lens)
+
+**Why:** The VS Code Breaking-Change Lens extension (proposal #3, if approved) will be published
+to the VS Code Marketplace. The Marketplace requires a publisher account. A personal publisher
+account is free; an organization account is $100 one-time (requires approval per
+`governance/PRODUCT_CONSTRAINTS.md` since it exceeds the ≤$5 threshold).
+
+**Non-blocking:** The factory can build the extension and test it locally without a publisher
+account. The account is only needed at publish time.
+
+**Time needed:** ~5–10 minutes for a personal account setup.
+
+**Steps (personal account — free, no approval needed):**
+1. Go to https://marketplace.visualstudio.com and sign in with a Microsoft account.
+2. Create a publisher profile (pick a publisher ID, e.g. "kendama-factory" or similar).
+3. Note the publisher ID and share it with the factory (add it to `brain/ACCOUNTS.md`
+   or a similar file so the manifest can reference it).
+
+**If organization account ($100) is preferred:**
+- Reply in `APPROVALS.md` when approving proposal #3 with: "use org publisher account."
+- The factory will add a new approval entry for the $100 one-time spend.
+
+---
+
 ## How items move out of this list
 
 The factory **never deletes** entries here. When an item is done,
