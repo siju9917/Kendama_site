@@ -48,6 +48,7 @@ export interface OapiParameter {
 export interface OapiRequestBody {
   required: boolean;
   schema: OapiSchema | null;
+  contentTypes: string[];
 }
 
 /** A single documented response header. */
@@ -62,6 +63,7 @@ export interface OapiResponse {
   statusCode: string;
   schema: OapiSchema | null;
   headers: Record<string, OapiResponseHeader>;
+  contentTypes: string[];
 }
 
 /** One HTTP operation: a path + method + its inputs/outputs. */
@@ -173,7 +175,11 @@ export type OapiChangeType =
   | "operation-security-scope-added"
   | "operation-security-scope-removed"
   | "response-header-required-changed"
-  | "response-header-format-changed";
+  | "response-header-format-changed"
+  | "response-media-type-removed"
+  | "response-media-type-added"
+  | "request-media-type-removed"
+  | "request-media-type-added";
 
 /** A raw structural difference between two specs before classification. */
 export interface OapiRawChange {

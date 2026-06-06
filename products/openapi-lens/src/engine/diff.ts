@@ -645,6 +645,47 @@ function diffNullable(
   }
 }
 
+/**
+ * Compare content-type sets between baseline and current for a request body or response.
+ * Only active when at least one side has an explicit content map (OAS 3.x `content:` field).
+ * Swagger 2.0 objects have `contentTypes: []` and are skipped to avoid false positives.
+ */
+function diffContentTypes(
+  path: string,
+  method: HttpMethod,
+  location: string,
+  bTypes: string[],
+  cTypes: string[],
+  isRequest: boolean,
+  changes: OapiRawChange[],
+): void {
+  if (bTypes.length === 0 && cTypes.length === 0) return;
+  const bSet = new Set(bTypes);
+  const cSet = new Set(cTypes);
+  for (const t of bSet) {
+    if (!cSet.has(t)) {
+      changes.push({
+        type: isRequest ? "request-media-type-removed" : "response-media-type-removed",
+        path, method,
+        location: `${location}.content[${t}]`,
+        before: t,
+        after: null,
+      });
+    }
+  }
+  for (const t of cSet) {
+    if (!bSet.has(t)) {
+      changes.push({
+        type: isRequest ? "request-media-type-added" : "response-media-type-added",
+        path, method,
+        location: `${location}.content[${t}]`,
+        before: null,
+        after: t,
+      });
+    }
+  }
+}
+
 /** Compare requestBody objects. */
 function diffRequestBody(
   path: string,
@@ -676,6 +717,7 @@ function diffRequestBody(
     if (bb.required && !cb.required) {
       changes.push({ type: "request-body-required-changed", path, method, location: "requestBody.required", before: true, after: false });
     }
+    diffContentTypes(path, method, "requestBody", bb.contentTypes, cb.contentTypes, true, changes);
     diffSchemaType(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffSchemaRequiredFields(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffSchemaProperties(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
@@ -778,6 +820,7 @@ function diffResponses(
       changes.push({ type: "response-status-removed", path, method, location: `responses[${code}]`, before: code, after: null });
       continue;
     }
+    diffContentTypes(path, method, `responses[${code}]`, br.contentTypes, cr.contentTypes, false, changes);
     const loc = `responses[${code}].content.schema`;
     diffSchemaType(path, method, loc, br.schema, cr.schema, false, changes);
     diffSchemaRequiredFields(path, method, loc, br.schema, cr.schema, false, changes);

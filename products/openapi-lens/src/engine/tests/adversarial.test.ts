@@ -6061,7 +6061,7 @@ paths:
     expect(constraintChange?.severity).toBe("BREAKING");
   });
 
-  it("adding null to type array (string → [string,null]) in request body is INFO", () => {
+  it("adding null to type array (string → [string,null]) in request body is INFO (round 33)", () => {
     const baseline = `
 openapi: "3.1.0"
 info: {title: T, version: "1"}
@@ -6101,5 +6101,214 @@ paths:
     expect(nullableChange?.before).toBe(false);
     expect(nullableChange?.after).toBe(true);
     expect(nullableChange?.severity).toBe("INFO");
+  });
+});
+
+// ─── Round 34: content-type media type change detection ───────────────────────
+
+describe("response media type change detection (5.7.5 round 34)", () => {
+  it("removing application/json from response while adding application/xml is BREAKING", () => {
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/xml:
+              schema:
+                type: object
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const removed = changes.find((c) => c.type === "response-media-type-removed");
+    const added = changes.find((c) => c.type === "response-media-type-added");
+    expect(removed).toBeDefined();
+    expect(removed?.before).toBe("application/json");
+    expect(removed?.severity).toBe("BREAKING");
+    expect(added).toBeDefined();
+    expect(added?.after).toBe("application/xml");
+    expect(added?.severity).toBe("INFO");
+  });
+
+  it("adding application/xml alongside application/json is INFO only", () => {
+    const withJson = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+`;
+    const withBoth = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+`;
+    const changes = analyzeOpenApiDiff(withJson, withBoth);
+    expect(changes.find((c) => c.type === "response-media-type-removed")).toBeUndefined();
+    const added = changes.find((c) => c.type === "response-media-type-added");
+    expect(added).toBeDefined();
+    expect(added?.after).toBe("application/xml");
+    expect(added?.severity).toBe("INFO");
+  });
+
+  it("no media type change when content types are identical", () => {
+    const spec = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+`;
+    const changes = analyzeOpenApiDiff(spec, spec);
+    expect(changes.filter((c) => c.type === "response-media-type-removed" || c.type === "response-media-type-added")).toHaveLength(0);
+  });
+
+  it("Swagger 2.0 responses (no content map) do not generate spurious media-type changes", () => {
+    const swagger = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          schema:
+            type: object
+`;
+    const changes = analyzeOpenApiDiff(swagger, swagger);
+    expect(changes.filter((c) => c.type === "response-media-type-removed" || c.type === "response-media-type-added")).toHaveLength(0);
+  });
+});
+
+describe("request media type change detection (5.7.5 round 34)", () => {
+  it("removing application/json from requestBody is BREAKING", () => {
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+          application/xml:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const removed = changes.find((c) => c.type === "request-media-type-removed");
+    expect(removed).toBeDefined();
+    expect(removed?.before).toBe("application/json");
+    expect(removed?.severity).toBe("BREAKING");
+  });
+
+  it("adding application/x-www-form-urlencoded to requestBody is INFO", () => {
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const added = changes.find((c) => c.type === "request-media-type-added");
+    expect(added).toBeDefined();
+    expect(added?.after).toBe("application/x-www-form-urlencoded");
+    expect(added?.severity).toBe("INFO");
+    expect(changes.find((c) => c.type === "request-media-type-removed")).toBeUndefined();
   });
 });

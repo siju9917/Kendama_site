@@ -180,6 +180,17 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     matches: (c) => c.type === "response-status-removed" ? "BREAKING" : null,
     message: (c) => `Response status code removed: ${c.location}. Clients expecting this status code will not handle the new response correctly.`,
   },
+  // ─── Media type changes ───────────────────────────────────────────────────
+  // Removing application/json from a response is BREAKING — JSON clients will not receive the expected format.
+  {
+    matches: (c) => c.type === "response-media-type-removed" ? "BREAKING" : null,
+    message: (c) => `Response media type removed: ${c.location}. Clients that accept ${String(c.before)} will no longer receive a response body in that format.`,
+  },
+  // Removing a request media type is BREAKING — clients that send that content-type will fail.
+  {
+    matches: (c) => c.type === "request-media-type-removed" ? "BREAKING" : null,
+    message: (c) => `Request media type removed: ${c.location}. Clients that send ${String(c.before)} request bodies will now receive a 415 Unsupported Media Type.`,
+  },
   {
     matches: (c) => c.type === "response-schema-field-required-removed" ? "BREAKING" : null,
     message: (c) => `Required response field removed: ${c.location}. Clients that depend on this field being present will break.`,
@@ -879,6 +890,15 @@ const CLASSIFY_RULES: ClassifyRule[] = [
   {
     matches: (c) => c.type === "response-status-added" ? "INFO" : null,
     message: (c) => `New response status code added: ${c.location}. Clients should handle this new status.`,
+  },
+  // Media type additions are INFO — clients that use existing media types are unaffected.
+  {
+    matches: (c) => c.type === "response-media-type-added" ? "INFO" : null,
+    message: (c) => `Response media type added: ${c.location}. Clients may now also accept ${String(c.after)} format responses.`,
+  },
+  {
+    matches: (c) => c.type === "request-media-type-added" ? "INFO" : null,
+    message: (c) => `Request media type added: ${c.location}. The server now also accepts ${String(c.after)} request bodies.`,
   },
   {
     matches: (c) => c.type === "response-schema-field-required-added" ? "INFO" : null,

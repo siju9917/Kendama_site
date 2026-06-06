@@ -821,6 +821,10 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "operation-security-scope-removed":                      ["write:users", null],
     "response-header-required-changed":                      [true, false],
     "response-header-format-changed":                        ["uuid", "uri"],
+    "response-media-type-removed":                           ["application/json", null],
+    "response-media-type-added":                             [null, "application/xml"],
+    "request-media-type-removed":                            ["application/json", null],
+    "request-media-type-added":                              [null, "application/xml"],
   };
 
   it.each(Object.keys(TYPE_STUBS) as OapiChangeType[])(
