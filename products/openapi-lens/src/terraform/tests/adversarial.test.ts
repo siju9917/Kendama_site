@@ -449,3 +449,87 @@ describe("adversarial round 48 — new IAM/security resource type coverage", () 
     expect(result.severity).not.toBe("NORMAL");
   });
 });
+
+describe("adversarial round 61 — extended data-store and IAM type coverage", () => {
+  function makeChange(type: string, action: string, address?: string) {
+    return { address: address ?? `${type}.example`, type, actions: [action], mode: "managed" as const };
+  }
+
+  // ── Data store additions ────────────────────────────────────────────────────
+  it("aws_kinesis_stream update is CRITICAL (in-flight records at risk)", () => {
+    const result = classifyChange(makeChange("aws_kinesis_stream", "update"));
+    expect(result.severity).toBe("CRITICAL");
+  });
+
+  it("aws_kinesis_firehose_delivery_stream update is CRITICAL (delivery disruption risk)", () => {
+    const result = classifyChange(makeChange("aws_kinesis_firehose_delivery_stream", "update"));
+    expect(result.severity).toBe("CRITICAL");
+  });
+
+  it("aws_sqs_queue update is CRITICAL (message visibility or retention changes disrupt consumers)", () => {
+    const result = classifyChange(makeChange("aws_sqs_queue", "update"));
+    expect(result.severity).toBe("CRITICAL");
+  });
+
+  it("aws_sqs_queue creation is NORMAL (no existing messages at risk)", () => {
+    const result = classifyChange(makeChange("aws_sqs_queue", "create"));
+    expect(result.severity).toBe("NORMAL");
+  });
+
+  it("aws_documentdb_cluster update is CRITICAL (DocumentDB data store modification risks data)", () => {
+    const result = classifyChange(makeChange("aws_documentdb_cluster", "update"));
+    expect(result.severity).toBe("CRITICAL");
+  });
+
+  it("aws_neptune_cluster update is CRITICAL (Neptune graph DB data store modification risks data)", () => {
+    const result = classifyChange(makeChange("aws_neptune_cluster", "update"));
+    expect(result.severity).toBe("CRITICAL");
+  });
+
+  it("google_storage_bucket update is CRITICAL (GCP object storage — data loss risk mirrors S3)", () => {
+    const result = classifyChange(makeChange("google_storage_bucket", "update"));
+    expect(result.severity).toBe("CRITICAL");
+  });
+
+  it("google_bigquery_dataset update is CRITICAL (schema or ACL changes affect all tables in dataset)", () => {
+    const result = classifyChange(makeChange("google_bigquery_dataset", "update"));
+    expect(result.severity).toBe("CRITICAL");
+  });
+
+  it("aws_cognito_user_pool update is CRITICAL (user accounts — password policy or MFA changes lock out users)", () => {
+    const result = classifyChange(makeChange("aws_cognito_user_pool", "update"));
+    expect(result.severity).toBe("CRITICAL");
+  });
+
+  // ── IAM additions ──────────────────────────────────────────────────────────
+  it("google_project_iam_policy update triggers IAM review (replaces entire project policy)", () => {
+    const result = classifyChange(makeChange("google_project_iam_policy", "update"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  it("aws_cognito_user_pool_client update triggers IAM review (app client credential rotation)", () => {
+    const result = classifyChange(makeChange("aws_cognito_user_pool_client", "update"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  it("aws_ssm_parameter update triggers IAM review (Parameter Store secrets may be rotated/deleted)", () => {
+    const result = classifyChange(makeChange("aws_ssm_parameter", "update"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  it("aws_iam_group_policy_attachment update triggers IAM review (managed policy attached to group)", () => {
+    const result = classifyChange(makeChange("aws_iam_group_policy_attachment", "update"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  // ── Stateless compute should NOT be in either table ────────────────────────
+  it("aws_kinesis_stream creation is NORMAL (new stream, no existing records)", () => {
+    const result = classifyChange(makeChange("aws_kinesis_stream", "create"));
+    expect(result.severity).toBe("NORMAL");
+  });
+
+  it("aws_lambda_function is NOT classified as data store or IAM (stateless compute)", () => {
+    const result = classifyChange(makeChange("aws_lambda_function", "update"));
+    expect(result.severity).toBe("NORMAL");
+  });
+});

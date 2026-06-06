@@ -39,6 +39,17 @@ export const DATA_STORE_TYPES: readonly string[] = [
   "google_container_cluster",   // GKE cluster — node drain disrupts all workloads (mirrors aws_eks_cluster)
   "azurerm_kubernetes_cluster", // AKS cluster — node drain disrupts all workloads (mirrors aws_eks_cluster)
   "aws_msk_cluster",            // Amazon MSK (Managed Kafka) — in-flight messages at risk on modify
+  "aws_kinesis_stream",         // Kinesis Data Streams — in-flight records at risk; shard changes disrupt consumers
+  "aws_kinesis_firehose_delivery_stream", // Kinesis Firehose — delivery disruption on config change
+  "aws_sqs_queue",              // SQS — in-flight messages lost on queue deletion; visibility changes disrupt consumers
+  "aws_documentdb_cluster",     // Amazon DocumentDB (MongoDB-compatible) — in-memory state + replica disruption
+  "aws_neptune_cluster",        // Amazon Neptune (graph DB) — data store modification risks graph data
+  "aws_timestream_database",    // Amazon Timestream — time-series data store
+  "google_storage_bucket",      // GCP Cloud Storage bucket — object data loss risk (mirrors aws_s3_bucket)
+  "google_bigquery_dataset",    // BigQuery dataset — schema or access-control changes affect all tables
+  "azurerm_storage_container",  // Azure Blob Storage container within a storage account
+  "azurerm_data_lake_store",    // Azure Data Lake Store — analytics data loss risk
+  "aws_cognito_user_pool",      // Cognito User Pool — user accounts; modification can lock out all users
 ];
 
 /** Resource types where any change should be flagged for IAM/security review. */
@@ -74,6 +85,12 @@ export const IAM_TYPES: readonly string[] = [
   "google_service_account_key",     // key rotation or deletion breaks authenticating workloads
   "google_service_account_iam_binding",  // bindings grant impersonation
   "google_service_account_iam_member",
+  "google_project_iam_policy",           // replaces the entire project IAM policy (highly destructive)
+  "aws_cognito_identity_pool",           // Cognito Identity Pool — federated identity provider changes affect auth
+  "aws_cognito_user_pool_client",        // app client credentials; rotation breaks all callers using that client
+  "azurerm_federated_identity_credential", // workload identity federation — alters OIDC trust relationship
+  "aws_iam_group_policy_attachment",     // attaches managed policies to a group (complements group_policy)
+  "aws_ssm_parameter",                   // SSM Parameter Store — frequently used to store secrets/credentials
 ];
 
 /**

@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **1587/1587 tests** (BidDiff 586/586 + openapi-lens 1001/1001). Rounds 54-57: cross-level consistency matrices (87 tests). Round 58: security:[] Phase 2 gap locked (2 tests). Round 59: OAS 3.1 type-array nullable normalization (3 tests). Round 60: cross-version Swagger 2.0↔OAS 3.0 comparison (3 tests — characterizes media-type-added artifact and detects real schema differences).
+- **Build green:** **1612/1612 tests** (BidDiff 586/586 + openapi-lens 1026/1026). Rounds 54-60: cross-level matrices + security gap + OAS-3.1 normalization + cross-version comparison. Round 61: 12 new DATA_STORE_TYPES (Kinesis/SQS/DocumentDB/Neptune/GCS/BigQuery/Cognito/etc.) + 5 new IAM_TYPES (google_project_iam_policy/ssm_parameter/cognito_user_pool_client/etc.) + 25 tests.
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +

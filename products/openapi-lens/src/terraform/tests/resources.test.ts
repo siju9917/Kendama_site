@@ -158,3 +158,42 @@ describe("new resource types added in rounds 47-48 are in the correct tables", (
     expect(IAM_TYPES).not.toContain("aws_lambda_function");
   });
 });
+
+describe("new resource types added in round 61 are in the correct tables", () => {
+  // Data store additions (round 61)
+  it("aws_kinesis_stream is in DATA_STORE_TYPES", () => {
+    expect(DATA_STORE_TYPES).toContain("aws_kinesis_stream");
+  });
+  it("aws_sqs_queue is in DATA_STORE_TYPES", () => {
+    expect(DATA_STORE_TYPES).toContain("aws_sqs_queue");
+  });
+  it("aws_documentdb_cluster is in DATA_STORE_TYPES", () => {
+    expect(DATA_STORE_TYPES).toContain("aws_documentdb_cluster");
+  });
+  it("google_storage_bucket is in DATA_STORE_TYPES", () => {
+    expect(DATA_STORE_TYPES).toContain("google_storage_bucket");
+  });
+  it("google_bigquery_dataset is in DATA_STORE_TYPES", () => {
+    expect(DATA_STORE_TYPES).toContain("google_bigquery_dataset");
+  });
+  it("aws_cognito_user_pool is in DATA_STORE_TYPES", () => {
+    expect(DATA_STORE_TYPES).toContain("aws_cognito_user_pool");
+  });
+
+  // IAM additions (round 61)
+  it("google_project_iam_policy is in IAM_TYPES", () => {
+    expect(IAM_TYPES).toContain("google_project_iam_policy");
+  });
+  it("aws_ssm_parameter is in IAM_TYPES", () => {
+    expect(IAM_TYPES).toContain("aws_ssm_parameter");
+  });
+  it("aws_iam_group_policy_attachment is in IAM_TYPES", () => {
+    expect(IAM_TYPES).toContain("aws_iam_group_policy_attachment");
+  });
+
+  // Stateless compute still not in either list
+  it("aws_lambda_function is still in neither table after round 61 additions", () => {
+    expect(DATA_STORE_TYPES).not.toContain("aws_lambda_function");
+    expect(IAM_TYPES).not.toContain("aws_lambda_function");
+  });
+});
