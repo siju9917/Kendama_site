@@ -1170,3 +1170,294 @@ paths:
     expect(constraint?.location).toMatch(/address.*zipCode.*minLength/);
   });
 });
+
+// ─── allOf constraint inheritance ────────────────────────────────────────────
+
+describe("allOf constraint inheritance — flattenAllOf must propagate constraint fields", () => {
+  it("minLength in allOf base schema is inherited — tightening is BREAKING", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/EmailSchema"
+components:
+  schemas:
+    EmailSchema:
+      type: string
+      minLength: 3
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/EmailSchema"
+components:
+  schemas:
+    EmailSchema:
+      type: string
+      minLength: 10
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const constraint = changes.find((c) => c.type === "request-schema-property-constraint-changed");
+    expect(constraint).toBeDefined();
+    expect(constraint?.before).toBe(3);
+    expect(constraint?.after).toBe(10);
+    expect(constraint?.severity).toBe("BREAKING");
+  });
+
+  it("pattern added to allOf base schema is BREAKING (constraint added from null)", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/CodeSchema"
+components:
+  schemas:
+    CodeSchema:
+      type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/CodeSchema"
+components:
+  schemas:
+    CodeSchema:
+      type: string
+      pattern: "^[A-Z]{3}$"
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const constraint = changes.find((c) => c.type === "request-schema-property-constraint-changed");
+    expect(constraint).toBeDefined();
+    expect(constraint?.before).toBeNull();
+    expect(constraint?.after).toBe("^[A-Z]{3}$");
+    expect(constraint?.severity).toBe("BREAKING");
+  });
+});
+
+// ─── Top-level body schema constraint diffing ─────────────────────────────────
+
+describe("top-level body schema constraint diffing — non-object request/response bodies", () => {
+  it("request body scalar string: minLength tightened is BREAKING", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              minLength: 3
+      responses:
+        "201":
+          description: created
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              minLength: 10
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const constraint = changes.find((c) => c.type === "request-schema-property-constraint-changed");
+    expect(constraint).toBeDefined();
+    expect(constraint?.before).toBe(3);
+    expect(constraint?.after).toBe(10);
+    expect(constraint?.severity).toBe("BREAKING");
+  });
+
+  it("request body scalar string: minLength loosened is INFO", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              minLength: 10
+      responses:
+        "201":
+          description: created
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              minLength: 3
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const constraint = changes.find((c) => c.type === "request-schema-property-constraint-changed");
+    expect(constraint).toBeDefined();
+    expect(constraint?.severity).toBe("INFO");
+  });
+
+  it("response body array: maxItems increased (loosened — server may return more) is BREAKING", () => {
+    // maxItems 50→100: server can now return up to 100 items; clients written for ≤50 may break.
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                maxItems: 50
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                maxItems: 100
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const constraint = changes.find((c) => c.type === "response-schema-property-constraint-changed");
+    expect(constraint).toBeDefined();
+    expect(constraint?.before).toBe(50);
+    expect(constraint?.after).toBe(100);
+    expect(constraint?.severity).toBe("BREAKING");
+  });
+
+  it("response body array: maxItems decreased (tightened — server guarantees fewer) is INFO", () => {
+    // maxItems 100→50: server now promises even fewer items; clients written for ≤100 still work.
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                maxItems: 100
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                maxItems: 50
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const constraint = changes.find((c) => c.type === "response-schema-property-constraint-changed");
+    expect(constraint).toBeDefined();
+    expect(constraint?.severity).toBe("INFO");
+  });
+});

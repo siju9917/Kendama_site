@@ -113,6 +113,12 @@ function flattenAllOf(schema: OapiSchema): OapiSchema {
     if (result.writeOnly === undefined && member.writeOnly !== undefined) result.writeOnly = member.writeOnly;
     if (result.items === undefined && member.items !== undefined) result.items = member.items;
     if (result.enum === undefined && member.enum !== undefined) result.enum = member.enum;
+    // Inherit constraint fields from members when parent doesn't define them.
+    const numericConstraints = ["minimum", "maximum", "minLength", "maxLength", "minItems", "maxItems"] as const;
+    for (const cf of numericConstraints) {
+      if (result[cf] === undefined && member[cf] !== undefined) result[cf] = member[cf];
+    }
+    if (result.pattern === undefined && member.pattern !== undefined) result.pattern = member.pattern;
   }
 
   return result;

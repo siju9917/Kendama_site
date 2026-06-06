@@ -121,6 +121,20 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   `response-schema-items-constraint-changed`) with direction-aware classify rules matching
   the existing property constraint classification logic. 10 new unit tests + 2 adversarial
   integration tests. **297/297 tests.**
+- [x] **5.7.5 / 5.7.2 round 5 — allOf constraint inheritance + top-level body schema
+  constraints** — escalating critique found two gaps: (1) `flattenAllOf` merged `type`,
+  `format`, `nullable`, `readOnly`, `writeOnly`, `items`, `enum` from `allOf` members into
+  the parent schema, but NOT the 7 constraint fields (`minimum`/`maximum`/`minLength`/
+  `maxLength`/`pattern`/`minItems`/`maxItems`). A constraint change in an `allOf` base schema
+  (e.g., `minLength: 3→10`) was invisible because the flattened schema never carried the
+  constraint. Fixed: added constraint inheritance loop to `flattenAllOf` (2 loops: numeric
+  fields + pattern). (2) `diffRequestBody` and `diffResponses` called `diffSchemaProperties`,
+  `diffSchemaItems`, and `diffNullable` but never a top-level constraint comparison — meaning
+  a request body that is a scalar string/array (not an object with properties) would never
+  have its `minLength`/`maxItems`/etc. compared. Fixed: added `diffSchemaTopLevelConstraints`
+  helper called from both. 6 new adversarial integration tests (allOf constraint inheritance ×2
+  + top-level body constraint tightened/loosened ×2 for request + ×2 for response).
+  **313/313 tests.**
 
 ### Breaking-change rules implemented (Phase 0)
 

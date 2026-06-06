@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **893/893 tests** (BidDiff 586/586 + openapi-lens 307/307).
+- **Build green:** **899/899 tests** (BidDiff 586/586 + openapi-lens 313/313).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -709,6 +709,18 @@ all green; check tests 16/16.
     nested required-added (BREAKING), response nested required-added (INFO),
     response nested required-removed (BREAKING). 297→300 openapi-lens.
     Total: **886/886 tests**.
+
+64. **5.7.5 round 5 / 5.7.2 escalating critique — allOf constraint inheritance + top-level body
+    schema constraints** — escalating critique of the constraint diffing work found two gaps:
+    (1) `flattenAllOf` merged type/format/nullable/readOnly/writeOnly/items/enum from allOf members
+    but NOT constraint fields. A constraint change in an allOf base schema (e.g., `minLength: 3→10`
+    in a component schema) was invisible because the flattened schema never carried the constraint.
+    Fixed: added numeric constraint inheritance loop + pattern inheritance to `flattenAllOf`. (2)
+    `diffRequestBody` and `diffResponses` called `diffSchemaProperties` (per-property constraints
+    covered) but never top-level schema constraint comparison — a scalar request body schema with
+    `minLength` had its constraint completely ignored. Fixed: `diffSchemaTopLevelConstraints` helper
+    called from both entry points. 6 new adversarial integration tests. PROGRESS.md, PORTFOLIO.md,
+    CRITIQUE_AGENTS.md updated (5.7.3 roster growth). 307→313 openapi-lens. Total: **899/899 tests**.
 
 59. **5.7.4 "nothing is done" / allOf composition flattening** — adversarial "nothing is done"
     review identified allOf flattening as the next highest-value Phase 0 improvement: real-world

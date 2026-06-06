@@ -373,6 +373,35 @@ function diffSchemaItems(
   }
 }
 
+/**
+ * Compare top-level validation constraint fields on a schema (not per-property — for body schemas
+ * that are scalars or arrays rather than objects with named properties).
+ */
+function diffSchemaTopLevelConstraints(
+  path: string,
+  method: HttpMethod,
+  location: string,
+  baseline: OapiSchema | null,
+  current: OapiSchema | null,
+  isRequest: boolean,
+  changes: OapiRawChange[],
+): void {
+  const constraintFields = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems"] as const;
+  for (const cf of constraintFields) {
+    const bVal = baseline?.[cf] ?? null;
+    const cVal = current?.[cf] ?? null;
+    if (bVal !== cVal) {
+      changes.push({
+        type: isRequest ? "request-schema-property-constraint-changed" : "response-schema-property-constraint-changed",
+        path, method,
+        location: `${location}.${cf}`,
+        before: bVal,
+        after: cVal,
+      });
+    }
+  }
+}
+
 /** Compare nullable in a schema (response or request). */
 function diffNullable(
   path: string,
@@ -429,6 +458,7 @@ function diffRequestBody(
     diffSchemaProperties(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffSchemaItems(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffNullable(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
+    diffSchemaTopLevelConstraints(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
   }
 }
 
@@ -455,6 +485,7 @@ function diffResponses(
     diffNullable(path, method, loc, br.schema, cr.schema, false, changes);
     diffSchemaProperties(path, method, loc, br.schema, cr.schema, false, changes);
     diffSchemaItems(path, method, loc, br.schema, cr.schema, false, changes);
+    diffSchemaTopLevelConstraints(path, method, loc, br.schema, cr.schema, false, changes);
   }
 
   for (const code of Object.keys(cMap)) {
