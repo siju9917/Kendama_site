@@ -9451,3 +9451,247 @@ paths:
     expect(changes.filter((c) => c.type === "server-removed" || c.type === "server-added")).toHaveLength(0);
   });
 });
+
+// ─── Round 68: property type removal + implicit-object before value + Swagger 2.0 absent-fields ─
+
+describe("adversarial round 68 — property type removal and implicit-object before value", () => {
+  it("response property type removed (type:string → no type field) is BREAKING (before:string, after:null)", () => {
+    // When a response property loses its explicit `type` field, the diff engine emits
+    // response-schema-property-type-changed with before:'string', after:null.
+    // Classify rule: before !== null && after === null → BREAKING.
+    // Rationale: clients can no longer rely on the type constraint; could receive any value.
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    description: "the status"
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) =>
+      c.type === "response-schema-property-type-changed" &&
+      String(c.location).includes("status")
+    );
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe(null);
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+
+  it("removing a response property with no explicit type emits response-schema-property-removed with before:'(object)' fallback", () => {
+    // When a property has only sub-properties (no `type` field), the diff engine uses
+    // the string "(object)" as the before value in the removal event.
+    // This is the fallback: `bProp.type ?? "(object)"` in diffSchemaProperties.
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  address:
+                    properties:
+                      street:
+                        type: string
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const propRemoved = changes.find((c) =>
+      c.type === "response-schema-property-removed" &&
+      String(c.location).includes("address")
+    );
+    expect(propRemoved).toBeDefined();
+    expect(propRemoved?.before).toBe("(object)");
+    expect(propRemoved?.after).toBe(null);
+    expect(propRemoved?.severity).toBe("BREAKING");
+  });
+
+  it("adding a response property with no explicit type emits response-schema-property-added with after:'(object)' fallback", () => {
+    // Symmetric to removal: when a new property has only sub-properties (no type field),
+    // the after value uses the "(object)" fallback.
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  address:
+                    properties:
+                      street:
+                        type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const propAdded = changes.find((c) =>
+      c.type === "response-schema-property-added" &&
+      String(c.location).includes("address")
+    );
+    expect(propAdded).toBeDefined();
+    expect(propAdded?.after).toBe("(object)");
+    expect(propAdded?.before).toBe(null);
+    expect(propAdded?.severity).toBe("INFO");
+  });
+});
+
+describe("adversarial round 68 — Swagger 2.0 absent schemes and host fields", () => {
+  it("Swagger 2.0 spec without schemes field defaults to https:// (schemes[0] ?? 'https')", () => {
+    // OAS parseServers: absent schemes → asArray(undefined) = [] → schemes[0] ?? "https" = "https"
+    // The synthesized server URL is https://api.example.com/
+    const noSchemes = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+host: api.example.com
+basePath: /
+paths:
+  /items:
+    get:
+      responses:
+        200:
+          description: ok
+`;
+    const withHttpScheme = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+host: api.example.com
+basePath: /
+schemes:
+  - http
+paths:
+  /items:
+    get:
+      responses:
+        200:
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(noSchemes, withHttpScheme);
+    // noSchemes synthesizes https://api.example.com/ → withHttp synthesizes http://api.example.com/
+    const removed = changes.find((c) => c.type === "server-removed");
+    const added   = changes.find((c) => c.type === "server-added");
+    expect(removed).toBeDefined();
+    expect(String(removed?.before)).toContain("https://");
+    expect(removed?.severity).toBe("BREAKING");
+    expect(added).toBeDefined();
+    expect(String(added?.after)).toContain("http://");
+    expect(added?.severity).toBe("INFO");
+  });
+
+  it("Swagger 2.0 spec without host field has no synthesized server URL — no server events", () => {
+    // parseServers: host absent → asString(undefined) = undefined → host falsy → return []
+    // Both baseline and current have no host → both have empty servers list → no server events.
+    const noHostSpec = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+basePath: /api
+paths:
+  /items:
+    get:
+      responses:
+        200:
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(noHostSpec, noHostSpec);
+    expect(changes.filter((c) => c.type === "server-removed" || c.type === "server-added")).toHaveLength(0);
+  });
+
+  it("Swagger 2.0 host added (no-host baseline vs host current) emits server-added INFO", () => {
+    // Before: no host → empty servers list
+    // After: host added → synthesized https://api.example.com/ → server-added INFO
+    const noHostSpec = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+basePath: /
+paths:
+  /items:
+    get:
+      responses:
+        200:
+          description: ok
+`;
+    const withHostSpec = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+host: api.example.com
+basePath: /
+paths:
+  /items:
+    get:
+      responses:
+        200:
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(noHostSpec, withHostSpec);
+    const added = changes.find((c) => c.type === "server-added");
+    expect(added).toBeDefined();
+    expect(String(added?.after)).toContain("api.example.com");
+    expect(added?.severity).toBe("INFO");
+    expect(changes.filter((c) => c.type === "server-removed")).toHaveLength(0);
+  });
+});
