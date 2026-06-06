@@ -323,6 +323,11 @@ export function DiffView({ result, sessionNotices }: Props): React.ReactElement 
           <li><kbd>J</kbd> / <kbd>K</kbd> — next / previous change</li>
           <li><kbd>R</kbd> — mark the focused change reviewed</li>
           <li><kbd>/</kbd> — jump to the text filter</li>
+          {filter === "CRITICAL" && (
+            <li style={{ fontStyle: "italic", opacity: 0.8, marginTop: 4 }}>
+              J / K navigate Critical changes only — switch to All to reach every change.
+            </li>
+          )}
         </ul>
       </details>
       </div>
