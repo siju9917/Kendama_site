@@ -6312,3 +6312,168 @@ paths:
     expect(changes.find((c) => c.type === "request-media-type-removed")).toBeUndefined();
   });
 });
+
+// ─── Round 35: allOf + $ref base schema propagation ──────────────────────────
+
+describe("allOf with $ref base schema — breaking changes propagate through inheritance (5.7.5 round 35)", () => {
+  it("required field added to $ref base schema inside allOf is detected as BREAKING in response", () => {
+    // Baseline: Base has no required; Child allOf Base
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+components:
+  schemas:
+    Base:
+      type: object
+      properties:
+        id: {type: string}
+    Child:
+      allOf:
+        - $ref: "#/components/schemas/Base"
+        - type: object
+          properties:
+            name: {type: string}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Child"
+`;
+    // Current: Base now requires `id`
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+components:
+  schemas:
+    Base:
+      type: object
+      required: [id]
+      properties:
+        id: {type: string}
+    Child:
+      allOf:
+        - $ref: "#/components/schemas/Base"
+        - type: object
+          properties:
+            name: {type: string}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Child"
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const requiredAdded = changes.find((c) => c.type === "response-schema-field-required-added");
+    expect(requiredAdded).toBeDefined();
+    expect(String(requiredAdded?.location ?? "")).toContain("id");
+    expect(requiredAdded?.severity).toBe("INFO");
+  });
+
+  it("property type change in $ref base schema propagates through allOf inheritance", () => {
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+components:
+  schemas:
+    Base:
+      type: object
+      properties:
+        count: {type: string}
+    Child:
+      allOf:
+        - $ref: "#/components/schemas/Base"
+        - type: object
+          properties:
+            name: {type: string}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Child"
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+components:
+  schemas:
+    Base:
+      type: object
+      properties:
+        count: {type: integer}
+    Child:
+      allOf:
+        - $ref: "#/components/schemas/Base"
+        - type: object
+          properties:
+            name: {type: string}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Child"
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find(
+      (c) => c.type === "response-schema-property-type-changed" && String(c.location).includes("count"),
+    );
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+
+  it("parent schema overrides allOf member property on key conflict — parent wins", () => {
+    // OapiSchema from allOf: parent type wins over member type when both set.
+    // If baseline Child defines count: integer at parent level and Base also has count: string,
+    // the merged schema should have count: integer (parent wins).
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+components:
+  schemas:
+    Base:
+      type: object
+      properties:
+        count: {type: string}
+    Child:
+      type: object
+      properties:
+        count: {type: integer}
+      allOf:
+        - $ref: "#/components/schemas/Base"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Child"
+`;
+    // Current is the same — should detect no change (parent still wins with integer).
+    const changes = analyzeOpenApiDiff(baseline, baseline);
+    expect(changes.filter((c) => c.type === "response-schema-property-type-changed")).toHaveLength(0);
+  });
+});
