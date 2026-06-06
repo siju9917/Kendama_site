@@ -22,6 +22,17 @@ describe("normalizeText", () => {
     expect(normalizeText("“hi” — there–ok")).toBe('"hi" - there-ok');
   });
 
+  // 5.7.5 bug-hunt (2026-06-06): U+2212 MINUS SIGN (mathematical minus, used by
+  // equation editors and some PDF producers for financial table cells with negative
+  // values) was NOT in the LIGATURES list. It survived normalizeText as U+2212, and
+  // aggressiveNormalize classified it as a Math Symbol (not \p{P}), so it passed
+  // through unchanged. "−$5,000" and "-$5,000" then normalized to different strings,
+  // producing spurious MODIFY changes for a purely typographic difference.
+  it("converts U+2212 MINUS SIGN to hyphen-minus (PDF financial table fix)", () => {
+    expect(normalizeText("−$5,000")).toBe("-$5,000");
+    expect(normalizeText("Adjustment: −10%")).toBe("Adjustment: -10%");
+  });
+
   it("removes soft hyphens", () => {
     expect(normalizeText("dis­tributed")).toBe("distributed");
   });

@@ -117,6 +117,18 @@ describe("aggressiveNormalize — unit behavior", () => {
     // A genuine clause-number change must NOT be unified away.
     expect(aggressiveNormalize("FAR 52.204-21")).not.toBe(aggressiveNormalize("FAR 52.204-25"));
   });
+
+  // 5.7.5 bug-hunt (2026-06-06): U+2212 MINUS SIGN (mathematical minus) was not
+  // in the LIGATURES normalization list. "−$5,000" (U+2212) produced a different
+  // aggressiveNormalize output than "-$5,000" (regular hyphen), causing a spurious
+  // MODIFY for a purely typographic difference from PDF financial tables.
+  it("U+2212 MINUS SIGN normalizes equal to hyphen-minus before dollar amounts", () => {
+    const withMathMinus = aggressiveNormalize("−$5,000");   // U+2212
+    const withHyphen = aggressiveNormalize("-$5,000");      // ASCII hyphen-minus
+    expect(withMathMinus).toBe(withHyphen);
+    // A genuine value change still differs, regardless of minus character.
+    expect(aggressiveNormalize("-$5,000")).not.toBe(aggressiveNormalize("-$4,000"));
+  });
 });
 
 // ---------------------------------------------------------------------------

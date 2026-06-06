@@ -20,7 +20,7 @@ const LIGATURES: ReadonlyArray<[RegExp, string]> = [
   [/ﬂ/g, "fl"],
   [/ﬃ/g, "ffi"],
   [/ﬄ/g, "ffl"],
-  [/‐|‑|‒|–|—/g, "-"],
+  [/‐|‑|‒|–|—|−/g, "-"],
   [/‘|’/g, "'"],
   [/“|”/g, '"'],
   [/…/g, "..."],
