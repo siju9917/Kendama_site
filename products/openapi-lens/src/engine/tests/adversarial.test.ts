@@ -10707,3 +10707,92 @@ paths:
     expect(constChange?.after).toBeNull();
   });
 });
+
+// ─── Round 84: request body top-level minProperties + maxProperties null-transitions ─
+// Completes the full 9-constraint × null-transition matrix for request body top-level scope.
+// minProperties: min-sense (before=null→BREAKING, after=null→INFO)
+// maxProperties: max-sense (before=null→BREAKING, after=null→INFO)
+
+describe("adversarial round 84 — request body top-level minProperties/maxProperties null-transitions (end-to-end)", () => {
+  function makeObjectBodySpec84(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /settings:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: string
+              ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("adding minProperties to request body object (null→2) is BREAKING — clients sending objects with fewer than 2 keys were valid before", () => {
+    // requestConstraintSeverity min-sense: before === null → BREAKING
+    // Previously any object was accepted; now an empty object {} or single-key object will fail.
+    const noMin   = makeObjectBodySpec84("");
+    const withMin = makeObjectBodySpec84("minProperties: 2");
+    const changes = analyzeOpenApiDiff(noMin, withMin);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".minProperties"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(2);
+  });
+
+  it("removing minProperties from request body object (2→null) is INFO — constraint relaxed, all prior valid objects remain valid", () => {
+    // requestConstraintSeverity min-sense: after === null → INFO
+    // Objects with ≥2 keys still pass; now objects with 0 or 1 key are also accepted.
+    const withMin = makeObjectBodySpec84("minProperties: 2");
+    const noMin   = makeObjectBodySpec84("");
+    const changes = analyzeOpenApiDiff(withMin, noMin);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".minProperties"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(2);
+    expect(constChange?.after).toBeNull();
+  });
+
+  it("adding maxProperties to request body object (null→5) is BREAKING — clients sending objects with more than 5 keys were valid before", () => {
+    // requestConstraintSeverity max-sense: before === null → BREAKING
+    // Objects with 6+ keys were previously accepted; now they fail validation.
+    const noMax   = makeObjectBodySpec84("");
+    const withMax = makeObjectBodySpec84("maxProperties: 5");
+    const changes = analyzeOpenApiDiff(noMax, withMax);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".maxProperties"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(5);
+  });
+
+  it("removing maxProperties from request body object (5→null) is INFO — constraint relaxed, all prior valid objects remain valid", () => {
+    // requestConstraintSeverity max-sense: after === null → INFO
+    // Objects with ≤5 keys still pass; now objects with 6+ keys are also accepted.
+    const withMax = makeObjectBodySpec84("maxProperties: 5");
+    const noMax   = makeObjectBodySpec84("");
+    const changes = analyzeOpenApiDiff(withMax, noMax);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".maxProperties"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(5);
+    expect(constChange?.after).toBeNull();
+  });
+});
