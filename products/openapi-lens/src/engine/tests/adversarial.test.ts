@@ -9085,3 +9085,158 @@ paths:
     expect(typeAdded?.severity).toBe("INFO");
   });
 });
+
+// ─── Round 66: extractContentSchema priority shift — adding preferred content type ─
+// When application/json is ADDED alongside an existing non-JSON content type,
+// extractContentSchema switches its preferred schema from the old content type to JSON.
+// This causes the diff engine to compare the JSON schema against the previous text/plain
+// schema — producing spurious schema events alongside the real media-type-added event.
+// Tests document current behavior as a Phase 2 characterization.
+
+describe("adversarial round 66 — extractContentSchema priority shift when adding JSON", () => {
+  it("adding application/json alongside text/plain-only response causes spurious schema-type-changed BREAKING (Phase 2 gap)", () => {
+    // Baseline: response delivers text/plain (schema type: string).
+    // Current: ADDS application/json (schema type: object) alongside text/plain.
+    // The diff engine now compares baseline's text/plain schema (string) against
+    // current's preferred JSON schema (object), producing a spurious BREAKING type change.
+    // The real change — adding a new content type — should be INFO only.
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            text/plain:
+              schema:
+                type: string
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    // The real change: a new content type was added — correct, INFO.
+    const mediaTypeAdded = changes.find((c) => c.type === "response-media-type-added");
+    expect(mediaTypeAdded).toBeDefined();
+    expect(mediaTypeAdded?.after).toBe("application/json");
+    expect(mediaTypeAdded?.severity).toBe("INFO");
+    // Spurious Phase 2 gap: schema type changed from string (text/plain) to object (json preferred).
+    // Documents current behavior — NOT a correctness assertion, just a characterization.
+    const schemaTypeChanged = changes.find((c) => c.type === "response-schema-type-changed");
+    expect(schemaTypeChanged).toBeDefined();
+    // The overall verdict is misleadingly BREAKING due to the spurious schema change.
+    expect(changes.some((c) => c.severity === "BREAKING")).toBe(true);
+  });
+
+  it("adding text/plain to a JSON-only response leaves JSON as preferred — no spurious schema events", () => {
+    // Baseline: response delivers application/json (schema type: object).
+    // Current: ADDS text/plain — but JSON is still preferred by extractContentSchema.
+    // The engine compares JSON schema against JSON schema → no spurious schema events.
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+            text/plain:
+              schema:
+                type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    // Only the media-type-added event should be emitted (INFO for text/plain).
+    const mediaTypeAdded = changes.find((c) => c.type === "response-media-type-added");
+    expect(mediaTypeAdded).toBeDefined();
+    expect(mediaTypeAdded?.after).toBe("text/plain");
+    expect(mediaTypeAdded?.severity).toBe("INFO");
+    // No spurious schema-type-changed: JSON remains preferred on both sides.
+    expect(changes.filter((c) => c.type === "response-schema-type-changed")).toHaveLength(0);
+  });
+
+  it("removing text/plain when JSON remains produces only media-type-removed (no spurious schema events)", () => {
+    // Baseline: response has BOTH application/json (object) and text/plain (string).
+    //   extractContentSchema picks JSON (preferred) for baseline.
+    // Current: text/plain removed, JSON remains.
+    //   extractContentSchema picks JSON for current.
+    // Both sides compare the SAME JSON schema → no spurious schema events; only media-type-removed.
+    const bothSpec = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+            text/plain:
+              schema:
+                type: string
+`;
+    const jsonOnly = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+`;
+    const changes = analyzeOpenApiDiff(bothSpec, jsonOnly);
+    const mediaTypeRemoved = changes.find((c) => c.type === "response-media-type-removed");
+    expect(mediaTypeRemoved).toBeDefined();
+    expect(mediaTypeRemoved?.before).toBe("text/plain");
+    expect(mediaTypeRemoved?.severity).toBe("BREAKING");
+    // No spurious schema events — JSON schema is the same on both sides.
+    expect(changes.filter((c) => c.type === "response-schema-type-changed")).toHaveLength(0);
+    expect(changes.filter((c) => c.type === "response-schema-property-added" || c.type === "response-schema-property-removed")).toHaveLength(0);
+  });
+});

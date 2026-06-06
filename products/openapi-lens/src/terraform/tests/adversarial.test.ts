@@ -585,3 +585,106 @@ describe("adversarial round 63 — Terraform classifier multi-rule interactions"
     expect(c.reasons.length).toBeGreaterThan(0);
   });
 });
+
+describe("adversarial round 66 — isTerraformPlanJson edge cases and classifier boundary behaviors", () => {
+  // ── isTerraformPlanJson edge cases ─────────────────────────────────────────
+
+  it("isTerraformPlanJson: format_version present but resource_changes absent → false", () => {
+    // A JSON file that mentions format_version but has no resource_changes key
+    // should NOT be detected as a Terraform plan.
+    const text = '{"format_version":"1.0","terraform_version":"1.8.0","some_other_key":[]}';
+    expect(isTerraformPlanJson(text)).toBe(false);
+  });
+
+  it("isTerraformPlanJson: terraform_version present but resource_changes absent → false", () => {
+    // Only the version fields, no resource_changes — not a plan.
+    const text = '{"terraform_version":"1.9.0","format_version":"1.0"}';
+    expect(isTerraformPlanJson(text)).toBe(false);
+  });
+
+  it("isTerraformPlanJson: detection keys appearing beyond first 2000 chars are NOT detected (known limitation)", () => {
+    // The function slices the first 2000 chars for efficiency.
+    // A very large JSON blob where the Terraform keys appear only after position 2000
+    // returns false even though the full text is a valid Terraform plan.
+    // This documents the known detection limitation for large compressed/minified plans.
+    const padding = "x".repeat(1990);
+    // {"note":"<1990 x's>","resource_changes":[],"terraform_version":"1.8.0"}
+    // "resource_changes" starts at position 2001 — outside the 2000-char slice.
+    const text = `{"note":"${padding}","resource_changes":[],"terraform_version":"1.8.0"}`;
+    expect(isTerraformPlanJson(text)).toBe(false);
+  });
+
+  it("isTerraformPlanJson: both keys within the 2000-char window but close to boundary → still detected", () => {
+    // Boundary verification: keys just INSIDE the 2000-char slice are still found.
+    const padding = "x".repeat(1940);
+    // "resource_changes" starts at around position 1949 — inside the 2000-char slice.
+    const text = `{"note":"${padding}","resource_changes":[],"terraform_version":"1.8.0"}`;
+    expect(isTerraformPlanJson(text)).toBe(true);
+  });
+
+  // ── Classifier boundary behaviors ───────────────────────────────────────────
+
+  it("data store CREATE is NORMAL — isCreateOnly guard prevents Rule 4 from firing", () => {
+    // Rule 4 fires only when !isCreateOnly(actions). A pure create of a data-store type
+    // is NORMAL: no existing data to lose, no risk of data loss.
+    const plan = JSON.stringify({
+      format_version: "1.0",
+      terraform_version: "1.8.0",
+      resource_changes: [
+        {
+          address: "aws_rds_cluster.primary",
+          type: "aws_rds_cluster",
+          name: "primary",
+          mode: "managed",
+          change: {
+            actions: ["create"],
+            before: null,
+            after: { cluster_identifier: "prod-db" },
+            after_unknown: {},
+          },
+        },
+      ],
+    });
+    const result = parseTerraformPlan(plan);
+    expect(result.critical).toBe(0);
+    expect(result.normal).toBe(1);
+    expect(result.changes[0]!.severity).toBe("NORMAL");
+  });
+
+  it("resource_changes entry with actions as string (not array) is silently skipped (isResourceChange guard)", () => {
+    // isResourceChange requires change.actions to be an array.
+    // A malformed entry where actions is a string literal is skipped.
+    const plan = JSON.stringify({
+      format_version: "1.0",
+      terraform_version: "1.8.0",
+      resource_changes: [
+        {
+          address: "aws_instance.bad",
+          type: "aws_instance",
+          name: "bad",
+          mode: "managed",
+          change: {
+            actions: "create",
+            before: null,
+            after: { id: "i-1" },
+          },
+        },
+        {
+          address: "aws_instance.good",
+          type: "aws_instance",
+          name: "good",
+          mode: "managed",
+          change: {
+            actions: ["create"],
+            before: null,
+            after: { id: "i-2" },
+          },
+        },
+      ],
+    });
+    const result = parseTerraformPlan(plan);
+    expect(result.changes).toHaveLength(1);
+    expect(result.changes[0]!.change.address).toBe("aws_instance.good");
+    expect(result.normal).toBe(1);
+  });
+});
