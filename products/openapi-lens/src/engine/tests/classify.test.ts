@@ -124,6 +124,126 @@ describe("classifyChanges — classification rules", () => {
     expect(result[0]?.severity).toBe("INFO");
   });
 
+  it("classifies request-body-required-changed (true→null, body removed) as BREAKING", () => {
+    const result = classifyChanges([raw("request-body-required-changed", true, null, "requestBody")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/removed/i);
+  });
+
+  it("classifies response-schema-property-type-changed as BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-property-type-changed", "string", "integer", "responses[200].properties.id.type")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+  });
+
+  it("classifies response-schema-property-removed as BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-property-removed", "string", null, "responses[200].properties.id")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+  });
+
+  it("classifies response-schema-property-added as INFO", () => {
+    const result = classifyChanges([raw("response-schema-property-added", null, "string", "responses[200].properties.meta")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies request-schema-property-type-changed as BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-property-type-changed", "string", "integer", "requestBody.properties.count.type")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+  });
+
+  it("classifies request-schema-property-removed as BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-property-removed", "string", null, "requestBody.properties.name")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+  });
+
+  it("classifies request-schema-property-added as INFO", () => {
+    const result = classifyChanges([raw("request-schema-property-added", null, "string", "requestBody.properties.phone")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies response-schema-items-type-changed (string→integer) as BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-items-type-changed", "string", "integer", "responses[200].items.type")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+  });
+
+  it("classifies response-schema-items-type-changed (type→null) as BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-items-type-changed", "string", null, "responses[200].items.type")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+  });
+
+  it("classifies response-schema-items-type-changed (null→type) as INFO", () => {
+    const result = classifyChanges([raw("response-schema-items-type-changed", null, "string", "responses[200].items.type")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies request-schema-items-type-changed (string→integer) as BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-items-type-changed", "string", "integer", "requestBody.items.type")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+  });
+
+  it("classifies request-schema-items-type-changed (null→type) as BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-items-type-changed", null, "string", "requestBody.items.type")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+  });
+
+  it("classifies request-schema-items-type-changed (type→null) as INFO", () => {
+    const result = classifyChanges([raw("request-schema-items-type-changed", "string", null, "requestBody.items.type")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies response-schema-property-enum-changed (values added) as BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-property-enum-changed", ["a", "b"], ["a", "b", "c"], "responses[200].properties.status.enum")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/exhaustive/i);
+  });
+
+  it("classifies response-schema-property-enum-changed (values removed) as INFO", () => {
+    const result = classifyChanges([raw("response-schema-property-enum-changed", ["a", "b", "c"], ["a", "b"], "responses[200].properties.status.enum")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies request-schema-property-enum-changed (values removed) as BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-property-enum-changed", ["pending", "active"], ["active"], "requestBody.properties.status.enum")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/pending/);
+  });
+
+  it("classifies request-schema-property-enum-changed (values added) as INFO", () => {
+    const result = classifyChanges([raw("request-schema-property-enum-changed", ["active"], ["active", "pending"], "requestBody.properties.status.enum")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies response-schema-property-format-changed as BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-property-format-changed", "date", "date-time", "responses[200].properties.createdAt.format")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+  });
+
+  it("classifies request-schema-property-format-changed as BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-property-format-changed", "int32", "int64", "requestBody.properties.count.format")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+  });
+
+  it("classifies operation-deprecated-changed (false→true) as INFO", () => {
+    const result = classifyChanges([raw("operation-deprecated-changed", false, true, "GET /items.deprecated")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/deprecated/i);
+  });
+
+  it("classifies operation-deprecated-changed (true→false) as INFO", () => {
+    const result = classifyChanges([raw("operation-deprecated-changed", true, false, "GET /items.deprecated")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/un-deprecated/i);
+  });
+
+  it("classifies request-schema-nullable-changed (true→false) as BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-nullable-changed", true, false, "requestBody.content.schema.nullable")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+  });
+
+  it("classifies request-schema-nullable-changed (false→true) as INFO", () => {
+    const result = classifyChanges([raw("request-schema-nullable-changed", false, true, "requestBody.content.schema.nullable")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
   it("handles multiple changes in a single call", () => {
     const changes = classifyChanges([
       raw("endpoint-removed", "get /a", null),
