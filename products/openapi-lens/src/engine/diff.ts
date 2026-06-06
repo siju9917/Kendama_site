@@ -734,6 +734,17 @@ function diffResponseHeaders(
         after: cHdr.required,
       });
     }
+    const bFmt = bHdr.schema?.format ?? null;
+    const cFmt = cHdr.schema?.format ?? null;
+    if (bFmt !== cFmt) {
+      changes.push({
+        type: "response-header-format-changed",
+        path, method,
+        location: `${loc}.schema.format`,
+        before: bFmt,
+        after: cFmt,
+      });
+    }
   }
 
   for (const name of cKeys) {

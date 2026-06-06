@@ -794,6 +794,18 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     matches: (c) => c.type === "response-header-removed" ? "BREAKING" : null,
     message: (c) => `Response header removed: ${c.location}. Clients that read this header will no longer receive it.`,
   },
+  // response-header-format-changed: direction-aware.
+  // before non-null: format changed or removed → BREAKING (clients parsing old format fail).
+  {
+    matches: (c) => c.type === "response-header-format-changed" && c.before !== null ? "BREAKING" : null,
+    message: (c) => c.after === null
+      ? `Response header format constraint removed: ${c.location}. Clients that parse this header with format '${c.before}' may receive unexpected values.`
+      : `Response header format changed: ${c.location} (${c.before} → ${c.after}). Clients deserializing this header with the old format will fail.`,
+  },
+  {
+    matches: (c) => c.type === "response-header-format-changed" && c.before === null && c.after !== null ? "INFO" : null,
+    message: (c) => `Response header format documented: ${c.location}. Server now specifies format '${c.after}' for this header value (non-breaking for clients).`,
+  },
   // response-header-type-changed: direction-aware.
   // before non-null: type changed or removed → BREAKING (clients parsing old type will fail).
   {

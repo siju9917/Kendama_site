@@ -5351,6 +5351,52 @@ describe("Swagger 2.0 response header type parsing (5.7.5 round 28 bug fix)", ()
   });
 });
 
+describe("response-header-format-changed (5.7.5 round 31)", () => {
+  const makeSpec = (fmt: string | null) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Request-Id:
+              schema:
+                type: string
+                ${fmt !== null ? `format: ${fmt}` : ""}
+`;
+
+  it("response header format change (uuid→uri) is BREAKING", () => {
+    const changes = analyzeOpenApiDiff(makeSpec("uuid"), makeSpec("uri"));
+    const change = changes.find((c) => c.type === "response-header-format-changed");
+    expect(change).toBeDefined();
+    expect(change?.severity).toBe("BREAKING");
+    expect(change?.before).toBe("uuid");
+    expect(change?.after).toBe("uri");
+  });
+
+  it("response header format removed (uuid→absent) is BREAKING", () => {
+    const changes = analyzeOpenApiDiff(makeSpec("uuid"), makeSpec(null));
+    const change = changes.find((c) => c.type === "response-header-format-changed");
+    expect(change).toBeDefined();
+    expect(change?.severity).toBe("BREAKING");
+    expect(change?.after).toBeNull();
+  });
+
+  it("response header format added (absent→uuid) is INFO", () => {
+    const changes = analyzeOpenApiDiff(makeSpec(null), makeSpec("uuid"));
+    const change = changes.find((c) => c.type === "response-header-format-changed");
+    expect(change).toBeDefined();
+    expect(change?.severity).toBe("INFO");
+    expect(change?.before).toBeNull();
+    expect(change?.after).toBe("uuid");
+  });
+});
+
 describe("response-header-required-changed (5.7.5 round 28)", () => {
   const makeSpec = (required: boolean) => `
 openapi: "3.0.0"

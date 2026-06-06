@@ -172,7 +172,8 @@ export type OapiChangeType =
   | "operation-security-scheme-added"
   | "operation-security-scope-added"
   | "operation-security-scope-removed"
-  | "response-header-required-changed";
+  | "response-header-required-changed"
+  | "response-header-format-changed";
 
 /** A raw structural difference between two specs before classification. */
 export interface OapiRawChange {
