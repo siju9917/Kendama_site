@@ -117,7 +117,11 @@ export type OapiChangeType =
   | "parameter-constraint-changed"
   | "response-schema-items-constraint-changed"
   | "request-schema-items-constraint-changed"
-  | "parameter-nullable-changed";
+  | "parameter-nullable-changed"
+  | "request-schema-format-changed"
+  | "response-schema-format-changed"
+  | "request-schema-enum-changed"
+  | "response-schema-enum-changed";
 
 /** A raw structural difference between two specs before classification. */
 export interface OapiRawChange {

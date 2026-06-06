@@ -671,6 +671,60 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     matches: (c) => c.type === "parameter-deprecated-changed" && c.after === false ? "INFO" : null,
     message: (c) => `Parameter un-deprecated: ${c.location}. This parameter is no longer marked for removal.`,
   },
+
+  // ─── Top-level body schema format ─────────────────────────────────────────
+  {
+    matches: (c) => c.type === "request-schema-format-changed" ? "BREAKING" : null,
+    message: (c) => `Request body schema format changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients sending data in the old format may fail validation.`,
+  },
+  {
+    matches: (c) => c.type === "response-schema-format-changed" ? "BREAKING" : null,
+    message: (c) => `Response body schema format changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients parsing the response with the old format assumptions will break.`,
+  },
+
+  // ─── Top-level body schema enum ───────────────────────────────────────────
+  {
+    matches: (c) => {
+      if (c.type !== "request-schema-enum-changed") return null;
+      const before = c.before as unknown[] | null;
+      const after = c.after as unknown[] | null;
+      if (!before || !after) return "BREAKING"; // enum added or removed entirely
+      // Values removed from request enum = BREAKING (previously-valid values now rejected).
+      const removed = before.filter((v) => !after.includes(v));
+      return removed.length > 0 ? "BREAKING" : "INFO";
+    },
+    message: (c) => {
+      const before = c.before as unknown[] | null;
+      const after = c.after as unknown[] | null;
+      if (!before) return `Request body schema enum added: ${c.location}. Server now restricts accepted values to [${(after ?? []).join(", ")}].`;
+      if (!after) return `Request body schema enum removed: ${c.location}. Server no longer enforces enum restriction on this value.`;
+      const removed = before.filter((v) => !after.includes(v));
+      return removed.length > 0
+        ? `Request body schema enum values removed: ${c.location}. Removed: [${removed.join(", ")}]. Clients sending these values will now receive 422.`
+        : `Request body schema enum values added: ${c.location}. New accepted values: [${after.filter((v) => !before.includes(v)).join(", ")}].`;
+    },
+  },
+  {
+    matches: (c) => {
+      if (c.type !== "response-schema-enum-changed") return null;
+      const before = c.before as unknown[] | null;
+      const after = c.after as unknown[] | null;
+      if (!before || !after) return "BREAKING"; // enum added or removed entirely
+      // Values added to response enum = BREAKING (clients expecting exhaustive enums break).
+      const added = (after ?? []).filter((v) => !before.includes(v));
+      return added.length > 0 ? "BREAKING" : "INFO";
+    },
+    message: (c) => {
+      const before = c.before as unknown[] | null;
+      const after = c.after as unknown[] | null;
+      if (!before) return `Response body schema enum added: ${c.location}. Server now constrains this value to [${(after ?? []).join(", ")}].`;
+      if (!after) return `Response body schema enum removed: ${c.location}. Server no longer guarantees a restricted set for this value.`;
+      const added = (after ?? []).filter((v) => !(before ?? []).includes(v));
+      return added.length > 0
+        ? `Response body schema enum values added: ${c.location}. New values: [${added.join(", ")}]. Exhaustive clients will not handle these values.`
+        : `Response body schema enum values removed: ${c.location}. Removed: [${(before ?? []).filter((v) => !(after ?? []).includes(v)).join(", ")}].`;
+    },
+  },
 ];
 
 /**

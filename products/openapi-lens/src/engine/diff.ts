@@ -402,6 +402,40 @@ function diffSchemaTopLevelConstraints(
   }
 }
 
+/** Compare format and enum on a top-level request/response body schema. */
+function diffSchemaTopLevelFields(
+  path: string,
+  method: HttpMethod,
+  location: string,
+  baseline: OapiSchema | null,
+  current: OapiSchema | null,
+  isRequest: boolean,
+  changes: OapiRawChange[],
+): void {
+  const bFmt = baseline?.format ?? null;
+  const cFmt = current?.format ?? null;
+  if (bFmt !== cFmt) {
+    changes.push({
+      type: isRequest ? "request-schema-format-changed" : "response-schema-format-changed",
+      path, method,
+      location: `${location}.format`,
+      before: bFmt,
+      after: cFmt,
+    });
+  }
+  const bEnum = baseline?.enum;
+  const cEnum = current?.enum;
+  if (!deepEqual(bEnum, cEnum) && (bEnum !== undefined || cEnum !== undefined)) {
+    changes.push({
+      type: isRequest ? "request-schema-enum-changed" : "response-schema-enum-changed",
+      path, method,
+      location: `${location}.enum`,
+      before: bEnum ?? null,
+      after: cEnum ?? null,
+    });
+  }
+}
+
 /** Compare nullable in a schema (response or request). */
 function diffNullable(
   path: string,
@@ -459,6 +493,7 @@ function diffRequestBody(
     diffSchemaItems(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffNullable(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffSchemaTopLevelConstraints(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
+    diffSchemaTopLevelFields(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
   }
 }
 
@@ -486,6 +521,7 @@ function diffResponses(
     diffSchemaProperties(path, method, loc, br.schema, cr.schema, false, changes);
     diffSchemaItems(path, method, loc, br.schema, cr.schema, false, changes);
     diffSchemaTopLevelConstraints(path, method, loc, br.schema, cr.schema, false, changes);
+    diffSchemaTopLevelFields(path, method, loc, br.schema, cr.schema, false, changes);
   }
 
   for (const code of Object.keys(cMap)) {

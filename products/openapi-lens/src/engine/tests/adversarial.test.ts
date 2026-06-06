@@ -1171,6 +1171,97 @@ paths:
   });
 });
 
+// ─── Top-level body schema format + enum ─────────────────────────────────────
+
+describe("top-level body schema format and enum diffing — integration", () => {
+  it("request body format change is BREAKING (date → date-time)", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /events:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              format: date
+      responses:
+        "201":
+          description: created
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /events:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              format: date-time
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const fmt = changes.find((c) => c.type === "request-schema-format-changed");
+    expect(fmt).toBeDefined();
+    expect(fmt?.severity).toBe("BREAKING");
+    expect(fmt?.before).toBe("date");
+    expect(fmt?.after).toBe("date-time");
+  });
+
+  it("response body enum value added is BREAKING", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /status:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+                enum: [active, inactive]
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /status:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+                enum: [active, inactive, pending]
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const enumChange = changes.find((c) => c.type === "response-schema-enum-changed");
+    expect(enumChange).toBeDefined();
+    expect(enumChange?.severity).toBe("BREAKING");
+    expect(enumChange?.message).toMatch(/pending/);
+  });
+});
+
 // ─── allOf constraint inheritance ────────────────────────────────────────────
 
 describe("allOf constraint inheritance — flattenAllOf must propagate constraint fields", () => {

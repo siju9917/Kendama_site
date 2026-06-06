@@ -537,6 +537,44 @@ describe("classifyChanges — classification rules", () => {
     expect(result[0]?.message).toMatch(/removed/i);
   });
 
+  // ─── Top-level body schema format ─────────────────────────────────────────
+  it("classifies request-schema-format-changed as BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-format-changed", "date", "date-time", "requestBody.content.schema.format")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/format changed/i);
+  });
+
+  it("classifies response-schema-format-changed as BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-format-changed", "date", "date-time", "responses[200].content.schema.format")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/format changed/i);
+  });
+
+  // ─── Top-level body schema enum ───────────────────────────────────────────
+  it("classifies request-schema-enum-changed (value removed) as BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-enum-changed", ["a", "b"], ["a"], "requestBody.content.schema.enum")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/removed/i);
+    expect(result[0]?.message).toMatch(/b/);
+  });
+
+  it("classifies request-schema-enum-changed (value added) as INFO", () => {
+    const result = classifyChanges([raw("request-schema-enum-changed", ["a"], ["a", "b"], "requestBody.content.schema.enum")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies response-schema-enum-changed (value added) as BREAKING", () => {
+    const result = classifyChanges([raw("response-schema-enum-changed", ["a"], ["a", "b"], "responses[200].content.schema.enum")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/added/i);
+    expect(result[0]?.message).toMatch(/b/);
+  });
+
+  it("classifies response-schema-enum-changed (value removed) as INFO", () => {
+    const result = classifyChanges([raw("response-schema-enum-changed", ["a", "b"], ["a"], "responses[200].content.schema.enum")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
   it("returns empty array for empty input", () => {
     expect(classifyChanges([])).toEqual([]);
   });
@@ -617,6 +655,10 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "parameter-nullable-changed":                   [true, false],
     "response-schema-items-constraint-changed":     [10, 5],
     "request-schema-items-constraint-changed":      [5, 10],
+    "request-schema-format-changed":                ["date", "date-time"],
+    "response-schema-format-changed":               ["date", "date-time"],
+    "request-schema-enum-changed":                  [["a", "b"], ["a"]],
+    "response-schema-enum-changed":                 [["a"], ["a", "b"]],
   };
 
   it.each(Object.keys(TYPE_STUBS) as OapiChangeType[])(
