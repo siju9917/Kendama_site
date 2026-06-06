@@ -501,3 +501,100 @@ describe("classifyChange — Rule 2+4 and Rule 3+5 interactions (round 103)", ()
     expect(c.reasons.length).toBeGreaterThanOrEqual(2);
   });
 });
+
+// ─── Round 105: IAM deletion + inline_policy + egress CIDR paths ─────────────
+// Three paths genuinely untested before this round:
+//   1. IAM resource DELETED (not replaced): Rule 2 (DELETED) + Rule 5 (IAM CRITICAL, direction unclear)
+//      both fire simultaneously. No prior test covered Rule 2 + Rule 5 for a pure delete.
+//   2. `inline_policy` field: extractIamStatements iterates ["policy","assume_role_policy","inline_policy"];
+//      the third field was never exercised.
+//   3. Egress CIDR block counting: extractCidrCount falls back to nested ingress/egress blocks;
+//      the egress branch was never hit — only ingress was tested in round P2.
+
+describe("classifyChange — Rule 2+5 IAM deletion + inline_policy + egress CIDR (round 105)", () => {
+  it("(R105-1) IAM resource deletion fires BOTH Rule 2 (DELETED) and Rule 5 (IAM CRITICAL) reasons", () => {
+    // Deleting an IAM resource triggers Rule 2 (any delete → CRITICAL) and Rule 5
+    // (IAM type + not create + not no-op → IAM CRITICAL).
+    // Since after=null, analyzeIamDirection returns "unknown", so Rule 5 adds
+    // "direction unclear" note — NOT "WIDENED".
+    const c = classifyChange(
+      makeChange({
+        address: "aws_iam_role.app",
+        type: "aws_iam_role",
+        actions: ["delete"],
+        after: null,
+      }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+
+    // Rule 2 reason: permanently DELETED.
+    const deleteReason = c.reasons.find((r) => r.includes("DELETED"));
+    expect(deleteReason).toBeDefined();
+
+    // Rule 5 reason: IAM change CRITICAL — direction unclear (after=null → unknown direction).
+    const iamReason = c.reasons.find((r) => r.includes("IAM change is CRITICAL"));
+    expect(iamReason).toBeDefined();
+    expect(iamReason).not.toContain("WIDENED");
+    expect(iamReason).toContain("unclear");
+
+    // Both reasons emitted simultaneously.
+    expect(c.reasons.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("(R105-2) analyzeIamDirection detects widening via inline_policy field", () => {
+    // extractIamStatements checks "policy", "assume_role_policy", then "inline_policy".
+    // The "inline_policy" branch was never hit in previous test rounds.
+    const beforePolicy = JSON.stringify({
+      Statement: [{ Effect: "Allow", Action: "s3:GetObject", Resource: "*" }],
+    });
+    const afterPolicy = JSON.stringify({
+      Statement: [
+        { Effect: "Allow", Action: "s3:GetObject", Resource: "*" },
+        { Effect: "Allow", Action: "s3:PutObject", Resource: "*" },
+      ],
+    });
+    // Use only the "inline_policy" field (no "policy" or "assume_role_policy").
+    const result = analyzeIamDirection(
+      { inline_policy: beforePolicy },
+      { inline_policy: afterPolicy },
+    );
+    expect(result).toBe("widening");
+  });
+
+  it("(R105-2b) analyzeIamDirection detects narrowing via inline_policy field", () => {
+    const beforePolicy = JSON.stringify({
+      Statement: [
+        { Effect: "Allow", Action: "s3:GetObject", Resource: "*" },
+        { Effect: "Allow", Action: "s3:PutObject", Resource: "*" },
+      ],
+    });
+    const afterPolicy = JSON.stringify({
+      Statement: [{ Effect: "Allow", Action: "s3:GetObject", Resource: "*" }],
+    });
+    const result = analyzeIamDirection(
+      { inline_policy: beforePolicy },
+      { inline_policy: afterPolicy },
+    );
+    expect(result).toBe("narrowing");
+  });
+
+  it("(R105-3) analyzeIamDirection detects widening via egress CIDR block (not ingress)", () => {
+    // extractCidrCount falls back to nested ingress/egress when no top-level cidr_blocks.
+    // The egress branch was never hit — only ingress was tested in the P2 round.
+    const before = { egress: [{ cidr_blocks: ["10.0.0.0/8"] }] };
+    const after = {
+      egress: [{ cidr_blocks: ["10.0.0.0/8"] }, { cidr_blocks: ["0.0.0.0/0"] }],
+    };
+    const result = analyzeIamDirection(before, after);
+    expect(result).toBe("widening");
+  });
+
+  it("(R105-3b) analyzeIamDirection detects narrowing via egress CIDR block", () => {
+    const before = {
+      egress: [{ cidr_blocks: ["10.0.0.0/8"] }, { cidr_blocks: ["0.0.0.0/0"] }],
+    };
+    const after = { egress: [{ cidr_blocks: ["10.0.0.0/8"] }] };
+    const result = analyzeIamDirection(before, after);
+    expect(result).toBe("narrowing");
+  });
+});
