@@ -811,6 +811,23 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     matches: (c) => c.type === "response-header-added" ? "INFO" : null,
     message: (c) => `Response header added: ${c.location}. Clients that understand this header may use it; others are unaffected.`,
   },
+  // response-header-required-changed: direction-aware.
+  // required true→false: BREAKING (server no longer guarantees header presence; clients that assumed it will fail).
+  {
+    matches: (c) =>
+      c.type === "response-header-required-changed" && c.before === true && c.after === false
+        ? "BREAKING"
+        : null,
+    message: (c) => `Response header guarantee removed: ${c.location}. Header was previously guaranteed to be present; server may now omit it. Clients that read this header unconditionally will fail.`,
+  },
+  // required false→true: INFO (server strengthens guarantee; clients benefit).
+  {
+    matches: (c) =>
+      c.type === "response-header-required-changed" && c.before === false && c.after === true
+        ? "INFO"
+        : null,
+    message: (c) => `Response header now guaranteed: ${c.location}. Server now always sends this header (non-breaking for existing clients).`,
+  },
 
   // ─── SAFE / INFO ────────────────────────────────────────────────────────
   {

@@ -5189,6 +5189,92 @@ paths:
   });
 });
 
+describe("Swagger 2.0 response header type parsing (5.7.5 round 28 bug fix)", () => {
+  it("Swagger 2.0 response headers with bare `type` field are parsed and diffed correctly", () => {
+    const baseline = JSON.stringify({
+      swagger: "2.0",
+      info: { title: "T", version: "1" },
+      paths: {
+        "/items": {
+          get: {
+            responses: {
+              "200": {
+                description: "ok",
+                headers: { "X-Rate-Limit": { type: "integer" } },
+              },
+            },
+          },
+        },
+      },
+    });
+    const current = JSON.stringify({
+      swagger: "2.0",
+      info: { title: "T", version: "1" },
+      paths: {
+        "/items": {
+          get: {
+            responses: {
+              "200": {
+                description: "ok",
+                headers: { "X-Rate-Limit": { type: "string" } },
+              },
+            },
+          },
+        },
+      },
+    });
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "response-header-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("integer");
+    expect(typeChange?.after).toBe("string");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+});
+
+describe("response-header-required-changed (5.7.5 round 28)", () => {
+  const makeSpec = (required: boolean) => `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Correlation-Id:
+              required: ${required}
+              schema:
+                type: string
+`;
+
+  it("required:true → required:false is BREAKING (guarantee removed)", () => {
+    const changes = analyzeOpenApiDiff(makeSpec(true), makeSpec(false));
+    const change = changes.find((c) => c.type === "response-header-required-changed");
+    expect(change).toBeDefined();
+    expect(change?.severity).toBe("BREAKING");
+    expect(change?.before).toBe(true);
+    expect(change?.after).toBe(false);
+  });
+
+  it("required:false → required:true is INFO (server strengthens guarantee)", () => {
+    const changes = analyzeOpenApiDiff(makeSpec(false), makeSpec(true));
+    const change = changes.find((c) => c.type === "response-header-required-changed");
+    expect(change).toBeDefined();
+    expect(change?.severity).toBe("INFO");
+    expect(change?.before).toBe(false);
+    expect(change?.after).toBe(true);
+  });
+
+  it("unchanged required:true produces no required-changed event", () => {
+    const spec = makeSpec(true);
+    expect(analyzeOpenApiDiff(spec, spec).filter((c) => c.type === "response-header-required-changed")).toHaveLength(0);
+  });
+});
+
 describe("security scheme / scope diffing (5.7.5 round 27)", () => {
   const makeSpec = (security: string) => `
 openapi: "3.0.0"

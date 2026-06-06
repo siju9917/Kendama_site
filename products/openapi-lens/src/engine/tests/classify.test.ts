@@ -819,6 +819,7 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "operation-security-scheme-added":                       [null, "apiKey"],
     "operation-security-scope-added":                        [null, "write:users"],
     "operation-security-scope-removed":                      ["write:users", null],
+    "response-header-required-changed":                      [true, false],
   };
 
   it.each(Object.keys(TYPE_STUBS) as OapiChangeType[])(

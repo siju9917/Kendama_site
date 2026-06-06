@@ -725,6 +725,15 @@ function diffResponseHeaders(
         after: cType,
       });
     }
+    if (bHdr.required !== cHdr.required) {
+      changes.push({
+        type: "response-header-required-changed",
+        path, method,
+        location: `${loc}.required`,
+        before: bHdr.required,
+        after: cHdr.required,
+      });
+    }
   }
 
   for (const name of cKeys) {

@@ -296,7 +296,8 @@ function parseResponseHeaders(
         })()
       : hdr;
     const required = asBoolean(effective["required"]) ?? false;
-    const schema = normalizeSchema(effective["schema"], schemaLookup);
+    // Swagger 2.0 headers declare `type` directly (no `schema` wrapper); OAS 3.x wraps in `schema`.
+    const schema = normalizeSchema(effective["schema"] ?? (effective["type"] ? effective : undefined), schemaLookup);
     const resolved: OapiResponseHeader = {
       name,
       required,
