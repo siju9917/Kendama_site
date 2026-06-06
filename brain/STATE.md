@@ -732,6 +732,32 @@ all green; check tests 16/16.
     Limitations entries. No new tests (Phase 2 scope, not Phase 0 bug). Suite unchanged:
     **931/931 tests**.
 
+70. **D5 Phase 1 pre-design** (pre-work before 2026-06-13 Proposal #3 auto-proceed):
+    Detailed Phase 1 architecture specification for the VS Code extension scaffold written
+    ahead of the build start date. New file `brain/PLAYBOOKS/openapi-lens-phase1-design.md`
+    covers: full file layout, detector.ts (OpenAPI file heuristic), baseline.ts (git HEAD
+    + explicit file picker), diagnostics.ts (block-level line mapping with Phase 2 CST
+    upgrade path), codelens.ts (N BREAKING · M INFO above openapi: declaration), extension.ts
+    wiring, package.json manifest fields, Vite CJS build target for VS Code, Phase 1 test
+    plan (~376 total tests), known limitations, Phase 1 completion gate. Updated
+    `vscode-extension-ide-diff.md` playbook to fix stale D5 section (was using hypothetical
+    oasdiff wrapper; corrected to our own Phase 0 engine API). Fixed Proposal #3 stale
+    "91/91 tests" → "345/345 tests" in APPROVALS.md.
+
+71. **D6 Phase 1 pre-design** (pre-work before 2026-06-13 Proposal #4 auto-proceed):
+    Detailed Phase 1 architecture specification for the Terraform Plan Destructive-Change
+    Classifier VS Code extension. New file `brain/PLAYBOOKS/terraform-lens-phase1-design.md`
+    covers: why D6 is architecturally simpler than D5 (plan JSON has before/after embedded,
+    no baseline or line mapping needed); full module layout (types.ts, parser.ts, classify.ts,
+    resources.ts, webview.ts under `src/terraform/`); classification rules: no-op→NO-OP,
+    delete/replace→CRITICAL, data-store-update→CRITICAL, IAM/SG-change→CRITICAL (Phase 1:
+    conservative — all IAM changes flagged), create→NORMAL; DATA_STORE_TYPES and IAM_TYPES
+    data-driven tables; `parseTerraformPlan()` with content-based activation (detects
+    `"resource_changes"` in first 300 chars of JSON); `hasReplacePattern()` handles both
+    Terraform 0.15+ single 'replace' and earlier ['delete','create'] form; Phase 1 test plan
+    (~42 new D6 tests, ~418 total); known limitations (conservative IAM widening, no binary
+    plan format, no output_changes, no create_before_destroy distinction).
+
 69. **First-principles BCL format-pack roadmap scoring** (5.7.6 continuous ideation):
     Evaluated K8s YAML, SQL migration, GraphQL, CloudFormation, Avro, Docker image diff as
     format-pack candidates for the Breaking-Change Lens product line (NOT new D-series items
