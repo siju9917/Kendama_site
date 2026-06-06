@@ -1822,3 +1822,171 @@ paths:
     expect(constraint?.severity).toBe("INFO");
   });
 });
+
+// ─── Top-level body schema type null-transition diffing ────────────────────────
+
+describe("top-level body schema type null-transitions (5.7.5 round 9)", () => {
+  it("response body type removed (string→undefined) is BREAKING — server may return any type", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /val:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /val:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: {}
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "response-schema-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBeNull();
+  });
+
+  it("request body type removed (string→undefined) is INFO — server now accepts any type", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /val:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "201":
+          description: created
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /val:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {}
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "request-schema-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("INFO");
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBeNull();
+  });
+
+  it("response body type added (undefined→string) is INFO — server now guarantees type", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /val:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: {}
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /val:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "response-schema-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("INFO");
+    expect(typeChange?.before).toBeNull();
+    expect(typeChange?.after).toBe("string");
+  });
+
+  it("request body type added (undefined→string) is BREAKING — server now enforces type", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /val:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {}
+      responses:
+        "201":
+          description: created
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /val:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "request-schema-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+    expect(typeChange?.before).toBeNull();
+    expect(typeChange?.after).toBe("string");
+  });
+});

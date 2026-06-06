@@ -162,9 +162,11 @@ function diffSchemaType(
   isRequest: boolean,
   changes: OapiRawChange[],
 ): void {
-  const bType = baseline?.type;
-  const cType = current?.type;
-  if (bType !== undefined && cType !== undefined && bType !== cType) {
+  // Use null sentinel so that type-removed (string→undefined) and type-added (undefined→string)
+  // transitions are emitted — the same pattern as diffSchemaProperties (item 54 fix).
+  const bType = baseline?.type ?? null;
+  const cType = current?.type ?? null;
+  if (bType !== cType && (bType !== null || cType !== null)) {
     changes.push({
       type: isRequest ? "request-schema-type-changed" : "response-schema-type-changed",
       path, method,

@@ -78,9 +78,18 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     matches: (c) => c.type === "request-schema-field-required-added" ? "BREAKING" : null,
     message: (c) => `Required field added to request body: ${c.location}. Clients not sending this field will now receive 400.`,
   },
+  // request-schema-type-changed: direction-aware (mirrors request-schema-property-type-changed).
+  // after !== null: type changed or added → BREAKING (server now validates a specific type).
   {
-    matches: (c) => c.type === "request-schema-type-changed" ? "BREAKING" : null,
-    message: (c) => `Request body field type changed: ${c.location} (${c.before} → ${c.after}). Clients sending the old type will fail validation.`,
+    matches: (c) => c.type === "request-schema-type-changed" && c.after !== null ? "BREAKING" : null,
+    message: (c) => c.before === null
+      ? `Request body type constraint added: ${c.location}. Server now requires type ${c.after}; clients sending other types will fail validation.`
+      : `Request body field type changed: ${c.location} (${c.before} → ${c.after}). Clients sending the old type will fail validation.`,
+  },
+  // after === null: type removed → INFO (server no longer enforces type; existing clients still work).
+  {
+    matches: (c) => c.type === "request-schema-type-changed" && c.after === null ? "INFO" : null,
+    message: (c) => `Request body type constraint removed: ${c.location}. Server no longer enforces a specific type (non-breaking for clients).`,
   },
   {
     matches: (c) => c.type === "response-status-removed" ? "BREAKING" : null,
@@ -90,9 +99,18 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     matches: (c) => c.type === "response-schema-field-required-removed" ? "BREAKING" : null,
     message: (c) => `Required response field removed: ${c.location}. Clients that depend on this field being present will break.`,
   },
+  // response-schema-type-changed: direction-aware (mirrors response-schema-property-type-changed).
+  // before !== null: type changed or removed → BREAKING (clients relying on old type may break).
   {
-    matches: (c) => c.type === "response-schema-type-changed" ? "BREAKING" : null,
-    message: (c) => `Response field type changed: ${c.location} (${c.before} → ${c.after}). Clients parsing this field with the old type will fail.`,
+    matches: (c) => c.type === "response-schema-type-changed" && c.before !== null ? "BREAKING" : null,
+    message: (c) => c.after === null
+      ? `Response body type constraint removed: ${c.location}. Server may now return any type; clients expecting ${c.before} will break.`
+      : `Response field type changed: ${c.location} (${c.before} → ${c.after}). Clients parsing this field with the old type will fail.`,
+  },
+  // before === null: type added → INFO (server now guarantees type, clients benefit).
+  {
+    matches: (c) => c.type === "response-schema-type-changed" && c.before === null ? "INFO" : null,
+    message: (c) => `Response body type added: ${c.location}. Server now guarantees type ${c.after} (previously unspecified).`,
   },
   {
     matches: (c) =>

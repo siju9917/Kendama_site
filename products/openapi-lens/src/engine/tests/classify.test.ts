@@ -87,6 +87,18 @@ describe("classifyChanges — classification rules", () => {
     expect(result[0]?.severity).toBe("BREAKING");
   });
 
+  it("classifies request-schema-type-changed (null→type) as BREAKING — type added tightens request", () => {
+    const result = classifyChanges([raw("request-schema-type-changed", null, "string", "requestBody.content.schema.type")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/added/i);
+  });
+
+  it("classifies request-schema-type-changed (type→null) as INFO — type removed loosens request", () => {
+    const result = classifyChanges([raw("request-schema-type-changed", "string", null, "requestBody.content.schema.type")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/removed/i);
+  });
+
   it("classifies response-status-removed as BREAKING", () => {
     const result = classifyChanges([raw("response-status-removed", "200", null, "responses[200]")]);
     expect(result[0]?.severity).toBe("BREAKING");
@@ -112,6 +124,18 @@ describe("classifyChanges — classification rules", () => {
   it("classifies response-schema-type-changed as BREAKING", () => {
     const result = classifyChanges([raw("response-schema-type-changed", "string", "object", "responses[200].content.schema.type")]);
     expect(result[0]?.severity).toBe("BREAKING");
+  });
+
+  it("classifies response-schema-type-changed (type→null) as BREAKING — type removed, server may return any type", () => {
+    const result = classifyChanges([raw("response-schema-type-changed", "string", null, "responses[200].content.schema.type")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/removed/i);
+  });
+
+  it("classifies response-schema-type-changed (null→type) as INFO — type added, server now guarantees type", () => {
+    const result = classifyChanges([raw("response-schema-type-changed", null, "string", "responses[200].content.schema.type")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/added/i);
   });
 
   it("classifies nullable changed (true→false) as BREAKING", () => {

@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **935/935 tests** (BidDiff 586/586 + openapi-lens 349/349).
+- **Build green:** **943/943 tests** (BidDiff 586/586 + openapi-lens 357/357).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -208,9 +208,10 @@ Priority order is `ops/loop.md`.
 
 **Unblocked (zero-cost):**
 7. ~~**P2** Vite/Vitest toolchain bump~~ — **DONE 2026-06-06.** Vite 6.4.3 + Vitest 4.1.8.
-8. ~~**D5 Phase 0 engine**~~ — **DONE + hardened 2026-06-06.** `products/openapi-lens/` — 345/345 tests
-   (rounds 5–8: allOf constraint inheritance, top-level body schema constraints/format/enum,
-   parameter items type/format/enum/nullable/constraints, items.properties recursion).
+8. ~~**D5 Phase 0 engine**~~ — **DONE + hardened 2026-06-06.** `products/openapi-lens/` — 357/357 tests
+   (rounds 5–9: allOf constraint inheritance, top-level body schema constraints/format/enum,
+   parameter items type/format/enum/nullable/constraints, items.properties recursion,
+   Swagger 2.0 path-level body param fix, `diffSchemaType` null-transition gap).
    VS Code extension scaffold (Phase 1) begins once Proposal #3 auto-proceeds 2026-06-13.
 9. Recurring: re-critique cadence, "nothing is ever done" reviews,
    ambient ideation, factory self-improvement, META audit.
@@ -789,6 +790,18 @@ all green; check tests 16/16.
     path-level body). +2 coverage tests (op-level overrides path-level param same-name+in; JSON
     preferred over XML when multiple content types coexist — both were already working, now
     regression-locked). 345→349 openapi-lens. Total suite: **935/935 tests**.
+
+75. **5.7.5 bug: `diffSchemaType` null-transition gap — top-level body schema type
+    added/removed was invisible** — `diffSchemaType` guarded with `bType !== undefined
+    && cType !== undefined`, meaning a type going from `string` to `undefined` (removed)
+    or from `undefined` to `string` (added) emitted NO change event and was completely
+    invisible. Identical mistake to item 54's `diffSchemaProperties` null-transition fix.
+    Fix: null sentinel pattern (`?? null`) + `bType !== cType && !(bType === null && cType === null)`.
+    Direction-aware classify rules split 2 simple BREAKING rules into 4: request type-added = BREAKING
+    (server now validates type; clients sending wrong type fail); request type-removed = INFO (looser);
+    response type-removed = BREAKING (server may return any type; clients fail); response type-added
+    = INFO (server now guarantees type). +8 tests (4 classify unit + 4 adversarial integration covering
+    all null-transition combinations). 349→357 openapi-lens. Total suite: **943/943 tests**.
 
 69. **First-principles BCL format-pack roadmap scoring** (5.7.6 continuous ideation):
     Evaluated K8s YAML, SQL migration, GraphQL, CloudFormation, Avro, Docker image diff as
