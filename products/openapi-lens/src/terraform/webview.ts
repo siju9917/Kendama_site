@@ -1,4 +1,4 @@
-import type { TfClassification, TfPlanSummary } from "./types.js";
+import type { TfClassification, TfOutputChange, TfPlanSummary } from "./types.js";
 
 /** Escapes HTML special characters to prevent injection. */
 function esc(s: string): string {
@@ -7,6 +7,16 @@ function esc(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function renderOutputRow(o: TfOutputChange): string {
+  const actionText = o.actions.join(", ");
+  const valueText = o.sensitive ? "(sensitive — value hidden)" : `action: ${esc(actionText)}`;
+  return `
+    <tr>
+      <td><code>${esc(o.name)}</code></td>
+      <td>${esc(valueText)}</td>
+    </tr>`;
 }
 
 function renderRow(c: TfClassification): string {
@@ -135,6 +145,14 @@ ${
 </table>`
     : ""
 }
+${summary.outputChanges.length > 0
+  ? `<h2>Output Changes (${summary.outputChanges.length})</h2>
+<p class="meta">Output value changes may affect downstream automation that reads these outputs.</p>
+<table>
+  <thead><tr><th>Output Name</th><th>Change</th></tr></thead>
+  <tbody>${summary.outputChanges.map(renderOutputRow).join("")}</tbody>
+</table>`
+  : ""}
 <div class="limitations">
   <strong>Phase 1 limitations:</strong> IAM/security changes are conservatively flagged regardless of direction.
   Binary plan format (<code>terraform plan -out=plan.bin</code>) is not supported — use <code>terraform show -json plan.bin</code>.

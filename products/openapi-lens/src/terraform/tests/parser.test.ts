@@ -150,3 +150,58 @@ describe("isTerraformPlanJson", () => {
     expect(isTerraformPlanJson(text)).toBe(true);
   });
 });
+
+describe("parseTerraformPlan — output_changes", () => {
+  it("returns empty outputChanges when output_changes is absent", () => {
+    const result = parseTerraformPlan(makePlan());
+    expect(result.outputChanges).toEqual([]);
+  });
+
+  it("parses a created output", () => {
+    const result = parseTerraformPlan(
+      makePlan({
+        output_changes: {
+          bucket_name: { actions: ["create"], before: null, after: "my-bucket" },
+        },
+      }),
+    );
+    expect(result.outputChanges).toHaveLength(1);
+    expect(result.outputChanges[0]!.name).toBe("bucket_name");
+    expect(result.outputChanges[0]!.actions).toEqual(["create"]);
+    expect(result.outputChanges[0]!.sensitive).toBe(false);
+  });
+
+  it("parses a sensitive output and marks it sensitive", () => {
+    const result = parseTerraformPlan(
+      makePlan({
+        output_changes: {
+          db_password: {
+            actions: ["update"],
+            before: "old",
+            after_sensitive: true,
+            after: null,
+          },
+        },
+      }),
+    );
+    expect(result.outputChanges[0]!.sensitive).toBe(true);
+  });
+
+  it("skips no-op outputs", () => {
+    const result = parseTerraformPlan(
+      makePlan({
+        output_changes: {
+          stable_output: { actions: ["no-op"], before: "v1", after: "v1" },
+          changed_output: { actions: ["update"], before: "v1", after: "v2" },
+        },
+      }),
+    );
+    expect(result.outputChanges).toHaveLength(1);
+    expect(result.outputChanges[0]!.name).toBe("changed_output");
+  });
+
+  it("returns empty outputChanges when output_changes is not an object", () => {
+    const result = parseTerraformPlan(makePlan({ output_changes: null }));
+    expect(result.outputChanges).toEqual([]);
+  });
+});

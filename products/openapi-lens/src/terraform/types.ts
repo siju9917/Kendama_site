@@ -19,8 +19,16 @@ export interface TfClassification {
   reasons: string[];
 }
 
+/** An output value change from the Terraform plan's output_changes section. */
+export interface TfOutputChange {
+  name: string;
+  actions: TfActionSet;
+  sensitive: boolean;
+}
+
 export interface TfPlanSummary {
   changes: TfClassification[];
+  outputChanges: TfOutputChange[];
   critical: number;
   normal: number;
   noOp: number;

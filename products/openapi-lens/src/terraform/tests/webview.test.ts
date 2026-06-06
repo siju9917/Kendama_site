@@ -25,6 +25,7 @@ function makeClassification(
 function makeSummary(overrides: Partial<TfPlanSummary> = {}): TfPlanSummary {
   return {
     changes: [],
+    outputChanges: [],
     critical: 0,
     normal: 0,
     noOp: 0,
@@ -138,6 +139,35 @@ describe("createPlanWebviewContent", () => {
     const html = createPlanWebviewContent(makeSummary());
     expect(html).toContain("0 resource changes");
     expect(html).not.toContain("(0");
+  });
+
+  it("shows output changes section when outputChanges is non-empty", () => {
+    const html = createPlanWebviewContent(
+      makeSummary({
+        outputChanges: [
+          { name: "bucket_name", actions: ["create"], sensitive: false },
+          { name: "db_password", actions: ["update"], sensitive: true },
+        ],
+      }),
+    );
+    expect(html).toContain("Output Changes (2)");
+    expect(html).toContain("bucket_name");
+    expect(html).toContain("(sensitive");
+  });
+
+  it("does not show output changes section when outputChanges is empty", () => {
+    const html = createPlanWebviewContent(makeSummary());
+    expect(html).not.toContain("Output Changes");
+  });
+
+  it("escapes HTML in output change name", () => {
+    const html = createPlanWebviewContent(
+      makeSummary({
+        outputChanges: [{ name: "bucket<xss>", actions: ["create"], sensitive: false }],
+      }),
+    );
+    expect(html).toContain("bucket&lt;xss&gt;");
+    expect(html).not.toContain("bucket<xss>");
   });
 
   it("renders correct row count for mixed plan", () => {

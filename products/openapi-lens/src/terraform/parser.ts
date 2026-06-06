@@ -1,4 +1,4 @@
-import type { TfChange, TfPlanSummary } from "./types.js";
+import type { TfChange, TfOutputChange, TfPlanSummary } from "./types.js";
 import { classifyAll } from "./classify.js";
 
 /**
@@ -51,8 +51,11 @@ export function parseTerraformPlan(json: string): TfPlanSummary {
   const normal = classified.filter((c) => c.severity === "NORMAL").length;
   const noOp = classified.filter((c) => c.severity === "NO-OP").length;
 
+  const outputChanges = parseOutputChanges(plan["output_changes"]);
+
   return {
     changes: classified,
+    outputChanges,
     critical,
     normal,
     noOp,
@@ -80,6 +83,26 @@ function isResourceChange(x: unknown): x is {
   if (!ch || typeof ch !== "object" || Array.isArray(ch)) return false;
   if (!Array.isArray((ch as Record<string, unknown>)["actions"])) return false;
   return true;
+}
+
+function parseOutputChanges(raw: unknown): TfOutputChange[] {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+  const outputMap = raw as Record<string, unknown>;
+  const results: TfOutputChange[] = [];
+  for (const [name, value] of Object.entries(outputMap)) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) continue;
+    const entry = value as Record<string, unknown>;
+    if (!Array.isArray(entry["actions"])) continue;
+    const actions = entry["actions"] as string[];
+    // Skip no-op outputs (no actual change).
+    if (actions.every((a: string) => a === "no-op")) continue;
+    results.push({
+      name,
+      actions,
+      sensitive: entry["after_sensitive"] === true || entry["before_sensitive"] === true,
+    });
+  }
+  return results;
 }
 
 /**
