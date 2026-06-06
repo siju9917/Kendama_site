@@ -335,6 +335,31 @@ parsed but not diffed → add diff emit → add classify rules → add completen
 guard entry. Encoding this protocol as a playbook makes the next VS Code
 extension cycle (Phase 1) and D6 (Terraform classifier) dramatically faster.
 
+## 12. Extend brain count-drift check to catch stale test counts in APPROVALS.md
+
+**Type:** tooling
+
+**Expected impact:** rigor — the `state-count-sanity` check guards `STATE.md`'s headline
+test count, but `APPROVALS.md` proposals can contain test-count mentions ("91/91 tests",
+"345/345 tests") that become stale across context windows. Stale counts in proposals mislead
+human reviewers reading the approval gate. The 5.7.8 audit on items 70-71 found one real
+instance: Proposal #3 still said "91/91 tests" when the real count was 345/345. No check
+caught it; it was fixed only by manual reading.
+
+**Cost to implement:** small. Extend `state-count-sanity.mjs` or create a new check that
+scans APPROVALS.md for `NNN/NNN tests` patterns and flags any count below the current
+STATE.md headline (under the heuristic that test counts are monotonically non-decreasing;
+if a proposal mentions a smaller count than the current headline, it is stale).
+
+**Strengthens or weakens?** stronger.
+
+**Status:** proposed.
+
+**Reasoning trace:** 5.7.8 audit finding from items 70-71 continuation
+(META_LESSONS.md 2026-06-06 — "items 70-71" entry). The `state-count-sanity` check's scope
+was deliberately narrow (STATE.md headline only) to avoid a slow-suite trap; extending scope
+to APPROVALS.md is safe because it is a string search, not a suite run.
+
 ## Notes for the META loop
 
 - The META loop pulls the top item from this list each cycle,

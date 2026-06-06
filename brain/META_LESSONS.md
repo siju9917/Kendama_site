@@ -1160,3 +1160,83 @@ diff candidate), this lesson.
 2026-06-13 per Proposal #3 auto-proceed; (c) next session's roster growth check verifies
 the roster grew during Phase 1 build work.
 
+---
+
+## 2026-06-06 — 5.7.7 META audit (context-window continuation, items 70–71)
+
+**Operational event:** Saturday Routine context-window continuation. Resumed from a compacted
+context window after items 68-69. Documentation and pre-design work — no new tests, no product
+code changes. Suite unchanged at 931/931. All factory checks green (11/11).
+
+**Items completed this continuation:**
+- Item 70: D5 Phase 1 pre-design — full architecture specification for the VS Code OpenAPI
+  Breaking-Change Lens extension. New playbook `brain/PLAYBOOKS/openapi-lens-phase1-design.md`
+  (detector, baseline, diagnostics, codelens, extension wiring, package.json, Vite CJS build,
+  Phase 1 test plan ~376 total, known limitations). Updated `vscode-extension-ide-diff.md`
+  playbook to fix stale D5 section (was describing hypothetical oasdiff JS wrapper; corrected
+  to our own Phase 0 engine API). Fixed APPROVALS.md Proposal #3 stale "91/91 tests" → "345/345."
+- Item 71: D6 Phase 1 pre-design — full architecture specification for the Terraform Plan
+  Destructive-Change Classifier VS Code extension. New playbook
+  `brain/PLAYBOOKS/terraform-lens-phase1-design.md` (types, parser, classify, resources, webview
+  modules; 5 classification rules; DATA_STORE_TYPES + IAM_TYPES data-driven tables; Phase 1 test
+  plan ~418 total; known limitations including conservative IAM widening and no binary plan support).
+
+**5.7.1 (monthly re-critique):** N/A — no shipped products.
+
+**5.7.2 (escalating critique):** N/A — documentation-only continuation.
+
+**5.7.3 (roster growth):** Zero new checklist items. Honest note: second documentation-only
+continuation this session with no new code pattern to check. The Phase 1 pre-designs introduce
+new patterns (VS Code extension wiring, WebView content generation) that WILL become checklist
+additions when Phase 1 code is built. Logging the anticipated additions so they are not missed:
+the D5 Phase 1 build should trigger checklist items on (a) VS Code API boundary isolation (no
+vscode imports in engine), (b) WebView HTML injection safety (no user-provided string interpolation),
+(c) diagnostic re-compute must clear old diagnostics before setting new ones.
+
+**5.7.4 ("nothing is done"):** HELD — the D5 Phase 1 pre-design itself functions as a "nothing
+is done" re-opening of the Phase 0 engine work: the design doc asks "what does the VS Code
+adapter need that Phase 0 didn't build?" and discovered the block-level line-mapping challenge
+(Phase 0 returns path+method strings, not line numbers), the git HEAD baseline challenge, and
+the Vite CJS build requirement. These are real gaps found by the re-opening review, and all are
+documented with a clear Phase 2 upgrade path (CST-based YAML parsing for precise positions).
+
+**5.7.5 (continuous bug-hunt):** Not run — documentation-only work. Phase 0 engine assessed as
+saturated; Phase 1 code does not yet exist to hunt.
+
+**5.7.6 (continuous ideation):** HELD — both pre-design documents are substantive ideation
+artifacts that accumulate factory knowledge: the D6 pre-design in particular identified the
+architectural simplification (plan JSON is self-contained, no baseline management needed) as a
+distinguishing property vs. D5. This is "invent something unexpected" in the context of
+build-preparation: the natural assumption is that D6 would mirror D5's complexity; the design
+work revealed it is architecturally simpler.
+
+**5.7.7 (this audit):** Running now. Evidence-bound verdicts.
+
+**5.7.8 (audit-of-the-auditor):**
+
+1. **Was the audit shallow?** Six rules addressed with held/N/A verdicts and concrete evidence
+   (file names, design insights). The zero-roster-growth note is honest and proactively names
+   the three anticipated future additions so they are not forgotten.
+
+2. **Was an obvious lapse missed?** One observation: the stale test count in APPROVALS.md
+   ("91/91 tests" vs actual "345/345") was found and fixed during item 70. This is a
+   brain-drift incident — a prior session committed a number that became stale across 7+
+   context windows. The `state-count-sanity` check guards STATE.md's headline count but
+   APPROVALS.md is not checked. Potential improvement: extend `state-count-sanity` or the
+   `brain-integrity` check to flag test-count mentions in APPROVALS.md against STATE.md's
+   headline. Logging as a SELF_IMPROVEMENT candidate (item 12).
+
+3. **Was the conclusion defended or asserted?** Verdicts cite specific file names and design
+   artifacts. Evidence-bound.
+
+**Action from 5.7.8 finding:** Log SELF_IMPROVEMENT item 12 — extend a factory check to
+detect stale test-count mentions in APPROVALS.md (cross-validate against STATE.md headline).
+
+**Where applied:** `brain/STATE.md` (items 70-71 logged), `brain/SELF_IMPROVEMENT.md`
+(item 12 candidate logged), this lesson.
+
+**Recurrence test:** (a) factory checks remain 11/11 green; (b) D5 Phase 1 scaffold begins
+2026-06-13 per Proposal #3 auto-proceed; (c) when Phase 1 code is built, the three anticipated
+checklist additions (VS Code API isolation, WebView injection, diagnostic re-compute) are added
+to CRITIQUE_AGENTS.md before the Phase 1 critique panel runs.
+
