@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **1353/1353 tests** (BidDiff 586/586 + openapi-lens 767/767).
+- **Build green:** **1379/1379 tests** (BidDiff 586/586 + openapi-lens 793/793).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -160,6 +160,32 @@
   WebView polish: spec-level changes (server-removed, server-added) now display
   "Spec-level" in the Operation column instead of the confusing "GET /" placeholder;
   2 new WebView tests → 767.
+  5.7.5 bug-hunt round 32 (bug fix + new feature): OAS 3.1 type arrays
+  `type: ["string", "null"]` were silently losing type info because asString()
+  returns undefined for arrays. Fixed normalizeSchema to extract first non-null
+  type and synthesize nullable: true. 5 adversarial tests (cross-version equivalence,
+  nullable in request body, property-level, single-element array) → 772.
+  5.7.5 bug-hunt round 33: parameter in: location change (query→header) correctly
+  emits parameter-removed (BREAKING) + parameter-added (INFO for optional, BREAKING
+  for required); default response status code removal is BREAKING; OAS 3.1 type array
+  + constraint field interaction (minimum change detected via
+  request-schema-property-constraint-changed); 7 adversarial tests → 778.
+  5.7.5 bug-hunt round 34 (bug fix + new feature): content-type change detection gap.
+  When application/json removed and application/xml added, no change was reported
+  (engine picked "first available" media type for both). Fixed: added contentTypes:
+  string[] to OapiRequestBody and OapiResponse; diffContentTypes helper; 4 new
+  OapiChangeType values (response-media-type-removed BREAKING, response-media-type-added
+  INFO, request-media-type-removed BREAKING, request-media-type-added INFO); classify
+  rules; TYPE_STUBS updated; 6 adversarial tests; Swagger 2.0 specs produce no
+  spurious events → 788.
+  5.7.5 bug-hunt round 35: allOf + $ref base schema propagation — verified required
+  field addition in $ref base schema propagates through allOf inheritance to response,
+  property type change propagates, parent schema overrides allOf member on key conflict;
+  3 adversarial tests → 791.
+  5.7.5 bug-hunt round 36: OAS 3.1 non-null union type arrays documented — type:
+  [integer, string] picks first element as primary (known limitation); 2 adversarial
+  tests documenting the gap (false negative when [integer,string]→integer, correct
+  detection when [string,integer]→integer) → 793.
   All typecheck clean; full CI gate verified green.
 - **Stop-on-Saturday enforcement (this session, human directive):** now a
   TECHNICAL INTERLOCK, not just a written rule. `ops/checks/stop-guard.mjs`

@@ -113,6 +113,23 @@ Checklist:
   was BREAKING for true→false and INFO for false→true — INVERTED vs. the
   property and items levels which were both correct; fix + 30-case cross-
   level table added to classify.test.ts).
+- **When a parser helper (e.g. `asString`) returns `undefined` for a non-string
+  type, check every caller where the raw field might legitimately arrive as a
+  non-string.** JSON Schema and OAS 3.1 allow the `type` field to be an array
+  (`["string", "null"]`); a parser that calls `asString(raw["type"])` silently
+  loses the type info for all array-typed schemas. Audit parser fields with the
+  question: "could this value be legitimately non-string in newer spec versions?"
+  Added 2026-06-06 (openapi-lens round 32: OAS 3.1 `type: ["string", "null"]`
+  produced `type: undefined` because `asString(array)` returned undefined).
+- **"Prefer first available" media-type extraction creates false negatives when
+  the preferred media type disappears.** `application/json` preferred → first
+  other entry fallback. If baseline has `application/json` and current only has
+  `application/xml`, the fallback picks two DIFFERENT schemas and compares them
+  — falsely attributing any difference to a schema change rather than a media-type
+  removal. The fix: track content type keys explicitly and compare sets; a missing
+  preferred type is a `media-type-removed` event, not a schema change. Added
+  2026-06-06 (openapi-lens round 34: removing `application/json` while adding
+  `application/xml` produced no change events; fixed by content-type set diffing).
 
 ### 2. Adversarial Tester
 
@@ -186,6 +203,16 @@ Checklist:
   one must NOT overwrite the other. Added 2026-06-06 (openapi-lens
   D5 Phase 0: a map keyed only by `name` would merge `path:id` and
   `query:id`; fixed at design-time to use `${p.in}:${p.name}`).
+- **For diff engines that compare API specs: probe cross-version semantics
+  (OAS 3.0 vs 3.1) explicitly.** OAS 3.1 changed several fields from OAS 3.0:
+  `type` is now an array; `exclusiveMinimum`/`exclusiveMaximum` are numbers
+  not booleans; `nullable` is replaced by adding "null" to the type array.
+  A diff engine comparing a 3.0 baseline to a 3.1 current (or vice versa)
+  must normalise both sides to the same representation before comparing.
+  Probe: baseline OAS 3.0 (`type: string, nullable: true`) vs current OAS 3.1
+  (`type: ["string", "null"]`) — should produce no false positive. Added
+  2026-06-06 (openapi-lens round 32: OAS 3.1 type arrays silently lost type
+  info; round 36: non-null union arrays lose secondary types).
 
 ### 3. Security Critic
 
