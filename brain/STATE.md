@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **714/714 tests** (BidDiff 586/586 + openapi-lens 128/128).
+- **Build green:** **715/715 tests** (BidDiff 586/586 + openapi-lens 129/129).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -604,6 +604,13 @@ all green; check tests 16/16.
     stripped). All 5 new `it` blocks pass immediately — no bugs found, but the gap
     is now regression-locked. 582/582 BidDiff. Total suite: **688/688 tests**.
 
+51. **5.7.5 fix: items type constraint addition/removal not detected** — `diffSchemaItems`
+    only fired when BOTH schemas had items with a defined type. Adding/removing the items
+    spec entirely was invisible. Fix: use `bType ?? null` / `cType ?? null` for comparison;
+    direction-aware classification (response loses items=BREAKING, gains=INFO; request gains
+    items=BREAKING, loses=INFO). 1 net new test (updated old "no-emit" assertion to correct
+    new behavior + added reverse-direction test). Total suite: **715/715 tests**.
+
 50. **5.7.5 fix: openapi-lens request body nullable never detected** — `diffResponseNullable`
     was only called for response schemas. A request body changing from `nullable: true` to
     `nullable: false` (clients sending null will be rejected → BREAKING) was invisible.
@@ -658,7 +665,7 @@ all green; check tests 16/16.
   components tested). All unblocked POLISH done. Next session: privacy copy fix
   (NEED #7, when human responds), store submission prep, and D5 VS Code extension
   Phase 1 scaffold (once Proposal #3 auto-proceeds 2026-06-13).
-- **D5 Phase 0 engine is in `products/openapi-lens/`** — 128 tests, all passing.
+- **D5 Phase 0 engine is in `products/openapi-lens/`** — 129 tests, all passing.
   Phase 1 (VS Code extension scaffold) starts when Proposal #3 auto-proceeds 2026-06-13.
 - Spend cap: plan-included web tools (sub-agents, search) are FREE; $0 committed
   external spend. No cap blocker.
