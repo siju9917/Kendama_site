@@ -7667,3 +7667,80 @@ paths:
     expect(reqChange?.severity).toBe("BREAKING");
   });
 });
+
+// ─── Round 49: request body added/removed edge cases ─────────────────────────
+
+describe("request body added to operation with no prior body (5.7.5 round 49)", () => {
+  const NO_BODY = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /ping:
+    post:
+      responses:
+        "200":
+          description: ok
+`;
+
+  const REQUIRED_BODY = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /ping:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        "200":
+          description: ok
+`;
+
+  const OPTIONAL_BODY = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /ping:
+    post:
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        "200":
+          description: ok
+`;
+
+  it("adding a REQUIRED request body to an operation that had none is BREAKING", () => {
+    // Existing clients calling POST /ping without a body will now get 400/422.
+    const changes = analyzeOpenApiDiff(NO_BODY, REQUIRED_BODY);
+    const bodyChange = changes.find((c) => c.type === "request-body-required-changed");
+    expect(bodyChange).toBeDefined();
+    expect(bodyChange?.severity).toBe("BREAKING");
+    expect(bodyChange?.before).toBe(false);
+    expect(bodyChange?.after).toBe(true);
+  });
+
+  it("adding an OPTIONAL request body to an operation that had none produces no BREAKING change", () => {
+    // Clients not sending a body still work — optional body is non-breaking.
+    const changes = analyzeOpenApiDiff(NO_BODY, OPTIONAL_BODY);
+    const bodyChange = changes.find((c) => c.type === "request-body-required-changed");
+    // Optional body added: no event — no change for clients not sending a body
+    expect(bodyChange).toBeUndefined();
+    const breakingChanges = changes.filter((c) => c.severity === "BREAKING");
+    expect(breakingChanges).toHaveLength(0);
+  });
+
+  it("removing a REQUIRED request body is BREAKING (was: required changes to removed)", () => {
+    // Removing the request body from spec is tracked as before=true, after=null.
+    const changes = analyzeOpenApiDiff(REQUIRED_BODY, NO_BODY);
+    const bodyChange = changes.find((c) => c.type === "request-body-required-changed");
+    expect(bodyChange).toBeDefined();
+    expect(bodyChange?.before).toBe(true);
+    expect(bodyChange?.after).toBeNull();
+    expect(bodyChange?.severity).toBe("BREAKING");
+  });
+});
