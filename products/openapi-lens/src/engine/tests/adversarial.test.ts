@@ -13961,3 +13961,120 @@ paths:
     expect(c?.severity).toBe("INFO");
   });
 });
+
+// ─── Round 110: items-enum-changed missing directions ─────────────────────────
+// Prior tests cover: response null→enum (INFO), response enum→null (BREAKING).
+// Six directions untested:
+//   response: enum+value-added (BREAKING), enum value removed (INFO)
+//   request: null→enum (BREAKING), enum→null (INFO), value-added (INFO), value-removed (BREAKING)
+
+describe("adversarial round 110 — items enum missing directions (response + request)", () => {
+  function makeResponseItemsSpec(enumValues: string[]): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /colors:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  enum: [${enumValues.map((v) => `"${v}"`).join(", ")}]
+`;
+  }
+
+  function makeRequestItemsEnumSpec(enumValues: string[] | null): string {
+    const enumLine = enumValues !== null
+      ? `                enum: [${enumValues.map((v) => `"${v}"`).join(", ")}]`
+      : "";
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /submit:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+${enumLine}
+      responses:
+        "201":
+          description: created
+`;
+  }
+
+  it("(R110-1) response items enum value added is BREAKING — exhaustive clients will not handle new value", () => {
+    const changes = analyzeOpenApiDiff(
+      makeResponseItemsSpec(["red", "blue"]),
+      makeResponseItemsSpec(["red", "blue", "green"]),
+    );
+    const c = changes.find((x) => x.type === "response-schema-items-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("(R110-2) response items enum value removed is INFO — server sends fewer possible values", () => {
+    const changes = analyzeOpenApiDiff(
+      makeResponseItemsSpec(["red", "blue", "green"]),
+      makeResponseItemsSpec(["red", "blue"]),
+    );
+    const c = changes.find((x) => x.type === "response-schema-items-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+  });
+
+  it("(R110-3) request items enum added (null→enum): BREAKING — server now restricts element values", () => {
+    const changes = analyzeOpenApiDiff(
+      makeRequestItemsEnumSpec(null),
+      makeRequestItemsEnumSpec(["draft", "published"]),
+    );
+    const c = changes.find((x) => x.type === "request-schema-items-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.before).toBeNull();
+    expect(c?.after).toEqual(["draft", "published"]);
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("(R110-4) request items enum removed (enum→null): INFO — server no longer restricts elements", () => {
+    const changes = analyzeOpenApiDiff(
+      makeRequestItemsEnumSpec(["draft", "published"]),
+      makeRequestItemsEnumSpec(null),
+    );
+    const c = changes.find((x) => x.type === "request-schema-items-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.before).toEqual(["draft", "published"]);
+    expect(c?.after).toBeNull();
+    expect(c?.severity).toBe("INFO");
+  });
+
+  it("(R110-5) request items enum value added is INFO — new accepted values, existing clients still work", () => {
+    const changes = analyzeOpenApiDiff(
+      makeRequestItemsEnumSpec(["draft", "published"]),
+      makeRequestItemsEnumSpec(["draft", "published", "archived"]),
+    );
+    const c = changes.find((x) => x.type === "request-schema-items-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+  });
+
+  it("(R110-6) request items enum value removed is BREAKING — clients sending removed value will get 422", () => {
+    const changes = analyzeOpenApiDiff(
+      makeRequestItemsEnumSpec(["draft", "published", "archived"]),
+      makeRequestItemsEnumSpec(["draft", "published"]),
+    );
+    const c = changes.find((x) => x.type === "request-schema-items-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+  });
+});
