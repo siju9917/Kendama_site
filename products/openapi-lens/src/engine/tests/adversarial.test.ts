@@ -10383,3 +10383,110 @@ paths:
     expect(constChange?.after).toBeNull();
   });
 });
+
+// ─── Round 81: request body top-level maxLength + response body maxItems null-transitions ─
+// maxLength at request top-level: only property-level tests exist (e.g. .properties.name.maxLength).
+// maxItems at response top-level: only value-change tests exist (50→100 BREAKING, 100→50 INFO in earlier rounds).
+// Both null-transition paths (add/remove) are untested at top-level body schema scope.
+
+describe("adversarial round 81 — request body top-level maxLength and response body maxItems null-transitions (end-to-end)", () => {
+  function makeStringBodySpec81(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /titles:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  function makeArrayResponseSpec81(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /results:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                ${constraintLine}
+`;
+  }
+
+  it("adding maxLength to request body string (null→50) is BREAKING — previously valid long strings now rejected", () => {
+    // requestConstraintSeverity max-sense: before === null → BREAKING
+    // Clients that send strings longer than 50 chars were accepted before but will fail after.
+    const noMax   = makeStringBodySpec81("");
+    const withMax = makeStringBodySpec81("maxLength: 50");
+    const changes = analyzeOpenApiDiff(noMax, withMax);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".maxLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(50);
+  });
+
+  it("removing maxLength from request body string (50→null) is INFO — constraint relaxed, all prior valid strings remain valid", () => {
+    // requestConstraintSeverity max-sense: after === null → INFO
+    // Removing maxLength widens acceptance — existing clients send shorter strings, still valid.
+    const withMax = makeStringBodySpec81("maxLength: 50");
+    const noMax   = makeStringBodySpec81("");
+    const changes = analyzeOpenApiDiff(withMax, noMax);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".maxLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(50);
+    expect(constChange?.after).toBeNull();
+  });
+
+  it("adding maxItems to response body array (null→10) is INFO — server now guarantees at most 10 elements", () => {
+    // responseConstraintSeverity max-sense: before === null → INFO
+    // Clients that rely on the server not over-filling the array benefit; no existing client breaks.
+    const noMax   = makeArrayResponseSpec81("");
+    const withMax = makeArrayResponseSpec81("maxItems: 10");
+    const changes = analyzeOpenApiDiff(noMax, withMax);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".maxItems"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(10);
+  });
+
+  it("removing maxItems from response body array (10→null) is BREAKING — server may now return more items than clients expect", () => {
+    // responseConstraintSeverity max-sense: after === null → BREAKING
+    // Clients that allocated fixed-size buffers or iterated expecting ≤10 items may fail.
+    const withMax = makeArrayResponseSpec81("maxItems: 10");
+    const noMax   = makeArrayResponseSpec81("");
+    const changes = analyzeOpenApiDiff(withMax, noMax);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".maxItems"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBe(10);
+    expect(constChange?.after).toBeNull();
+  });
+});
