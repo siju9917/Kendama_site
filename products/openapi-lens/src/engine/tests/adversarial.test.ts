@@ -11134,3 +11134,90 @@ paths:
     expect(constChange?.after).toBeNull();
   });
 });
+
+// ─── Round 88: parameter constraint null-transitions ─────────────────────────
+// The only existing parameter-constraint-changed test (line ~1103) tests value-to-value:
+// maximum 100→50=BREAKING. Adding or removing a parameter constraint (null-transition)
+// has never been tested end-to-end. Parameters use requestConstraintSeverity semantics
+// (they constrain what clients may send, so adding=BREAKING, removing=INFO).
+
+describe("adversarial round 88 — parameter constraint null-transitions (end-to-end)", () => {
+  function makeParamSpec88(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("adding minimum to query parameter (null→1) is BREAKING — clients sending 0 or negative values now fail", () => {
+    // requestConstraintSeverity min-sense: before === null → BREAKING
+    // Previously any integer was accepted; now values <1 will fail server validation.
+    const noMin   = makeParamSpec88("");
+    const withMin = makeParamSpec88("minimum: 1");
+    const changes = analyzeOpenApiDiff(noMin, withMin);
+    const constChange = changes.find(
+      (c) => c.type === "parameter-constraint-changed" && String(c.location).endsWith(".minimum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(1);
+  });
+
+  it("removing minimum from query parameter (1→null) is INFO — constraint relaxed, existing valid values remain valid", () => {
+    // requestConstraintSeverity min-sense: after === null → INFO
+    // Clients sending values ≥1 still pass; values <1 now also accepted.
+    const withMin = makeParamSpec88("minimum: 1");
+    const noMin   = makeParamSpec88("");
+    const changes = analyzeOpenApiDiff(withMin, noMin);
+    const constChange = changes.find(
+      (c) => c.type === "parameter-constraint-changed" && String(c.location).endsWith(".minimum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(1);
+    expect(constChange?.after).toBeNull();
+  });
+
+  it("adding maximum to query parameter (null→100) is BREAKING — clients sending values >100 now fail", () => {
+    // requestConstraintSeverity max-sense: before === null → BREAKING
+    // Previously unbounded; now capped at 100, so clients sending 101+ fail validation.
+    const noMax   = makeParamSpec88("");
+    const withMax = makeParamSpec88("maximum: 100");
+    const changes = analyzeOpenApiDiff(noMax, withMax);
+    const constChange = changes.find(
+      (c) => c.type === "parameter-constraint-changed" && String(c.location).endsWith(".maximum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(100);
+  });
+
+  it("removing maximum from query parameter (100→null) is INFO — constraint relaxed, values >100 now accepted", () => {
+    // requestConstraintSeverity max-sense: after === null → INFO
+    // Clients that sent ≤100 still pass; the removal only widens the valid range.
+    const withMax = makeParamSpec88("maximum: 100");
+    const noMax   = makeParamSpec88("");
+    const changes = analyzeOpenApiDiff(withMax, noMax);
+    const constChange = changes.find(
+      (c) => c.type === "parameter-constraint-changed" && String(c.location).endsWith(".maximum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(100);
+    expect(constChange?.after).toBeNull();
+  });
+});
