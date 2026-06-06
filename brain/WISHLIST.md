@@ -342,3 +342,59 @@ using the same parser as `state-count-sanity.mjs`.
 
 **Promoted to backlog?** Not yet — candidate for SELF_IMPROVEMENT backlog;
 the state-count-sanity check (#8) is a sibling.
+
+---
+
+## 2026-06-06 — OpenAPI allOf/oneOf/anyOf schema composition merger
+
+**Friction encountered:** During openapi-lens D5 Phase 0, schemas using
+`allOf`, `oneOf`, or `anyOf` composition are stored as-is and their member
+schemas are NOT merged before diffing. A breaking change inside a composed
+schema is invisible to the current engine. Every real-world OpenAPI spec uses
+composition heavily (inheritance patterns, discriminated unions, nullable via
+`oneOf: [{...}, {type: "null"}]`).
+
+**Where it came up:** openapi-lens Phase 0 Known Limitations section — flagged
+as Phase 2 work. Found during initial engine design.
+
+**Proposed feature (openapi-lens Phase 2 or as a standalone library):** A
+pre-processing step that flattens `allOf`/`oneOf`/`anyOf` schemas before
+diffing: merge `allOf` members into a single flat schema (taking the union of
+`required[]` and `properties`), flag `oneOf`/`anyOf` members as requiring
+per-variant comparison. If extracted into a library, useful to any API tooling
+(linters, generators, mock servers) that needs a flat view of a composed schema.
+
+**Initial size estimate:** Medium. The `allOf` flattening case is well-defined
+(merge required + properties, error on conflicting types). The `oneOf`/`anyOf`
+case requires per-variant analysis, which is genuinely complex (n² comparisons).
+Ship `allOf` first; leave `oneOf`/`anyOf` for a follow-up.
+
+**Promoted to backlog?** Not yet — logged as a Phase 2 candidate for
+openapi-lens. Cross-referenced from `products/openapi-lens/PROGRESS.md`
+Phase 2 known limitation.
+
+---
+
+## 2026-06-06 — Recursive property-level diff beyond 1 level
+
+**Friction encountered:** openapi-lens Phase 0 added one-level-deep property
+diffing (`properties.fieldName.type`). Nested objects (e.g., a `user` object
+with a `address` object with a `zipCode` field) are only compared at the
+`user.type` level. A type change in `user.address.zipCode` from `number` to
+`string` is currently invisible.
+
+**Where it came up:** openapi-lens Phase 0 Known Limitations — flagged explicitly
+as a limitation during Phase 0 engine design.
+
+**Proposed feature:** A recursive schema walker that diffs the full `properties`
+tree to arbitrary depth, with a configurable max-depth to prevent infinite loops
+on circular schemas (which would need cycle detection via a visited-set). Output
+would be paths like `responses[200].content.schema.properties.user.properties.address.properties.zipCode.type`.
+
+**Initial size estimate:** Small-to-medium within openapi-lens. The key
+complexity is circular reference detection (a schema property that $refs back to
+a parent type — common with tree/linked-list schemas). With a `seen: Set<object>`
+guard, the recursion is straightforward.
+
+**Promoted to backlog?** Not yet — logged as a Phase 2 enhancement for
+openapi-lens. Cross-referenced from `products/openapi-lens/PROGRESS.md` Phase 2.

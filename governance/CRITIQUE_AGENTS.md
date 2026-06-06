@@ -126,6 +126,18 @@ Checklist:
   silently drops the value. Characterize this behavior in a test and
   verify it is acceptable or fix it. Added 2026-06-06 (BidDiff
   `detectMoney`: `$1.5MMM` returns `$1 = 1.00` not no-match).
+- **A YAML/TOML/JSON spec built by string concatenation must produce a
+  VALID tree at every intermediate form.** If the base string ends with
+  a top-level sibling key (e.g., `components:`), text appended with
+  string concatenation lands as a *sibling of that key* — not inside
+  the block the author intended. Always validate the final tree
+  structure in a test (e.g., `yaml.load(spec).paths['/foo']` exists),
+  or construct specs programmatically (not via string append) when the
+  base has terminal open blocks. Added 2026-06-06 (openapi-lens D5:
+  a test variant appended a new path after a `components:` block, so
+  the new path became a top-level key instead of a `paths` entry;
+  the test then silently got `undefined` for the endpoint and the
+  assertion was checking the wrong shape of the spec).
 - **A `window.addEventListener('keydown')` handler in a React
   `useEffect` requires tests for each guard independently:**
   (a) modifier keys (`metaKey`/`ctrlKey`/`altKey` each bypass
@@ -135,6 +147,16 @@ Checklist:
   only the happy path (the key works) leaves all guards untested.
   Added 2026-06-06 (DiffView: J/K nav had all four guards but zero
   tests for any of them until the first component test was written).
+- **A diff/map key that is a single field (e.g., `name`) silently
+  collapses distinct entities that share that field in different
+  namespaces (e.g., two OpenAPI parameters named `id`, one `path`
+  and one `query`).** Always use a compound key that includes every
+  dimension that distinguishes the entity (`in:name` for OpenAPI
+  parameters, `resource:action` for policy rules, etc.). Probe with
+  two entities that share `name` but differ on the namespace field —
+  one must NOT overwrite the other. Added 2026-06-06 (openapi-lens
+  D5 Phase 0: a map keyed only by `name` would merge `path:id` and
+  `query:id`; fixed at design-time to use `${p.in}:${p.name}`).
 
 ### 3. Security Critic
 
@@ -242,6 +264,30 @@ ruleset still needs the human-gated practitioner validation in
   an integration test exercises the full chain: anchor detection →
   classify → critical-rule evaluation → engine output. A unit test
   on the detector alone is necessary but not sufficient.
+
+**OpenAPI / REST API specialization** (for openapi-lens and the
+API-diff product family; added 2026-06-06 D5 Phase 0):
+- **Schema comparison must reach the `properties` object.** Comparing
+  only top-level `type` and `required[]` misses the most common
+  real-world breaking change: a property that already existed changes
+  its `type` (e.g., `number` → `string`). Always diff one level into
+  `properties`; if nesting is deeper, document the limit explicitly.
+- **`allOf`/`oneOf`/`anyOf` composition schemas cannot be compared at
+  face value.** A tool that diffs `allOf: [{...}, {...}]` as an opaque
+  object will miss breaking changes inside any member. Correct
+  treatment requires flattening the composition first; if that isn't
+  implemented, flag every composed schema as "needs manual review."
+- **The breaking-vs-safe polarity reverses between requests and
+  responses.** Adding a required field to a REQUEST body is BREAKING
+  (clients must now send it). Adding a required field to a RESPONSE
+  body is SAFE-to-INFO (the server now guarantees it, which clients
+  can only benefit from). A classifier that uses a single rule for
+  both directions is wrong.
+- **Remote `$ref` resolution must be explicit.** A diff tool that
+  silently drops remote references produces false "no change" results
+  when the actual contract has changed. The limitation must be documented
+  prominently and a test must verify the exact behavior (drop/error/warn)
+  so users know what they're relying on.
 
 ### 6. Performance Critic
 
@@ -527,3 +573,6 @@ with no growth is a warning sign flagged in the weekly digest.
 | 2026-06-06 | Adversarial Tester (#2) checklist | Added: a regex optional group wrapping BOTH a word prefix and `\(` makes the paren optional too — test every regex with and without each optional prefix INDEPENDENTLY | BidDiff N16: `PAGE_LIMIT_RE` had `\(?` inside the word-group optional so bare `"(30) pages"` (no word prefix) never produced a PAGE_LIMIT anchor (`products/biddiff/CRITIQUE_LOG.md` bug-hunt, session 2026-06-06) |
 | 2026-06-06 | Adversarial Tester (#2) checklist | Added: optional groups with `\b` can produce unexpected partial matches through backtracking — when the full match fails `\b`, the engine backtracks an optional group and produces a shorter, potentially wrong match. Characterize this behavior in a test. | BidDiff `detectMoney`: `$1.5MMM` returns `$1 = 1.00` (not no-match) because `MM` fails the word boundary but the engine backtracks the optional decimal and matches `$1` with `\b` between the digit and the subsequent `.` |
 | 2026-06-06 | Adversarial Tester (#2) checklist | Added: a `window.addEventListener('keydown')` handler in a React useEffect requires independent tests for each guard: modifier keys, active input elements, IME composition, empty-list guard. The happy path alone leaves all guards untested. | BidDiff DiffView: J/K nav had all four guards but zero tests for any guard before `DiffView.test.tsx` was written in the 2026-06-06 session continuation. The gap was found by "nothing is done" 5.7.4 review. |
+| 2026-06-06 | Correctness Critic (#1) checklist | Added: a diff/map key that is a single field silently collapses distinct entities sharing that field in different namespaces — always use a compound key that includes every dimension distinguishing the entity; probe with two entities that share `name` but differ on namespace. | openapi-lens D5 Phase 0: parameter map keyed only by `name` would merge `path:id` and `query:id`; fixed at design time to `${p.in}:${p.name}` (no bug reached tests — the pattern was anticipated during design, but the pattern is general and must be enforced). |
+| 2026-06-06 | Adversarial Tester (#2) checklist | Added: a YAML/TOML/JSON spec built by string-concatenation must be validated as a tree, not assumed structurally correct — text appended after a terminal top-level key lands as a sibling, not a child. Test the final tree shape (e.g., `yaml.load(spec).paths['/foo']` exists), or build specs programmatically. | openapi-lens D5: a test appended a new path after a `components:` block; the new path became a top-level key rather than a `paths` entry, producing a silent `undefined` assertion. Required test-spec reconstruction to fix. |
+| 2026-06-06 | Domain-Expert Critic (#5) checklist | Added OpenAPI/REST API specialization: property-level diff coverage (type changes inside `properties` are the most common breaking change); `allOf`/`oneOf` composition warning; request-vs-response polarity reversal; remote `$ref` gap documentation. | openapi-lens D5 Phase 0 — the initial engine compared `type` + `required[]` only; a property changing from `number` to `string` was invisible until `diffSchemaProperties()` was added. The OpenAPI domain has well-understood rules that must be enforced by this critic on any API-diff product. |

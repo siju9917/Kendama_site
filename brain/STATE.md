@@ -199,7 +199,7 @@ Priority order is `ops/loop.md`.
 
 **Unblocked (zero-cost):**
 7. ~~**P2** Vite/Vitest toolchain bump~~ — **DONE 2026-06-06.** Vite 6.4.3 + Vitest 4.1.8.
-8. ~~**D5 Phase 0 engine**~~ — **DONE 2026-06-06.** `products/openapi-lens/` — 68/68 tests.
+8. ~~**D5 Phase 0 engine**~~ — **DONE 2026-06-06.** `products/openapi-lens/` — 91/91 tests.
    VS Code extension scaffold (Phase 1) begins once Proposal #3 auto-proceeds 2026-06-13.
 9. Recurring: re-critique cadence, "nothing is ever done" reviews,
    ambient ideation, factory self-improvement, META audit.
@@ -490,14 +490,41 @@ all green; check tests 16/16.
 ### D5 Phase 0 (2026-06-06, this context window)
 
 32. **OpenAPI Breaking-Change Lens Phase 0 complete** (`products/openapi-lens/`):
-    Pure TypeScript engine, no VS Code dependencies. 68/68 tests:
+    Pure TypeScript engine, no VS Code dependencies. Started at 68 tests; extended:
     - `parser.ts`: YAML/JSON/Swagger 2.0 parser, $ref resolution, path-level param merge (17 tests)
     - `diff.ts`: endpoint add/remove, parameter add/remove/required/type/format/enum,
       request body required, request schema required fields, response status add/remove,
       response schema required fields + type + nullable (20 tests)
-    - `classify.ts`: 21 BREAKING/INFO rules mapping raw changes to human-readable messages (22 tests)
+    - `classify.ts`: 26 BREAKING/INFO rules mapping raw changes to human-readable messages (22 tests)
     - `engine.test.ts`: integration pipeline parse→diff→classify (9 tests)
-    - Typecheck clean. PROGRESS.md, PORTFOLIO.md updated. NEED_FROM_HUMAN #10 already covers pub reg.
+    - `adversarial.test.ts`: 5.7.2 second-independent-hard-pass (15 tests)
+    - `property-diff.test.ts`: property-level type change/remove/add detection (8 tests)
+    - **91/91 tests total**. Typecheck clean. PROGRESS.md, PORTFOLIO.md updated.
+    - Adversarial pass: found and fixed YAML-concatenation test construction bug (new path
+      appended after `components:` block was landing at wrong YAML level, not inside `paths:`).
+    - `diffSchemaProperties()` added to diff.ts: detects property type changes, removals, additions.
+    - 5.7.2: second independent adversarial pass clean (P0/P1=0). Phase 0 complete.
+
+### D5 continuation / factory hardening (this context window)
+
+33. **5.7.3 Roster growth** — four new checklist items and one new specialization added
+    to `governance/CRITIQUE_AGENTS.md` from openapi-lens session patterns:
+    - Correctness Critic #1: "diff map key must be compound (multi-field) when distinct
+      entities share a simple attribute" — `path:id` + `query:id` silently merge on `name` alone.
+    - Adversarial Tester #2: "YAML/JSON spec built by string-concatenation must be tree-validated
+      — text appended after a terminal top-level key becomes a sibling, not a child."
+    - Domain-Expert Critic #5: **OpenAPI/REST API specialization** added — property-level diff
+      coverage (most common breaking change is inside `properties`); `allOf`/`oneOf` composition
+      warning; request-vs-response polarity reversal; remote `$ref` gap documentation.
+    - Roster growth log table updated with 4 new rows (Correctness, Adversarial × 2, Domain-Expert).
+34. **5.7.6 WISHLIST additions** — two new openapi-lens friction items added to `brain/WISHLIST.md`:
+    - "OpenAPI allOf/oneOf/anyOf schema composition merger" — composition schemas not flattened before
+      diffing; breaking changes inside composed schemas are invisible. Phase 2 candidate.
+    - "Recursive property-level diff beyond 1 level" — nested objects not diffed recursively; need
+      a cycle-detecting walker. Phase 2 candidate.
+35. **Brain updates**: APPROVALS.md Proposal #3 updated to note Phase 0 complete ahead of schedule.
+    IDEA_BACKLOG.md D5 row updated to Phase 0 status + 91/91 tests. STATE.md test counts corrected
+    to 91/91 (was 68 in two places). All committed + pushed.
 
 ## Notes for the next session
 
@@ -512,8 +539,8 @@ all green; check tests 16/16.
   components tested). All unblocked POLISH done. Next session: privacy copy fix
   (NEED #7, when human responds), store submission prep, and D5 VS Code extension
   Phase 1 scaffold (once Proposal #3 auto-proceeds 2026-06-13).
-- **D5 Phase 0 engine is in `products/openapi-lens/`** — 68 tests, all passing.
-  Phase 1 (VS Code extension scaffold) starts when Proposal #3 auto-proceeds.
+- **D5 Phase 0 engine is in `products/openapi-lens/`** — 91 tests, all passing.
+  Phase 1 (VS Code extension scaffold) starts when Proposal #3 auto-proceeds 2026-06-13.
 - Spend cap: plan-included web tools (sub-agents, search) are FREE; $0 committed
   external spend. No cap blocker.
 
