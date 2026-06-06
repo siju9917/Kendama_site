@@ -30,6 +30,7 @@ products/biddiff/coverage/
 **/dist/
 **/dist-zips/
 **/coverage/
+**/out/
 
 # Older root-level generated paths from before the Kendama
 # migration — keep ignored.
