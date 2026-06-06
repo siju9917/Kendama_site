@@ -406,12 +406,12 @@ const CLASSIFY_RULES: ClassifyRule[] = [
         if (after === null) return "INFO"; // pattern removed = constraint relaxed
         return "BREAKING"; // pattern added or changed
       }
-      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")) {
+      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties") || loc.endsWith(".minProperties")) {
         if (after === null) return "INFO";
         if (before === null) return "BREAKING";
         return typeof after === "number" && typeof before === "number" && after > before ? "BREAKING" : "INFO";
       }
-      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems")) {
+      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems") || loc.endsWith(".maxProperties") || loc.endsWith(".maxProperties")) {
         if (after === null) return "INFO";
         if (before === null) return "BREAKING";
         return typeof after === "number" && typeof before === "number" && after < before ? "BREAKING" : "INFO";
@@ -435,7 +435,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const bNum = c.before as number;
       const aNum = c.after as number;
       const tightened =
-        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")
+        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")
           ? aNum > bNum
           : aNum < bNum;
       return tightened
@@ -453,12 +453,12 @@ const CLASSIFY_RULES: ClassifyRule[] = [
         if (before === null) return "INFO"; // pattern newly added = server narrows guarantee (non-breaking for clients)
         return "BREAKING"; // pattern removed or changed
       }
-      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")) {
+      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")) {
         if (after === null) return "BREAKING";
         if (before === null) return "INFO";
         return typeof after === "number" && typeof before === "number" && after < before ? "BREAKING" : "INFO";
       }
-      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems")) {
+      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems") || loc.endsWith(".maxProperties")) {
         if (after === null) return "BREAKING";
         if (before === null) return "INFO";
         return typeof after === "number" && typeof before === "number" && after > before ? "BREAKING" : "INFO";
@@ -482,7 +482,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const bNum = c.before as number;
       const aNum = c.after as number;
       const loosened =
-        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")
+        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")
           ? aNum < bNum
           : aNum > bNum;
       return loosened
@@ -501,12 +501,12 @@ const CLASSIFY_RULES: ClassifyRule[] = [
         if (after === null) return "INFO"; // pattern removed = constraint relaxed
         return "BREAKING"; // pattern added or changed
       }
-      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")) {
+      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")) {
         if (after === null) return "INFO";
         if (before === null) return "BREAKING";
         return typeof after === "number" && typeof before === "number" && after > before ? "BREAKING" : "INFO";
       }
-      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems")) {
+      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems") || loc.endsWith(".maxProperties")) {
         if (after === null) return "INFO";
         if (before === null) return "BREAKING";
         return typeof after === "number" && typeof before === "number" && after < before ? "BREAKING" : "INFO";
@@ -530,7 +530,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const bNum = c.before as number;
       const aNum = c.after as number;
       const tightened =
-        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")
+        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")
           ? aNum > bNum
           : aNum < bNum;
       return tightened
@@ -548,12 +548,12 @@ const CLASSIFY_RULES: ClassifyRule[] = [
         if (after === null) return "INFO"; // pattern removed = constraint relaxed
         return "BREAKING"; // pattern added or changed
       }
-      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")) {
+      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")) {
         if (after === null) return "INFO";
         if (before === null) return "BREAKING";
         return typeof after === "number" && typeof before === "number" && after > before ? "BREAKING" : "INFO";
       }
-      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems")) {
+      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems") || loc.endsWith(".maxProperties")) {
         if (after === null) return "INFO";
         if (before === null) return "BREAKING";
         return typeof after === "number" && typeof before === "number" && after < before ? "BREAKING" : "INFO";
@@ -577,7 +577,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const bNum = c.before as number;
       const aNum = c.after as number;
       const tightened =
-        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")
+        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")
           ? aNum > bNum
           : aNum < bNum;
       return tightened
@@ -595,12 +595,12 @@ const CLASSIFY_RULES: ClassifyRule[] = [
         if (before === null) return "INFO"; // pattern newly added = server narrows guarantee (non-breaking for clients)
         return "BREAKING"; // pattern removed or changed
       }
-      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")) {
+      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")) {
         if (after === null) return "BREAKING";
         if (before === null) return "INFO";
         return typeof after === "number" && typeof before === "number" && after < before ? "BREAKING" : "INFO";
       }
-      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems")) {
+      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems") || loc.endsWith(".maxProperties")) {
         if (after === null) return "BREAKING";
         if (before === null) return "INFO";
         return typeof after === "number" && typeof before === "number" && after > before ? "BREAKING" : "INFO";
@@ -624,7 +624,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const bNum = c.before as number;
       const aNum = c.after as number;
       const loosened =
-        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")
+        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")
           ? aNum < bNum
           : aNum > bNum;
       return loosened
@@ -929,12 +929,12 @@ const CLASSIFY_RULES: ClassifyRule[] = [
         if (after === null) return "INFO"; // pattern removed = constraint relaxed
         return "BREAKING"; // pattern added or changed
       }
-      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")) {
+      if (loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")) {
         if (after === null) return "INFO";
         if (before === null) return "BREAKING";
         return typeof after === "number" && typeof before === "number" && after > before ? "BREAKING" : "INFO";
       }
-      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems")) {
+      if (loc.endsWith(".maximum") || loc.endsWith(".maxLength") || loc.endsWith(".maxItems") || loc.endsWith(".maxProperties")) {
         if (after === null) return "INFO";
         if (before === null) return "BREAKING";
         return typeof after === "number" && typeof before === "number" && after < before ? "BREAKING" : "INFO";
@@ -954,7 +954,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       const bNum = c.before as number;
       const aNum = c.after as number;
       const tightened =
-        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems")
+        loc.endsWith(".minimum") || loc.endsWith(".minLength") || loc.endsWith(".minItems") || loc.endsWith(".minProperties")
           ? aNum > bNum : aNum < bNum;
       return tightened
         ? `Parameter array element constraint tightened: ${c.location} (${c.before} → ${c.after}). Clients sending elements that were previously valid may now fail validation.`

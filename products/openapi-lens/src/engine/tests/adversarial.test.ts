@@ -4556,3 +4556,239 @@ paths:
     expect(wo?.severity).not.toBe("BREAKING");
   });
 });
+
+// ─── Round 25: minProperties / maxProperties constraint fields ────────────────
+describe("minProperties/maxProperties schema constraints (5.7.5 round 25)", () => {
+  const PREAMBLE = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    post:`;
+
+  it("request body minProperties increase fires BREAKING (request tightened)", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 0
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 2
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const c = changes.find((ch) => ch.type === "request-schema-property-constraint-changed" && ch.location.endsWith(".minProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(0);
+    expect(c?.after).toBe(2);
+  });
+
+  it("request body maxProperties decrease fires BREAKING (request tightened)", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              maxProperties: 10
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              maxProperties: 3
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const c = changes.find((ch) => ch.type === "request-schema-property-constraint-changed" && ch.location.endsWith(".maxProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(10);
+    expect(c?.after).toBe(3);
+  });
+
+  it("request body minProperties decrease fires INFO (request loosened)", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 3
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const c = changes.find((ch) => ch.type === "request-schema-property-constraint-changed" && ch.location.endsWith(".minProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+  });
+
+  it("response schema minProperties decrease fires BREAKING (response loosened)", () => {
+    const spec200 = `
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object`;
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                minProperties: 3
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                minProperties: 1
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const c = changes.find((ch) => ch.type === "response-schema-property-constraint-changed" && ch.location.endsWith(".minProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(3);
+    expect(c?.after).toBe(1);
+  });
+
+  it("response schema maxProperties increase fires BREAKING (response loosened)", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                maxProperties: 5
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                maxProperties: 10
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const c = changes.find((ch) => ch.type === "response-schema-property-constraint-changed" && ch.location.endsWith(".maxProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(5);
+    expect(c?.after).toBe(10);
+  });
+
+  it("property-level minProperties increase fires BREAKING on request", () => {
+    const baseline = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                metadata:
+                  type: object
+                  minProperties: 0
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                metadata:
+                  type: object
+                  minProperties: 2
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const c = changes.find((ch) => ch.type === "request-schema-property-constraint-changed" && ch.location.endsWith(".minProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+  });
+});

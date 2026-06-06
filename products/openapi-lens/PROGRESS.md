@@ -273,6 +273,16 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   rules (direction-aware): request readOnly false→true = BREAKING; response writeOnly false→true
   = BREAKING; all other directions = INFO (mirrors property/items rules). TYPE_STUBS updated
   (+4 entries). +10 tests (4 TYPE_STUBS completeness + 6 adversarial integration). **495/495 tests.**
+- [x] **5.7.5 round 25 — `minProperties`/`maxProperties` constraints missing** — OpenAPI defines
+  `minProperties` (minimum number of object properties required) and `maxProperties` (maximum
+  allowed) as standard constraint fields. Neither was in `OapiSchema`, the parser, `flattenAllOf`,
+  or any constraint comparison loop. Request schema `minProperties: 0→2` (BREAKING — server now
+  rejects objects with fewer properties) was invisible. Response schema `maxProperties: 5→10`
+  (BREAKING — server may return more properties than clients expect) was also invisible.
+  Fixed: added `minProperties`/`maxProperties` to `OapiSchema`, `normalizeSchema`, `flattenAllOf`
+  numeric constraint loop, all 5 constraint field arrays in `diff.ts`, and all 6 constraint
+  classify rules' `loc.endsWith` checks for direction-aware severity. Uses existing change types.
+  +6 adversarial integration tests. **501/501 tests.**
 - [x] **5.7.5 round 15 — request-side constraint removal classified as BREAKING instead of INFO** —
   systematic audit of all request-side classify rules found 11 cases where a constraint being REMOVED
   from the server spec (before=value, after=null/undefined) was incorrectly classified as BREAKING.

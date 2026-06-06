@@ -24,6 +24,8 @@ export interface OapiSchema {
   pattern?: string;
   minItems?: number;
   maxItems?: number;
+  minProperties?: number;
+  maxProperties?: number;
   /**
    * Whether extra properties are permitted (JSON Schema `additionalProperties`).
    * undefined = spec omits the field (equivalent to `true` — extras are allowed).

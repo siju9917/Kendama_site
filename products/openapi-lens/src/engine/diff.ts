@@ -69,7 +69,7 @@ function diffParameters(
     if (bNull !== cNull) {
       changes.push({ type: "parameter-nullable-changed", path, method, location: `parameter(${bp.in}:${bp.name}).schema.nullable`, before: bNull, after: cNull });
     }
-    const paramConstraintFields = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems"] as const;
+    const paramConstraintFields = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems", "minProperties", "maxProperties"] as const;
     for (const cf of paramConstraintFields) {
       const bVal = bp.schema[cf] ?? null;
       const cVal = cp.schema[cf] ?? null;
@@ -109,7 +109,7 @@ function diffParameters(
         if (bNull !== cNull) {
           changes.push({ type: "parameter-items-nullable-changed", path, method, location: `${paramItemsLoc}.nullable`, before: bNull, after: cNull });
         }
-        const paramItemsConstraints = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems"] as const;
+        const paramItemsConstraints = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems", "minProperties", "maxProperties"] as const;
         for (const cf of paramItemsConstraints) {
           const bVal = bItems[cf] ?? null;
           const cVal = cItems[cf] ?? null;
@@ -299,7 +299,7 @@ function diffSchemaProperties(
     }
 
     // Compare validation constraint fields.
-    const constraintFields: Array<keyof typeof bProp> = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems"];
+    const constraintFields: Array<keyof typeof bProp> = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems", "minProperties", "maxProperties"];
     for (const cf of constraintFields) {
       const bVal = bProp[cf] ?? null;
       const cVal = cProp[cf] ?? null;
@@ -417,7 +417,7 @@ function diffSchemaItems(
         after: cItemsNull,
       });
     }
-    const itemsConstraintFields = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems"] as const;
+    const itemsConstraintFields = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems", "minProperties", "maxProperties"] as const;
     for (const cf of itemsConstraintFields) {
       const bVal = bItems[cf] ?? null;
       const cVal = cItems[cf] ?? null;
@@ -491,7 +491,7 @@ function diffSchemaTopLevelConstraints(
   isRequest: boolean,
   changes: OapiRawChange[],
 ): void {
-  const constraintFields = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems"] as const;
+  const constraintFields = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems", "minProperties", "maxProperties"] as const;
   for (const cf of constraintFields) {
     const bVal = baseline?.[cf] ?? null;
     const cVal = current?.[cf] ?? null;
