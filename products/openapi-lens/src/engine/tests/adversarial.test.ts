@@ -13139,3 +13139,185 @@ paths:
     expect(paramItemsChanges).toHaveLength(1);
   });
 });
+
+// ─── Round 101: type change from object (with nested properties) to scalar ──
+// When a property's type changes from object to scalar, the diff engine emits
+// BOTH a type-changed event AND property-removed events for each nested field
+// (because diffSchemaProperties recurses whenever bProp.properties is truthy).
+// The reverse case (scalar → object) emits type-changed + property-added.
+// This interaction has never been tested; this round confirms the multi-event
+// emission is correct and uses the right change types.
+
+describe("adversarial round 101 — object-to-scalar type change also emits nested property removals (end-to-end)", () => {
+  it("(R101-1) response property type object→string: emits type-changed BREAKING + nested property-removed BREAKING", () => {
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  address:
+                    type: object
+                    properties:
+                      street:
+                        type: string
+                      city:
+                        type: string
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  address:
+                    type: string
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+
+    // Type change: object → string on the address property.
+    const typeChange = changes.find((c) => c.type === "response-schema-property-type-changed" && String(c.location).includes("address"));
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("object");
+    expect(typeChange?.after).toBe("string");
+    expect(typeChange?.severity).toBe("BREAKING");
+
+    // Nested property-removed events for street and city.
+    const propRemoved = changes.filter((c) => c.type === "response-schema-property-removed" && String(c.location).includes("address"));
+    expect(propRemoved).toHaveLength(2);
+    expect(propRemoved.every((c) => c.severity === "BREAKING")).toBe(true);
+    const locs = propRemoved.map((c) => String(c.location));
+    expect(locs.some((l) => l.includes("street"))).toBe(true);
+    expect(locs.some((l) => l.includes("city"))).toBe(true);
+  });
+
+  it("(R101-2) request property type object→string: emits type-changed BREAKING + nested property-removed INFO", () => {
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filter:
+                  type: object
+                  properties:
+                    minAge:
+                      type: integer
+                    maxAge:
+                      type: integer
+      responses:
+        "201":
+          description: created
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filter:
+                  type: string
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+
+    // Type change: object → string.
+    const typeChange = changes.find((c) => c.type === "request-schema-property-type-changed" && String(c.location).includes("filter"));
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+
+    // Nested property-removed events: request-schema-property-removed is BREAKING
+    // (conservative — server with strict validation rejects clients still sending the field).
+    const propRemoved = changes.filter((c) => c.type === "request-schema-property-removed" && String(c.location).includes("filter"));
+    expect(propRemoved).toHaveLength(2);
+    expect(propRemoved.every((c) => c.severity === "BREAKING")).toBe(true);
+  });
+
+  it("(R101-3) response property type string→object: emits type-changed BREAKING + nested property-added INFO", () => {
+    // Reverse direction: scalar becomes an object with new nested properties.
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metadata:
+                    type: string
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metadata:
+                    type: object
+                    properties:
+                      version:
+                        type: string
+                      timestamp:
+                        type: string
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+
+    // Type change: string → object = BREAKING (response value type changed).
+    const typeChange = changes.find((c) => c.type === "response-schema-property-type-changed" && String(c.location).includes("metadata"));
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("object");
+    expect(typeChange?.severity).toBe("BREAKING");
+
+    // Nested property-added: server now returns extra fields — INFO (clients benefit).
+    const propAdded = changes.filter((c) => c.type === "response-schema-property-added" && String(c.location).includes("metadata"));
+    expect(propAdded).toHaveLength(2);
+    expect(propAdded.every((c) => c.severity === "INFO")).toBe(true);
+  });
+});
