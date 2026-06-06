@@ -340,7 +340,7 @@ all green; check tests 16/16.
 
 ## Next five actions
 
-1. Run `node ops/checks/run-all.mjs` (10 checks; first session-start
+1. Run `node ops/checks/run-all.mjs` (11 checks; first session-start
    step) and reconcile the brain. The `approvals-window` check will
    flag if proposal #1's 2026-06-03 window has elapsed — if so, apply
    the REPOSITION default and proceed toward ship per that option.
@@ -438,6 +438,13 @@ all green; check tests 16/16.
     now detects PAGE_LIMIT anchor (bare "(30)" form was missed; only "thirty (30)"
     and plain "30" worked). `\(?` separated from optional word group. +3 tests;
     490/490 full suite green. PROGRESS N16 DONE.
+19. **Factory: `ranking-integrity` check** (META / WISHLIST 2026-06-06): YAML front-matter
+    added to 5 research files (Apex, D2 clauseguard, D3 protobuf, D5 VS Code lens, D6
+    terraform) with all 9 scoring factors. New `ops/checks/ranking-integrity.mjs` verifies
+    factor presence, score range (0–10), and sum(weighted)==total_score (or score_note
+    documents intentional diff). Wired into run-all.mjs (11 checks total, all passing;
+    D6's score_note intentional diff noted as info). Fixed `parseFrontMatter` bare-key bug
+    (bare `factors:` line wasn't matched). 61/61 check tests green. All committed + pushed.
 
 ## Notes for the next session
 

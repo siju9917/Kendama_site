@@ -246,6 +246,61 @@ timezone bug got its check immediately; the count-drift is a softer,
 recurring annoyance whose check needs a little design (avoid the
 slow-suite trap), so it is queued rather than rushed.
 
+## 9. Structured YAML front-matter for research files + ranking-integrity check
+
+**Type:** tooling / brain
+
+**Expected impact:** rigor — research files were free-form prose; scores
+referenced in RANKING.md could drift from the actual research. The YAML
+front-matter enforces machine-parseable scoring (all 9 factors, weighted
+sum = total_score) and the `ranking-integrity` check verifies consistency
+at session start. Eliminates the silent-calibration-drift class.
+
+**Cost to implement:** small (parseFrontMatter + check + retroactively
+add front-matter to 5 existing research files).
+
+**Strengthens or weakens?** stronger.
+
+**Status:** **done (2026-06-06).** YAML front-matter added to 5 research
+files (Apex, D2, D3, D5, D6). New `ops/checks/ranking-integrity.mjs` wired
+into run-all (11 checks total). Fixed a parser bug (bare `factors:` key
+not matched). 61/61 check tests green. Logged in `brain/DECISIONS.md`
+2026-06-06.
+
+**Reasoning trace:** WISHLIST 2026-06-06 "structured, machine-parseable
+deep-evaluation format." The research file D6 had a risk-adjusted score
+(641 vs raw 670) that could only be verified manually; the `score_note`
+field + `ranking-integrity` check now makes the intentional adjustment
+machine-verifiable.
+
+## 10. VS Code extension development playbook (for D5/D6 builds)
+
+**Type:** playbook
+
+**Expected impact:** speed — when D5 (VS Code Breaking-Change Lens) and
+D6 (Terraform Plan Classifier) build phases start, the factory has zero
+accumulated VS Code extension experience. A playbook capturing the VS Code
+API patterns (diagnostic providers, CodeLens, WebView panels), Marketplace
+publishing, license/subscription patterns, and the specific oasdiff/plan-JSON
+integration approach compounds the first-session learning across both builds.
+
+**Cost to implement:** ~half a session to draft + critique.
+
+**Strengthens or weakens?** stronger.
+
+**Status:** **done (2026-06-06).** Shipped
+`brain/PLAYBOOKS/vscode-extension-ide-diff.md`. Covers the full extension
+scaffold (package.json manifest, activation lifecycle, diagnostic/CodeLens/
+WebView patterns), Marketplace publishing mechanics, LemonSqueezy subscription
+integration, and D5/D6-specific integration notes (oasdiff library vs
+terraform plan JSON schema).
+
+**Reasoning trace:** D5 CONDITIONAL PROCEED (636/1000) and D6 CONDITIONAL
+PROCEED (641/1000) are the top two candidates in the pipeline (both pending
+proposal approval). The Chrome MV3 playbook (SELF_IMPROVEMENT #5) accelerated
+BidDiff's build; the same pattern applies here. Write the playbook while the
+evaluation findings are fresh, not after the build starts cold.
+
 ## Notes for the META loop
 
 - The META loop pulls the top item from this list each cycle,
