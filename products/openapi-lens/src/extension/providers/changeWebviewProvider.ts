@@ -9,15 +9,21 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/** Change types that are spec-level (not tied to a specific operation). */
+const SPEC_LEVEL_TYPES = new Set(["server-removed", "server-added"]);
+
 function renderChangeRow(c: BreakingChange): string {
   const badge =
     c.severity === "BREAKING"
       ? '<span class="badge breaking">BREAKING</span>'
       : '<span class="badge info">INFO</span>';
+  const opCell = SPEC_LEVEL_TYPES.has(c.type)
+    ? '<code class="spec-label">Spec-level</code>'
+    : `<code>${esc(c.method.toUpperCase())} ${esc(c.path)}</code>`;
   return `
     <tr class="${c.severity.toLowerCase()}">
       <td>${badge}</td>
-      <td><code>${esc(c.method.toUpperCase())} ${esc(c.path)}</code></td>
+      <td>${opCell}</td>
       <td><code>${esc(c.location)}</code></td>
       <td>${esc(c.message)}</td>
     </tr>`;
@@ -105,6 +111,7 @@ export function createChangeWebviewContent(
   .badge.breaking { background: #6b1e1e; color: #f99; }
   .badge.info     { background: #1e3a6e; color: #9af; }
   code { font-family: var(--vscode-editor-font-family, monospace); font-size: 0.85em; word-break: break-all; }
+  code.spec-label { color: var(--vscode-descriptionForeground, #888); font-style: italic; }
   .empty { color: var(--vscode-descriptionForeground, #888); font-style: italic; }
 </style>
 </head>

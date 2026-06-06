@@ -151,4 +151,27 @@ describe("createChangeWebviewContent", () => {
     expect(html).toContain("&lt;evil&gt;");
     expect(html).not.toContain("<evil>");
   });
+
+  it("renders spec-level changes (server-removed) with Spec-level label instead of method+path", () => {
+    const serverChange: BreakingChange = {
+      severity: "BREAKING",
+      type: "server-removed",
+      path: "/",
+      method: "get",
+      location: "servers[https://api.example.com]",
+      message: "Server URL removed: servers[https://api.example.com]. Clients hard-coded to this base URL will no longer be able to reach the API.",
+      before: "https://api.example.com",
+      after: null,
+    };
+    const html = createChangeWebviewContent([serverChange]);
+    expect(html).toContain("Spec-level");
+    expect(html).not.toContain("GET /");
+  });
+
+  it("renders non-spec-level changes with method+path", () => {
+    const opChange = makeBreaking({ type: "endpoint-removed", path: "/users", method: "get" });
+    const html = createChangeWebviewContent([opChange]);
+    expect(html).toContain("GET /users");
+    expect(html).not.toContain("Spec-level");
+  });
 });
