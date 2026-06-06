@@ -14599,3 +14599,153 @@ describe("Round 114 — symmetric reverse directions and additional-properties t
     expect(c?.after).toBe(true);
   });
 });
+
+// ─── Round 115: property-enum null transitions + AP reverse directions ────────
+// response-property-enum: null→enum (INFO) and enum→null (BREAKING) untested.
+// request-property-enum: enum→null (INFO) untested.
+// response-schema-additional-properties-changed false→true (INFO) untested.
+// request-schema-property-additional-properties-changed false→true (INFO) untested.
+
+describe("Round 115 — property-enum null directions and additional-properties reverse", () => {
+  function makeRespPropEnumSpec(enumValues: string[] | null): string {
+    const enumLine = enumValues !== null
+      ? `\n                    enum: [${enumValues.map((v) => `"${v}"`).join(", ")}]`
+      : "";
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string${enumLine}
+`;
+  }
+
+  function makeReqPropEnumSpec2(enumValues: string[] | null): string {
+    const enumLine = enumValues !== null
+      ? `\n                  enum: [${enumValues.map((v) => `"${v}"`).join(", ")}]`
+      : "";
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string${enumLine}
+      responses:
+        "201":
+          description: created
+`;
+  }
+
+  it("(R115-1) response property enum added (null→enum) is INFO — server now promises constrained values", () => {
+    const changes = analyzeOpenApiDiff(
+      makeRespPropEnumSpec(null),
+      makeRespPropEnumSpec(["active", "inactive"]),
+    );
+    const c = changes.find((x) => x.type === "response-schema-property-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.after).toEqual(["active", "inactive"]);
+  });
+
+  it("(R115-2) response property enum removed (enum→null) is BREAKING — server may return any value, exhaustive client handlers break", () => {
+    const changes = analyzeOpenApiDiff(
+      makeRespPropEnumSpec(["active", "inactive"]),
+      makeRespPropEnumSpec(null),
+    );
+    const c = changes.find((x) => x.type === "response-schema-property-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.message).toMatch(/removed|any value/i);
+  });
+
+  it("(R115-3) request property enum removed (enum→null) is INFO — server no longer restricts values", () => {
+    const changes = analyzeOpenApiDiff(
+      makeReqPropEnumSpec2(["active", "inactive"]),
+      makeReqPropEnumSpec2(null),
+    );
+    const c = changes.find((x) => x.type === "request-schema-property-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.message).toMatch(/removed|no longer/i);
+  });
+
+  it("(R115-4) response body additionalProperties false→true is INFO — schema opens up, less restrictive", () => {
+    function makeRespBodyAPSpec(ap: boolean): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name: {type: string}
+                additionalProperties: ${ap}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeRespBodyAPSpec(false), makeRespBodyAPSpec(true));
+    const c = changes.find((x) => x.type === "response-schema-additional-properties-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(false);
+    expect(c?.after).toBe(true);
+  });
+
+  it("(R115-5) request nested property additionalProperties false→true is INFO — server now accepts extra fields", () => {
+    function makeReqPropAPSpec(ap: boolean): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /orders:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: object
+                  properties:
+                    street: {type: string}
+                  additionalProperties: ${ap}
+      responses:
+        "201":
+          description: created
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeReqPropAPSpec(false), makeReqPropAPSpec(true));
+    const c = changes.find((x) => x.type === "request-schema-property-additional-properties-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(false);
+    expect(c?.after).toBe(true);
+  });
+});
