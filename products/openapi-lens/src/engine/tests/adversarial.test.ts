@@ -4245,3 +4245,93 @@ paths:
     expect(constraintChange?.severity).toBe("BREAKING");
   });
 });
+
+// ─── parameter items scalar fields guard (5.7.5 round 22) ─────────────────
+
+describe("parameter items scalar fields — no spurious events when items are newly added (5.7.5 round 22)", () => {
+  const PREAMBLE = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /v1/items:
+    get:
+`;
+
+  it("newly added parameter items schema with constraint emits NO constraint-changed event (only type-changed)", () => {
+    // Parameter changes from type:string to type:array with items.minLength=3
+    const baseline = `${PREAMBLE}
+      parameters:
+        - name: codes
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      parameters:
+        - name: codes
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              minLength: 3
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    // Parameter type changed (string→array) — expected at the parameter level
+    const typeChange = changes.find((c) => c.type === "parameter-type-changed");
+    expect(typeChange).toBeDefined();
+    // items type change (null→string) — expected
+    const itemsTypeChange = changes.find((c) => c.type === "parameter-items-type-changed");
+    expect(itemsTypeChange).toBeDefined();
+    // No spurious constraint event — items didn't exist before
+    const constraintChange = changes.find((c) => c.type === "parameter-items-constraint-changed");
+    expect(constraintChange).toBeUndefined();
+  });
+
+  it("parameter items constraint change on existing items IS still detected", () => {
+    const baseline = `${PREAMBLE}
+      parameters:
+        - name: codes
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              minLength: 3
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `${PREAMBLE}
+      parameters:
+        - name: codes
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              minLength: 8
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const constraintChange = changes.find((c) => c.type === "parameter-items-constraint-changed");
+    expect(constraintChange).toBeDefined();
+    expect(constraintChange?.before).toBe(3);
+    expect(constraintChange?.after).toBe(8);
+    expect(constraintChange?.severity).toBe("BREAKING");
+  });
+});

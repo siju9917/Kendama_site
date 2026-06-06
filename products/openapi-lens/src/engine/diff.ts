@@ -93,25 +93,29 @@ function diffParameters(
       if (bType !== cType) {
         changes.push({ type: "parameter-items-type-changed", path, method, location: `${paramItemsLoc}.type`, before: bType, after: cType });
       }
-      const bFmt = bItems?.format ?? null;
-      const cFmt = cItems?.format ?? null;
-      if (bFmt !== cFmt) {
-        changes.push({ type: "parameter-items-format-changed", path, method, location: `${paramItemsLoc}.format`, before: bFmt, after: cFmt });
-      }
-      if (!enumSetsEqual(bItems?.enum, cItems?.enum) && (bItems?.enum !== undefined || cItems?.enum !== undefined)) {
-        changes.push({ type: "parameter-items-enum-changed", path, method, location: `${paramItemsLoc}.enum`, before: bItems?.enum ?? null, after: cItems?.enum ?? null });
-      }
-      const bNull = bItems?.nullable ?? false;
-      const cNull = cItems?.nullable ?? false;
-      if (bNull !== cNull) {
-        changes.push({ type: "parameter-items-nullable-changed", path, method, location: `${paramItemsLoc}.nullable`, before: bNull, after: cNull });
-      }
-      const paramItemsConstraints = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems"] as const;
-      for (const cf of paramItemsConstraints) {
-        const bVal = bItems?.[cf] ?? null;
-        const cVal = cItems?.[cf] ?? null;
-        if (bVal !== cVal) {
-          changes.push({ type: "parameter-items-constraint-changed", path, method, location: `${paramItemsLoc}.${cf}`, before: bVal, after: cVal });
+      // Scalar field comparisons only when both item schemas exist (avoids double-reporting
+      // alongside parameter-items-type-changed when items are newly added or removed).
+      if (bItems && cItems) {
+        const bFmt = bItems.format ?? null;
+        const cFmt = cItems.format ?? null;
+        if (bFmt !== cFmt) {
+          changes.push({ type: "parameter-items-format-changed", path, method, location: `${paramItemsLoc}.format`, before: bFmt, after: cFmt });
+        }
+        if (!enumSetsEqual(bItems.enum, cItems.enum) && (bItems.enum !== undefined || cItems.enum !== undefined)) {
+          changes.push({ type: "parameter-items-enum-changed", path, method, location: `${paramItemsLoc}.enum`, before: bItems.enum ?? null, after: cItems.enum ?? null });
+        }
+        const bNull = bItems.nullable ?? false;
+        const cNull = cItems.nullable ?? false;
+        if (bNull !== cNull) {
+          changes.push({ type: "parameter-items-nullable-changed", path, method, location: `${paramItemsLoc}.nullable`, before: bNull, after: cNull });
+        }
+        const paramItemsConstraints = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems"] as const;
+        for (const cf of paramItemsConstraints) {
+          const bVal = bItems[cf] ?? null;
+          const cVal = cItems[cf] ?? null;
+          if (bVal !== cVal) {
+            changes.push({ type: "parameter-items-constraint-changed", path, method, location: `${paramItemsLoc}.${cf}`, before: bVal, after: cVal });
+          }
         }
       }
     }

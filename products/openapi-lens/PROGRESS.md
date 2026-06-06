@@ -243,6 +243,13 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   schemas continue to produce events.
   +5 adversarial integration tests (3 no-spurious + 2 genuine-change-still-detected).
   **481/481 tests.**
+- [x] **5.7.5 round 22 — `diffParameters` parameter items scalar fields fired spuriously for newly-added items** —
+  Same guard principle as rounds 20–21, now applied to the parameter items block in `diffParameters`.
+  When a parameter changes from non-array (no items schema) to array (with items including format/enum/
+  nullable/constraints), the scalar field comparisons would fire alongside `parameter-items-type-changed`.
+  Fix: moved format, enum, nullable, and constraint comparisons inside an inner `if (bItems && cItems)`
+  guard, while the type comparison remains outside as the primary detector. +2 adversarial tests.
+  **483/483 tests.**
 - [x] **5.7.5 round 15 — request-side constraint removal classified as BREAKING instead of INFO** —
   systematic audit of all request-side classify rules found 11 cases where a constraint being REMOVED
   from the server spec (before=value, after=null/undefined) was incorrectly classified as BREAKING.
