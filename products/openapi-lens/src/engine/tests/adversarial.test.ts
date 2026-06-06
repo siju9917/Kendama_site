@@ -7453,3 +7453,113 @@ paths:
     expect(enumChange?.severity).toBe("BREAKING");
   });
 });
+
+// ─── Round 45: operationId message accuracy + response headers on error codes ──
+
+describe("operationId rename message accuracy (5.7.5 round 45)", () => {
+  function makeSpec(operationId: string | null): string {
+    const idLine = operationId !== null ? `      operationId: ${operationId}\n` : "";
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users/{id}:
+    get:
+${idLine}      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: {type: object}
+`;
+  }
+
+  it("operationId rename message does not say 'breaking' for an INFO-severity change", () => {
+    // The message previously said 'breaking calling code at compile time' — contradicts INFO severity.
+    const changes = analyzeOpenApiDiff(makeSpec("getUser"), makeSpec("fetchUser"));
+    const idChange = changes.find((c) => c.type === "operation-id-changed");
+    expect(idChange).toBeDefined();
+    expect(idChange?.severity).toBe("INFO");
+    // Message must NOT contain standalone 'breaking' (case-insensitive) — that word contradicts INFO
+    expect(idChange?.message).not.toMatch(/\bbreaking\b/i);
+    // But SHOULD still reference SDK/generator impact
+    expect(idChange?.message).toMatch(/SDK|sdk|generator|regenerate/i);
+  });
+});
+
+describe("response headers on error status codes (5.7.5 round 45)", () => {
+  function makeErrorHeaderSpec(statusCode: string, headerExtra: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        "201":
+          description: created
+          content:
+            application/json:
+              schema: {type: object}
+        "${statusCode}":
+          description: error
+          headers:
+            ${headerExtra}
+          content:
+            application/json:
+              schema: {type: object}
+`;
+  }
+
+  it("removing a response header on 429 (rate limit) is BREAKING (clients lose Retry-After info)", () => {
+    const withHeader = makeErrorHeaderSpec("429", `
+            Retry-After:
+              required: true
+              schema: {type: integer}`);
+    const withoutHeader = makeErrorHeaderSpec("429", `{}`);
+    const changes = analyzeOpenApiDiff(withHeader, withoutHeader);
+    const headerRemoved = changes.find((c) => c.type === "response-header-removed");
+    expect(headerRemoved).toBeDefined();
+    expect(headerRemoved?.severity).toBe("BREAKING");
+    // Location should reference the 429 response
+    expect(String(headerRemoved?.location)).toContain("429");
+  });
+
+  it("adding a response header on 503 (service unavailable) is INFO", () => {
+    const withoutHeader = makeErrorHeaderSpec("503", `{}`);
+    const withHeader = makeErrorHeaderSpec("503", `
+            Retry-After:
+              required: false
+              schema: {type: integer}`);
+    const changes = analyzeOpenApiDiff(withoutHeader, withHeader);
+    const headerAdded = changes.find((c) => c.type === "response-header-added");
+    expect(headerAdded).toBeDefined();
+    expect(headerAdded?.severity).toBe("INFO");
+  });
+
+  it("type change on 401 response header is BREAKING", () => {
+    const strHeader = makeErrorHeaderSpec("401", `
+            WWW-Authenticate:
+              required: true
+              schema: {type: string}`);
+    const intHeader = makeErrorHeaderSpec("401", `
+            WWW-Authenticate:
+              required: true
+              schema: {type: integer}`);
+    const changes = analyzeOpenApiDiff(strHeader, intHeader);
+    const typeChange = changes.find((c) => c.type === "response-header-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+    expect(String(typeChange?.location)).toContain("401");
+  });
+});

@@ -968,7 +968,7 @@ const CLASSIFY_RULES: ClassifyRule[] = [
       if (c.after === null) {
         return `operationId removed: ${c.location} (was '${c.before}'). SDK generators may revert to a path-derived method name.`;
       }
-      return `operationId renamed: ${c.location} ('${c.before}' → '${c.after}'). SDK-generated clients (openapi-generator, autorest, kiota) will rename the generated method — breaking calling code at compile time.`;
+      return `operationId renamed: ${c.location} ('${c.before}' → '${c.after}'). SDK-generated clients (openapi-generator, autorest, kiota) will use the new method name; regenerate and update any call sites that reference the old name.`;
     },
   },
   {
