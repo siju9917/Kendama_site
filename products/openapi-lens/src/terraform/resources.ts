@@ -62,6 +62,17 @@ export const IAM_TYPES: readonly string[] = [
   "azurerm_role_assignment",
   "azurerm_key_vault_access_policy",
   "azurerm_user_assigned_identity",
+  "azurerm_key_vault",              // vault itself — access policy or SKU changes affect all secrets
+  "azurerm_key_vault_secret",       // individual secret rotation or deletion
+  "azurerm_key_vault_key",          // encryption key rotation — data encrypted under old key becomes inaccessible
+  "aws_iam_policy_attachment",      // attaches policies to users/roles/groups (complements role_policy_attachment)
+  "aws_iam_user",                   // user modification can affect auth
+  "aws_iam_group",                  // group membership changes propagate to all members
+  "aws_kms_key",                    // KMS key disable/delete renders all encrypted data inaccessible
+  "google_service_account",         // GCP service account — credential of workload identity
+  "google_service_account_key",     // key rotation or deletion breaks authenticating workloads
+  "google_service_account_iam_binding",  // bindings grant impersonation
+  "google_service_account_iam_member",
 ];
 
 /**

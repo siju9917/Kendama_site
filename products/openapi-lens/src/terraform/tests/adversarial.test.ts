@@ -403,3 +403,45 @@ describe("adversarial round 47 — new data-store resource type coverage", () =>
     expect(classifyChange(makeUpdateChange("aws_msk_cluster")).severity).toBe("CRITICAL");
   });
 });
+
+describe("adversarial round 48 — new IAM/security resource type coverage", () => {
+  function makeIamUpdateChange(type: string): TfChange {
+    return makeChange({ type, address: `${type}.main`, actions: ["update"] });
+  }
+
+  it("azurerm_key_vault update triggers IAM review (SKU or access model change affects all secrets)", () => {
+    const result = classifyChange(makeIamUpdateChange("azurerm_key_vault"));
+    // Key vault is an IAM/security resource — any change warrants review
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  it("azurerm_key_vault_key update triggers IAM review (key rotation or algorithm change)", () => {
+    const result = classifyChange(makeIamUpdateChange("azurerm_key_vault_key"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  it("azurerm_key_vault_secret update triggers IAM review (secret value change)", () => {
+    const result = classifyChange(makeIamUpdateChange("azurerm_key_vault_secret"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  it("aws_iam_policy_attachment update triggers IAM review", () => {
+    const result = classifyChange(makeIamUpdateChange("aws_iam_policy_attachment"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  it("aws_kms_key update triggers IAM review (key disable/delete renders encrypted data inaccessible)", () => {
+    const result = classifyChange(makeIamUpdateChange("aws_kms_key"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  it("google_service_account update triggers IAM review (workload identity credential change)", () => {
+    const result = classifyChange(makeIamUpdateChange("google_service_account"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+
+  it("google_service_account_key update triggers IAM review (key rotation breaks authenticating workloads)", () => {
+    const result = classifyChange(makeIamUpdateChange("google_service_account_key"));
+    expect(result.severity).not.toBe("NORMAL");
+  });
+});
