@@ -22,6 +22,21 @@ let lastKnownBaselineLabel = "git HEAD";
 // should not affect other open OpenAPI specs.
 const manualBaselineByUri = new Map<string, string>();
 
+/** Debounces fn so it only fires after `delay` ms of silence. */
+function debounce<T extends unknown[]>(
+  fn: (...args: T) => void,
+  delay: number,
+): (...args: T) => void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return (...args: T): void => {
+    if (timer !== undefined) clearTimeout(timer);
+    timer = setTimeout(() => {
+      timer = undefined;
+      fn(...args);
+    }, delay);
+  };
+}
+
 export function activate(context: vscode.ExtensionContext): void {
   diagnosticCollection = vscode.languages.createDiagnosticCollection("openapi-lens");
   context.subscriptions.push(diagnosticCollection);
@@ -58,9 +73,17 @@ export function activate(context: vscode.ExtensionContext): void {
     },
   });
 
+  const debouncedAnalyze = debounce(
+    (doc: vscode.TextDocument) => void analyzeDocument(doc),
+    400,
+  );
+
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument((doc) => {
       void analyzeDocument(doc);
+    }),
+    vscode.workspace.onDidChangeTextDocument((event) => {
+      debouncedAnalyze(event.document);
     }),
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       if (editor) void analyzeDocument(editor.document);

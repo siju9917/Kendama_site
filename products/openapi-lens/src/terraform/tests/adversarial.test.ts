@@ -24,10 +24,26 @@ function makeChange(overrides: Partial<TfChange> = {}): TfChange {
 }
 
 describe("adversarial — edge cases in hasReplacePattern", () => {
-  it("['create', 'delete'] is replace (create_before_destroy) — CRITICAL", () => {
+  it("['create', 'delete'] is replace (create_before_destroy) — CRITICAL with create_before_destroy reason", () => {
     const c = classifyChange(makeChange({ actions: ["create", "delete"] }));
     expect(c.severity).toBe("CRITICAL");
     expect(c.reasons.some((r) => r.includes("REPLACED"))).toBe(true);
+    expect(c.reasons.some((r) => r.includes("create_before_destroy"))).toBe(true);
+  });
+
+  it("['delete', 'create'] is destroy_before_create — CRITICAL with downtime warning", () => {
+    const c = classifyChange(makeChange({ actions: ["delete", "create"] }));
+    expect(c.severity).toBe("CRITICAL");
+    expect(c.reasons.some((r) => r.includes("REPLACED"))).toBe(true);
+    expect(c.reasons.some((r) => r.includes("destroy_before_create"))).toBe(true);
+    expect(c.reasons.some((r) => r.includes("downtime window"))).toBe(true);
+  });
+
+  it("['replace'] single action — generic replaced and re-created reason", () => {
+    const c = classifyChange(makeChange({ actions: ["replace"] }));
+    expect(c.severity).toBe("CRITICAL");
+    expect(c.reasons.some((r) => r.includes("REPLACED"))).toBe(true);
+    expect(c.reasons.some((r) => r.includes("deleted and re-created"))).toBe(true);
   });
 
   it("['delete'] alone (no create) is CRITICAL with DELETED reason, not REPLACED", () => {

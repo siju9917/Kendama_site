@@ -21,9 +21,8 @@ export function classifyChange(c: TfChange): TfClassification {
   // Rule 3: replace (delete + re-create) → CRITICAL (downtime/data loss risk).
   if (hasReplacePattern(actions)) {
     severity = "CRITICAL";
-    reasons.push(
-      `${c.address} will be REPLACED (deleted and re-created) — downtime likely and any state not in Terraform may be lost.`,
-    );
+    const replaceDetail = replaceOrderDetail(actions);
+    reasons.push(`${c.address} will be REPLACED (${replaceDetail}) — any state not in Terraform may be lost.`);
   }
 
   // Rule 4: data store modification or deletion → CRITICAL regardless of action.
@@ -74,6 +73,18 @@ export function hasReplacePattern(actions: string[]): boolean {
 /** Returns true iff the only action is 'create' (pure new resource). */
 export function isCreateOnly(actions: string[]): boolean {
   return actions.length === 1 && actions[0] === "create";
+}
+
+/**
+ * Returns a human-readable description of the replace strategy.
+ * - Terraform 0.15+ uses the single action "replace".
+ * - Earlier Terraform uses ["delete","create"] (destroy-before-create) or
+ *   ["create","delete"] (create-before-destroy / lifecycle.create_before_destroy=true).
+ */
+export function replaceOrderDetail(actions: string[]): string {
+  if (actions.includes("replace")) return "deleted and re-created";
+  if (actions[0] === "create") return "create_before_destroy: new resource created first, then old one deleted — lower downtime risk";
+  return "destroy_before_create: old resource deleted first, then re-created — downtime window between deletion and creation";
 }
 
 /** Classify all changes in a plan. */
