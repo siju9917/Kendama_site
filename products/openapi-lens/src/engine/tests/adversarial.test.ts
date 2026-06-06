@@ -11885,3 +11885,164 @@ paths:
     expect(constChange?.after).toBeNull();
   });
 });
+
+// ─── Round 94: PATCH method + cookie parameter + multi-path isolation ─────────
+// PATCH operations were never tested for request body constraint changes.
+// Cookie parameters (`in: cookie`) were never tested for constraint changes.
+// Multi-path isolation: verifying that changing one path doesn't produce
+// spurious changes on an unrelated path in the same spec.
+
+describe("adversarial round 94 — PATCH method, cookie parameter, and multi-path isolation (end-to-end)", () => {
+  it("adding minimum to PATCH request body integer (null→0) is BREAKING — partial updates with negative values now fail", () => {
+    // PATCH is the last HTTP method with a request body never tested for constraint changes.
+    // diffPathsAndMethods routes PATCH through diffRequestBody identically to POST/PUT.
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /counters/{id}:
+    patch:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: integer
+      responses:
+        "200":
+          description: ok
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /counters/{id}:
+    patch:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: integer
+              minimum: 0
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".minimum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(0);
+  });
+
+  it("adding maxLength to cookie parameter string (null→32) is BREAKING — long cookie values now fail", () => {
+    // Cookie parameters (`in: cookie`) had never been tested for constraint changes.
+    // They use the same diffParameters path as query/header/path parameters.
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /profile:
+    get:
+      parameters:
+        - name: session
+          in: cookie
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /profile:
+    get:
+      parameters:
+        - name: session
+          in: cookie
+          schema:
+            type: string
+            maxLength: 32
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "parameter-constraint-changed" && String(c.location).endsWith(".maxLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(32);
+  });
+
+  it("changing constraint on one path produces no changes on an adjacent unrelated path", () => {
+    // Isolation: multi-path spec where only /users changes (minLength added). /posts must be clean.
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: ok
+  /posts:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+              minLength: 1
+      responses:
+        "200":
+          description: ok
+  /posts:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    // Exactly one change: the /users minLength constraint
+    const usersChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".minLength") && c.path === "/users",
+    );
+    expect(usersChange).toBeDefined();
+    expect(usersChange?.severity).toBe("BREAKING");
+    // /posts must have no changes at all
+    const postsChanges = changes.filter((c) => c.path === "/posts");
+    expect(postsChanges).toHaveLength(0);
+  });
+});
