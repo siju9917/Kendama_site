@@ -295,9 +295,13 @@ function parseOperations(raw: Record<string, unknown>, schemaLookup: Record<stri
       const parameters = parseParameters(pathLevelParams, opLevelParams, schemaLookup, paramLookup);
       const nonBodyParams = parameters.filter((p) => p.in !== ("body" as never));
 
+      // For Swagger 2.0, op-level params take priority over path-level (op-level first so
+      // .find() returns it before the path-level body param). A path-level body param is
+      // valid per the Swagger 2.0 spec and must be inherited when the operation doesn't
+      // define its own.
       const requestBody =
         version === "2.0"
-          ? buildSwagger2RequestBody(opLevelParams, schemaLookup)
+          ? buildSwagger2RequestBody([...opLevelParams, ...pathLevelParams], schemaLookup)
           : parseRequestBody(opRaw["requestBody"], schemaLookup);
 
       const responses = parseResponses(opRaw["responses"], schemaLookup);

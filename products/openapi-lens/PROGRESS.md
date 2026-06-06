@@ -132,6 +132,14 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   `diffSchemaProperties` on items schemas when `properties`/`required` are present.
   Reuses existing change types with location including `.items.properties.X`. 3 adversarial
   integration tests + 1 parser test. **345/345 tests.**
+- [x] **5.7.5 bug — Swagger 2.0 path-level body parameter silently ignored** — `buildSwagger2RequestBody`
+  was called with only `opLevelParams`; a body parameter defined at path level (valid per Swagger 2.0
+  spec) was silently dropped, leaving `requestBody: null` for every operation on that path. Fix:
+  pass `[...opLevelParams, ...pathLevelParams]` to the function (op-level first, so `find()` returns
+  op-level body when present, path-level otherwise). +2 new failing-first tests (path-level body
+  inherited; op-level body overrides path-level). +2 coverage tests regression-locking behavior that
+  was already correct (op-level overrides path-level for non-body params; `application/json` preferred
+  over other content types when multiple coexist). **349/349 tests.**
 - [x] **5.7.5 round 7 — array parameter items diffing** — parsed-but-never-diffed audit
   found that `items` on array-type parameters (e.g., `GET /items?ids=1,2,3` with
   `schema: {type: array, items: {type: string}}`) was completely ignored. A parameter

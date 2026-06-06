@@ -90,7 +90,7 @@
   human-gated). **Compliance P1** (privacy policy server-claim overstating actual
   v1 on-device behavior) still human-gated (NEED #7). BidDiff is **on-device**
   (no server calls except user-clicked SAM attachment download).
-- **Build green:** **931/931 tests** (BidDiff 586/586 + openapi-lens 345/345).
+- **Build green:** **935/935 tests** (BidDiff 586/586 + openapi-lens 349/349).
   BidDiff: was 490 at session start; current context window brought 504→575 (+14 N-queue polish +
   20 list-renumbering + 3 sub-CLIN + 8 SET_ASIDE + 4 critical rule 7 +
   1 SET_ASIDE false-positive + 1 Domain-Expert anchor gate + 1 obs#7 +
@@ -222,9 +222,9 @@ Priority order is `ops/loop.md`.
   Spend cap policy confirmed in place.
 - **The Saturday Routine does not exist.** `NEED_FROM_HUMAN.md` item 2.
   Sessions run only when human invokes Claude Code directly.
-- **This session's work is on branch `claude/intelligent-faraday-FnmJn`.**
-  Session task instructions require development here; main must be brought
-  current at session close (CLAUDE.md rule 6).
+- ~~**This session's work is on branch `claude/intelligent-faraday-FnmJn`.**~~ **RESOLVED.**
+  Feature branch fast-forward merged to `main` (d7c892e); `origin/main` is now current.
+  All 59 session commits are on `main`.
 - **BidDiff Compliance P1** (NEED #7): privacy policy overstates server
   data flows. Human must choose option A (scope copy) or B (implement).
 - **BidDiff positioning store update**: REPOSITION auto-proceeded 2026-06-06;
@@ -779,6 +779,16 @@ all green; check tests 16/16.
     Terraform 0.15+ single 'replace' and earlier ['delete','create'] form; Phase 1 test plan
     (~42 new D6 tests, ~418 total); known limitations (conservative IAM widening, no binary
     plan format, no output_changes, no create_before_destroy distinction).
+
+74. **5.7.5 bug: Swagger 2.0 path-level body parameter silently ignored** — `buildSwagger2RequestBody`
+    was called with only `opLevelParams` (operation-level raw params); a body param defined at
+    path level (valid per Swagger 2.0 spec — path-level params are inherited by all ops) was
+    silently dropped and `requestBody` would be `null` for every operation on that path. Fix:
+    pass `[...opLevelParams, ...pathLevelParams]` so op-level takes priority via `.find()` while
+    path-level acts as fallback. +2 tests (path-level body inherited; op-level body overrides
+    path-level body). +2 coverage tests (op-level overrides path-level param same-name+in; JSON
+    preferred over XML when multiple content types coexist — both were already working, now
+    regression-locked). 345→349 openapi-lens. Total suite: **935/935 tests**.
 
 69. **First-principles BCL format-pack roadmap scoring** (5.7.6 continuous ideation):
     Evaluated K8s YAML, SQL migration, GraphQL, CloudFormation, Avro, Docker image diff as

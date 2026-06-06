@@ -578,4 +578,137 @@ components:
     expect(schema?.items?.properties?.["count"]?.type).toBe("integer");
     expect(schema?.items?.required).toContain("id");
   });
+
+  it("op-level parameter overrides path-level parameter with same name and location", () => {
+    const spec = parseOapiSpec(`
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: ok
+`);
+    const op = spec.operations[0]!;
+    // Same name+in: exactly one parameter, op-level wins (integer, not string)
+    expect(op.parameters).toHaveLength(1);
+    const idParam = op.parameters.find((p) => p.name === "id" && p.in === "path");
+    expect(idParam?.schema.type).toBe("integer");
+  });
+
+  it("application/json is preferred over other content types when both are present", () => {
+    const spec = parseOapiSpec(`
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /data:
+    get:
+      responses:
+        "200":
+          content:
+            application/xml:
+              schema:
+                type: object
+                properties:
+                  xmlField:
+                    type: string
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    type: string
+`);
+    const op = spec.operations[0]!;
+    const schema = op.responses["200"]?.schema;
+    expect(schema?.required).toContain("id");
+    expect(schema?.properties?.["xmlField"]).toBeUndefined();
+  });
+
+  it("Swagger 2.0 body parameter defined at path level is inherited by all operations", () => {
+    const spec = parseOapiSpec(`
+swagger: "2.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required: [name]
+          properties:
+            name:
+              type: string
+    post:
+      responses:
+        "201":
+          description: created
+`);
+    const op = spec.operations[0]!;
+    expect(op.requestBody).not.toBeNull();
+    expect(op.requestBody?.required).toBe(true);
+    expect(op.requestBody?.schema?.type).toBe("object");
+    expect(op.requestBody?.schema?.required).toContain("name");
+  });
+
+  it("Swagger 2.0 op-level body parameter overrides path-level body parameter", () => {
+    const spec = parseOapiSpec(`
+swagger: "2.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    parameters:
+      - name: body
+        in: body
+        required: false
+        schema:
+          type: object
+          properties:
+            legacy:
+              type: string
+    post:
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            required: [name]
+            properties:
+              name:
+                type: string
+      responses:
+        "201":
+          description: created
+`);
+    const op = spec.operations[0]!;
+    // Op-level wins: required=true, has 'name' property, not 'legacy'
+    expect(op.requestBody?.required).toBe(true);
+    expect(op.requestBody?.schema?.required).toContain("name");
+    expect(op.requestBody?.schema?.properties?.["legacy"]).toBeUndefined();
+  });
 });
