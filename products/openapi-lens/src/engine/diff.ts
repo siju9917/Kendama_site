@@ -809,7 +809,7 @@ function diffResponseHeaders(
         after: cNullable,
       });
     }
-    const constraintFields = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems"] as const;
+    const constraintFields = ["minimum", "maximum", "minLength", "maxLength", "pattern", "minItems", "maxItems", "minProperties", "maxProperties"] as const;
     for (const cf of constraintFields) {
       const bVal = bHdr.schema?.[cf] ?? null;
       const cVal = cHdr.schema?.[cf] ?? null;

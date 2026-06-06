@@ -12333,3 +12333,156 @@ paths:
     expect(headerConstraintChanges).toHaveLength(1);
   });
 });
+
+// ─── Round 97: minProperties/maxProperties in response headers + Swagger 2.0 header constraints ─
+// Round 96 added a constraint loop with 7 fields. This round verifies the two additional
+// fields added immediately after (minProperties, maxProperties) and Swagger 2.0 headers.
+
+describe("adversarial round 97 — minProperties/maxProperties in response headers + Swagger 2.0 (end-to-end)", () => {
+  function oas3Spec(headerSchema: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /objects:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Pagination-Meta:
+              schema:
+${headerSchema.replace(/^/gm, "                ")}
+`;
+  }
+
+  it("adding minProperties to response header → INFO (server adds lower-bound object guarantee)", () => {
+    const before = oas3Spec("type: object");
+    const after = oas3Spec("type: object\nminProperties: 1");
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".minProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(1);
+  });
+
+  it("removing minProperties from response header → BREAKING (clients lose object count guarantee)", () => {
+    const before = oas3Spec("type: object\nminProperties: 2");
+    const after = oas3Spec("type: object");
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".minProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(2);
+    expect(c?.after).toBeNull();
+  });
+
+  it("decreasing minProperties on response header → BREAKING (weaker lower-bound guarantee)", () => {
+    const before = oas3Spec("type: object\nminProperties: 5");
+    const after = oas3Spec("type: object\nminProperties: 1");
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".minProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("adding maxProperties to response header → INFO (server adds upper-bound object guarantee)", () => {
+    const before = oas3Spec("type: object");
+    const after = oas3Spec("type: object\nmaxProperties: 10");
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".maxProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(10);
+  });
+
+  it("increasing maxProperties on response header → BREAKING (weaker upper-bound guarantee)", () => {
+    const before = oas3Spec("type: object\nmaxProperties: 5");
+    const after = oas3Spec("type: object\nmaxProperties: 20");
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".maxProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("Swagger 2.0 response header with minimum constraint change → response-header-constraint-changed", () => {
+    // Swagger 2.0 declares header type/constraints directly (no schema: wrapper).
+    const before = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+host: api.example.com
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Rate-Limit:
+              type: integer
+              minimum: 1
+`;
+    const after = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+host: api.example.com
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Rate-Limit:
+              type: integer
+              minimum: 10
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".minimum"));
+    expect(c).toBeDefined();
+    // minimum increased: INFO (server provides a stronger lower-bound guarantee)
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(1);
+    expect(c?.after).toBe(10);
+  });
+
+  it("Swagger 2.0 response header maximum removed → BREAKING", () => {
+    const before = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+host: api.example.com
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Rate-Limit:
+              type: integer
+              maximum: 100
+`;
+    const after = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+host: api.example.com
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Rate-Limit:
+              type: integer
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".maximum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(100);
+    expect(c?.after).toBeNull();
+  });
+});
