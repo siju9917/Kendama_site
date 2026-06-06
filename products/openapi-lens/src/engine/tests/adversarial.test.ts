@@ -10598,3 +10598,112 @@ paths:
     expect(constChange?.after).toBeNull();
   });
 });
+
+// ─── Round 83: request body top-level maxItems + response body maxProperties null-transitions ─
+// maxItems at request top-level: max-sense, clients sending large arrays now rejected (BREAKING).
+// maxProperties at response top-level: never tested at any level — highest risk of a gap.
+
+describe("adversarial round 83 — request body top-level maxItems and response body maxProperties null-transitions (end-to-end)", () => {
+  function makeArrayBodySpec83(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /batch:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+              ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  function makeObjectResponseSpec83(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /metadata:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+                ${constraintLine}
+`;
+  }
+
+  it("adding maxItems to request body array (null→10) is BREAKING — clients sending more than 10 elements were valid before", () => {
+    // requestConstraintSeverity max-sense: before === null → BREAKING
+    // Previously unbounded array now capped at 10; clients sending 11+ will fail validation.
+    const noMax   = makeArrayBodySpec83("");
+    const withMax = makeArrayBodySpec83("maxItems: 10");
+    const changes = analyzeOpenApiDiff(noMax, withMax);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".maxItems"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(10);
+  });
+
+  it("removing maxItems from request body array (10→null) is INFO — constraint relaxed, all prior valid arrays remain valid", () => {
+    // requestConstraintSeverity max-sense: after === null → INFO
+    // Clients that sent ≤10 elements still pass; the constraint removal only widens acceptance.
+    const withMax = makeArrayBodySpec83("maxItems: 10");
+    const noMax   = makeArrayBodySpec83("");
+    const changes = analyzeOpenApiDiff(withMax, noMax);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".maxItems"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(10);
+    expect(constChange?.after).toBeNull();
+  });
+
+  it("adding maxProperties to response body object (null→5) is INFO — server now guarantees at most 5 properties", () => {
+    // responseConstraintSeverity max-sense: before === null → INFO
+    // Server self-limiting the number of properties returned is a guarantee clients can rely on.
+    const noMax   = makeObjectResponseSpec83("");
+    const withMax = makeObjectResponseSpec83("maxProperties: 5");
+    const changes = analyzeOpenApiDiff(noMax, withMax);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".maxProperties"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(5);
+  });
+
+  it("removing maxProperties from response body object (5→null) is BREAKING — server may now return more properties than clients expect", () => {
+    // responseConstraintSeverity max-sense: after === null → BREAKING
+    // Clients that assumed a bounded property count (e.g. iterating over keys) may be broken
+    // if the server now returns an unbounded number of additional properties.
+    const withMax = makeObjectResponseSpec83("maxProperties: 5");
+    const noMax   = makeObjectResponseSpec83("");
+    const changes = analyzeOpenApiDiff(withMax, noMax);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".maxProperties"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBe(5);
+    expect(constChange?.after).toBeNull();
+  });
+});
