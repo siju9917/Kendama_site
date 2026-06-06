@@ -775,14 +775,30 @@ Built as D6 alongside D5 (same extension, two format classifiers):
   throwing. Tested behavior (5 new tests).
 - **`uniqueItems`, `default`, `exclusiveMinimum`, `exclusiveMaximum`, `multipleOf` not diffed.**
   JSON Schema / OAS 3.1 draft-07 fields `uniqueItems`, `default`, `exclusiveMinimum`,
-  `exclusiveMaximum`, `multipleOf` are not parsed or compared. Phase 2.
-- **No media-type coverage.** The engine uses the first `content` entry returned
-  by the YAML parser. An endpoint that dropped `application/xml` support while
-  keeping `application/json` will show no change. Phase 2.
-- **Response `headers` not diffed.** Response headers (`X-Rate-Limit`, `Location`,
-  etc.) are part of the API contract but not yet parsed or compared. Phase 2.
-- **Security scheme / scope changes not detected.** Operation-level `security:`
-  changes (new required scope, removed auth scheme) are invisible. Phase 2.
-- **`servers` array not compared.** Base URL changes are not detected. Phase 2.
-- **`operationId` changes not detected.** SDK-generator method-name renames are
-  invisible; high impact for typed-client consumers. Phase 2.
+  `exclusiveMaximum`, `multipleOf` are not parsed or compared. Phase 3 candidate.
+  Note: `exclusiveMinimum`/`exclusiveMaximum` have different semantics in OAS 3.0 (boolean)
+  vs OAS 3.1 (number), making cross-version comparison complex.
+- ~~**No media-type coverage.**~~ **FIXED (2026-06-06, round 34).** `response-media-type-removed`
+  (BREAKING) and `request-media-type-removed` (BREAKING) now emitted when content-type
+  keys are removed from `content:` maps. Added `contentTypes: string[]` to `OapiRequestBody`
+  and `OapiResponse`.
+- ~~**Response `headers` not diffed.**~~ **FIXED (2026-06-06, rounds 24–28).** Response headers
+  fully parsed and diffed: `response-header-removed` (BREAKING), `response-header-added` (INFO),
+  `response-header-type-changed`, `response-header-required-changed`, `response-header-format-changed`.
+  Handles OAS 3.x (`schema:` wrapper) and Swagger 2.0 (bare `type:`).
+- ~~**Security scheme / scope changes not detected.**~~ **FIXED (2026-06-06, round 27).**
+  `operation-security-scheme-removed` (BREAKING), `operation-security-scheme-added` (BREAKING),
+  `operation-security-scope-added` (BREAKING), `operation-security-scope-removed` (INFO) all detected.
+- ~~**`servers` array not compared.**~~ **FIXED (2026-06-06, round 26).**
+  `server-removed` (BREAKING) and `server-added` (INFO) emitted. WebView shows "Spec-level"
+  label for server changes (not tied to a specific operation path/method).
+- ~~**`operationId` changes not detected.**~~ **FIXED (2026-06-06, round 25).**
+  `operation-id-changed` (INFO) with SDK-generator context in message.
+- **OAS 3.1 type arrays partially supported.** `type: ["string", "null"]` is normalised to
+  `type: "string" + nullable: true`. Multi-type arrays without null (e.g. `["integer", "string"]`)
+  produce only the first non-null type; the polymorphic aspect is not surfaced. Phase 3.
+- **Global (root-level) `security:` not diffed.** Changes to the spec-level `security:`
+  array (which applies to all operations by default) are not detected. Only operation-level
+  `security:` overrides are compared. Phase 3.
+- **`oneOf`/`anyOf` composition NOT merged.** A breaking change inside a single oneOf variant
+  will not be detected (tested behaviour). Phase 3.
