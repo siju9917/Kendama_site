@@ -614,3 +614,307 @@ wrong conclusion from an unverified premise. The fix both times is to nail the
 premise (here: read back via the EXACT constant the code uses) before writing
 a single line of "fix" or a brain entry. The discipline caught it; no false
 bug was committed.
+
+---
+
+## 2026-06-06 — Maximization audit (5.7.7) + audit-of-the-auditor (5.7.8)
+
+Mandatory cadence audit of whether 5.7.1–5.7.6 actually held this session
+(spend cap confirmed resolved per policy; plan-included sub-agent research
+used; ~30 new commits to `claude/intelligent-faraday-FnmJn`; suite 455→486).
+
+**5.7.7 — did the maximization rules hold?**
+
+- **5.7.1 Re-critique cadence:** N/A — BidDiff has not shipped. Vacuously met.
+- **5.7.2 Escalating critique:** HELD with caveat. The SET_ASIDE feature was
+  attacked immediately after writing: the "set aside 30 minutes" adversarial
+  input exposed a real false-positive bug (the `\bset[- ]aside\b` space form
+  matched a general English verb). Found, fixed, regression-tested before
+  commit. The sub-CLIN feature was probed with parent+sub-CLINs-together and
+  the SubCLIN keyword — both edge cases confirmed clean. The integration tests
+  drove through the full chain (detect → classify → critical → engine output).
+  **Caveat (same as prior cycles):** the formal 14-critic panel did not re-run
+  this cycle; targeted critics ran per sub-feature. Defensible in a mid-K1
+  pass (no phase closure), but the next post-phase gate must run the full
+  escalating panel.
+- **5.7.3 Roster growth:** HELD — Domain-Expert Critic (#5) gained the
+  anchor-extension validation gate (a new checklist item requiring a cited
+  public regulatory source + a full-chain integration test for any new anchor
+  type). Logged in the roster-growth table with the triggering cause.
+- **5.7.4 "Nothing is ever done":** PARTIALLY HELD. The domain-expert P1
+  lens functioned as a re-opening review: obs #5 (TIME anchor) was
+  re-examined, the "nothing is done" question asked, and the honest answer
+  was "V1 is fine — Section L already catches this." That decision is positive
+  (avoiding premature complexity). Obs #9 (sub-CLINs) was similarly re-opened
+  and correctly found to need fixing. However, no explicit "nothing is ever
+  done" re-opening review was written for BidDiff as a whole-product
+  interrogation (the obs-by-obs examination substituted for it). A future
+  cycle should run the formal re-opening review explicitly.
+- **5.7.5 Continuous bug-hunt:** HELD — the SET_ASIDE false positive was
+  found through a probe-first adversarial input ("set aside 30 minutes")
+  AFTER the feature was written. This is the continuous-bug-hunt rule working
+  exactly as intended: the new code was attacked with inputs the spec did not
+  anticipate, and a real defect was found and fixed before commit.
+- **5.7.6 Continuous ideation:** PARTIALLY HELD. The VS Code Breaking-Change
+  Lens deep eval was a genuine ideation advance (636/1000, first candidate to
+  clear the auto-proceed threshold, gap confirmed: no free-standing VS Code
+  extension for OpenAPI breaking changes). The clauseguard eval ran (556/1000,
+  CONDITIONAL DEFER). HOWEVER: no new WISHLIST entries were written this
+  cycle, and D4 (Shopify theme-risk) and the rank-2 FAR/DFARS MCP remain
+  unevaluated — the pipeline is advancing but ambient "scratch-your-own-itch"
+  ideation was thin. This is a real, if mild, lapse.
+
+**5.7.8 — audit-of-the-auditor (Ambition #13 + Research Quality #14):**
+
+1. **Was the audit shallow?** Six rules addressed with held/lapsed/partial
+   verdicts and concrete evidence. Not shallow; the caveat on 5.7.4 and the
+   partial on 5.7.6 are honest calls that a shallow audit would have papered
+   over.
+
+2. **Was an obvious lapse missed / conclusion asserted not defended?**
+   Two findings from this adversarial re-read:
+
+   **Finding A (Research Quality):** D4 (Shopify theme-risk) and rank-2
+   FAR/DFARS MCP have NOT been evaluated. The current proposal to PROCEED with
+   the VS Code lens is defensible on its absolute score (636/1000), but the
+   evaluation is not exhaustive — the lens might still be outscored by D4 when
+   that's researched. The 5.7.6 lapse compounds this: the product pipeline
+   report says "next = VS Code lens" but that conclusion rests on incomplete
+   scoring of the candidate set. **Action:** the D4/rank-2 evaluations should
+   run before the VS Code lens begins Phase 0, or at least run in parallel.
+   Logged here as an honest gap; the proposal's 7-day auto-proceed window gives
+   room.
+
+   **Finding B (Ambition):** the session was defensively good but not
+   bold — the BidDiff work (sub-CLINs, SET_ASIDE, false-positive fix) and the
+   pipeline work (clauseguard + lens evals) are all correct but reactive (fix
+   the known P1, evaluate the seeded candidates). The WISHLIST has four
+   genuinely novel items (PDF WASM extractor, amendment monitoring, rules
+   curation DSL, TDD-guard for agents) none of which received any attention
+   this cycle. The Ambition Critic's "what is the boldest idea this cycle
+   considered?" answer is "the VS Code lens" — which clears the bar but is
+   more "fill the known gap" than "invent something unexpected." Noted; the
+   genuine creative work is properly gated on cap (which is now RESOLVED, so
+   this excuse is weaker than it was).
+
+3. **Was the conclusion defended or just asserted?** Every verdict above cites
+   a concrete artifact (the false-positive test, the roster-growth row, the
+   proposal score), not a bare claim.
+
+**Structural action from Finding A:** The next sub-agent queue should
+evaluate D4 (Shopify theme-risk app) before or concurrently with Phase 0 of
+the VS Code lens build. No rule change; just a sequencing note.
+
+**Structural action from Finding B:** The next session should log at least
+one NEW WISHLIST item from active friction before it ends. If no friction
+arose, that itself is a finding to record.
+
+**Where applied:** `brain/STATE.md` (this session's cycle recorded), this
+lesson.
+
+**Recurrence test:** next session's META audit verifies (a) a WISHLIST item
+grew or the absence is itself explained, and (b) D4/rank-2 evaluations ran or
+are explicitly gated on a reason.
+### Session continuation note (2026-06-06, post-487→490)
+
+The above 5.7.7 audit was written after session items 1-15 (486 tests). The session
+continued:
+
+- **Item 16** (N15, sign-before-dollar fix): `isLeadingSign` extended to fire before `$`.
+  Red test first → fix → 488/488. Adversarial: no false positives on word-internal hyphens
+  (`"pre-$5,000"`) or range dashes (`"50-$3,000"`). ✓
+- **Item 17** (classify-precedence pin): CLAUSE_REF anchor in Section M → category CLAUSES,
+  not EVALUATION_CRITERIA. Severity still CRITICAL (rule 3). Pin test documents V1 trade-off.
+- **Item 18** (N16, page-limit bare-paren fix): `PAGE_LIMIT_RE` split group; `"(30) pages"` now
+  produces PAGE_LIMIT anchor. Red test → fix → 490/490. ✓
+- **Item 19** (factory: ranking-integrity check): YAML front-matter added to 5 research files;
+  `ranking-integrity.mjs` wired; 61/61 check tests green; parser bare-key bug fixed. ✓
+- **Adversarial Pass 4**: N15/N16/classify-pin all adversarially clean. P0/P1/P2 = 0.
+  V1 trade-off documented for Section-M clause reference.
+- **Critique roster growth** (5.7.3): Two new checklist items — sign-before-currency (#1)
+  and regex-optional-group-wraps-bracket (#2) — added to Correctness Critic and Adversarial Tester.
+- **WISHLIST additions** (5.7.6): Multi-label classification (BidDiff V2) and drift-between-
+  session validator (factory self-improvement).
+- **VS Code extension playbook**: `brain/PLAYBOOKS/vscode-extension-ide-diff.md` shipped.
+
+**Updated 5.7.7 assessment for full session:**
+
+- **5.7.2 Escalating critique:** HELD — adversarial passes 3 and 4 completed as independent
+  hard passes on the three code changes. Both returned clean (P0/P1/P2=0). The formal 14-critic
+  panel has not run this cycle (a 5.7.4 "nothing is done" review was initiated as a background
+  agent at session end). This remains the standing caveat.
+- **5.7.3 Roster growth:** HELD — two new checklist items added (sign-before-currency;
+  regex-bracket-in-optional-group). Total new items this session: 3 (anchor-extension gate earlier
+  + these 2 at close).
+- **5.7.6 Ideation:** IMPROVED vs earlier — two new WISHLIST items logged from session friction.
+  The D7/D8/D9 ideation from the prior adversarial pass is still WISHLIST-only (not backlog);
+  correctly resisted as per the meta-synthesis "one engine, N packs" insight.
+
+The structural actions from the 2026-06-06 audit remain:
+- Finding A: D4 Shopify DROPPED per zero-opex filter (Filter 1 violation), so the
+  "D4 unevaluated" concern is resolved by the filter — no evaluation needed.
+- Finding B: A WISHLIST item DID grow this session (multi-label classification + drift
+  validator). The ambition concern is partially addressed.
+
+### Session continuation note (2026-06-06, post-490→567)
+
+Context window continuation after items 16-22 above. Suite 490→567; 18 new commits
+to `claude/intelligent-faraday-FnmJn`.
+
+**Items completed:**
+
+- **Item 24** (N14, solicitation-number mismatch guard): `extractSolicitationId()` in
+  `validate.ts`, wired into both extractors + engine; 12 new tests. Fixed a regex bug
+  (`\s`→`[ \t]` to prevent cross-line greedy capture) discovered while writing the tests
+  — the test found a real edge case before production saw it. 503 tests.
+- **Item 25** (N-A10, keyboard hint context-awareness): DiffView shortcuts `<details>`
+  shows "J / K navigate Critical changes only" note when Critical filter active.
+- **Item 26** (N18, History inline delete confirmation): replaced `window.confirm()` —
+  blocked in Chrome side panels — with an inline "Delete / Cancel" pair + Escape key
+  cancel. 3 tests updated + 1 new. 504 tests.
+- **Item 27**: PROGRESS.md updated; unblocked POLISH queue now empty.
+- **Item 28** (DiffView.test.tsx, 46 tests): first-ever full component test coverage:
+  `criticalFirst` pure function, all filter chips, empty-state variants, text filter,
+  warning banners, session notices, N-A10 context note, DOM ordering, section filter,
+  keyboard J/K/R/Arrow navigation + all guards (modifier, INPUT target, isComposing,
+  empty list), reviewed counter. 504→551 tests. Fixed two Chai issues:
+  (a) `toBeDisabled` invalid in Chai — used `.disabled` property access instead;
+  (b) `/reviewed/i` ambiguously matched keyboard shortcut text — tightened to
+  `/\d+\/\d+ reviewed/i`.
+- **Item 29** (Vite 6 + Vitest 4 toolchain bump): Vite 5→6.4.3, Vitest 2→4.1.8,
+  @vitejs/plugin-react 4→5.2.0. Critical Vitest UI-server vuln
+  GHSA-5xrq-8626-4rwp resolved. Suite 551/551 clean; build clean.
+- **Item 30** (SamAttachments.test.tsx, 12 tests): last untested sidepanel component.
+  Dynamic `import()` mocked via `vi.mock` hoisting at module-system level.
+  Covers: null-while-loading, empty list, items + MIME type, callback slots,
+  disabled+Loading… state, cross-id isolation, runtime failure → empty, null response.
+  551→563 tests.
+- **Item 31** (N-A21, filter result counter): `DiffView.tsx` shows "X of N changes"
+  when active filters narrow the list; "0 of N changes" when all filtered out. 4 new
+  tests (counter present, hidden when no filter, hidden when all pass, zero edge case).
+  563→567 tests.
+- **PORTFOLIO.md + PROGRESS.md updated** to reflect 567/567, ~97% build, Vite 6/
+  Vitest 4 done, DiffView + SamAttachments component coverage complete.
+
+**Updated 5.7.7 assessment for this continuation:**
+
+- **5.7.1 (monthly re-critique):** N/A — no shipped products.
+- **5.7.2 (escalating critique):** HELD — keyboard nav guard tests (modifier, INPUT
+  target, isComposing, empty list) were invented adversarially by the test suite.
+  All four guards were untested before; all four now have independent test coverage.
+  The "test the guards, not just the happy path" discipline is the escalation.
+- **5.7.3 (roster growth):** HELD — Adversarial Tester #2 gained the keyboard-handler
+  guard-pattern checklist item (event handler with modifier/target/composition guards
+  requires each guard tested independently). Logged in roster-growth table.
+- **5.7.4 ("nothing is done"):** HELD — N-A21 was produced by the re-opening review
+  lens: asked "what filter feedback is absent?" → the "how many results match?" counter
+  was missing. Found, shipped, tested.
+- **5.7.5 (continuous bug-hunt):** HELD — test-writing itself surfaces real issues:
+  N14's regex bug (greedy `\s` cross-line capture) was found by writing the test before
+  commit. The Chai `toBeDisabled` issue was a test framework portability finding, not a
+  false negative on product behavior.
+- **5.7.6 (continuous ideation):** HELD — N-A21 is a direct product of ambient
+  "what would make this materially better?" questioning during test writing.
+
+**5.7.8 (audit-of-the-auditor):**
+
+1. Was the audit shallow? Six rules addressed with held verdicts + concrete evidence
+   (specific test counts, specific guard names). Not shallow.
+2. Was an obvious lapse missed? One honest note: the formal 14-critic panel still has
+   not run in this context window. This is the third consecutive cycle continuation
+   where the full panel was bypassed in favor of targeted critic passes. Defensible
+   (no phase closure, no ship event) but worth noting that the cadence debt accumulates.
+   The trigger for a full panel run remains: any phase gate closes, or the gated P1s
+   clear and K1 converges.
+3. Was the conclusion defended or asserted? Each verdict cites a concrete artifact
+   (test file, guard name, N-A21 implementation). Evidence-bound.
+
+**Where applied:** `brain/STATE.md` (items 28-31 logged), `governance/CRITIQUE_AGENTS.md`
+(keyboard-handler guard item), this lesson.
+
+**Recurrence test:** the next formal panel run must include the keyboard-handler
+guard-pattern check (Adversarial Tester #2) as a test requirement on any React
+component with `useEffect`-registered window event listeners.
+
+### Session continuation note (2026-06-06, D5 Phase 0 + factory hardening)
+
+Context window continuation. Suite 567+91=658 total (BidDiff 567 unchanged; openapi-lens
+grew 68→91 with adversarial + property-diff passes).
+
+**Items completed:**
+
+- **Item 32** (D5 Phase 0 full engine): Parser (17 tests) + diff (20) + classify (22) +
+  integration (9) + adversarial 5.7.2 second pass (15) + property-level diff extension (8)
+  = 91/91 tests. Key defect found during adversarial pass: YAML spec built by string
+  concatenation produced wrong YAML structure (new path appended after `components:` block
+  became a top-level key, not a `paths` entry). Test suite reconstructed with standalone
+  spec strings. `diffSchemaProperties()` added to detect property type changes, removals,
+  additions — filled the gap where a property changing from `number` to `string` was
+  invisible to the engine.
+
+- **Item 33** (5.7.3 roster growth): Four new items added to CRITIQUE_AGENTS.md:
+  - Correctness Critic #1: compound diff keys required (single-field keys silently
+    merge distinct entities — `path:id` + `query:id` collapsing on `name` alone)
+  - Adversarial Tester #2: YAML/JSON spec string-concatenation must be tree-validated
+  - Domain-Expert Critic #5: OpenAPI/REST API specialization block added (property-level
+    diff coverage; allOf/oneOf composition warning; request-vs-response polarity reversal;
+    remote `$ref` gap documentation)
+  - Roster growth log updated with 4 new rows.
+
+- **Item 34** (5.7.6 WISHLIST): Two new items logged from openapi-lens friction:
+  "allOf/oneOf/anyOf composition schema merger" and "recursive property-level diff beyond
+  1 level."
+
+- **Item 35** (brain updates): APPROVALS.md Proposal #3 Phase 0 status noted. IDEA_BACKLOG.md
+  D5 row updated. STATE.md test counts corrected (68→91 in two places). Session items 33-35
+  added. All factory checks green (11/11).
+
+**Updated 5.7.7 assessment for this continuation:**
+
+- **5.7.1 (monthly re-critique):** N/A — no shipped products.
+- **5.7.2 (escalating critique):** HELD — the D5 adversarial second pass (15 tests) was a
+  fully independent re-attack of the engine with new adversarial inputs (malformed YAML,
+  circular-looking schemas, mixed-format specs, empty specs, Swagger 2.0 edge cases, parameter
+  namespace collisions). P0/P1/P2 = 0. The property-diff extension (item 32) was itself
+  attacked by an adversarial test set (8 tests). **Caveat (fourth consecutive cycle without the
+  full 14-critic panel):** the accumulating panel debt is real. The trigger remains: K1 phase
+  gate closes, or a ship event occurs.
+- **5.7.3 (roster growth):** HELD with strong evidence — four new checklist/specialization
+  additions including the OpenAPI domain specialization for Domain-Expert #5, which is a
+  genuinely broad addition (applies to all future API-diff products: D5, D6, and any
+  new formats in the "one shell, N packs" family).
+- **5.7.4 ("nothing is done"):** HELD — property-level diff gap was found by asking
+  "what would make this engine materially better?" — a `type` change inside `properties`
+  was invisible to the engine. This was found and fixed in Phase 0 (not deferred to Phase 2).
+- **5.7.5 (continuous bug-hunt):** HELD — the YAML-concatenation test construction bug
+  was found by running the adversarial suite against the engine with edge-case inputs.
+  The test for "a spec with no paths" (just info block) and similar minimal inputs exposed
+  that the constructed test specs themselves had structural defects.
+- **5.7.6 (continuous ideation):** HELD — two new WISHLIST items from real friction.
+
+**5.7.8 (audit-of-the-auditor):**
+
+1. Was the audit shallow? Six rules addressed with held/partial verdicts and concrete
+   artifact citations (test file names, check names, specific CRITIQUE_AGENTS.md items).
+   Not shallow.
+2. Was an obvious lapse missed? **One finding:** the property-level diff at 1 level deep
+   is documented as a Known Limitation (PROGRESS.md) — but the WISHLIST item just logged
+   frames it as "recursive diff beyond 1 level." The ACTUAL limitation is that even 1-level
+   property diffs have no `allOf`/`oneOf` composition support. The D5 Phase 1 build session
+   will need an explicit "what's the depth guarantee?" test before claiming coverage. Logged
+   as a Phase 1 gate item.
+3. Was the conclusion defended or asserted? Verdicts cite specific test files and checklist
+   additions. Evidence-bound.
+
+**Standing audit from Finding 2 above:** Phase 1 must include an explicit test verifying the
+"1-level-deep property diff covers these cases, and explicitly DOES NOT cover these other cases"
+contract — so the limitation is tested, not just documented.
+
+**Where applied:** `governance/CRITIQUE_AGENTS.md` (four new items), `brain/WISHLIST.md`
+(two new entries), `brain/STATE.md` (items 32-35), this lesson.
+
+**Recurrence test:** the next session's 5.7.7 must either (a) note the formal 14-critic panel
+ran, or (b) re-justify why not. Four consecutive cycle-continuations without the panel is
+approaching the mandatory cadence threshold; if K1 P1s clear at all in the next session,
+the full panel runs immediately.
+

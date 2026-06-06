@@ -41,7 +41,11 @@ export interface HeadingClassification {
 const UCF_HEADER_RE = /^\s*SECTION\s+([A-M])\b/i;
 const LETTER_DOT_RE = /^\s*([A-M])\.\s+\S/;
 const NUMBERED_RE = /^\s*(\d+(?:\.\d+)*)\.?\s+\S/;
-const SECTION_LM_RE = /^\s*([LM])\.(\d+(?:\.\d+)*)\s*[—\-:]?\s*\S/;
+// Covers A–M letter-dot-number items: "C.3 SOW", "L.4 Submission", "M.1 Factors".
+// LETTER_DOT matches "C. Title" (space after dot); this matches "C.3 Title" (digit after dot).
+// They are mutually exclusive, so ordering in classifyHeading doesn't matter for correctness,
+// but SECTION_LM_RE is checked first to preserve the L/M sub-item precedence (see test).
+const SECTION_LM_RE = /^\s*([A-M])\.(\d+(?:\.\d+)*)\s*[—\-:]?\s*\S/;
 
 /** Classify a single line. */
 export function classifyHeading(line: RawLine, modalBodyFontSize?: number): HeadingClassification {

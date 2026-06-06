@@ -68,7 +68,11 @@ describe("ChangeCard", () => {
     render(
       <ChangeCard change={baseChange} reviewed={true} onToggleReviewed={() => {}} />,
     );
-    expect(screen.getByRole("button", { name: /✓ Reviewed/i })).toBeTruthy();
+    // The aria-label is "Unmark as reviewed" when reviewed=true; the visible
+    // text "✓ Reviewed" is still present but the accessible name comes from aria-label.
+    const btn = screen.getByRole("button", { name: /Unmark as reviewed/i });
+    expect(btn).toBeTruthy();
+    expect(btn.getAttribute("aria-pressed")).toBe("true");
   });
 
   // N11: per-change copy.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { detectKind, isPdfEncrypted, validateInput } from "./validate.js";
+import { detectKind, isPdfEncrypted, validateInput, extractSolicitationId } from "./validate.js";
 import { ExtractionError } from "../interfaces.js";
 
 const bytes = (s: string): ArrayBuffer => new TextEncoder().encode(s).buffer as ArrayBuffer;
@@ -49,12 +49,14 @@ describe("validateInput", () => {
       expect((e as ExtractionError).code).toBe("UNSUPPORTED_FORMAT");
     }
   });
-  it("rejects legacy .doc with UNSUPPORTED_FORMAT", () => {
+  it("rejects legacy .doc with UNSUPPORTED_FORMAT and actionable conversion hint", () => {
     try {
       validateInput(bytes("anything"), "legacy.doc");
       throw new Error("should have thrown");
     } catch (e) {
       expect((e as ExtractionError).code).toBe("UNSUPPORTED_FORMAT");
+      // Message must include a concrete conversion step (Word Save As)
+      expect((e as ExtractionError).message).toMatch(/Save.*as.*\.docx|\.docx.*Save/i);
     }
   });
   it("rejects .txt cleanly instead of routing it to the DOCX extractor", () => {
@@ -72,6 +74,42 @@ describe("validateInput", () => {
   });
   it("accepts DOCX magic + extension", () => {
     expect(validateInput(docxHeader(), "x.docx")).toBe("DOCX");
+  });
+});
+
+describe("extractSolicitationId", () => {
+  it("extracts a solicitation number after 'Solicitation No.'", () => {
+    expect(extractSolicitationId("Solicitation No. W912TP-26-R-0001\nPage 1")).toBe("W912TP-26-R-0001");
+  });
+  it("extracts after 'Solicitation Number:'", () => {
+    expect(extractSolicitationId("Solicitation Number: FA8701-25-R-0042")).toBe("FA8701-25-R-0042");
+  });
+  it("extracts after RFP No.", () => {
+    expect(extractSolicitationId("RFP No. N00030-26-R-0001")).toBe("N00030-26-R-0001");
+  });
+  it("extracts after RFQ No.", () => {
+    expect(extractSolicitationId("RFQ No. W912TP-26-Q-0001")).toBe("W912TP-26-Q-0001");
+  });
+  it("normalizes internal whitespace (W912TP -26-R-0001 → W912TP-26-R-0001)", () => {
+    expect(extractSolicitationId("Solicitation No. W912TP -26-R-0001")).toBe("W912TP-26-R-0001");
+  });
+  it("returns null when no solicitation label is present", () => {
+    expect(extractSolicitationId("This is a plain document with no solicitation number.")).toBeNull();
+  });
+  it("returns null for an empty string", () => {
+    expect(extractSolicitationId("")).toBeNull();
+  });
+  it("does not fire on bare alphanumeric strings without the label", () => {
+    expect(extractSolicitationId("Contract number: W912TP-26-R-0001")).toBeNull();
+  });
+  it("only scans the first 2000 characters (ID buried deeper is ignored)", () => {
+    const prefix = "A".repeat(2001);
+    expect(extractSolicitationId(`${prefix} Solicitation No. W912TP-26-R-9999`)).toBeNull();
+  });
+  it("stops at a newline — inline text after the ID does not extend the match", () => {
+    // The char class uses [ \t] not \s, so \n terminates the match.
+    // The ID is on its own line (as in real federal PDFs), followed by newline text.
+    expect(extractSolicitationId("Solicitation No. W912TP-26-R-0001\nfor IT Services")).toBe("W912TP-26-R-0001");
   });
 });
 

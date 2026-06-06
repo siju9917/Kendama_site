@@ -41,6 +41,17 @@ describe("classifyChange", () => {
     ).toBe("CLAUSES");
   });
 
+  it("FIRST-match precedence: a clause anchor wins over an evaluation-criteria section", () => {
+    // Rule 1 (CLAUSE_REF anchor → CLAUSES) precedes rule 2 (EVALUATION_CRITERIA section).
+    // Trade-off: a Section-M block that references a FAR clause gets "CLAUSES" not
+    // "EVALUATION_CRITERIA". The critical severity is still CRITICAL via rule 3, so no
+    // severity gap — only the secondary reason differs. Pinned here so any deliberate
+    // change to this precedence shows up as a test update, not silent drift.
+    expect(
+      classifyChange({ section: section("EVALUATION_CRITERIA"), anchors: [anchor("CLAUSE_REF")] }),
+    ).toBe("CLAUSES");
+  });
+
   it("falls back to OTHER", () => {
     expect(classifyChange({ section: section("OTHER"), anchors: [] })).toBe("OTHER");
     expect(classifyChange({ section: null, anchors: [] })).toBe("OTHER");

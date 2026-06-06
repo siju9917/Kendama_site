@@ -60,7 +60,7 @@ export function validateInput(file: ArrayBuffer, fileName?: string): FileKind {
   if (kind === "DOC") {
     throw new ExtractionError(
       "UNSUPPORTED_FORMAT",
-      "Legacy .doc files are not supported. Save the document as .docx and try again.",
+      "Legacy .doc files are not supported. In Microsoft Word: File → Save As → format: Word Document (.docx).",
     );
   }
   if (kind === "TXT") {
@@ -72,10 +72,29 @@ export function validateInput(file: ArrayBuffer, fileName?: string): FileKind {
     // drag-drop and the offscreen path bypass it).
     throw new ExtractionError(
       "UNSUPPORTED_FORMAT",
-      "Plain-text (.txt) files are not supported. BidDiff compares PDF (.pdf) and Word (.docx) solicitations.",
+      "Plain-text (.txt) files are not supported. If the amendment is a PDF or Word file, upload that directly.",
     );
   }
   return kind;
+}
+
+/**
+ * Scan the first N characters of extracted text for a solicitation number.
+ * Returns the canonical (uppercased, whitespace-stripped) ID, or null if
+ * none is found. Conservative: only fires on explicit "Solicitation No./
+ * Number" labels to avoid false positives on unrelated alphanumeric strings.
+ *
+ * Normalizes the match so "W912TP -26-R-0001" == "W912TP-26-R-0001".
+ */
+export function extractSolicitationId(text: string): string | null {
+  // Scan only the first 2000 characters — the ID is on the cover page.
+  const head = text.slice(0, 2000);
+  const m = head.match(
+    /(?:solicitation\s*(?:no\.?|number)\s*[:.]?\s*|rfp\s*(?:no\.?|number)\s*[:.]?\s*|rfq\s*(?:no\.?|number)\s*[:.]?\s*)([A-Z0-9][A-Z0-9 \t-]{3,18}[A-Z0-9])/i,
+  );
+  if (!m) return null;
+  // Normalize: uppercase, collapse internal whitespace, trim
+  return m[1].replace(/\s+/g, "").toUpperCase();
 }
 
 /** Heuristic check for an encrypted PDF (the canonical /Encrypt dictionary). */

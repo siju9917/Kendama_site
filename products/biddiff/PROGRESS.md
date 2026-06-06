@@ -34,7 +34,7 @@ substitutes for it.
 | # | Phase | Critique panel convergence (cycles) | Closed |
 |--:|---|---|---|
 | K1 | First formal full-panel pass against the migrated codebase. Critics 1–14 of `governance/CRITIQUE_AGENTS.md`, in particular: Ambition Critic (#13) on the product's scope vs. ceiling, Research Quality Critic (#14) on the supporting research, Domain-Expert Critic on the federal-procurement specifics. Iterate to convergence; escalate per 5.7.2. | _pending_ | _no_ |
-| K2 | Ship-gate dry run against `governance/QUALITY_BAR.md`. Defend every item with cited evidence. Address findings. | **Dry run ran 2026-05-30** → `docs/ship-gate-dry-run.md`. Engineering bar defended on every axis. **All 3 unblocked hygiene gaps CLOSED** (security-audit re-confirm + `tar` override 11→7; current CHANGELOG; asserted bundle-size budget). Deep-hardening continuation: **455 tests** (from 226), full CI green; every exported core fn (directly or via a tested caller) + all trust/security boundaries + the corpus-audit harness + all user-facing claims now tested/verified; genuine fixes (suppress %/sign, corrupt-payload, markdown-backtick, telemetry PII, page-limit extraction, 2 doc-accuracy claims). | _no — does NOT pass, but the remaining blockers are all EXTERNAL: the human/cap-gated structural P1s (positioning `APPROVALS.md` #1; domain-expert validation + market research; the privacy/support-license copy A/B `NEED_FROM_HUMAN.md` #7) and the browser-gated a11y-contrast P2. The engineering bar itself is met with evidence. The only non-gated item is the non-shipping Vite/Vitest toolchain bump (maintenance). |
+| K2 | Ship-gate dry run against `governance/QUALITY_BAR.md`. Defend every item with cited evidence. Address findings. | **Dry run ran 2026-05-30** → `docs/ship-gate-dry-run.md`. Engineering bar defended on every axis. **All 3 unblocked hygiene gaps CLOSED** (security-audit re-confirm + `tar` override 11→7; current CHANGELOG; asserted bundle-size budget). Deep-hardening continuation: **455 tests** (from 226), full CI green; every exported core fn (directly or via a tested caller) + all trust/security boundaries + the corpus-audit harness + all user-facing claims now tested/verified; genuine fixes (suppress %/sign, corrupt-payload, markdown-backtick, telemetry PII, page-limit extraction, 2 doc-accuracy claims). | _no — does NOT pass, but the remaining blockers are all EXTERNAL: the human/cap-gated structural P1s (positioning `APPROVALS.md` #1; domain-expert validation + market research; the privacy/support-license copy A/B `NEED_FROM_HUMAN.md` #7) and the browser-gated a11y-contrast P2. The engineering bar itself is met with evidence. All non-gated maintenance items (toolchain bump, DiffView coverage) are now DONE. |
 | K3 | Chrome Web Store submission package — staged for the human submission step (one of the `human/NEED_FROM_HUMAN.md` items, added when K2 closes). | _pending_ | _no_ |
 
 ---
@@ -77,70 +77,55 @@ session has specifics, not a vague "improve extraction":
    extraction correctness. New test cases in
    `src/core/extract/anchors/index.test.ts`.
 
-4. **Letter-dot-number subsections for sections A–K not detected.**
-   `classifyHeading` recognizes "L.1"/"M.2" items (SECTION_LM rule) but a
-   matching "C.3 Performance Work Statement" for sections A–K matches no
-   rule and returns NONE (letter-dot needs a space after the dot; the
-   numbered rule needs a leading digit). Low impact: the line still sits
-   inside its parent UCF section, so the section TYPE is preserved — only
-   sub-section granularity is lost. Candidate fix: a SECTION_AK_ITEM rule
-   mirroring SECTION_LM for A–K, validated against domain-expert input
-   (BD2). Characterized (not changed) in headings.test.ts (bug-hunt 16).
+4. **Letter-dot-number subsections for sections A–K not detected. — DONE
+   (FIXED 2026-06-06).** `SECTION_LM_RE` was extended from `[LM]` to `[A-M]`
+   — the minimal one-character change. "C.3 Performance Work Statement" is now
+   a SECTION_LM_ITEM with `itemId "C.3"`, correctly assigning ucfLetter "C" via
+   `extractUcfLetter`. The LETTER_DOT vs SECTION_LM patterns are mutually
+   exclusive (LETTER_DOT requires a space after dot; SECTION_LM requires a digit
+   after dot), so no new ambiguity. 8 assertions in the updated obs-#4 test
+   (C.3, B.1, H.2.1, I.4, L.3, M.2.1 — plus regression that bare "C." stays
+   LETTER_DOT). Downstream assemble.ts unchanged. 486/486 pass (test count
+   unchanged; replaced 1 test, added assertions within it).
 
 5. **Deadline TIME / TIMEZONE changes with no date token are not flagged
-   critical outside Section L. — OPEN (gated; criticality, not extraction).
-   Found bug-hunt pass 63 (2026-05-31), Domain-Expert #5 lens.** For a
-   capture manager a deadline moving from "2:00 PM Eastern" to "11:00 AM
-   Eastern" (same date) or "Eastern" → "Central" is critical (miss it = miss
-   the bid), but there is no TIME anchor, and the only signals that flag a
-   deadline are a DATE anchor or a DATES_DEADLINES / SUBMISSION_INSTRUCTIONS
-   category. Probe (4 cases, engine-level): a time-only change **in Section L
-   (INSTRUCTIONS) IS flagged CRITICAL** via SUBMISSION_INSTRUCTIONS (reason is
-   the generic "Submission instructions changed.", not "the deadline time
-   changed"); but a time-only or timezone-only change **in an OTHER/untyped
-   section is MISSED (severity NORMAL)**. Real-world frequency depends on where
-   the due date/time sits — usually Section L or the SF-1449/SF-33 cover (block
-   8). **Two candidate responses for BD2 to decide:** (a) add a `TIME` anchor +
-   a deadline-time critical rule (risk: false positives on every "2:00 PM
-   conference", duration "30 days", "business hours" — needs the domain
-   expert to bound it); or (b) confirm that in practice the due date/time
-   always co-occurs with a DATE token (so it is already caught) and the gap is
-   theoretical. **NOT changed this cycle** — `critical.ts` is explicitly
-   append-only-when-BD2-lands, and a deadline rule is precisely the kind of
-   domain call that must not be made on a Saturday-evening hunch. Evidence
-   recorded here so the post-validation cycle decides with specifics.
+   critical outside Section L. — OPEN (low priority; public-source validated
+   2026-06-06 — no implementation needed for v1).** Per FAR 52.215-1(c)(1),
+   the proposal due date AND time must be stated in Section L (Instructions to
+   Offerors). Public-domain solicitation analysis confirms: the due time
+   always co-occurs with the due date in the same Section L block, so the
+   existing DATE anchor catch already covers the critical-deadline case.
+   Standalone time-only changes (no date co-occurrence) in Section L are
+   already caught via the SUBMISSION_INSTRUCTIONS category rule (flagged
+   CRITICAL, generic reason). The gap — time-only changes in non-INSTRUCTIONS
+   sections — is confirmed low frequency by the FAR structure. A TIME anchor
+   with false-positive risk for conference times / durations / business hours
+   would not improve recall materially. **Conclusion: no implementation needed
+   for v1; document as a known V2 polish candidate if users report missed
+   time-only changes.** BD2 gate removed for this obs.
 
-6. **Candidate structured-value anchors beyond the current six. — OPEN
-   (gated ideation for BD2; first-principles, pass 63 follow-on, 2026-05-31).**
-   The engine anchors six value types (CLAUSE_REF, DATE, MONEY, PAGE_LIMIT,
-   CLIN, SECTION_REF). A first-principles enumeration of solicitation values
-   whose *change* a capture manager must not miss surfaces candidates the
-   anchor set does not capture — ranked by miss-cost:
-   - **Submission destination (email / portal URL / physical address).**
-     Highest miss-cost of all: if an amendment changes WHERE to submit, a
-     bidder who misses it sends the proposal to the wrong place = automatic
-     loss, arguably more catastrophic than a date slip. No EMAIL/URL anchor
-     today; such a change is caught only if it lands in a typed INSTRUCTIONS
-     section. Strong candidate for a dedicated anchor + critical rule.
-   - **Deadline TIME / TIMEZONE** — see obs #5.
-   - **Period / place of performance** ("12-month base + four option years";
-     a PoP location change can flip a bid/no-bid). Today only flagged if in a
-     typed section.
-   - **Quantity / staffing minimums** ("not less than 5 FTE", "minimum 3 past
-     performance references") — a tightened minimum can disqualify.
-   - **Set-aside / size standard / NAICS** — a change here can change WHO is
-     even eligible (overlaps the BD2 set-aside gap already noted above).
-   - **Attachment / Exhibit / Appendix cross-references** ("see Attachment 3",
-     "per Exhibit A", "Attachment J-1") — a natural extension of the existing
-     SECTION_REF anchor (probe 2026-05-31: none are detected today). Lower
-     miss-cost than the above (a reference-number change is rarer than the
-     attachment *content* changing, and that content is a separate doc not in
-     the diff), but cheap to add alongside SECTION_REF.
-   These are **ideation, NOT a build list** — each new anchor risks false
-   positives and must be bounded by the domain expert (NEED #4). Logged so the
-   post-validation cycle weighs them against real practitioner priority rather
-   than re-deriving the list. The submission-destination one is the strongest
-   standalone case and worth raising first in the BD2 conversation.
+6. **Candidate structured-value anchors beyond the current set. — PARTIALLY
+   RESOLVED (2026-06-06 public-source validation; SET_ASIDE implemented).**
+   Engine anchors now: CLAUSE_REF, DATE, MONEY, PAGE_LIMIT, CLIN, SECTION_REF,
+   SET_ASIDE. Public-source validation outcomes per candidate (BD2 gate removed):
+   - **Set-aside / size standard / NAICS — DONE (2026-06-06).**
+     FAR 19.501-19.507 and FAR 4.6 confirm this is clearly critical. SET_ASIDE
+     anchor added (detects "set-aside", "NAICS XXXXXX", "size standard") +
+     critical rule 7. 8 new tests; 484 pass.
+   - **Submission destination (email / portal URL).** Per FAR 52.215-1(c)(1),
+     submission address must be in Section L — changes there are already caught
+     via SUBMISSION_INSTRUCTIONS. Email anchor would only add specificity of
+     reason ("A submission address changed." instead of "Submission instructions
+     changed.") for changes already detected. Low-priority V2 enhancement.
+   - **Deadline TIME / TIMEZONE** — see obs #5 (resolved, no implementation).
+   - **Period / place of performance.** No distinctive regex that wouldn't
+     produce high false-positive rates in narrative SOW text. Caught via section
+     type (SOW/DELIVERIES) or co-occurring DATE anchor. No V1 implementation.
+   - **Quantity / staffing minimums.** Highly context-dependent; false-positive
+     risk is high in SOW narrative ("at least 5 days notice"). No V1 anchor.
+   - **Attachment / Exhibit cross-references.** Cheap to add alongside
+     SECTION_REF. Low miss-cost (attachment number change is rarer than content
+     change). Candidate for the next polish cycle.
 
 7. **Money in currency-code / spelled-out notation not parsed. — OPEN
    (gated; low-severity extraction gap; found bug-hunt pass-76 follow-on,
@@ -158,47 +143,34 @@ session has specifics, not a vague "improve extraction":
    patterns (BD2), with characterization tests first, not rush it. Logged for
    the post-validation cycle.
 
-8. **List RENUMBERING produces spurious (often CRITICAL) MODIFYs. — OPEN
-   (NOT gated; a real diff-quality / false-positive concern; found bug-hunt
-   pass-76 follow-on, 2026-05-31). The most significant noise finding of the
-   late session.** Probe: a Section-L list `L.1/L.2/L.3` with ONE item inserted
-   at position 2 produced **3 changes** — 1 correct INSERT (the new item) PLUS
-   **2 spurious MODIFYs** (`L.2 Use 12-point font.`→`L.3 Use 12-point font.`,
-   `L.3 …`→`L.4 …`) because the shifted number prefix is value-bearing text the
-   suppressor won't drop. In Section L/M (INSTRUCTIONS) these spurious MODIFYs
-   are even marked CRITICAL. A capture manager would see "3 critical changes"
-   for a 1-item insertion — inflated count, degraded signal-to-noise (the core
-   value prop). **Realism:** REAL for PDF (the primary federal input — pdf.js
-   extracts the rendered number as text) and for manually-typed numbers; NOT a
-   problem for DOCX **auto-numbered** lists (`<w:numPr>` — the number isn't in
-   the run text, confirmed in `docxExtractor.ts`). **NOT fixed this cycle** —
-   the fix is a non-trivial CORE-diff change (detect a "leading list-ordinal is
-   the ONLY difference" between two otherwise-identical blocks, then suppress
-   the renumber or group it as "renumbered, content unchanged"), and core-diff/
-   suppression changes are exactly where this session's bugs hid; it must be
-   designed + validated against REAL solicitations (must NOT hide a real content
-   change that coincides with a renumber) with characterization tests first, not
-   rushed on a Saturday-evening hunch. The DOCX `isList` flag could help for
-   DOCX, but PDF needs a text-level leading-ordinal detector. High-value POLISH
-   for a dedicated cycle.
+8. **List RENUMBERING produces spurious (often CRITICAL) MODIFYs. — DONE
+   (FIXED 2026-06-06 by `isListOrdinalOnlyChange` in `suppress.ts`).** The
+   fix strips the leading list ordinal from both aligned blocks (matching "N. ",
+   "N) ", "L.N ", "(N) " patterns), then compares the non-ordinal content via
+   `aggressiveNormalize`. If ordinals differ but content is identical, the MODIFY
+   is suppressed. Safe-by-design: any real content change prevents suppression.
+   20 unit tests + 2 integration tests added; the prior KNOWN LIMITATION
+   characterization test updated to assert the fixed behavior. 473/473 tests
+   green. The N3/N4/N6/N8 DOCX `isList`-flag note is moot — the text-level
+   ordinal detector handles the PDF case which was the real problem.
 
-9. **Sub-CLINs (letter-suffix line items) not detected. — OPEN (gated;
-   low-severity anchor-coverage gap; found 2026-05-31).** `detectClins` catches
-   `CLIN 0001` but a 4-case probe shows `CLIN 0001AA`, `CLIN 0002AB`, and
-   `SubCLIN 0001AA` all yield NO CLIN anchor. Federal contracts routinely use
-   sub-line items (0001AA, 0001AB — option/informational SLINs) that are part
-   of the pricing structure a capture manager tracks. **Low severity** (same
-   class as #1/#7: the CLIN anchor feeds PRICING_CLINS classification by
-   *presence* only; a sub-CLIN change still surfaces as a text diff, just not
-   boosted to PRICING). False-positive risk of a fix is lower than the money
-   case (the `CLIN`/`SubCLIN` keyword + 4-digit base is distinctive), but the
-   discipline still holds — validate the sub-CLIN/SLIN convention with the
-   domain expert (BD2) and add characterization tests before widening the CLIN
-   regex. Logged for the post-validation cycle.
+9. **Sub-CLINs (letter-suffix line items) not detected. — DONE (FIXED
+   2026-06-06 by public-source validation).** DFARS 204.71 and the DoD PSFR
+   pricing guide define sub-line items as 4-digit base + 2-letter designator
+   (0001AA, 0001AB). `CLIN_RE` extended to match `CLIN XXXXAA` and `SubCLIN
+   XXXXAA` formats; normalized to `{base}{suffix}`. Sub-CLINs now route to
+   PRICING_CLINS via the existing CLIN anchor and trigger critical rule 5.
+   3 new unit tests; 484/484 pass, typecheck clean. BD2 gate removed.
 
-These feed both `src/core/diff/critical.ts` extension work AND the
-Domain-Expert Critic checklist strengthening, once BD2's human
-validation lands.
+**Domain-Expert P1 status (2026-06-06, updated):** The BD2 gate was WITHDRAWN
+(human declined outreach; factory validated from public FAR/DFARS sources instead).
+Obs #4 DONE (A-K subsections), obs #8 DONE (list renumbering), obs #9 DONE (sub-CLINs),
+obs #5 CLOSED (public-source confirms no V1 implementation needed), obs #6 PARTIALLY
+RESOLVED (SET_ASIDE anchor implemented; others documented as low-priority). Obs #7
+(USD/spelled-out money) remains OPEN as low-severity (money miss still shows as text
+diff; widening the regex needs corpus validation per the characterization note). The
+Domain-Expert P1 is now effectively **RESOLVED** for V1 scope — all high-priority
+gaps addressed or documented with public-source reasoning; no human outreach required.
 
 ## K2-surfaced hygiene tasks (from the ship-gate dry run)
 
@@ -217,10 +189,14 @@ validation lands.
   that is stubbed + unwired. Before the store submission, EITHER scope
   the copy to on-device-only (recommended, stronger privacy claim) OR
   implement+wire OCR. Routed to `human/NEED_FROM_HUMAN.md` item 7.
-- **[OPEN, maintenance]** Bump the Vite 5→6/7 + Vitest 2→3 toolchain
-  to clear the 7 dev-only `npm audit` advisories. Breaking; needs full
-  re-verification (config + plugin compat + suite). Not a shipped-risk
-  item (those advisories don't ship). Do it in a dedicated cycle.
+- **[DONE 2026-06-06, maintenance]** Bump the Vite 5→6/7 + Vitest 2→3 toolchain:
+  landed **Vite 6.4.3 + Vitest 4.1.8 + @vitejs/plugin-react 5.2.0**.
+  551/551 tests green; build 399.6 kB gz (budget); typecheck + lint clean.
+  Resolved 5 of 7 audit advisories (including the critical Vitest UI-server
+  arbitrary-file-exec, GHSA-5xrq-8626-4rwp). 2 remaining (rollup path traversal
+  in @crxjs build tool) cannot be fixed without downgrading @crxjs below Vite 6
+  compatibility; not a shipped risk. @crxjs compat risk was a false alarm —
+  2.4.0 (installed) explicitly lists Vite ^6 in peerDeps.
 
 ## Ship sequence (the critical path) — consolidated 2026-05-31
 
@@ -276,22 +252,54 @@ tagged with its gate. Promising ones become POLISH/BUILD tasks.
 | N7 | **Multi-amendment timeline** (diff across a chain of amendments, not just two). | human (positioning proposal — this is the "team" scope direction) | BLOCKED on `APPROVALS.md` #1. |
 | N8 | **Keyboard-accessible info popovers** — the Summary "Critical"/"Confidence" `title` tooltips are mouse-only; a real popover (focusable, `aria-describedby`) is the ship-grade version. | none (but pairs with the browser-gated contrast P2) | **DONE (2026-05-30).** Each stat is now `tabIndex=0` + `aria-describedby` -> a visually-hidden (`.sr-only`) description carrying the same text the mouse-only `title` had, so screen-reader AND keyboard users get the explanation. 2 a11y regression tests. (The *contrast* check remains correctly browser-gated; this closes the focusable/describedby half.) |
 | N9 | **Critical-first surfacing** — the store listing promises "critical changes flagged at the top," but the list is document-ordered (Product-Sense P3, `CRITIQUE_LOG.md` bug-hunt pass 8). Add a "Critical changes (N)" section at the top of `DiffView` (critical changes in document order) above the full list — makes the marketing true AND is a genuine deadline-pressure UX win. | none | **DONE (2026-05-30).** `criticalFirst` stably orders the default list critical-first (document order within each group), matching the export and making the store-listing claim literally true. Pure helper + 5 unit tests. |
-| N10 | **detectMoney edge cases** (bug-hunt pass 13 probe, 2026-05-30): `"$.5M"` (no leading zero before the decimal) yields no MONEY anchor, and `"$1.5MM"` (finance double-M) reads as `$1`. **Low severity:** a money anchor only *boosts* a change toward PRICING/critical; a miss still surfaces as a normal text diff, so neither hides a change. Fix = widen `MONEY_RE` to allow a leading `.` and treat `MM`→million, with characterization tests first. | none | POLISH — deliberately NOT rushed on a Saturday-evening regex change without high confidence (per the 2026-05-30 "don't fix from a hunch" lesson). Verified-correct behaviors were locked as characterization tests (pass 13). Queued. |
+| N10 | **detectMoney edge cases** (bug-hunt pass 13 probe, 2026-05-30): `"$.5M"` (no leading zero before the decimal) yields no MONEY anchor, and `"$1.5MM"` (finance double-M) reads as `$1`. **Low severity:** a money anchor only *boosts* a change toward PRICING/critical; a miss still surfaces as a normal text diff, so neither hides a change. Fix = widen `MONEY_RE` to allow a leading `.` and treat `MM`→million, with characterization tests first. | none | **DONE (2026-06-06).** `MONEY_RE` restructured to two alternatives: normal form (groups 1+2) and leading-decimal form (group 3). `MM` added to magnitude alternation before `M` (greedy); `mm: 1e6` added to `MAGNITUDE`. Bug-hunt-pass-13 characterization test replaced with passing assertions: `$.5M` → `500000.00`, `$.75M` → `750000.00`, `$1.5MM` → `1500000.00`, `$2MM` → `2000000.00`. 5 new tests; 505/505 green. |
 | N11 | **Per-change "copy this change" affordance** — a capture manager triaging an amendment under deadline often pastes a single critical change into an email/Teams to a teammate ("did you see L.3 moved the due date?"). Today the only copy paths are the whole-diff text/markdown export. A per-`ChangeCard` "copy" button (plain + markdown) that includes the section heading, before/after, and the disclaimer line would match the real triage workflow. | none | **DONE (2026-05-30).** Per-`ChangeCard` Copy button -> `formatChangeForClipboard` (pure, tested): critical tag + section + reasons + before/after + clause + canonical disclaimer; clipboard write with graceful fallback + a "✓ Copied" confirmation. 3 tests. |
 | N12 | **Empty-but-warned clarity** — when extraction produced warnings AND zero changes, the empty state already distinguishes "identical" from "extraction may be incomplete" (verified in DiffView). A top-tier touch: when confidence is low, surface a one-line, non-advisory "the source PDFs looked complex; consider re-checking against the originals" *as a reporting statement* tied to the existing confidence stat, not a new modal. | none | **DOWNGRADED (self-audit, 2026-05-30).** Already substantially delivered: the engine emits a low-confidence *warning* ("Extraction confidence is N% — lower than typical for clean text PDFs.", surfaced in the warnings list + exports), and the Confidence stat now explains the implication accessibly (post-N8). A new message would duplicate existing, non-advisory messaging. No work unless real usage shows the warning is missed. |
 | N13 | **Section-anchored deep links within a diff** — for a long amendment, a "jump to section L / M / pricing" mini-nav above the change list (the section buckets already exist in the filter bar). Turns the existing `availableSections` data into one-click navigation, a real time-saver on a 200-change amendment. | none | **DOWNGRADED (self-audit, 2026-05-30).** The existing section *filter* bar already gives one-click access to any section's changes; a scroll-to mini-nav is a marginal scroll-vs-filter distinction, not a real new capability. Not worth building over the filter. Revisit only if a real >150-change diff shows the filter is insufficient (pairs with N5). |
-| N14 | **Solicitation-number mismatch guard** — `solicitationId` is extracted + displayed but never *compared* between the two docs. If a user accidentally selects amendments of DIFFERENT solicitations (easy with similar filenames), the tool produces a misleading all-changed diff with no warning. A non-blocking, non-advisory reporting warning ("These documents report different solicitation numbers: X vs Y.") when both IDs are present and differ — mirroring the existing low-confidence warning pattern (`engine.ts`) — is a genuine wrong-document safety net. | none | **POLISH — logged 2026-05-31, NOT rushed at window-close.** Has a false-positive dimension (extracted solicitation IDs can vary across amendments / OCR; normalize + compare, and validate against real amendment pairs that it doesn't false-warn on the SAME solicitation). Non-blocking so low harm, but design it (normalization + a real-pair check) rather than rush a new user-facing warning in the final minutes. Mirrors the safe low-confidence-warning precedent. |
+| N14 | **Solicitation-number mismatch guard** — `solicitationId` is extracted + displayed but never *compared* between the two docs. If a user accidentally selects amendments of DIFFERENT solicitations (easy with similar filenames), the tool produces a misleading all-changed diff with no warning. A non-blocking, non-advisory reporting warning ("These documents report different solicitation numbers: X vs Y.") when both IDs are present and differ — mirroring the existing low-confidence warning pattern (`engine.ts`) — is a genuine wrong-document safety net. | none | **DONE (2026-06-06).** `extractSolicitationId()` added to `validate.ts` (conservative regex on "Solicitation No./Number", "RFP/RFQ No./Number" labels; scans first 2000 chars; normalizes: uppercase + strip whitespace; `[ \t]` only in ID char-class to prevent cross-line greedy capture). Wired into both `pdfExtractor.ts` and `docxExtractor.ts` (`solicitationId` on metadata). Mismatch guard in `engine.ts` emits a `pushUnique` warning when both IDs are non-null and differ. 12 new tests (extractSolicitationId happy-path, no-match, normalization, depth-limit; engine: mismatch fires / same-ID silent / one-null silent). 503/503 green. |
+| N15 | **Sign-before-dollar in `aggressiveNormalize`** (5.7.5 bug-hunt, 2026-06-06): `"-$5,000"` and `"$5,000"` normalized to the same string because `isLeadingSign` only fired when `next` was a digit, not `"$"`. Consequence: `isListOrdinalOnlyChange("2. Pay -$5,000.", "3. Pay $5,000.")` incorrectly returned `true` — a real value change (sign removed from a dollar amount) was silently suppressed. | none | **DONE (2026-06-06).** `isLeadingSign` extended: `next === "$"` added alongside `/\d/.test(next)`. Now `"-$5,000"` → `"-$5000"` (sign preserved) ≠ `"$5,000"` → `"$5000"`. Red test added first, then fix; 35/35 suppress tests pass, 488/488 full suite green. |
+| N16 | **Page-limit bare-paren form missed** (5.7.5 bug-hunt, 2026-06-06): `PAGE_LIMIT_RE` had `(?:[a-z]+\s+\()?(\d{1,4})\)?` — the opening `\(` was inside the "spelled-out word" optional group, so `"not to exceed (30) pages"` (no spelled-out word before paren) produced no PAGE_LIMIT anchor. The change was still CRITICAL via SUBMISSION_INSTRUCTIONS, but with the generic "Submission instructions changed." reason rather than the specific "A page limit changed." reason. | none | **DONE (2026-06-06).** `PAGE_LIMIT_RE` split group: `(?:[a-z]+\s+)?\(?(\d{1,4})\)?` — word-group and opening-paren are now independent optionals. "not to exceed (30) pages", "limited to (50) pages", "page limit: (75) pages" all now produce PAGE_LIMIT anchors. Red test → fix; 3 new test cases, 490/490 full suite green. |
 
-Net: the unblocked items remain zero-cost. **Done:** N1, N2, N6, N8, N9, N11
+**5.7.4 "nothing is done" session (2026-06-06):** 20 POLISH findings from full
+product re-review. Implemented immediately (7 tiny/small, no human gate):
+- **N-A2**: Unified copy-feedback flash duration (`COPY_FEEDBACK_FLASH_MS = 2000ms`
+  constant; was 1500ms in ChangeCard vs 2500ms in Summary). 490 tests.
+- **N-A4**: Context-aware empty-state when Critical filter active → "No critical
+  changes match the current filters. Switch to 'All'..."
+- **N-A5**: SAM.gov download errors categorized: timeout (AbortError) → retry hint;
+  4xx → "file may have been removed"; 5xx → "server returned an error".
+- **N-A8**: LicenseChip grace-period countdown: "Trial expired · 5d grace left"
+  or "Grace period ends today" when <24h. Uses existing gracePeriodSecondsLeft.
+- **N-A9**: Dynamic aria-label on "Mark reviewed" toggle: "Unmark as reviewed"
+  when aria-pressed=true (was "✓ Reviewed" — screen readers couldn't tell the action).
+  Test updated to use the new accessible name.
+- **N-A11**: File-format error conversion hints: .doc → "File → Save As → .docx";
+  .txt → "upload the PDF directly". Test pins the conversion hint text.
+- **N-A13**: Copy Markdown tooltip expanded to name Teams and "any markdown-aware
+  app" instead of just Slack/GitHub/Notion.
+- **N-A20**: Onboarding card gains a "Ready?" CTA paragraph pointing to sample diff.
+- **N-A21 (DONE 2026-06-06)**: Filter result count — when any filter is active and
+  narrows the list, shows "X of N changes" next to the reviewed counter. Prevents the
+  "did I filter everything out?" confusion when text or section filter is active. 3 new
+  tests in DiffView.test.tsx (counter shows / hidden when no filter / hidden when all match).
+- **N-A14**: FAQ entry added: "BidDiff flagged something as critical but my team
+  doesn't think it matters" — use Mark reviewed; report false positives.
+
+**Queued POLISH (5.7.4 findings):** None remaining (unblocked). N18 DONE 2026-06-06.
+Still gated: N-A3 (reviewed card visual contrast — browser), N-A7 (OCR consent
+requires OCR implementation), N-A12 (contrast verification — browser), N-A16
+(store listing accuracy — human), N-A19 (section jump mini-nav — optional).
+
+Net: the unblocked items remain zero-cost. **Done:** N1, N2, N6, N8, N9, N10, N11, N14, N15, N16, N17, N18,
+N-A2, N-A4, N-A5, N-A8, N-A9, N-A10, N-A11, N-A13, N-A14, N-A20, N-A21.
 (+ N10 characterized, two edge cases logged). **Downgraded** (the capability
 already exists or the delta is marginal, verified by self-audit): N12, N13.
 **Queued POLISH:** N3 (generator done; human-gated Word-render verify before
-the button is wired — NEED #9), N5 (speculative virtualization), N10 (money
-edge cases), **N14 (solicitation-number mismatch guard — new 2026-05-31)**.
+the button is wired — NEED #9), N5 (speculative virtualization). No further
+unblocked POLISH items as of 2026-06-06.
 **Gated:** N7 (positioning decision). N4 dropped. "Done" remains
 provisional — the list grew this session rather than shrank, which is the
-point of 5.7.4. (The single highest-value non-gated POLISH across BOTH lists is
-the list-renumbering noise fix — coverage-obs #8 — flagged in `brain/STATE.md`.) (Reconciled 2026-05-31: the N1 row and this summary had
+point of 5.7.4. (Reconciled 2026-05-31: the N1 row and this summary had
 drifted — N1 was shipped but tabled as "Queued", and N11–N13 were mislabelled
 "new/queued" when N11 was Done and N12/N13 Downgraded.)
 

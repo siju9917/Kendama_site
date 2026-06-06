@@ -18,10 +18,10 @@
  * The order of rules is preserved verbatim from the original branching
  * implementation so reasons emit in the same order (corpus tests lock this).
  *
- * The CRITICAL severity threshold: any matching rule. Rules 1–6:
+ * The CRITICAL severity threshold: any matching rule. Rules 1–7:
  *   1. date/deadline · 2. page-limit/format · 3. FAR/DFARS clause
  *   add/remove/modify · 4. evaluation criteria · 5. CLIN structure/values ·
- *   6. attachment add/remove.
+ *   6. attachment add/remove · 7. set-aside / NAICS / size-standard changes.
  */
 import type { Anchor } from "../model/types.js";
 import type { ChangeCategory, ChangeType, Severity } from "./types.js";
@@ -92,6 +92,13 @@ export const CRITICAL_RULES: ReadonlyArray<CriticalRule> = [
   {
     matches: (i) => i.category === "ATTACHMENTS" && (i.changeType === "INSERT" || i.changeType === "DELETE"),
     reason: (i) => (i.changeType === "INSERT" ? "An attachment was added." : "An attachment was removed."),
+  },
+  // 7. Set-aside / NAICS / size-standard (FAR Part 19 / FAR 4.6)
+  // A change to set-aside designation or NAICS code determines who is eligible
+  // to bid — a set-aside change can disqualify all large businesses outright.
+  {
+    matches: (i) => hasAnchor(i.anchors, "SET_ASIDE") && isAddRemoveModify(i.changeType),
+    reason: () => "A set-aside designation, NAICS code, or size standard changed.",
   },
 ];
 

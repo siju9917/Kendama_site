@@ -210,18 +210,22 @@ export function detectDates(text: string): Anchor[] {
 }
 
 // ---------- Money ----------
-// Captures a dollar amount, an optional decimal of any length, and an
-// optional magnitude suffix (K / M / B / thousand / million / billion).
-// Federal solicitations routinely state ceilings as "$1.5M" or
-// "$2.3 million"; without the suffix, "$1.5M" would have parsed as the
-// value $1 (the old pattern required cents to be exactly two digits and
-// ignored the suffix), mis-driving classification and the anchor value.
+// Captures a dollar amount with optional decimal and magnitude suffix.
+// Two forms:
+//   - Normal: leading digits (optional commas) then optional decimal → groups 1+2
+//   - Leading-decimal: no leading digits, starts with "." → group 3
+// Magnitude: K/M/MM/B/thousand/million/billion — MM (accounting "millions")
+// is listed before M so the alternation is greedy (MM matches first where
+// both would apply). "MM" = 1,000,000 in US federal accounting notation.
+// Bug-hunt pass 13 (N10): "$.5M" and "$1.5MM" were not parsed. Fixed by
+// allowing leading-decimal form (group 3) and adding MM to magnitude.
 const MONEY_RE =
-  /\$\s?(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d+))?(?:\s?(K|M|B|thousand|million|billion))?\b/gi;
+  /\$\s?(?:(\d{1,3}(?:,\d{3})*|\d+)(?:\.(\d+))?|\.(\d+))(?:\s?(K|MM|M|B|thousand|million|billion))?\b/gi;
 
 const MAGNITUDE: Readonly<Record<string, number>> = {
   k: 1e3,
   thousand: 1e3,
+  mm: 1e6,
   m: 1e6,
   million: 1e6,
   b: 1e9,
@@ -233,9 +237,10 @@ export function detectMoney(text: string): Anchor[] {
   const out: Anchor[] = [];
   let m: RegExpExecArray | null;
   while ((m = MONEY_RE.exec(text)) !== null) {
-    const whole = m[1].replace(/,/g, "");
-    const frac = m[2] ?? "";
-    const mult = m[3] ? (MAGNITUDE[m[3].toLowerCase()] ?? 1) : 1;
+    // group 1+2: normal form ($1.5M); group 3: leading-decimal form ($.5M)
+    const whole = (m[1] ?? "0").replace(/,/g, "");
+    const frac = m[2] ?? m[3] ?? "";
+    const mult = m[4] ? (MAGNITUDE[m[4].toLowerCase()] ?? 1) : 1;
     // Normalize to a fixed "dollars.cents" string. The value is only
     // ever compared/displayed, so toFixed(2) rounding is sufficient and
     // keeps magnitudes (e.g. $1.5M → 1500000.00) comparable across
@@ -259,7 +264,7 @@ export function detectMoney(text: string): Anchor[] {
 // followed by the authoritative digit in parentheses. The optional group is
 // skipped for the plain "30 pages" form, so existing matches are unaffected.
 const PAGE_LIMIT_RE =
-  /(?:not\s+(?:to\s+)?exceed|limited\s+to|no\s+more\s+than|maximum\s+of)\s+(?:[a-z]+\s+\()?(\d{1,4})\)?\s+pages\b|page\s+limit[:\s]+(?:of\s+)?(?:[a-z]+\s+\()?(\d{1,4})\)?\s+pages\b/gi;
+  /(?:not\s+(?:to\s+)?exceed|limited\s+to|no\s+more\s+than|maximum\s+of)\s+(?:[a-z]+\s+)?\(?(\d{1,4})\)?\s+pages\b|page\s+limit[:\s]+(?:of\s+)?(?:[a-z]+\s+)?\(?(\d{1,4})\)?\s+pages\b/gi;
 
 export function detectPageLimits(text: string): Anchor[] {
   PAGE_LIMIT_RE.lastIndex = 0;
@@ -281,23 +286,63 @@ export function detectPageLimits(text: string): Anchor[] {
 
 // ---------- CLIN ----------
 // Conservative — emitted only when the context permits (caller controls).
-
-const CLIN_RE = /\bCLIN\s*0*(\d{1,4})\b/g;
+//
+// Sub-CLINs (per DFARS 204.71 / DoD pricing PSFR guide) use the format
+// XXXX + YY where XXXX is the 4-digit parent CLIN and YY is a 2-letter
+// sub-line-item designator (0001AA, 0001AB, ...). "SubCLIN" is also used.
+// Detecting sub-CLINs ensures that pricing-structure changes to sub-line
+// items are routed to PRICING_CLINS and flagged critical (rule 5).
+const CLIN_RE = /\b(?:Sub)?CLIN\s*0*(\d{1,4})([A-Z]{2})?\b/gi;
 
 export function detectClins(text: string): Anchor[] {
   CLIN_RE.lastIndex = 0;
   const out: Anchor[] = [];
   let m: RegExpExecArray | null;
   while ((m = CLIN_RE.exec(text)) !== null) {
+    const base = m[1].padStart(4, "0");
+    const suffix = m[2] ? m[2].toUpperCase() : "";
     out.push({
       type: "CLIN",
       raw: m[0],
-      normalized: m[1].padStart(4, "0"),
+      normalized: base + suffix,
       charStart: m.index,
       charEnd: m.index + m[0].length,
     });
   }
   return out;
+}
+
+// ---------- Set-aside / NAICS ----------
+// A set-aside change is one of the highest-impact changes a solicitation
+// amendment can make: it determines WHO is eligible to bid. FAR 19.501-19.507
+// defines the set-aside designations; FAR 4.6 governs NAICS codes. Any block
+// containing these indicators whose text changes is flagged critical (rule 7
+// in critical.ts).
+//
+// Detection is conservative: the "set-aside" keyword (with/without hyphen),
+// NAICS codes (4–6 digit), and size-standard phrases are the common indicators
+// in solicitation cover pages and Section H. False-positive risk is low because
+// these terms are distinctive in the federal procurement context.
+// Only the hyphenated "set-aside" form is matched — not the space-separated
+// verb form ("please set aside time for questions"). In federal procurement
+// documents, the designation is always "Set-Aside" or "set-aside" (hyphenated).
+const SET_ASIDE_RE =
+  /\bset-aside\b|\bNAICS\s+(?:code\s*[:–-]?\s*)?\d{4,6}\b|\bsize\s+standard\b/gi;
+
+export function detectSetAside(text: string): Anchor[] {
+  SET_ASIDE_RE.lastIndex = 0;
+  const out: Anchor[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = SET_ASIDE_RE.exec(text)) !== null) {
+    out.push({
+      type: "SET_ASIDE",
+      raw: m[0],
+      normalized: m[0].toLowerCase().replace(/\s+/g, " "),
+      charStart: m.index,
+      charEnd: m.index + m[0].length,
+    });
+  }
+  return dedupSpans(out);
 }
 
 // ---------- Section references ----------
@@ -356,6 +401,7 @@ export function detectAllAnchors(text: string, ctx: DetectorContext = {}): Ancho
     ...detectPageLimits(normalized),
     ...(ctx.allowClin ? detectClins(normalized) : []),
     ...detectSectionRefs(normalized),
+    ...detectSetAside(normalized),
   ];
   return sortAnchors(dedupSpans(all));
 }

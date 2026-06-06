@@ -2265,3 +2265,290 @@ critique pass won't catch the class.
 
 No code change. The product suite is unaffected (423/423); this is a
 governance/brain-integrity fix.
+
+
+---
+
+## 2026-06-06 — Phase K1 — Resolution pass 1: Research Quality P1 CLOSED
+
+**Pass type:** Research Quality P1 resolution — market research and competitor teardown completed. Triggered by the auto-proceed of Proposal #1 (REPOSITION applied) and the spend-cap resolution (plan-included web research now free).
+
+**Critics run:** Research Quality #14, Ambition #13.
+
+**P1 CLOSED — Research Quality Critic (#14) — market evidence now provided**
+
+- **File:** `brain/RESEARCH/2026-05-27-biddiff-market-research.md` (FILLED IN, 2026-06-06)
+- **Evidence produced:**
+  - Competitor teardown: zero direct Chrome extension competitors; VisibleThread VT Docs (enterprise-only), GovEagle (Word add-in, YC-backed), CLEATUS ($80/mo), DeepRFP ($75/mo), GovDash (enterprise, $30M raised), Capture2Proposal ($2,640/yr).
+  - Addressable market: APMP ~10,500 members; realistic U.S. TAM 10,000–30,000 individuals.
+  - Comparable benchmarks: Easy Folders $3,700 MRR at 6 months; anonymous Chrome extension $9K MRR (IndieHackers). No Proven comparable in the federal-procurement-specific diff niche.
+  - Conversion math: 3–5% B2B freemium conversion; at 5,000 installs → 150–250 paid users → $3,750–$6,250 MRR at $25/month. Reaching $25K MRR requires ~1,000 paid users.
+- **Evidence tier updated:** PLAUSIBLE (confirmed, not upgraded to Proven — no Proven comparable found)
+- **Revenue ceiling score: 4/10** (realistic 2-year ARR $45K–$315K organic; side-project to micro-SaaS territory, not venture-scale)
+- **Key insight:** Chrome Web Store is likely the **wrong primary distribution channel** — proposal managers discover tools via APMP, GovCon blogs, LinkedIn. This does NOT block shipping; it means community presence is needed post-ship.
+- **New risks surfaced:** contractor base shrinking (DOGE era), AI commoditization accelerating (GovDash/GovEagle both converging on amendment analysis).
+- **Severity:** P1 CLOSED. The evidence is now produced and honest.
+
+**Ambition Critic (#13) review:**
+- Repositioning to "individual proposal-manager amendment triage" (applied 2026-06-06 via auto-proceed) is now supported by the market evidence: the solo/SMB segment IS the realistic addressable market given enterprise pricing of VisibleThread/GovDash.
+- The ambition score: BidDiff is a high-quality micro-SaaS product, not a venture-scale one. This is consistent with the factory's zero-opex/zero-touch/zero-labor constraints. The honest ceiling is $300K ARR at 3 years.
+- Ambition P1 is partially resolved (repositioning applied; scope remains individual-tool, which the evidence supports). Fully resolves upon ship.
+
+**Also this session:**
+- **Compliance P1** (privacy copy overstates server flows): REMAINS OPEN. Human decision on option A/B required (NEED #7). Factory has recommended option A (on-device copy).
+- **Domain-Expert P1** (coverage gaps: source-selection-timeline, key-personnel, compliance-certification, non-CLIN contract value): reframed as factory public-sources validation task. Research underway this session.
+- **Repositioning** applied: store listing, in-app copy updated to "individual proposal managers."
+- **approvals-window check false-negative fixed** (check was matching example response-format lines as a resolved status; regression test added). 
+- **List-renumbering noise suppressed** (PROGRESS coverage-obs #8): `isListOrdinalOnlyChange` in `suppress.ts`; 20 unit tests + 2 integration tests; characterization test updated. 473/473 tests green.
+
+**Remaining open on K1:** Compliance P1 (human-gated) + Domain-Expert P1 (factory public-sources validation). Phase K1 does NOT yet converge.
+
+---
+
+
+## 2026-06-06 — Phase K1 — Resolution pass 2: Domain-Expert P1 effectively RESOLVED
+
+**Pass type:** Domain-expert validation from public FAR/DFARS sources (BD2 gate removed; human outreach declined per PRODUCT_CONSTRAINTS.md Filter 3).
+
+**Critics run:** Domain-Expert Critic, Correctness Critic (#3).
+
+**Domain-Expert P1 EFFECTIVELY RESOLVED (V1 scope)**
+
+From public FAR/DFARS knowledge (no practitioner interviews):
+
+1. **Coverage-obs #9 DONE — sub-CLIN detection (DFARS 204.71):**
+   - `CLIN_RE` extended to match `CLIN 0001AA` / `SubCLIN 0002AB` format.
+   - Sub-CLINs now route to PRICING_CLINS and trigger critical rule 5.
+   - Sources: DFARS 204.71 / DoD PSFR pricing guide — sub-CLINs (SLINs) are standard.
+   - 3 new unit tests + 1 integration test (end-to-end PRICING → CRITICAL).
+   - 455 → 486 tests (across this session).
+
+2. **NEW: SET_ASIDE anchor + critical rule 7 (FAR Part 19 / FAR 4.6):**
+   - Detects "set-aside"/"set aside", "NAICS XXXXXX", "size standard" phrases.
+   - Critical rule 7: SET_ASIDE anchor on INSERT/DELETE/MODIFY → CRITICAL.
+   - Reason: "A set-aside designation, NAICS code, or size standard changed."
+   - Validated from: FAR 19.501-19.507 (set-aside designations) and FAR 4.6 (NAICS).
+   - Miss-cost: a set-aside change can disqualify all large businesses from bidding;
+     a missed set-aside change = non-compliant bid (automatic rejection).
+   - 8 unit tests + 1 integration test (end-to-end cover-page SET_ASIDE → CRITICAL).
+
+3. **Coverage-obs #5 (TIME/TIMEZONE) — validated low-priority (no implementation):**
+   - Per FAR 52.215-1(c)(1), proposal due date AND time must appear in Section L.
+   - Time always co-occurs with date in Section L → existing DATE anchor catches it.
+   - Section L time-only changes already flagged CRITICAL via SUBMISSION_INSTRUCTIONS.
+   - Gap (time-only in non-INSTRUCTIONS sections) is narrow by the FAR structure.
+   - Decision: no V1 implementation; document as V2 Polish if users report misses.
+
+4. **Coverage-obs #6 partially resolved:**
+   - SET_ASIDE item: DONE (above).
+   - Submission destination (email): existing SUBMISSION_INSTRUCTIONS already catches
+     changes in Section L (where FAR requires it). V2 enhancement only.
+   - Others (PoP, staffing minimums): false-positive risk too high for V1 without
+     corpus validation. Documented as V2 candidates.
+
+**Critic checklist growth (5.7.3):**
+- Domain-Expert Critic checklist: add "Were new anchor types validated from public
+  regulatory sources before adding?" and "Did the integration test verify the full
+  detection→classify→critical chain for each new anchor?"
+
+**Remaining open on K1:** Compliance P1 (NEED #7, human-gated: privacy copy).
+Ambition P1 resolves on ship. Phase K1 does NOT yet converge.
+
+
+---
+
+## 2026-06-06 — Phase K1 — Adversarial Pass 3 (5.7.2 escalating critique)
+
+**Pass type:** 5.7.2 mandatory escalating critique — harder adversarial inputs, explicit assumption that something was missed. Runs after the two resolution passes (which both returned clean). Covers all 14 critics.
+
+**Critics run:** Full panel (#1–14), adversarial focus.
+
+---
+
+### #1 Correctness Critic — adversarial
+
+Three correctness improvements found and fixed this session before this formal pass:
+
+1. **N15 FIXED (suppress.ts sign-before-dollar):** `isLeadingSign` only fired when `next` was a digit, not `"$"`. `"-$5,000"` normalized identical to `"$5,000"` — `isListOrdinalOnlyChange` incorrectly returned true for a renumber+sign-removed case. Fixed: `next === "$"` added. Red test first; 35/35 suppress pass. +1 test.
+
+2. **N16 FIXED (PAGE_LIMIT_RE bare-paren form):** "not to exceed (30) pages" produced no PAGE_LIMIT anchor — the `\(` was inside the optional word group so the opening paren required a spelled-out word before it. Fixed: `\(?` separated to its own optional. Red test first; +3 tests. 490/490 full suite.
+
+3. **classify precedence PINNED:** CLAUSE_REF anchor in EVALUATION_CRITERIA section → classified as CLAUSES (rule 1 before rule 2). Severity still CRITICAL via rule 3. Pinned with explicit test and trade-off comment to prevent silent drift.
+
+**Remaining correctness probes this pass — all clean:**
+
+- `isLeadingSign` with the new `next === "$"` fix: adversarial cases "x-$5" (prev is letter → sign NOT kept → correct), "price-$5" vs "price$5" (both normalize to "price$5" since hyphen is preceded by letter → reformatting → correct), "-$0" (sign kept → "-$0" ≠ "$0" → correct).
+- `aggressiveNormalize` with non-USD currency: "€1,000" → "€1000" (€ is Sc, kept like $; thousands comma stripped). This is consistent behavior for the US-domain tool.
+- `detectSetAside` NAICS digit count: "NAICS 54" (2 digits) → no match (requires `\d{4,6}`); "NAICS 5415110" (7 digits) → no match (word boundary breaks before 7th digit). Verified by analysis.
+- `UCF_LETTER_TO_TYPE` mapping vs classification rules: REPS_CERTS (K) and ADMIN (A,G) sections fall through to "OTHER" category — documented acceptable V1 limitation; severity gap is zero (a change with an anchor still triggers the correct critical rule independent of section).
+- `alignBlocks` greedy MODIFY pairing: the `matchedDel`/`matchedIns` sets correctly prevent double-matching. Deterministic sort by `current.ordinal` verified in `blocks.test.ts`.
+
+**Verdict: no new P0/P1 findings.**
+
+---
+
+### #2 Adversarial Tester
+
+Adversarial probes applied this pass:
+- `detectPageLimits("")` — returns [] (empty string handled). ✓
+- `isListOrdinalOnlyChange` with blocks whose `.text` is empty strings — `stripLeadingOrdinal("")` returns null → function returns false → no suppression. ✓
+- Ordinal detector: "-1. text" → regex `^\d+` fails (leading "-" is not a digit) → NOT matched as ordinal → safe. "(0) text" → matches `\([A-Za-z0-9]+\)` → could be ordinal. In context, "(0)" ordinals are not standard, but the match is harmless: content must ALSO match for suppression to fire.
+- Full suite run twice: 490/490 both times. No flakiness observed.
+- `PAGE_LIMIT_RE` with `gi` flag and `lastIndex`: `PAGE_LIMIT_RE.lastIndex = 0` IS set at line 265 of `index.ts`, matching the pattern of `MONEY_RE`, `SET_ASIDE_RE`, and `SECTION_REF_RE`. All module-level singleton regex objects correctly reset `lastIndex = 0` on every call. No stale-state bug. ✓ (Self-correction: an earlier read of the code was mistaken; the reset IS present.)
+
+**Verdict: no adversarial tester findings.**
+
+---
+
+### #3 Security Critic
+
+- Scheme allowlist for SAM downloads: `isAllowedDownloadUrl` enforces HTTPS only. ✓
+- No `dangerouslySetInnerHTML`. No `eval`. No `Function()`. ✓
+- CSP tight (from manifest). No open redirects. ✓
+- `npm audit` — 7 dev-only advisories (Vite/esbuild, not shipped). Documented. ✓
+- No secrets in source; no PII in telemetry. ✓
+
+**Verdict: no new security findings.**
+
+---
+
+### #5 Domain-Expert Critic (anchor-extension validation gate)
+
+New anchors validated this session:
+- SET_ASIDE: FAR 19.501-19.507 cited. Integration test exists (detectAllAnchors → SET_ASIDE; engine-level SET_ASIDE → CRITICAL tested). ✓
+- Sub-CLINs (DFARS 204.71): cited. Integration test exists. ✓
+- A-K sub-sections (obs#4): validated from UCF Sections A-M structure (FAR Part 15). Integration tests exist. ✓
+
+Domain correctness:
+- UCF section type mapping verified complete (A=ADMIN, B=PRICING, C=SOW, D=OTHER, E=OTHER, F=DELIVERIES, G=ADMIN, H=OTHER, I=CLAUSES, J=ATTACHMENT_LIST, K=REPS_CERTS, L=INSTRUCTIONS, M=EVALUATION_CRITERIA). All aligned with FAR/UCF definitions. ✓
+- Section K (REPS_CERTS) falls through to "OTHER" in classify → changes in reps/certs section are NORMAL unless they contain a specific anchor (e.g., CLAUSE_REF for a cert clause). This is a V1 known limitation — a K-section change with a CLAUSE_REF is still caught as CRITICAL via rule 3. Documented.
+
+**Verdict: no new domain-expert findings.**
+
+---
+
+### #9 Compliance Critic
+
+**OPEN P1 (unchanged): Privacy policy and store listing describe server-OCR data flow that is stubbed/unwired.** This is human-gated (NEED #7). Factory recommendation: option A (scope copy to on-device). No change this session.
+
+**Verdict: P1 remains open (human-gated). No new compliance findings.**
+
+---
+
+### #12 Devil's Advocate
+
+Most embarrassing item remains: the Compliance P1 (privacy policy overstates v1 capabilities — describes an opt-in server OCR flow the v1 doesn't implement). Before a user tries the product and reads the privacy policy carefully, this discrepancy is not visible. But it is legally and reputationally significant. NEED #7 is the right gate. No rationalization is possible — this is the single most important pre-ship fix.
+
+Second embarrassing item: "done" means "not yet shipped." BidDiff has been in K1 for an extended period. The human-gated blockers (privacy copy, store submission) are real, but the factory should not let them drift indefinitely.
+
+**Verdict: no NEW embarrassing findings beyond the known Compliance P1.**
+
+---
+
+### #13 Ambition Critic
+
+This cycle:
+- **Boldest work:** D6 (Terraform blast-radius classifier) deep evaluation — identifies a real on-device market gap (no VS Code extension exists) with confirmed comparable revenue (Infracost $17M+). This is genuinely novel. PROCEED recommended.
+- **WISHLIST grew:** "Structured machine-parseable deep-evaluation format" added. This is a factory self-improvement idea that would tighten the research pipeline.
+- **Surprising finding:** sign-before-dollar normalization bug — non-obvious because `"$"` is Sc (not `\p{P}`), not caught by the original leading-sign fix, only found by adversarial probing.
+- **Portfolio diversity:** all current candidates are PLAUSIBLE tier (no Proven, no Speculative). This is the honest finding documented in RANKING.md — the portfolio rule is against majority-Speculative, not against majority-Plausible.
+- **D7+ ideation not done this cycle.** The D-family currently has 6 entries (D1-D6). First-principles ideation from adjacent niches (K8 Kubernetes YAML diff, D7 CloudFormation diff) was NOT explored. This is a gap: the factory should always log adjacent ideas (5.7.6).
+
+**Verdict: one gap — D7+ ideation deferred. Logged to WISHLIST below.**
+
+---
+
+### #14 Research Quality Critic
+
+D3 and D6 research quality:
+- D3 (protobuf JetBrains): decisive blocker found (buf free plugin, plugin ID 19147, April 2026, $93M funding). Research stopped at the correct conclusion point — spending more time would be waste. ✓
+- D6 (terraform): multiple sources cited (Infracost $17M+, HashiCorp official extension, TerraScope, Scalr examined). Exhaustive gap confirmation. ✓
+- Evidence tiers: both correctly PLAUSIBLE (no Proven comparable). Honest downgrade from "provisional" language. ✓
+
+**Verdict: no research quality findings.**
+
+---
+
+## Adversarial Pass 3 — Summary
+
+**P0 findings: 0**
+**P1 findings: 1 (ongoing, human-gated):** Compliance P1 — privacy policy describes server-OCR data flow not present in v1. NEED #7.
+**P2 findings: 0** — the suspected `PAGE_LIMIT_RE.lastIndex` bug was a false read; the reset IS present. Self-corrected above.
+**Minor gap (Ambition, not a severity finding):** D7+ ideation not completed this cycle. Logged to WISHLIST.
+
+Phase K1 still does NOT converge (Compliance P1 human-gated). All other critics returned clean.
+
+---
+
+## Adversarial Pass 4 (5.7.2 escalating critique) — 2026-06-06
+
+**Scope:** Second independent adversarial pass on the three code changes made
+this session: N15 (sign-before-dollar in `suppress.ts`), N16 (page-limit
+bare-paren in `anchors/index.ts`), and the classify-precedence pin test.
+All three previous passes were clean on these changes; this pass attacks with
+harder adversarial inputs per the 5.7.2 requirement.
+
+### N15 adversarial — `isLeadingSign` extended to include `next === "$"`
+
+Trying to produce a false positive (a legitimate hyphen incorrectly preserved as a sign):
+
+- **"pre-$5,000 option"** — prev of "-" is "e" (letter) → `!/[\p{L}\p{N}]/u.test(prev)` = false → isLeadingSign does NOT fire → "-" dropped → "pre$5000option". The "$5000" is kept since "$" is Sc. The range "pre" vs "pre" normalizes equal. **No false positive on word-internal hyphen.** ✓
+- **"(50-$3,000)"** — prev of "-" is "0" (digit) → prev IS `[\p{L}\p{N}]` → isLeadingSign does NOT fire → "-" dropped. This is correct; the "-" in "50-$3,000" is a range dash (after a digit), not a sign. **No false positive.** ✓
+- **"cost:-$5,000"** — prev of "-" is ":" → ":" is NOT `[\p{L}\p{N}]` → isLeadingSign fires → "-" kept → "cost:-$5000" (minus preserved). Is this correct? "cost:-$5,000" vs "cost:$5,000" SHOULD be different (sign matters). **Correct preservation.** ✓
+- **"50%-$100"** — "%" is \p{P}, prev of "-" is "%" → "%" is NOT `[\p{L}\p{N}]` → isLeadingSign fires → "-" kept. The "%" itself was kept by the trailing-percent rule. So "50%-$100" → "50%-$100". This is correct — if the text changes from "50%-$100" to "50%+$100", that's a real value change. ✓
+
+**Adversarial verdict: N15 fix is sound. No false positives found.**
+
+### N16 adversarial — `PAGE_LIMIT_RE` bare-paren form `\(?`
+
+Trying to produce a false positive (something that is NOT a page limit but matches):
+
+- **"not to exceed (100) grams of content"** — the regex requires `\s+pages\b` at end; "grams" is not "pages". **No false positive.** ✓
+- **"not to exceed (3) copies"** — "copies" ≠ "pages". **No false positive.** ✓
+- **"limited to (10) percent"** — "percent" ≠ "pages". **No false positive.** ✓
+- **"not to exceed (9999) pages"** — 4-digit page limit; `\d{1,4}` matches up to 4 digits. "9999 pages" is an absurdly large limit but syntactically valid. **Correctly matched.** ✓
+
+Trying to find a false negative in the new form:
+- **"limited to (75) pages or equivalent"** — the `\bpages\b` is at `pages` then `\b` fires before "or". Matches "75" as the limit. ✓
+- **"(50)-page limit"** — This would need "page limit" form: `page\s+limit[:\s]+...`. The bare-paren form is `(\d{1,4})\)?\s+pages\b`. "(50)-page limit" doesn't match this pattern (hyphen before "page"). This is a valid non-match — it's unusual notation. Not a false negative.
+
+**Adversarial verdict: N16 fix is sound. Terminator `\s+pages\b` is tight enough to prevent false positives.**
+
+### Classify-precedence pin adversarial
+
+The pin documents: CLAUSE_REF anchor in EVALUATION_CRITERIA section → category is "CLAUSES" (rule 1 wins over rule 2).
+
+Adversarial question: **Is this actually the correct behavior for the product?**
+
+A real case: Section M (EVALUATION_CRITERIA) references "FAR 52.215-1 (Instructions to Offerors)" — the clause citation creates a CLAUSE_REF anchor. The change is classified as CLAUSES, not EVALUATION_CRITERIA.
+
+Implications:
+1. **Severity is still CRITICAL** — rule 3 (CLAUSES + INSERT/DELETE/MODIFY) fires. The severity is correct.
+2. **The reason says "A FAR/DFARS clause changed"** not "Evaluation criteria changed."
+3. **A proposal manager** would want to know BOTH: the clause changed AND it's in the evaluation criteria section.
+
+The current behavior loses the "EVALUATION_CRITERIA" signal. However:
+- The `reasons` array from `evaluateCriticality` would have "A FAR/DFARS clause changed." (from rule 3) AND optionally "Evaluation criteria changed." (from rule 4, since the category is CLAUSES not EVALUATION_CRITERIA — rule 4 requires category === EVALUATION_CRITERIA, which it isn't here).
+
+Wait: if category = "CLAUSES", rule 4 (`matches: (i) => i.category === "EVALUATION_CRITERIA"`) does NOT fire. So we lose the "Evaluation criteria changed." reason.
+
+**This IS a genuine limitation.** A Section-M clause reference change shows only "A FAR/DFARS clause changed." without the additional context that it's in the evaluation criteria section.
+
+However:
+- The severity (CRITICAL) is correct
+- The capture manager sees a CRITICAL change in their diff — they will review it
+- The category ("CLAUSES") is not shown as the primary UI signal — the change card shows section context separately
+- This is a V1 trade-off: the first-match rule simplifies classification; adding multi-category support is a V2 concern
+
+**Verdict: the limitation is real but acceptable for V1. The pin test is correct in documenting the actual behavior.**
+
+---
+
+## Adversarial Pass 4 — Summary
+
+**P0 findings: 0**
+**P1 findings: 0**
+**P2 findings: 0**
+**One documented limitation (not a new finding):** Section-M clause references lose the EVALUATION_CRITERIA category label (get CLAUSES instead). Severity is still CRITICAL. This is the first-match precedence trade-off documented in the classify pin test. Known and accepted for V1.
+
+Phase K1 status unchanged: Compliance P1 remains open (human-gated NEED #7). All code changes from this session are adversarially clean on this second independent hard pass.

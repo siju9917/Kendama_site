@@ -23,7 +23,12 @@ export function LicenseChip({
     const tier = license.tier.charAt(0).toUpperCase() + license.tier.slice(1);
     label = `${tier} · active`;
   } else if (license.status === "grace") {
-    label = "Trial expired · grace";
+    const graceHours = Math.ceil((license.gracePeriodSecondsLeft ?? 0) / 3600);
+    const graceDays = Math.ceil(graceHours / 24);
+    label =
+      graceHours <= 24
+        ? `Grace period ends today — subscribe to keep working`
+        : `Trial expired · ${graceDays}d grace left`;
     upgrade = true;
   } else if (license.status === "expired") {
     label = "Subscribe to continue";

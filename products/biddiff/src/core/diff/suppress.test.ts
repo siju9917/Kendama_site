@@ -1,13 +1,16 @@
 /**
  * Tests for false-positive suppression (Phase 3.8).
  *
- * The load-bearing invariant: reformatting suppression must NEVER hide a
- * change that alters a numeric value. These tests pin both directions —
- * genuine reformatting is suppressed, value changes are not.
+ * Two suppression paths are tested:
+ *   1. isReformattingOnly — whitespace/punctuation/case normalization.
+ *   2. isListOrdinalOnlyChange — ordinal-prefix shift from list renumbering.
+ *
+ * Load-bearing invariant for both: NEVER hide a change that alters the
+ * actual content. Both are tested for the "suppress" and "don't suppress" directions.
  */
 import { describe, expect, it } from "vitest";
 import type { Block } from "../model/types.js";
-import { isReformattingOnly, aggressiveNormalize } from "./suppress.js";
+import { isReformattingOnly, isListOrdinalOnlyChange, aggressiveNormalize } from "./suppress.js";
 import { tokenize } from "../../shared/text.js";
 
 function block(text: string): Block {
@@ -113,5 +116,108 @@ describe("aggressiveNormalize — unit behavior", () => {
     expect(aggressiveNormalize("FAR 52.204—21")).toBe(ascii); // em-dash
     // A genuine clause-number change must NOT be unified away.
     expect(aggressiveNormalize("FAR 52.204-21")).not.toBe(aggressiveNormalize("FAR 52.204-25"));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isListOrdinalOnlyChange — list-renumbering noise suppression
+// ---------------------------------------------------------------------------
+//
+// Scenario: a Section-L numbered list has one item inserted at position 2.
+// Every item after it shifts ordinal by 1, producing spurious MODIFY changes
+// for items whose content is completely unchanged.  The suppressor should
+// fire for those, and NEVER fire when the non-ordinal content actually changed.
+
+const ordinalOnly = (a: string, b: string) =>
+  isListOrdinalOnlyChange(block(a), block(b));
+
+describe("isListOrdinalOnlyChange — should suppress (ordinal shifted, content same)", () => {
+  it("plain Arabic 'N. text' form (the most common case)", () => {
+    expect(ordinalOnly("2. Use 12-point font.", "3. Use 12-point font.")).toBe(true);
+    expect(ordinalOnly("3. Submit electronically.", "4. Submit electronically.")).toBe(true);
+  });
+
+  it("UCF sub-item 'L.N text' form (Section-L style, the headline PROGRESS case)", () => {
+    expect(ordinalOnly("L.2 Use 12-point font.", "L.3 Use 12-point font.")).toBe(true);
+    expect(ordinalOnly("L.12 Submit via SAM.", "L.13 Submit via SAM.")).toBe(true);
+  });
+
+  it("UCF sub-item with trailing dot 'L.N. text' form", () => {
+    expect(ordinalOnly("L.2. Use 12-point font.", "L.3. Use 12-point font.")).toBe(true);
+  });
+
+  it("parenthesised ordinal '(N) text' form", () => {
+    expect(ordinalOnly("(1) First requirement.", "(2) First requirement.")).toBe(true);
+  });
+
+  it("parenthesised alphabetic '(a) text' form", () => {
+    expect(ordinalOnly("(a) Submit form X.", "(b) Submit form X.")).toBe(true);
+  });
+
+  it("Arabic with paren '1) text' form", () => {
+    expect(ordinalOnly("1) First item.", "2) First item.")).toBe(true);
+  });
+
+  it("whitespace-only difference in content is still suppressed", () => {
+    // content differs only in whitespace (aggressiveNormalize handles it)
+    expect(ordinalOnly("2.  Use 12-point  font.", "3. Use 12-point font.")).toBe(true);
+  });
+});
+
+describe("isListOrdinalOnlyChange — must NOT suppress (content changed)", () => {
+  it("page-limit number changed alongside renumber", () => {
+    // The ordinal shifted AND the page limit changed — must surface.
+    expect(ordinalOnly("2. Page limit is 15 pages.", "3. Page limit is 20 pages.")).toBe(false);
+  });
+
+  it("money value changed alongside renumber", () => {
+    expect(ordinalOnly("1. Contract value $1.5M.", "2. Contract value $15M.")).toBe(false);
+  });
+
+  it("content fully changed (same ordinal shift)", () => {
+    expect(ordinalOnly("2. Submit form A.", "3. Submit form B.")).toBe(false);
+  });
+
+  it("no ordinal on either side — not our concern", () => {
+    // Plain paragraph with no leading ordinal.
+    expect(ordinalOnly("The contractor shall submit.", "The offeror shall submit.")).toBe(false);
+  });
+
+  it("no ordinal on PRIOR side", () => {
+    expect(ordinalOnly("Use 12-point font.", "3. Use 12-point font.")).toBe(false);
+  });
+
+  it("no ordinal on CURRENT side", () => {
+    expect(ordinalOnly("2. Use 12-point font.", "Use 12-point font.")).toBe(false);
+  });
+
+  it("same ordinals — this case would be EQUAL, not MODIFY", () => {
+    // Same ordinal: not our concern; the aligner would produce EQUAL anyway.
+    expect(ordinalOnly("2. Use 12-point font.", "2. Use 12-point font.")).toBe(false);
+  });
+
+  it("clause reference FAR XX.XXX-XXXX does NOT match as a list ordinal", () => {
+    // "52.204-21 applies" starts with digits.period but is a clause ref,
+    // not a list ordinal — the pattern requires a space after the ordinal so
+    // "52.204-21" (no space before the content part) does not match.
+    expect(ordinalOnly("52.204-21 applies.", "52.204-25 applies.")).toBe(false);
+  });
+
+  it("minus sign removed before dollar amount alongside renumber", () => {
+    // "-$5,000" and "$5,000" must NOT normalize equal: the minus sign changes
+    // the value. A renumber that also drops the sign is a real content change.
+    expect(ordinalOnly("2. Adjustment: -$5,000.", "3. Adjustment: $5,000.")).toBe(false);
+  });
+});
+
+describe("isListOrdinalOnlyChange — does NOT fire for FAR clause text changes", () => {
+  it("a real FAR clause paragraph change is not suppressed", () => {
+    // No leading list ordinal in typical clause text — must never suppress.
+    expect(
+      ordinalOnly(
+        "The Contractor shall comply with FAR 52.204-21.",
+        "The Contractor shall comply with FAR 52.204-25.",
+      ),
+    ).toBe(false);
   });
 });

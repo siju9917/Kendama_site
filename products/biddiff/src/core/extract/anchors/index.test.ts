@@ -7,6 +7,7 @@ import {
   detectMoney,
   detectPageLimits,
   detectSectionRefs,
+  detectSetAside,
   sortAnchors,
 } from "./index.js";
 import type { Anchor } from "../../model/types.js";
@@ -141,10 +142,42 @@ describe("money", () => {
       "1500000.00",
     ]);
   });
-  it("KNOWN LIMITATION (PROGRESS.md N10): no leading-dot or double-M support", () => {
-    // Documented, low-severity: a money miss still surfaces as a text diff.
-    expect(detectMoney("$.5M").length).toBe(0); // no leading zero → no match
-    expect(detectMoney("$1.5MM").map((x) => x.normalized)).toEqual(["1.00"]); // "MM" not recognized
+  it("parses leading-decimal form ($.5M — no leading zero before decimal)", () => {
+    expect(detectMoney("$.5M").map((x) => x.normalized)).toEqual(["500000.00"]);
+    expect(detectMoney("award ceiling of $.75M").map((x) => x.normalized)).toEqual(["750000.00"]);
+    expect(detectMoney("$.5").map((x) => x.normalized)).toEqual(["0.50"]);
+  });
+  it("parses double-M accounting notation ($1.5MM = $1.5 million)", () => {
+    expect(detectMoney("$1.5MM").map((x) => x.normalized)).toEqual(["1500000.00"]);
+    expect(detectMoney("ceiling not to exceed $2MM").map((x) => x.normalized)).toEqual(["2000000.00"]);
+  });
+  it("$1K parses to 1000.00 (magnitude suffix on bare integer)", () => {
+    expect(detectMoney("$1K total").map((x) => x.normalized)).toEqual(["1000.00"]);
+    expect(detectMoney("$500K base").map((x) => x.normalized)).toEqual(["500000.00"]);
+  });
+  it("$1,500K parses to 1500000.00 (commas + magnitude)", () => {
+    // Unusual but mathematically valid: $1,500K = $1,500 × 1,000 = $1.5M
+    expect(detectMoney("award of $1,500K").map((x) => x.normalized)).toEqual(["1500000.00"]);
+  });
+  it("$1.5MMM: triple-M suffix backtracks decimal — matches only $1", () => {
+    // MM fails \b (third M is a word char); M also fails \b (second M is a word char).
+    // The regex backtracks the optional decimal group: $1 matches with \b between
+    // the digit and the subsequent '.'. The value $1 is a "best effort" partial match.
+    // This is consistent behavior: $1.5MMM is not a valid notation; the anchor signals
+    // a money amount is present without claiming the full value.
+    expect(detectMoney("$1.5MMM").map((x) => x.normalized)).toEqual(["1.00"]);
+  });
+  it("KNOWN LIMITATION (PROGRESS.md obs #7): USD-prefix and spelled-out forms not parsed", () => {
+    // "$"-prefixed forms work; non-dollar-sign prefixes do not.
+    // Not changed: widening MONEY_RE to "USD"/"dollars" carries false-positive
+    // risk ("5 USD per line item", "5 million parameters") and the miss-cost
+    // is low (a USD amount change still surfaces as a plain text diff).
+    // These probe the US domestic-contract common cases:
+    expect(detectMoney("USD 5,000,000 ceiling").length).toBe(0);   // "USD" prefix
+    expect(detectMoney("5,000,000 USD").length).toBe(0);            // trailing currency code
+    expect(detectMoney("5 million dollars").length).toBe(0);        // spelled-out suffix
+    // Contrast: "$" + spelled-out magnitude suffix IS handled:
+    expect(detectMoney("$2.3 million").map((x) => x.normalized)).toEqual(["2300000.00"]);
   });
 });
 
@@ -180,6 +213,14 @@ describe("page limits", () => {
     expect(detectPageLimits("not to exceed 30 pages").map((x) => x.normalized)).toEqual(["30"]);
     expect(detectPageLimits("maximum of 40 pages").map((x) => x.normalized)).toEqual(["40"]);
   });
+
+  it("extracts the bare-parenthesized digit '(30) pages' form", () => {
+    // "not to exceed (30) pages" — no spelled-out word, just digits in parens.
+    // Less common but valid. The authoritative count is the digit inside parens.
+    expect(detectPageLimits("not to exceed (30) pages").map((x) => x.normalized)).toEqual(["30"]);
+    expect(detectPageLimits("limited to (50) pages").map((x) => x.normalized)).toEqual(["50"]);
+    expect(detectPageLimits("page limit: (75) pages").map((x) => x.normalized)).toEqual(["75"]);
+  });
 });
 
 describe("CLIN", () => {
@@ -189,6 +230,53 @@ describe("CLIN", () => {
   });
   it("ignores prose without CLIN token", () => {
     expect(detectClins("0001 alone").length).toBe(0);
+  });
+  it("matches sub-CLINs with 2-letter suffix (DFARS 204.71 format)", () => {
+    const a = detectClins("CLIN 0001AA and CLIN 0001AB are sub-line items.");
+    expect(a.map((x) => x.normalized)).toEqual(["0001AA", "0001AB"]);
+  });
+  it("matches SubCLIN keyword", () => {
+    const a = detectClins("SubCLIN 0002AA is an informational sub-line item.");
+    expect(a.map((x) => x.normalized)).toEqual(["0002AA"]);
+  });
+  it("parent CLIN and sub-CLINs are both detected", () => {
+    const a = detectClins("CLIN 0001 (base) has sub-items CLIN 0001AA and CLIN 0001AB.");
+    const norms = a.map((x) => x.normalized);
+    expect(norms).toContain("0001");
+    expect(norms).toContain("0001AA");
+    expect(norms).toContain("0001AB");
+  });
+});
+
+describe("SET_ASIDE", () => {
+  it("matches 'set-aside' keyword (hyphen form)", () => {
+    const a = detectSetAside("This acquisition is a Total Small Business Set-Aside.");
+    expect(a.some((x) => x.type === "SET_ASIDE")).toBe(true);
+  });
+  it("does NOT match 'set aside' (space form / general verb — would be a false positive)", () => {
+    // "Please set aside 30 minutes" is not a procurement set-aside.
+    // Only the hyphenated form "set-aside" is the procurement term.
+    expect(detectSetAside("Please set aside 30 minutes for the oral presentation.").length).toBe(0);
+  });
+  it("matches NAICS code with numeric code", () => {
+    const a = detectSetAside("NAICS Code 541511 applies to this solicitation.");
+    expect(a.some((x) => x.type === "SET_ASIDE")).toBe(true);
+  });
+  it("matches NAICS without 'code' keyword", () => {
+    const a = detectSetAside("NAICS 541330 (Engineering Services).");
+    expect(a.some((x) => x.type === "SET_ASIDE")).toBe(true);
+  });
+  it("matches 'size standard' phrase", () => {
+    const a = detectSetAside("Size Standard: $25 million in annual receipts.");
+    expect(a.some((x) => x.type === "SET_ASIDE")).toBe(true);
+  });
+  it("does not match unrelated text", () => {
+    expect(detectSetAside("The award amount is $1 million for the base year.").length).toBe(0);
+    expect(detectSetAside("FAR 52.204-21 is incorporated.").length).toBe(0);
+  });
+  it("is included in detectAllAnchors output for set-aside text", () => {
+    const a = detectAllAnchors("This is a NAICS 541511 Small Business Set-Aside solicitation.");
+    expect(a.some((x) => x.type === "SET_ASIDE")).toBe(true);
   });
 });
 

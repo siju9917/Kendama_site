@@ -30,11 +30,25 @@ async function downloadAttachmentAsFile(a: OpportunityAttachment): Promise<File>
   const timeout = setTimeout(() => controller.abort(), 5 * 60 * 1000);
   try {
     const resp = await fetch(a.url, { signal: controller.signal });
-    if (!resp.ok) throw new Error(`download failed (${resp.status})`);
+    if (!resp.ok) {
+      const hint =
+        resp.status >= 500
+          ? "The SAM.gov server returned an error. Try again in a moment."
+          : "The file may have been removed or requires login. Try downloading from SAM.gov directly.";
+      throw new Error(`Download failed (${resp.status}). ${hint}`);
+    }
     const blob = await resp.blob();
     return new File([blob], a.fileName, {
       type: blob.type || a.mimeType || "application/octet-stream",
     });
+  } catch (e) {
+    // AbortController fired → timeout
+    if (e instanceof Error && e.name === "AbortError") {
+      throw new Error(
+        "Download timed out. The SAM.gov server may be slow — try again or download the file manually from SAM.gov.",
+      );
+    }
+    throw e;
   } finally {
     clearTimeout(timeout);
   }

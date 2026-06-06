@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { DiffResult } from "../core/diff/types.js";
 import { exportPdfReport, copySummaryToClipboard, copyMarkdownToClipboard } from "../core/export/index.js";
-import { CATEGORY_LABELS } from "../shared/constants.js";
+import { CATEGORY_LABELS, COPY_FEEDBACK_FLASH_MS } from "../shared/constants.js";
 
 interface Props {
   result: DiffResult;
@@ -44,7 +44,7 @@ export function Summary({ result }: Props): React.ReactElement {
     flashTimer.current = setTimeout(() => {
       flashTimer.current = null;
       setFeedback("");
-    }, 2500);
+    }, COPY_FEEDBACK_FLASH_MS);
   };
 
   const onExportPdf = async (): Promise<void> => {
@@ -128,7 +128,7 @@ export function Summary({ result }: Props): React.ReactElement {
           <button
             onClick={onCopyMarkdown}
             disabled={busy !== ""}
-            title="Copy as Markdown for Slack / GitHub / Notion"
+            title="Copy as Markdown — paste into Slack, GitHub, Notion, Teams, or any markdown-aware app to keep formatting"
           >
             {busy === "md" ? "Copying…" : "Copy Markdown"}
           </button>

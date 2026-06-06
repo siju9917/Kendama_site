@@ -79,7 +79,23 @@ describe("evaluateCriticality", () => {
   });
 
   it("the ruleset is data (extensible)", () => {
-    expect(CRITICAL_RULES.length).toBe(6);
+    expect(CRITICAL_RULES.length).toBe(7);
+  });
+
+  it("set-aside / NAICS changes are critical (rule 7)", () => {
+    expect(
+      evaluateCriticality(input({ anchors: [anchor("SET_ASIDE")], changeType: "MODIFY" })).reasons,
+    ).toContain("A set-aside designation, NAICS code, or size standard changed.");
+    expect(
+      evaluateCriticality(input({ anchors: [anchor("SET_ASIDE")], changeType: "INSERT" })).severity,
+    ).toBe("CRITICAL");
+    expect(
+      evaluateCriticality(input({ anchors: [anchor("SET_ASIDE")], changeType: "DELETE" })).severity,
+    ).toBe("CRITICAL");
+    // MOVE is not covered by rule 7 (isAddRemoveModify excludes MOVE)
+    expect(
+      evaluateCriticality(input({ anchors: [anchor("SET_ASIDE")], changeType: "MOVE" })).severity,
+    ).toBe("NORMAL");
   });
 
   // Property test (bug-hunt pass 38): invariants that must hold for ANY input.
@@ -89,7 +105,7 @@ describe("evaluateCriticality", () => {
       "SUBMISSION_INSTRUCTIONS", "PRICING_CLINS", "ATTACHMENTS", "OTHER",
     ] as const;
     const changeTypes = ["INSERT", "DELETE", "MODIFY", "MOVE"] as const;
-    const anchorTypes = ["CLAUSE_REF", "DATE", "MONEY", "PAGE_LIMIT", "CLIN"] as const;
+    const anchorTypes = ["CLAUSE_REF", "DATE", "MONEY", "PAGE_LIMIT", "CLIN", "SET_ASIDE"] as const;
     let s = 0xc4171ca1 >>> 0;
     const rnd = () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 0x100000000);
 

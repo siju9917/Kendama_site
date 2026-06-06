@@ -192,3 +192,209 @@ real). Strategic fit: medium — it's adjacent to the factory's own needs
 and, more immediately, as a *factory-internal* capability worth prototyping
 (it would have prevented this session's worst lapse). The
 `brain/SELF_IMPROVEMENT.md` count-drift check (#8) is a smaller sibling.
+
+---
+
+## 2026-06-06 — A structured, machine-parseable deep-evaluation format
+
+**Friction encountered:** The SCORING_MODEL (`brain/SCORING_MODEL.md`) produces
+a score from 9 factors × 0–10, but the deep evaluation files (e.g.,
+`brain/RESEARCH/2026-06-06-vscode-breaking-change-lens.md`) are unstructured
+prose. Reading a completed eval requires scanning many paragraphs to extract
+the factor scores; there is no way to grep, diff, or automatically check that
+every factor was addressed. When a second eval is done months later, calibration
+drift (same product scores differently because the prose framing shifted) is
+invisible.
+
+**Where it came up:** This session — running two product deep evaluations back-
+to-back (clauseguard + VS Code lens), then summarizing both to RANKING.md. The
+summaries are the only thing I can actually compare; the underlying reasoning is
+prose locked behind 1000+ lines.
+
+**Proposed tool/format:** A YAML or JSON front-matter block at the top of every
+deep-eval file that machine-encodes the final score:
+
+```yaml
+---
+product: VS Code OpenAPI Breaking-Change Lens
+date: 2026-06-06
+evidence_tier: Plausible
+total_score: 636
+scores:
+  revenue_ceiling: {weight: 18, score: 5, weighted: 90}
+  probability: {weight: 14, score: 4, weighted: 56}
+  # ...
+recommendation: PROCEED
+---
+```
+
+The factory's `ops/checks/` could then include a `ranking-integrity` check
+that (a) parses the front-matter from all research files, (b) re-derives the
+weighted totals, (c) checks that RANKING.md's score for each product matches
+the front-matter, and (d) flags any factor in the scoring model that appears
+in fewer than 50% of evaluations (a sign a factor is routinely skipped).
+
+**Initial size estimate:** Small. The front-matter format is a one-time schema;
+the check is ~50 lines. The backward-compat path is "add front-matter on first
+re-edit" rather than "retrofit all existing files immediately."
+
+**Promoted to backlog?** Not yet — logged for the next factory self-improvement
+cycle. It eliminates the current manual/fuzzy calibration problem for all future
+evaluations, at near-zero cost.
+
+---
+
+## 2026-06-06 — Critical-change diff for infrastructure-as-code (D7+ ideation)
+
+**Friction encountered:** The D-family currently tops out at D6 (Terraform VS Code
+classifier). The horizontal capability thesis ("critical-change diff as a platform")
+has additional adjacent verticals that were NOT evaluated this cycle — logged by
+the Ambition Critic as an ideation gap.
+
+**Where it came up:** Adversarial critique pass 3, Ambition Critic finding.
+
+**Proposed ideas (D7+):**
+- **D7: Kubernetes YAML diff classifier** — detects critical changes in K8s
+  manifests (replicas=0, securityContext privilege escalation, RBAC permission
+  widening, secret/configmap changes, image tag changes to "latest"). DevOps
+  audience; incumbent tools (kubeval, Datree, Polaris) focus on validation, not
+  diff classification. On-device. TypeScript + YAML parser.
+- **D8: CloudFormation / CDK diff classifier** — AWS-specific; detects resource
+  replacements, IAM policy widening, data-store deletion in IaC plans. Similar
+  wedge to D6 (Terraform) but AWS-native audience. The CF change-set JSON is
+  the input (structured, not prose). `aws cloudformation deploy --no-execute-changeset`
+  produces the input. High-value CI/CD integration.
+- **D9: Docker image layer diff** — detects dependency version changes, removed
+  packages, new root-level files, privilege changes (USER root), exposed port
+  additions between two image build outputs. Audience: security-conscious DevOps.
+
+**Initial size estimate:** Each is medium scope. D7 (K8s) and D8 (CloudFormation)
+share the most with D6 (IaC focus); D9 (Docker) is most orthogonal.
+
+**Promoted to backlog?** Not yet — requires deep evaluation (cap-gated web
+research to verify gap + comparable revenue). Logged as D7/D8/D9 candidates.
+Add to IDEA_BACKLOG on the next research cycle.
+
+---
+
+## 2026-06-06 — Multi-label change classification in BidDiff
+
+**Friction encountered:** The `classify` function uses a first-match rule
+across categories — a CLAUSE_REF anchor inside Section M (EVALUATION_CRITERIA)
+gets classified as CLAUSES (rule 1 fires first), losing the "evaluation criteria
+changed" label. A proposal manager scanning for evaluation-criteria changes would
+miss this one unless they notice it's in Section M. The severity is still CRITICAL
+(clause rules fire on any CLAUSES + INSERT/DELETE/MODIFY), but the category label
+carries information a practitioner needs.
+
+**Where it came up:** Adversarial Pass 4 (2026-06-06), reviewing the classify-
+precedence pin test. Explicitly accepted as a V1 trade-off — the first-match rule
+simplifies classification and the severity is correct — but logged here so V2
+design considers multi-label output.
+
+**Proposed feature (for BidDiff V2 or a configurable option):** Allow a change
+to carry multiple categories when anchors from different category classes
+co-occur (CLAUSE_REF + EVALUATION_CRITERIA anchor, or DEADLINE + SUBMISSION_INSTRUCTIONS).
+Output both labels in the ChangeCard, and fire all category-specific critical rules
+across both labels. This requires a small refactor: `classifyItem` returns
+`string[]` of categories instead of a single `string`; `evaluateCriticality`
+applies rules against ANY matching category.
+
+**Initial size estimate:** Small-medium refactor within the engine (touch
+`classify.ts`, `critical.ts`, and the `ChangeItem` type). Risk: the test
+surface is large; every classify/critical test must handle array output.
+The pin test that documents the current V1 behavior becomes the migration
+regression test.
+
+**Promoted to backlog?** Not yet. Log as V2 BidDiff POLISH. Evaluate when
+a practitioner validates that the category signal materially affects their
+workflow (vs. "section M = CRITICAL anyway, I don't need the label").
+
+---
+
+## 2026-06-06 — Factory check "drift-between-session" validator
+
+**Friction encountered:** This session manually updated STATE.md item counts
+(455→484→486→488→490 tests) across many commits, and the count drifted stale
+between commits. The existing `state-count-sanity` check validates the final
+count headline but doesn't validate that mid-session commits haven't left the
+count stale for a long time.
+
+Also, during the session, the META_LESSONS 5.7.7 audit was written when tests
+were at 486; by session end they were at 490. The audit document was accurate
+at the time of writing but stale when the session ended. There's no mechanism
+to flag "this document was last updated at state X, and state has since advanced."
+
+**Where it came up:** Writing the session continuation and realizing META_LESSONS
+covered items 1-15 but the session actually reached item 19 by end.
+
+**Proposed tool:** A "temporal consistency" check — given a set of brain files
+that assert a count/status (STATE.md, META_LESSONS.md), validate that the
+highest-stated count doesn't lag the actual repo state by more than a fixed
+threshold. Could be as simple as: parse `STATE.md`'s test-count headline,
+compare to `META_LESSONS.md`'s most-recent session audit's stated count — if
+they diverge by >10, flag as P2 "brain drift." 
+
+**Initial size estimate:** Small. Build as another `ops/checks/` module.
+Caveat: must not run the vitest suite (per the existing state-count-sanity
+design note). Instead, read both files and compare the stated test counts
+using the same parser as `state-count-sanity.mjs`.
+
+**Promoted to backlog?** Not yet — candidate for SELF_IMPROVEMENT backlog;
+the state-count-sanity check (#8) is a sibling.
+
+---
+
+## 2026-06-06 — OpenAPI allOf/oneOf/anyOf schema composition merger
+
+**Friction encountered:** During openapi-lens D5 Phase 0, schemas using
+`allOf`, `oneOf`, or `anyOf` composition are stored as-is and their member
+schemas are NOT merged before diffing. A breaking change inside a composed
+schema is invisible to the current engine. Every real-world OpenAPI spec uses
+composition heavily (inheritance patterns, discriminated unions, nullable via
+`oneOf: [{...}, {type: "null"}]`).
+
+**Where it came up:** openapi-lens Phase 0 Known Limitations section — flagged
+as Phase 2 work. Found during initial engine design.
+
+**Proposed feature (openapi-lens Phase 2 or as a standalone library):** A
+pre-processing step that flattens `allOf`/`oneOf`/`anyOf` schemas before
+diffing: merge `allOf` members into a single flat schema (taking the union of
+`required[]` and `properties`), flag `oneOf`/`anyOf` members as requiring
+per-variant comparison. If extracted into a library, useful to any API tooling
+(linters, generators, mock servers) that needs a flat view of a composed schema.
+
+**Initial size estimate:** Medium. The `allOf` flattening case is well-defined
+(merge required + properties, error on conflicting types). The `oneOf`/`anyOf`
+case requires per-variant analysis, which is genuinely complex (n² comparisons).
+Ship `allOf` first; leave `oneOf`/`anyOf` for a follow-up.
+
+**Promoted to backlog?** Not yet — logged as a Phase 2 candidate for
+openapi-lens. Cross-referenced from `products/openapi-lens/PROGRESS.md`
+Phase 2 known limitation.
+
+---
+
+## 2026-06-06 — Recursive property-level diff beyond 1 level
+
+**Friction encountered:** openapi-lens Phase 0 added one-level-deep property
+diffing (`properties.fieldName.type`). Nested objects (e.g., a `user` object
+with a `address` object with a `zipCode` field) are only compared at the
+`user.type` level. A type change in `user.address.zipCode` from `number` to
+`string` is currently invisible.
+
+**Where it came up:** openapi-lens Phase 0 Known Limitations — flagged explicitly
+as a limitation during Phase 0 engine design.
+
+**Proposed feature:** A recursive schema walker that diffs the full `properties`
+tree to arbitrary depth, with a configurable max-depth to prevent infinite loops
+on circular schemas (which would need cycle detection via a visited-set). Output
+would be paths like `responses[200].content.schema.properties.user.properties.address.properties.zipCode.type`.
+
+**Initial size estimate:** Small-to-medium within openapi-lens. The key
+complexity is circular reference detection (a schema property that $refs back to
+a parent type — common with tree/linked-list schemas). With a `seen: Set<object>`
+guard, the recursion is straightforward.
+
+**Promoted to backlog?** Not yet — logged as a Phase 2 enhancement for
+openapi-lens. Cross-referenced from `products/openapi-lens/PROGRESS.md` Phase 2.

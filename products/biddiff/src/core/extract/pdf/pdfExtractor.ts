@@ -8,7 +8,7 @@ import { ExtractionError, type IExtractor } from "../../interfaces.js";
 import type { StructuredDocument } from "../../model/types.js";
 import { buildDocument, emptyMetadata } from "../../model/build.js";
 import { shortHash } from "../../../shared/hash.js";
-import { isPdfEncrypted, validateInput } from "../validate.js";
+import { isPdfEncrypted, validateInput, extractSolicitationId } from "../validate.js";
 import { extractPdfTextItems, type ExtractOptions, type PdfJsLike } from "./extract.js";
 import { itemsToRawLines } from "./reconstruct.js";
 import { sectionsFromRawLines } from "../sections/assemble.js";
@@ -63,6 +63,7 @@ export class PdfExtractor implements IExtractor {
     const overallExtractionConfidence = result.appearsScanned ? 0.4 : computeOverallConfidence(allBlocks);
 
     const meta = emptyMetadata(fileName, file);
+    const allText = rawLines.map((l) => l.text).join("\n");
     const baseDoc: StructuredDocument = buildDocument({
       metadata: {
         ...meta,
@@ -70,6 +71,7 @@ export class PdfExtractor implements IExtractor {
         pageCount: result.pageCount,
         overallExtractionConfidence,
         extractionWarnings: [...result.warnings],
+        solicitationId: extractSolicitationId(allText),
       },
       sections,
     });

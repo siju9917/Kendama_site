@@ -48,10 +48,14 @@ export function Onboarding(): React.ReactElement | null {
           Use the &lsquo;Critical&rsquo; filter chip to see just those.
         </li>
         <li>
-          <strong>Export or copy.</strong> Branded PDF report for your capture team, or a
+          <strong>Export or copy.</strong> Branded PDF report for your records, or a
           one-paste summary for Slack.
         </li>
       </ol>
+      <p style={{ margin: "8px 0 0", fontSize: 12 }}>
+        Ready? Drop your amendment files above, or try a{" "}
+        <strong>sample diff</strong> from the New Diff screen.
+      </p>
     </section>
   );
 }

@@ -53,6 +53,7 @@ The `no-github-actions` check enforces this for the whole repo.
 | `checks-registry` | Meta-check: every `ops/checks/*.mjs` check (excluding the known infrastructure files) is registered in `run-all.mjs`'s `CHECKS` array and documented in this README. Prevents an added-but-unregistered check from silently never running. | P1/P2 |
 | `state-count-sanity` | The one canonical `Build green: **NNN/NNN tests**` headline in `brain/STATE.md` is well-formed and self-consistent (exactly one; passed === total). Catches the count-drift class (a mangled "288/312", a "green" headline over a red count). Deliberately narrow: does NOT run the suite or scan historical narrative. | P1/P2 |
 | `approvals-window` | Flags an OPEN `human/APPROVALS.md` proposal whose auto-proceed window ("no response by YYYY-MM-DD") has elapsed against the real clock, so a session can't silently miss applying the documented default. Scoped to the "Open proposals" section (closed/audit history never trips it). | P1 |
+| `ranking-integrity` | Every `brain/RESEARCH/*.md` file with YAML front-matter has all 9 required scoring factors present, each factor's score is in range (0–10), the weighted values are non-negative, and the sum of weighted values equals `total_score` (or a `score_note` documents the intentional difference). Implements the WISHLIST structured deep-evaluation format; prevents silent calibration drift between a research file and RANKING.md. Files without front-matter are silently skipped. | P1 |
 
 ### The stop-guard red team (separate — run at STOP time, not session start)
 

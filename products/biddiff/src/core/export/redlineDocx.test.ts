@@ -74,6 +74,16 @@ describe("buildRedlineDocumentXml", () => {
     expect(allText).toContain("does not provide legal"); // disclaimer
   });
 
+  it("places the disclaimer before the diff content (visible even on page 1)", () => {
+    const xml = buildRedlineDocumentXml(result([change({ beforeText: "old text", afterText: "new text" })]));
+    // Disclaimer must appear before any change text in the XML.
+    const disclaimerPos = xml.indexOf("does not provide legal");
+    const changePos = xml.indexOf("old text");
+    expect(disclaimerPos).toBeGreaterThan(-1);
+    expect(changePos).toBeGreaterThan(-1);
+    expect(disclaimerPos, "disclaimer must come before change text").toBeLessThan(changePos);
+  });
+
   it("emits run-properties in canonical CT_RPr order (Word rejects out-of-order rPr)", () => {
     // Insertion run = underlined + green color → color MUST precede u.
     // Heading = bold + larger size → b MUST precede sz.

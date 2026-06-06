@@ -31,7 +31,7 @@ import {
 import { tokenDiff } from "./tokens.js";
 import { classifyChange } from "./classify.js";
 import { evaluateCriticality } from "./critical.js";
-import { isReformattingOnly } from "./suppress.js";
+import { isReformattingOnly, isListOrdinalOnlyChange } from "./suppress.js";
 
 interface PendingChange {
   changeType: ChangeType;
@@ -88,6 +88,7 @@ export class DiffEngine implements IDiffEngine {
         if (item.kind === "EQUAL") continue;
         if (item.kind === "MODIFY") {
           if (isReformattingOnly(item.prior, item.current)) continue;
+          if (isListOrdinalOnlyChange(item.prior, item.current)) continue;
           pending.push({
             changeType: "MODIFY",
             section,
@@ -211,6 +212,16 @@ export class DiffEngine implements IDiffEngine {
       // place that says the human must review.
       pushUnique(
         `Extraction confidence is ${(diffConfidence * 100).toFixed(0)}% — lower than typical for clean text PDFs.`,
+      );
+    }
+    // Solicitation-number mismatch guard (N14): if both documents report a
+    // solicitation number and they differ, the user probably dropped the wrong
+    // file. Surface it as a non-critical warning so they can verify.
+    const curId = current.metadata.solicitationId;
+    const priId = prior.metadata.solicitationId;
+    if (curId && priId && curId !== priId) {
+      pushUnique(
+        `These documents report different solicitation numbers (${curId} vs. ${priId}). Verify you selected the correct files.`,
       );
     }
 

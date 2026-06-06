@@ -111,4 +111,108 @@ describe("DiffEngine edge cases", () => {
     const r = engine.diff(doc, doc);
     expect(r.changes.length).toBe(0);
   });
+
+  // ---- List-renumbering noise suppression (PROGRESS coverage-obs #8) --------
+  //
+  // Scenario (from the PROGRESS note): a Section-L list has one item inserted
+  // at position 2. Every item after it shifts ordinal by 1, which used to
+  // produce spurious CRITICAL MODIFYs for items whose content is unchanged.
+  //
+  // Expected engine output:
+  //   1 × INSERT  (the genuinely new item at position 2)
+  //   0 × MODIFY  (the shifted "L.2/L.3" items must be suppressed)
+
+  it("inserting a list item produces exactly 1 INSERT and no spurious MODIFYs for shifted items", () => {
+    function makeSectionL(items: string[]): StructuredDocument {
+      const blocks = items.map((text, i) =>
+        buildBlock({ sectionPath: "L", ordinal: i, blockType: "PARAGRAPH", rawText: text }),
+      );
+      const section = buildSection({
+        heading: "Section L — Instructions",
+        headingLevel: 1,
+        ucfLetter: "L",
+        sectionType: "INSTRUCTIONS",
+        blocks,
+        ordinal: 0,
+      });
+      return { metadata: meta("L-doc"), sections: [section] };
+    }
+
+    const prior = makeSectionL([
+      "L.1 Submit via SAM.gov.",
+      "L.2 Use 12-point font.",
+      "L.3 Page limit is 50 pages.",
+    ]);
+    const current = makeSectionL([
+      "L.1 Submit via SAM.gov.",
+      "L.2 All attachments must be in PDF.",   // ← new item inserted here
+      "L.3 Use 12-point font.",                 // was L.2 — ordinal shifted, content same
+      "L.4 Page limit is 50 pages.",            // was L.3 — ordinal shifted, content same
+    ]);
+
+    const r = engine.diff(current, prior);
+
+    // The insert must appear.
+    const inserts = r.changes.filter((c) => c.changeType === "INSERT");
+    expect(inserts).toHaveLength(1);
+    expect(inserts[0].afterText).toContain("All attachments must be in PDF");
+
+    // The shifted items must NOT appear as MODIFY changes (renumbering noise suppressed).
+    const modifies = r.changes.filter((c) => c.changeType === "MODIFY");
+    expect(modifies).toHaveLength(0);
+
+    // Total: only the 1 real INSERT (no spurious MODIFYs).
+    expect(r.changes).toHaveLength(1);
+    // The new instruction in Section L IS legitimately critical — no spurious
+    // CRITICAL from the shifted items (there are none). The count reflects the
+    // real change, not noise.
+  });
+
+  it("inserting a list item where content also changed produces INSERT + MODIFY (not suppressed)", () => {
+    function makeList(items: string[]): StructuredDocument {
+      const blocks = items.map((text, i) =>
+        buildBlock({ sectionPath: "L", ordinal: i, blockType: "PARAGRAPH", rawText: text }),
+      );
+      const section = buildSection({
+        heading: "Section L",
+        headingLevel: 1,
+        ucfLetter: "L",
+        sectionType: "INSTRUCTIONS",
+        blocks,
+        ordinal: 0,
+      });
+      return { metadata: meta("L-doc"), sections: [section] };
+    }
+
+    const prior = makeList([
+      "1. Page limit is 15 pages.",
+      "2. Submit electronically.",
+    ]);
+    const current = makeList([
+      "1. New requirement added.",          // inserted before original first item
+      "2. Page limit is 20 pages.",         // ordinal shifted AND content changed → must surface
+      "3. Submit electronically.",          // ordinal shifted, content same → suppressed
+    ]);
+
+    const r = engine.diff(current, prior);
+
+    // Item 1 (new) → INSERT.
+    const inserts = r.changes.filter((c) => c.changeType === "INSERT");
+    expect(inserts.length).toBeGreaterThanOrEqual(1);
+
+    // "Page limit 15 → 20" must surface as MODIFY (content changed).
+    const modifies = r.changes.filter((c) => c.changeType === "MODIFY");
+    const pageLimitMod = modifies.find(
+      (c) => c.beforeText?.includes("15") && c.afterText?.includes("20"),
+    );
+    expect(pageLimitMod).toBeTruthy();
+
+    // "Submit electronically" shifted ordinal only → suppressed (not in modifies).
+    const spurious = modifies.find(
+      (c) =>
+        c.afterText?.includes("Submit electronically") &&
+        c.beforeText?.includes("Submit electronically"),
+    );
+    expect(spurious).toBeUndefined();
+  });
 });

@@ -11,7 +11,7 @@ import { ExtractionError, type IExtractor } from "../../interfaces.js";
 import type { StructuredDocument } from "../../model/types.js";
 import { buildDocument, emptyMetadata } from "../../model/build.js";
 import { shortHash } from "../../../shared/hash.js";
-import { validateInput } from "../validate.js";
+import { validateInput, extractSolicitationId } from "../validate.js";
 import { sectionsFromRawLines } from "../sections/assemble.js";
 import { enrichStructuredDocument, computeOverallConfidence } from "../normalize.js";
 import { computeModalFontSize } from "../sections/headings.js";
@@ -209,6 +209,7 @@ export class DocxExtractor implements IExtractor {
     const overallExtractionConfidence = computeOverallConfidence(allBlocks);
 
     const meta = emptyMetadata(fileName, file);
+    const allText = paragraphs.map((p) => p.text).join("\n");
     const baseDoc: StructuredDocument = buildDocument({
       metadata: {
         ...meta,
@@ -216,6 +217,7 @@ export class DocxExtractor implements IExtractor {
         pageCount: Math.max(1, Math.ceil(paragraphs.length / 25)),
         overallExtractionConfidence,
         extractionWarnings: [],
+        solicitationId: extractSolicitationId(allText),
       },
       sections,
     });

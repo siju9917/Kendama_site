@@ -1,5 +1,5 @@
 /**
- * Redline DOCX export (POLISH N3) — a Word document capture teams can attach
+ * Redline DOCX export (POLISH N3) — a Word document proposal managers can attach
  * to a review. A `.docx` is a zip of OOXML, built here with the existing
  * JSZip dependency (no new dep). Deletions render struck-through + red,
  * insertions underlined + green; critical changes first; the canonical
@@ -82,6 +82,9 @@ export function buildRedlineDocumentXml(result: DiffResult): string {
   const normal = result.changes.filter((c) => c.severity !== "CRITICAL");
   const body: string[] = [];
   body.push(para("BidDiff — Solicitation Amendment Redline", { heading: true }));
+  // Disclaimer at the top so reviewers see it regardless of document length.
+  body.push(para(DISCLAIMER_TEXT, { color: "595959" }));
+  body.push(para(""));
   body.push(
     para(
       `Compared: ${result.currentDoc.sourceFileName} vs. ${result.priorDoc.sourceFileName}`,

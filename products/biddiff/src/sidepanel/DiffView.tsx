@@ -270,6 +270,11 @@ export function DiffView({ result, sessionNotices }: Props): React.ReactElement 
             {reviewedCount}/{filtered.length} reviewed
           </span>
         )}
+        {hasActiveFilter && filtered.length < result.changes.length && (
+          <span className="section-chip-counts" aria-live="polite">
+            {filtered.length} of {result.changes.length} changes
+          </span>
+        )}
         {hasActiveFilter && (
           <button
             className="ghost"
@@ -323,6 +328,11 @@ export function DiffView({ result, sessionNotices }: Props): React.ReactElement 
           <li><kbd>J</kbd> / <kbd>K</kbd> — next / previous change</li>
           <li><kbd>R</kbd> — mark the focused change reviewed</li>
           <li><kbd>/</kbd> — jump to the text filter</li>
+          {filter === "CRITICAL" && (
+            <li style={{ fontStyle: "italic", opacity: 0.8, marginTop: 4 }}>
+              J / K navigate Critical changes only — switch to All to reach every change.
+            </li>
+          )}
         </ul>
       </details>
       </div>
@@ -333,7 +343,9 @@ export function DiffView({ result, sessionNotices }: Props): React.ReactElement 
               ? result.warnings.length > 0
                 ? "No textual differences detected — but the warnings above mean extraction may not have read all of the content."
                 : "No changes detected. These two versions appear to be identical."
-              : "No changes match the current filter."}
+              : filter === "CRITICAL"
+                ? "No critical changes match the current filters. Switch to 'All' or a different section to see every change."
+                : "No changes match the current filter."}
           </p>
           {hasActiveFilter && (
             <button onClick={clearFilters}>Clear filters</button>

@@ -12,7 +12,8 @@ export type AnchorType =
   | "MONEY"
   | "PAGE_LIMIT"
   | "CLIN"
-  | "SECTION_REF";
+  | "SECTION_REF"
+  | "SET_ASIDE";
 
 export interface Anchor {
   type: AnchorType;

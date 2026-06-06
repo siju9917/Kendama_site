@@ -71,44 +71,55 @@ describe("History", () => {
     });
   });
 
-  it("opens a diff on click and removes it on delete (with confirm)", async () => {
+  it("opens a diff on click and removes it on delete (with inline confirm)", async () => {
     const storage = new DiffStorage();
     await storage.saveDiff(fakeResult("d1"));
     const onOpen = vi.fn();
-    // Stub the confirm so the test runs deterministically.
-    const realConfirm = window.confirm;
-    window.confirm = () => true;
-    try {
-      render(<History storage={storage} onOpen={onOpen} />);
-      await waitFor(() => screen.getByText("d1-current.pdf"));
+    render(<History storage={storage} onOpen={onOpen} />);
+    await waitFor(() => screen.getByText("d1-current.pdf"));
 
-      fireEvent.click(screen.getByText("d1-current.pdf"));
-      expect(onOpen).toHaveBeenCalledWith("d1");
+    fireEvent.click(screen.getByText("d1-current.pdf"));
+    expect(onOpen).toHaveBeenCalledWith("d1");
 
-      fireEvent.click(screen.getByLabelText(/Delete this diff/i));
-      await waitFor(async () => {
-        expect(await storage.getDiff("d1")).toBeNull();
-      });
-    } finally {
-      window.confirm = realConfirm;
-    }
+    // First click shows inline confirmation — not an immediate delete.
+    fireEvent.click(screen.getByLabelText(/Delete this diff/i));
+    await waitFor(() => screen.getByRole("button", { name: /^Confirm delete$/i }));
+    expect(await storage.getDiff("d1")).not.toBeNull(); // not yet deleted
+
+    // Clicking the "Delete" confirm button completes the delete.
+    fireEvent.click(screen.getByRole("button", { name: /^Confirm delete$/i }));
+    await waitFor(async () => {
+      expect(await storage.getDiff("d1")).toBeNull();
+    });
   });
 
-  it("does not delete when the user cancels the confirm", async () => {
+  it("does not delete when the user cancels the inline confirm", async () => {
     const storage = new DiffStorage();
     await storage.saveDiff(fakeResult("d2"));
-    const realConfirm = window.confirm;
-    window.confirm = () => false;
-    try {
-      render(<History storage={storage} onOpen={() => {}} />);
-      await waitFor(() => screen.getByText("d2-current.pdf"));
-      fireEvent.click(screen.getByLabelText(/Delete this diff/i));
-      // Give the rejection a tick to settle.
-      await new Promise((r) => setTimeout(r, 0));
-      expect(await storage.getDiff("d2")).not.toBeNull();
-    } finally {
-      window.confirm = realConfirm;
-    }
+    render(<History storage={storage} onOpen={() => {}} />);
+    await waitFor(() => screen.getByText("d2-current.pdf"));
+
+    fireEvent.click(screen.getByLabelText(/Delete this diff/i));
+    await waitFor(() => screen.getByRole("button", { name: /Cancel delete/i }));
+
+    fireEvent.click(screen.getByRole("button", { name: /Cancel delete/i }));
+    // Confirmation gone, item still present.
+    await waitFor(() => screen.getByLabelText(/Delete this diff/i));
+    expect(await storage.getDiff("d2")).not.toBeNull();
+  });
+
+  it("pressing Escape cancels the inline confirmation without deleting", async () => {
+    const storage = new DiffStorage();
+    await storage.saveDiff(fakeResult("d3"));
+    render(<History storage={storage} onOpen={() => {}} />);
+    await waitFor(() => screen.getByText("d3-current.pdf"));
+
+    fireEvent.click(screen.getByLabelText(/Delete this diff/i));
+    await waitFor(() => screen.getByRole("button", { name: /^Confirm delete$/i }));
+
+    fireEvent.keyDown(window, { key: "Escape" });
+    await waitFor(() => screen.getByLabelText(/Delete this diff/i));
+    expect(await storage.getDiff("d3")).not.toBeNull();
   });
 
   it("marks unseen diffs with a visible dot", async () => {

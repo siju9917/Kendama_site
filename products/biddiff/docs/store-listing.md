@@ -2,7 +2,7 @@
 
 ## Title (max 75 chars)
 
-**BidDiff — Federal Solicitation Amendment Diff for Proposal & Capture Teams**
+**BidDiff — Federal Solicitation Amendment Diff for Federal Proposal Managers**
 
 ## Short description (max 132 chars)
 
@@ -12,9 +12,9 @@ Diff amended U.S. federal solicitations against prior versions. Categorized chan
 
 **See every change in a federal solicitation amendment in 30 seconds.**
 
-BidDiff is built for proposal managers and capture managers at companies bidding on U.S. federal contracts. When SAM.gov posts an amendment, BidDiff compares it against the prior version and produces a categorized, critical-flagged list of every change — clause additions, due-date shifts, evaluation criteria edits, page-limit moves, CLIN changes, attachment updates.
+BidDiff is built for individual proposal managers at companies bidding on U.S. federal contracts. When SAM.gov posts an amendment, BidDiff compares it against the prior version and produces a categorized, critical-flagged list of every change — clause additions, due-date shifts, evaluation criteria edits, page-limit moves, CLIN changes, attachment updates.
 
-No more side-by-side page flipping under deadline pressure. No more team-wide "what changed?" emails. No more risk that a critical change slipped through.
+No more side-by-side page flipping under deadline pressure. No more risk that a critical change slipped through.
 
 ### What BidDiff catches
 
@@ -31,7 +31,7 @@ No more side-by-side page flipping under deadline pressure. No more team-wide "w
 1. Open the BidDiff side panel from SAM.gov or anywhere.
 2. Drop in the new amendment file and the prior version (PDF or DOCX).
 3. Review the categorized change list. Critical changes are flagged at the top.
-4. Export a branded PDF report or copy a summary for your capture team.
+4. Export a branded PDF report or copy a summary for quick reference.
 
 ### Privacy by design
 
@@ -70,7 +70,7 @@ Three self-serve tiers. Annual prepay discount. 14-day full-feature trial. No "c
 ## Category
 
 Productivity. (Secondary category: Workflow & Planning.) The audience is
-proposal and capture managers, not developers — this is intentionally not
+proposal managers, not developers — this is intentionally not
 listed under Developer Tools.
 
 ## Languages
