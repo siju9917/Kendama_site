@@ -5669,3 +5669,218 @@ paths:
     expect(idChange?.severity).toBe("INFO");
   });
 });
+
+// ─── Round 32: OAS 3.1 type arrays ────────────────────────────────────────────
+
+describe("OAS 3.1 type arrays — normalised to nullable flag (5.7.5 round 32)", () => {
+  function spec31(type: string): string {
+    return `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: ${type}
+`;
+  }
+
+  it("detects response type change from [string,null] to [integer,null] as BREAKING", () => {
+    const baseline = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: [string, "null"]
+`;
+    const current = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: [integer, "null"]
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "response-schema-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+
+  it("detects type change when OAS 3.1 type array [string,null] replaces OAS 3.0 type: string + nullable: true", () => {
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+                nullable: true
+`;
+    const current = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: [string, "null"]
+`;
+    // Both schemas are semantically equivalent (string | null) — no type change expected.
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "response-schema-type-changed");
+    expect(typeChange).toBeUndefined();
+  });
+
+  it("detects request body narrowed from [string,null] to string (removing null) as BREAKING", () => {
+    const baseline = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: [string, "null"]
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: ok
+`;
+    // Removing nullable from a request body (string|null → string) means clients
+    // that currently send null will break — BREAKING.
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const nullableChange = changes.find((c) => c.type === "request-schema-nullable-changed");
+    expect(nullableChange).toBeDefined();
+    expect(nullableChange?.before).toBe(true);
+    expect(nullableChange?.after).toBe(false);
+    expect(nullableChange?.severity).toBe("BREAKING");
+  });
+
+  it("detects property in response changed from type: string to type: [integer, null] as BREAKING", () => {
+    const baseline = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: string
+`;
+    const current = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: [integer, "null"]
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find(
+      (c) => c.type === "response-schema-property-type-changed" && c.location?.includes("count"),
+    );
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+
+  it("single-element type array [string] is equivalent to type: string — no change detected", () => {
+    const baseline = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+`;
+    const current = `
+openapi: "3.1.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: [string]
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    expect(changes.filter((c) => c.type === "response-schema-type-changed")).toHaveLength(0);
+  });
+});
