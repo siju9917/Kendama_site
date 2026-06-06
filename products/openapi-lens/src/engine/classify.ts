@@ -672,6 +672,49 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => `Parameter un-deprecated: ${c.location}. This parameter is no longer marked for removal.`,
   },
 
+  // ─── Parameter items (array parameter element schema) ─────────────────────
+  {
+    matches: (c) => c.type === "parameter-items-type-changed" ? "BREAKING" : null,
+    message: (c) => `Parameter array element type changed: ${c.location} (${c.before ?? "unspecified"} → ${c.after ?? "unspecified"}). Clients sending arrays with the old element type will fail validation.`,
+  },
+  {
+    matches: (c) => c.type === "parameter-items-format-changed" ? "BREAKING" : null,
+    message: (c) => `Parameter array element format changed: ${c.location} (${c.before ?? "none"} → ${c.after ?? "none"}). Clients sending elements in the old format may fail validation.`,
+  },
+  {
+    matches: (c) => {
+      if (c.type !== "parameter-items-enum-changed") return null;
+      const before = c.before as unknown[] | null;
+      const after = c.after as unknown[] | null;
+      if (!before || !after) return "BREAKING"; // enum added or removed entirely
+      // Request: values removed = BREAKING (clients sending now-invalid values will fail).
+      const removed = before.filter((v) => !after.includes(v));
+      return removed.length > 0 ? "BREAKING" : "INFO";
+    },
+    message: (c) => {
+      const before = c.before as unknown[] | null;
+      const after = c.after as unknown[] | null;
+      if (!before) return `Parameter array element enum added: ${c.location}. Elements must now be one of [${(after ?? []).join(", ")}].`;
+      if (!after) return `Parameter array element enum removed: ${c.location}. Enum restriction no longer enforced on array elements.`;
+      const removed = before.filter((v) => !after.includes(v));
+      return removed.length > 0
+        ? `Parameter array element enum values removed: ${c.location}. Removed: [${removed.join(", ")}]. Clients sending these values will receive 422.`
+        : `Parameter array element enum values added: ${c.location}. New accepted values: [${after.filter((v) => !before.includes(v)).join(", ")}].`;
+    },
+  },
+  {
+    matches: (c) =>
+      c.type === "parameter-items-nullable-changed" && c.before === true && c.after === false
+        ? "BREAKING" : null,
+    message: (c) => `Parameter array element became non-nullable: ${c.location}. Clients sending null elements will now receive 400.`,
+  },
+  {
+    matches: (c) =>
+      c.type === "parameter-items-nullable-changed" && c.before === false && c.after === true
+        ? "INFO" : null,
+    message: (c) => `Parameter array element became nullable: ${c.location}. Clients may now send null elements.`,
+  },
+
   // ─── Top-level body schema format ─────────────────────────────────────────
   {
     matches: (c) => c.type === "request-schema-format-changed" ? "BREAKING" : null,

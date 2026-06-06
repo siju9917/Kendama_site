@@ -537,6 +537,41 @@ describe("classifyChanges — classification rules", () => {
     expect(result[0]?.message).toMatch(/removed/i);
   });
 
+  // ─── Parameter items (array parameter element schema) ─────────────────────
+  it("classifies parameter-items-type-changed as BREAKING", () => {
+    const result = classifyChanges([raw("parameter-items-type-changed", "string", "integer", "parameter(query:ids).schema.items.type")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/element type changed/i);
+  });
+
+  it("classifies parameter-items-format-changed as BREAKING", () => {
+    const result = classifyChanges([raw("parameter-items-format-changed", "date", "date-time", "parameter(query:dates).schema.items.format")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/format changed/i);
+  });
+
+  it("classifies parameter-items-enum-changed (value removed) as BREAKING", () => {
+    const result = classifyChanges([raw("parameter-items-enum-changed", ["a", "b"], ["a"], "parameter(query:status).schema.items.enum")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/removed/i);
+  });
+
+  it("classifies parameter-items-enum-changed (value added) as INFO", () => {
+    const result = classifyChanges([raw("parameter-items-enum-changed", ["a"], ["a", "b"], "parameter(query:status).schema.items.enum")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("classifies parameter-items-nullable-changed (true→false) as BREAKING", () => {
+    const result = classifyChanges([raw("parameter-items-nullable-changed", true, false, "parameter(query:ids).schema.items.nullable")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).toMatch(/non-nullable/i);
+  });
+
+  it("classifies parameter-items-nullable-changed (false→true) as INFO", () => {
+    const result = classifyChanges([raw("parameter-items-nullable-changed", false, true, "parameter(query:ids).schema.items.nullable")]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
   // ─── Top-level body schema format ─────────────────────────────────────────
   it("classifies request-schema-format-changed as BREAKING", () => {
     const result = classifyChanges([raw("request-schema-format-changed", "date", "date-time", "requestBody.content.schema.format")]);
@@ -659,6 +694,10 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "response-schema-format-changed":               ["date", "date-time"],
     "request-schema-enum-changed":                  [["a", "b"], ["a"]],
     "response-schema-enum-changed":                 [["a"], ["a", "b"]],
+    "parameter-items-type-changed":                 ["string", "integer"],
+    "parameter-items-format-changed":               ["date", "date-time"],
+    "parameter-items-enum-changed":                 [["a", "b"], ["a"]],
+    "parameter-items-nullable-changed":             [true, false],
   };
 
   it.each(Object.keys(TYPE_STUBS) as OapiChangeType[])(

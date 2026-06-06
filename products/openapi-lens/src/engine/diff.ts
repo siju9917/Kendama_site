@@ -74,6 +74,30 @@ function diffParameters(
         });
       }
     }
+    // Diff items schema for array-type parameters (e.g. query param with type:array).
+    const bItems = bp.schema.items;
+    const cItems = cp.schema.items;
+    if (bItems || cItems) {
+      const paramItemsLoc = `parameter(${bp.in}:${bp.name}).schema.items`;
+      const bType = bItems?.type ?? null;
+      const cType = cItems?.type ?? null;
+      if (bType !== cType) {
+        changes.push({ type: "parameter-items-type-changed", path, method, location: `${paramItemsLoc}.type`, before: bType, after: cType });
+      }
+      const bFmt = bItems?.format ?? null;
+      const cFmt = cItems?.format ?? null;
+      if (bFmt !== cFmt) {
+        changes.push({ type: "parameter-items-format-changed", path, method, location: `${paramItemsLoc}.format`, before: bFmt, after: cFmt });
+      }
+      if (!deepEqual(bItems?.enum, cItems?.enum) && (bItems?.enum !== undefined || cItems?.enum !== undefined)) {
+        changes.push({ type: "parameter-items-enum-changed", path, method, location: `${paramItemsLoc}.enum`, before: bItems?.enum ?? null, after: cItems?.enum ?? null });
+      }
+      const bNull = bItems?.nullable ?? false;
+      const cNull = cItems?.nullable ?? false;
+      if (bNull !== cNull) {
+        changes.push({ type: "parameter-items-nullable-changed", path, method, location: `${paramItemsLoc}.nullable`, before: bNull, after: cNull });
+      }
+    }
   }
 
   for (const [key, cp] of cMap) {

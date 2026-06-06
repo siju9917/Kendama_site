@@ -121,6 +121,17 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   `response-schema-items-constraint-changed`) with direction-aware classify rules matching
   the existing property constraint classification logic. 10 new unit tests + 2 adversarial
   integration tests. **297/297 tests.**
+- [x] **5.7.5 round 6 — top-level body schema format + enum diffing** — systematic
+  parsed-but-never-diffed audit found that `format` and `enum` on the request/response
+  body schema itself (not inside properties) were never compared. An endpoint accepting
+  a raw `date`-formatted string body changing to `date-time` format was invisible.
+  Similarly, a GET returning a raw enum string having values added/removed was invisible.
+  New: `request-schema-format-changed` / `response-schema-format-changed` (both BREAKING);
+  `request-schema-enum-changed` / `response-schema-enum-changed` (direction-aware: request
+  values removed=BREAKING, response values added=BREAKING). `diffSchemaTopLevelFields`
+  helper wired into `diffRequestBody` and `diffResponses`. 4 new OapiChangeType values,
+  4 classify rules, 4 unit tests, 2 adversarial integration tests.
+  **325/325 tests.**
 - [x] **5.7.5 / 5.7.2 round 5 — allOf constraint inheritance + top-level body schema
   constraints** — escalating critique found two gaps: (1) `flattenAllOf` merged `type`,
   `format`, `nullable`, `readOnly`, `writeOnly`, `items`, `enum` from `allOf` members into

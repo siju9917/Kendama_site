@@ -1171,6 +1171,109 @@ paths:
   });
 });
 
+// ─── Array parameter items diffing ───────────────────────────────────────────
+
+describe("array parameter items diffing — integration", () => {
+  it("query parameter array element type change (string→integer) is BREAKING", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - name: ids
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - name: ids
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "parameter-items-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.severity).toBe("BREAKING");
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+  });
+
+  it("query parameter array element enum value removed is BREAKING", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [active, inactive, pending]
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [active, inactive]
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const enumChange = changes.find((c) => c.type === "parameter-items-enum-changed");
+    expect(enumChange).toBeDefined();
+    expect(enumChange?.severity).toBe("BREAKING");
+    expect(enumChange?.message).toMatch(/pending/);
+  });
+});
+
 // ─── Top-level body schema format + enum ─────────────────────────────────────
 
 describe("top-level body schema format and enum diffing — integration", () => {
