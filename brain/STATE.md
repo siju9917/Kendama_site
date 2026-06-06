@@ -525,6 +525,14 @@ all green; check tests 16/16.
 35. **Brain updates**: APPROVALS.md Proposal #3 updated to note Phase 0 complete ahead of schedule.
     IDEA_BACKLOG.md D5 row updated to Phase 0 status + 91/91 tests. STATE.md test counts corrected
     to 91/91 (was 68 in two places). All committed + pushed.
+36. **Full 14-critic panel on D5 Phase 0** — first formal panel run for openapi-lens.
+    P1 found: circular `$ref` causes infinite recursion (no `visited` set guard). Fixed.
+    P2 found (4): request-schema-property-added type missing (diff always used response type);
+    public API throw contract undocumented; no allOf behavior pin test; no remote $ref behavior
+    pin test. All fixed. 5.7.2 escalating critique also passed (hard second pass, P0/P1=0).
+    96/96 tests (was 91); `CRITIQUE_LOG.md` created; PROGRESS.md known-limitations updated.
+    This closes the "four consecutive cycles without the full panel" caveat from the 5.7.7 audit.
+    Total suite: **663/663 tests** (BidDiff 567/567 + openapi-lens 96/96).
 
 ## Notes for the next session
 
