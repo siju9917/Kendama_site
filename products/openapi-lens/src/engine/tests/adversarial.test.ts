@@ -10490,3 +10490,111 @@ paths:
     expect(constChange?.after).toBeNull();
   });
 });
+
+// ─── Round 82: request body top-level minItems + response body minProperties null-transitions ─
+// minItems at request top-level: min-sense constraint, never tested at body scope (only property-level).
+// minProperties at response top-level: never tested at all (no property-level tests either).
+// Exercises constraintKind "min-sense" mapping for both field names via diffSchemaTopLevelConstraints.
+
+describe("adversarial round 82 — request body top-level minItems and response body minProperties null-transitions (end-to-end)", () => {
+  function makeArrayBodySpec82(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /tags:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+              ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  function makeObjectResponseSpec82(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /config:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                ${constraintLine}
+`;
+  }
+
+  it("adding minItems to request body array (null→3) is BREAKING — clients sending fewer than 3 elements were valid before", () => {
+    // requestConstraintSeverity min-sense: before === null → BREAKING
+    // Array body with no minItems accepted empty arrays; now requires at least 3.
+    const noMin   = makeArrayBodySpec82("");
+    const withMin = makeArrayBodySpec82("minItems: 3");
+    const changes = analyzeOpenApiDiff(noMin, withMin);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".minItems"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(3);
+  });
+
+  it("removing minItems from request body array (3→null) is INFO — constraint relaxed, all prior valid arrays remain valid", () => {
+    // requestConstraintSeverity min-sense: after === null → INFO
+    // Removing minItems allows smaller arrays — clients that sent ≥3 elements still pass.
+    const withMin = makeArrayBodySpec82("minItems: 3");
+    const noMin   = makeArrayBodySpec82("");
+    const changes = analyzeOpenApiDiff(withMin, noMin);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-property-constraint-changed" && String(c.location).endsWith(".minItems"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(3);
+    expect(constChange?.after).toBeNull();
+  });
+
+  it("adding minProperties to response body object (null→2) is INFO — server now guarantees at least 2 keys", () => {
+    // responseConstraintSeverity min-sense: before === null → INFO
+    // Clients that received objects with 0 or 1 key were OK before; now server guarantees ≥2 keys.
+    // This is a stronger server guarantee — INFO for clients.
+    const noMin   = makeObjectResponseSpec82("");
+    const withMin = makeObjectResponseSpec82("minProperties: 2");
+    const changes = analyzeOpenApiDiff(noMin, withMin);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".minProperties"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(2);
+  });
+
+  it("removing minProperties from response body object (2→null) is BREAKING — server may now return objects with fewer keys than clients expect", () => {
+    // responseConstraintSeverity min-sense: after === null → BREAKING
+    // Clients that relied on ≥2 keys being present (e.g. destructuring) may now receive objects with 0 or 1 key.
+    const withMin = makeObjectResponseSpec82("minProperties: 2");
+    const noMin   = makeObjectResponseSpec82("");
+    const changes = analyzeOpenApiDiff(withMin, noMin);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-property-constraint-changed" && String(c.location).endsWith(".minProperties"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBe(2);
+    expect(constChange?.after).toBeNull();
+  });
+});
