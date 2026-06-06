@@ -11382,3 +11382,91 @@ paths:
     expect(constChange?.after).toBe(1);
   });
 });
+
+// ─── Round 90: parameter minLength/maxLength null-transitions (string parameters) ─
+// All previous parameter constraint tests used integer parameters (minimum/maximum).
+// String parameters with minLength/maxLength constraints have never been tested end-to-end.
+// The constraintKind lookup maps minLength→min-sense and maxLength→max-sense, so the
+// same requestConstraintSeverity branches fire, but the field name extraction and the
+// YAML-level parameter schema parsing is exercised with string constraints for the first time.
+
+describe("adversarial round 90 — parameter minLength/maxLength null-transitions for string parameters (end-to-end)", () => {
+  function makeStringParamSpec90(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /search:
+    get:
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+            ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("adding minLength to string parameter (null→3) is BREAKING — clients sending shorter strings now fail", () => {
+    // requestConstraintSeverity min-sense: before === null → BREAKING
+    // String parameter had no length floor; now strings with <3 chars fail validation.
+    const noMin   = makeStringParamSpec90("");
+    const withMin = makeStringParamSpec90("minLength: 3");
+    const changes = analyzeOpenApiDiff(noMin, withMin);
+    const constChange = changes.find(
+      (c) => c.type === "parameter-constraint-changed" && String(c.location).endsWith(".minLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(3);
+  });
+
+  it("removing minLength from string parameter (3→null) is INFO — constraint relaxed, short strings now accepted", () => {
+    // requestConstraintSeverity min-sense: after === null → INFO
+    // Strings ≥3 chars still pass; shorter strings now also accepted.
+    const withMin = makeStringParamSpec90("minLength: 3");
+    const noMin   = makeStringParamSpec90("");
+    const changes = analyzeOpenApiDiff(withMin, noMin);
+    const constChange = changes.find(
+      (c) => c.type === "parameter-constraint-changed" && String(c.location).endsWith(".minLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(3);
+    expect(constChange?.after).toBeNull();
+  });
+
+  it("adding maxLength to string parameter (null→50) is BREAKING — clients sending longer strings now fail", () => {
+    // requestConstraintSeverity max-sense: before === null → BREAKING
+    // Previously any-length strings were accepted; now strings >50 chars fail validation.
+    const noMax   = makeStringParamSpec90("");
+    const withMax = makeStringParamSpec90("maxLength: 50");
+    const changes = analyzeOpenApiDiff(noMax, withMax);
+    const constChange = changes.find(
+      (c) => c.type === "parameter-constraint-changed" && String(c.location).endsWith(".maxLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(50);
+  });
+
+  it("removing maxLength from string parameter (50→null) is INFO — constraint relaxed, longer strings now accepted", () => {
+    // requestConstraintSeverity max-sense: after === null → INFO
+    // Strings ≤50 chars still pass; the removal only widens acceptance to longer strings.
+    const withMax = makeStringParamSpec90("maxLength: 50");
+    const noMax   = makeStringParamSpec90("");
+    const changes = analyzeOpenApiDiff(withMax, noMax);
+    const constChange = changes.find(
+      (c) => c.type === "parameter-constraint-changed" && String(c.location).endsWith(".maxLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(50);
+    expect(constChange?.after).toBeNull();
+  });
+});
