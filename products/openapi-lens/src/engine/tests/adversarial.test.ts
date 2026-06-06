@@ -11470,3 +11470,163 @@ paths:
     expect(constChange?.after).toBeNull();
   });
 });
+
+// ─── Round 91: items-level + parameter pattern constraint null-transitions ────
+// Pattern constraints on request/response array items and on parameters have never
+// been tested end-to-end. The classify rules for pattern are: requestConstraintSeverity
+// "pattern": after===null→INFO, else BREAKING; responseConstraintSeverity "pattern":
+// before===null→INFO, else BREAKING. These fire for both items-constraint and
+// parameter-constraint change types via the same requestConstraintSeverity function.
+
+describe("adversarial round 91 — items-level and parameter pattern constraint null-transitions (end-to-end)", () => {
+  function makeRequestArrayPatternSpec91(patternLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /codes:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                ${patternLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  function makeResponseArrayPatternSpec91(patternLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /codes:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  ${patternLine}
+`;
+  }
+
+  function makeParamPatternSpec91(patternLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /search:
+    get:
+      parameters:
+        - name: filter
+          in: query
+          schema:
+            type: string
+            ${patternLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("adding pattern to request array items (null→^[A-Z]{3}$) is BREAKING — clients sending non-matching elements now fail", () => {
+    // requestConstraintSeverity pattern: after !== null → BREAKING
+    // Previously any string element was accepted; now only 3-capital-letter codes pass.
+    const noPat   = makeRequestArrayPatternSpec91("");
+    const withPat = makeRequestArrayPatternSpec91("pattern: '^[A-Z]{3}$'");
+    const changes = analyzeOpenApiDiff(noPat, withPat);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-items-constraint-changed" && String(c.location).endsWith(".pattern"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe("^[A-Z]{3}$");
+  });
+
+  it("removing pattern from request array items (^[A-Z]{3}$→null) is INFO — constraint relaxed, all strings now accepted", () => {
+    // requestConstraintSeverity pattern: after === null → INFO
+    // Clients sending code-format elements still pass; any string now also accepted.
+    const withPat = makeRequestArrayPatternSpec91("pattern: '^[A-Z]{3}$'");
+    const noPat   = makeRequestArrayPatternSpec91("");
+    const changes = analyzeOpenApiDiff(withPat, noPat);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-items-constraint-changed" && String(c.location).endsWith(".pattern"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe("^[A-Z]{3}$");
+    expect(constChange?.after).toBeNull();
+  });
+
+  it("adding pattern to response array items (null→^[a-z]+$) is INFO — server now guarantees elements match the pattern", () => {
+    // responseConstraintSeverity pattern: before === null → INFO
+    // Server adding a pattern guarantee to its array elements is a stronger promise for clients.
+    const noPat   = makeResponseArrayPatternSpec91("");
+    const withPat = makeResponseArrayPatternSpec91("pattern: '^[a-z]+$'");
+    const changes = analyzeOpenApiDiff(noPat, withPat);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-items-constraint-changed" && String(c.location).endsWith(".pattern"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe("^[a-z]+$");
+  });
+
+  it("removing pattern from response array items (^[a-z]+$→null) is BREAKING — clients validating element format may break", () => {
+    // responseConstraintSeverity pattern: before !== null → BREAKING
+    // Clients that relied on elements matching the pattern may break when server returns arbitrary strings.
+    const withPat = makeResponseArrayPatternSpec91("pattern: '^[a-z]+$'");
+    const noPat   = makeResponseArrayPatternSpec91("");
+    const changes = analyzeOpenApiDiff(withPat, noPat);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-items-constraint-changed" && String(c.location).endsWith(".pattern"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBe("^[a-z]+$");
+    expect(constChange?.after).toBeNull();
+  });
+
+  it("adding pattern to string parameter (null→^[a-z]{2,4}$) is BREAKING — clients sending non-matching values now fail", () => {
+    // requestConstraintSeverity pattern: after !== null → BREAKING
+    // Previously any string was a valid parameter value; now only lowercase 2-4 char strings pass.
+    const noPat   = makeParamPatternSpec91("");
+    const withPat = makeParamPatternSpec91("pattern: '^[a-z]{2,4}$'");
+    const changes = analyzeOpenApiDiff(noPat, withPat);
+    const constChange = changes.find(
+      (c) => c.type === "parameter-constraint-changed" && String(c.location).endsWith(".pattern"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe("^[a-z]{2,4}$");
+  });
+
+  it("removing pattern from string parameter (^[a-z]{2,4}$→null) is INFO — any string value now accepted", () => {
+    // requestConstraintSeverity pattern: after === null → INFO
+    // Clients sending 2-4 lowercase char values still pass; any string now also accepted.
+    const withPat = makeParamPatternSpec91("pattern: '^[a-z]{2,4}$'");
+    const noPat   = makeParamPatternSpec91("");
+    const changes = analyzeOpenApiDiff(withPat, noPat);
+    const constChange = changes.find(
+      (c) => c.type === "parameter-constraint-changed" && String(c.location).endsWith(".pattern"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe("^[a-z]{2,4}$");
+    expect(constChange?.after).toBeNull();
+  });
+});
