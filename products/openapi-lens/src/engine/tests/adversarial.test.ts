@@ -8170,3 +8170,158 @@ paths:
     expect(statusAdded?.after).toBe("422");
   });
 });
+
+// ─── Round 52: remaining untested change types ────────────────────────────────
+
+describe("parameter-nullable-changed — zero prior adversarial tests (5.7.5 round 52)", () => {
+  function makeParamSpec(nullable: boolean): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    get:
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            nullable: ${nullable}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("parameter nullable true→false is BREAKING (clients sending null now get 400)", () => {
+    const changes = analyzeOpenApiDiff(makeParamSpec(true), makeParamSpec(false));
+    const nullableChange = changes.find((c) => c.type === "parameter-nullable-changed");
+    expect(nullableChange).toBeDefined();
+    expect(nullableChange?.severity).toBe("BREAKING");
+  });
+
+  it("parameter nullable false→true is INFO (clients may now send null)", () => {
+    const changes = analyzeOpenApiDiff(makeParamSpec(false), makeParamSpec(true));
+    const nullableChange = changes.find((c) => c.type === "parameter-nullable-changed");
+    expect(nullableChange).toBeDefined();
+    expect(nullableChange?.severity).toBe("INFO");
+  });
+});
+
+describe("request-schema-property-format-changed — zero prior adversarial tests (5.7.5 round 52)", () => {
+  function makeRequestFormatSpec(format: string | null): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  ${format !== null ? `format: "${format}"` : ""}
+      responses:
+        "201":
+          description: created
+`;
+  }
+
+  it("request property format added (null→email) is BREAKING (server now validates email format)", () => {
+    const changes = analyzeOpenApiDiff(makeRequestFormatSpec(null), makeRequestFormatSpec("email"));
+    const fmtChange = changes.find((c) => c.type === "request-schema-property-format-changed");
+    expect(fmtChange).toBeDefined();
+    expect(fmtChange?.severity).toBe("BREAKING");
+    expect(fmtChange?.before).toBeNull();
+    expect(fmtChange?.after).toBe("email");
+  });
+
+  it("request property format removed (email→null) is INFO (server relaxes validation)", () => {
+    const changes = analyzeOpenApiDiff(makeRequestFormatSpec("email"), makeRequestFormatSpec(null));
+    const fmtChange = changes.find((c) => c.type === "request-schema-property-format-changed");
+    expect(fmtChange).toBeDefined();
+    expect(fmtChange?.severity).toBe("INFO");
+  });
+
+  it("request property format changed (date→date-time) is BREAKING", () => {
+    const changes = analyzeOpenApiDiff(makeRequestFormatSpec("date"), makeRequestFormatSpec("date-time"));
+    const fmtChange = changes.find((c) => c.type === "request-schema-property-format-changed");
+    expect(fmtChange).toBeDefined();
+    expect(fmtChange?.severity).toBe("BREAKING");
+  });
+});
+
+describe("operation-deprecated-changed — zero prior adversarial tests (5.7.5 round 52)", () => {
+  function makeDeprecatedSpec(deprecated: boolean): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /legacy:
+    get:
+      deprecated: ${deprecated}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("operation deprecated false→true is INFO (deprecation warning added, endpoint still works)", () => {
+    const changes = analyzeOpenApiDiff(makeDeprecatedSpec(false), makeDeprecatedSpec(true));
+    const depChange = changes.find((c) => c.type === "operation-deprecated-changed");
+    expect(depChange).toBeDefined();
+    expect(depChange?.severity).toBe("INFO");
+    expect(depChange?.after).toBe(true);
+  });
+
+  it("operation deprecated true→false is INFO (un-deprecated, endpoint continues working)", () => {
+    const changes = analyzeOpenApiDiff(makeDeprecatedSpec(true), makeDeprecatedSpec(false));
+    const depChange = changes.find((c) => c.type === "operation-deprecated-changed");
+    expect(depChange).toBeDefined();
+    expect(depChange?.severity).toBe("INFO");
+    expect(depChange?.after).toBe(false);
+  });
+});
+
+describe("parameter-deprecated-changed — zero prior adversarial tests (5.7.5 round 52)", () => {
+  function makeParamDeprecatedSpec(deprecated: boolean): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    get:
+      parameters:
+        - name: old_filter
+          in: query
+          required: false
+          deprecated: ${deprecated}
+          schema: {type: string}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("parameter deprecated false→true is INFO (advisory; parameter still accepted)", () => {
+    const changes = analyzeOpenApiDiff(makeParamDeprecatedSpec(false), makeParamDeprecatedSpec(true));
+    const depChange = changes.find((c) => c.type === "parameter-deprecated-changed");
+    expect(depChange).toBeDefined();
+    expect(depChange?.severity).toBe("INFO");
+    expect(depChange?.after).toBe(true);
+  });
+
+  it("parameter deprecated true→false is INFO (parameter un-deprecated, no action required)", () => {
+    const changes = analyzeOpenApiDiff(makeParamDeprecatedSpec(true), makeParamDeprecatedSpec(false));
+    const depChange = changes.find((c) => c.type === "parameter-deprecated-changed");
+    expect(depChange).toBeDefined();
+    expect(depChange?.severity).toBe("INFO");
+    expect(depChange?.after).toBe(false);
+  });
+});
