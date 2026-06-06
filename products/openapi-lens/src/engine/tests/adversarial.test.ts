@@ -11221,3 +11221,164 @@ paths:
     expect(constChange?.after).toBeNull();
   });
 });
+
+// ─── Round 89: items maxLength null-transitions + parameter constraint loosening ─
+// R87 tested items minLength (min-sense) null-transitions. R88 tested parameter minimum/maximum
+// null-transitions. Remaining gaps:
+//   1. Items maxLength (max-sense) null-transitions: request null→50=BREAKING, 50→null=INFO;
+//      response null→50=INFO, 50→null=BREAKING — all untested.
+//   2. Parameter constraint loosening paths (value-change INFO): maximum increase (50→100) and
+//      minimum decrease (5→1) — only BREAKING parameter constraint value-change was tested.
+
+describe("adversarial round 89 — items maxLength null-transitions and parameter constraint loosening (end-to-end)", () => {
+  function makeRequestArraySpec89(itemsLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /tokens:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                ${itemsLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  function makeResponseArraySpec89(itemsLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /tokens:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  ${itemsLine}
+`;
+  }
+
+  function makeParamSpec89(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /search:
+    get:
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("adding maxLength to request array items (null→50) is BREAKING — clients sending longer elements now fail", () => {
+    // requestConstraintSeverity max-sense: before === null → BREAKING
+    // Clients that sent elements >50 chars were valid; now they fail validation.
+    const noMax   = makeRequestArraySpec89("");
+    const withMax = makeRequestArraySpec89("maxLength: 50");
+    const changes = analyzeOpenApiDiff(noMax, withMax);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-items-constraint-changed" && String(c.location).endsWith(".maxLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(50);
+  });
+
+  it("removing maxLength from request array items (50→null) is INFO — constraint relaxed, longer elements now accepted", () => {
+    // requestConstraintSeverity max-sense: after === null → INFO
+    // Elements ≤50 chars still pass; the removal only widens acceptance.
+    const withMax = makeRequestArraySpec89("maxLength: 50");
+    const noMax   = makeRequestArraySpec89("");
+    const changes = analyzeOpenApiDiff(withMax, noMax);
+    const constChange = changes.find(
+      (c) => c.type === "request-schema-items-constraint-changed" && String(c.location).endsWith(".maxLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(50);
+    expect(constChange?.after).toBeNull();
+  });
+
+  it("adding maxLength to response array items (null→50) is INFO — server now guarantees elements are at most 50 chars", () => {
+    // responseConstraintSeverity max-sense: before === null → INFO
+    // Server adding a ceiling on element lengths is a stronger promise for clients.
+    const noMax   = makeResponseArraySpec89("");
+    const withMax = makeResponseArraySpec89("maxLength: 50");
+    const changes = analyzeOpenApiDiff(noMax, withMax);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-items-constraint-changed" && String(c.location).endsWith(".maxLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBeNull();
+    expect(constChange?.after).toBe(50);
+  });
+
+  it("removing maxLength from response array items (50→null) is BREAKING — server may now return longer elements than clients expect", () => {
+    // responseConstraintSeverity max-sense: after === null → BREAKING
+    // Clients that relied on elements being ≤50 chars may break with unbounded-length strings.
+    const withMax = makeResponseArraySpec89("maxLength: 50");
+    const noMax   = makeResponseArraySpec89("");
+    const changes = analyzeOpenApiDiff(withMax, noMax);
+    const constChange = changes.find(
+      (c) => c.type === "response-schema-items-constraint-changed" && String(c.location).endsWith(".maxLength"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("BREAKING");
+    expect(constChange?.before).toBe(50);
+    expect(constChange?.after).toBeNull();
+  });
+
+  it("raising maximum on query parameter (50→100) is INFO — constraint loosened, values 51-100 now accepted", () => {
+    // requestConstraintSeverity max-sense: after (100) > before (50) → INFO
+    // Clients that sent ≤50 still pass; the range widened to ≤100.
+    const before = makeParamSpec89("maximum: 50");
+    const after  = makeParamSpec89("maximum: 100");
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "parameter-constraint-changed" && String(c.location).endsWith(".maximum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(50);
+    expect(constChange?.after).toBe(100);
+  });
+
+  it("lowering minimum on query parameter (5→1) is INFO — constraint loosened, values 1-4 now accepted", () => {
+    // requestConstraintSeverity min-sense: after (1) < before (5) → INFO
+    // Clients that sent ≥5 still pass; smaller values now also accepted.
+    const before = makeParamSpec89("minimum: 5");
+    const after  = makeParamSpec89("minimum: 1");
+    const changes = analyzeOpenApiDiff(before, after);
+    const constChange = changes.find(
+      (c) => c.type === "parameter-constraint-changed" && String(c.location).endsWith(".minimum"),
+    );
+    expect(constChange).toBeDefined();
+    expect(constChange?.severity).toBe("INFO");
+    expect(constChange?.before).toBe(5);
+    expect(constChange?.after).toBe(1);
+  });
+});
