@@ -3180,3 +3180,216 @@ paths:
     expect(typeChange?.message).not.toMatch(/^Change detected at/);
   });
 });
+
+describe("additionalProperties breaking-change detection (5.7.5 round 16)", () => {
+  it("request body with additionalProperties:false added is BREAKING", () => {
+    // Closing an open request schema is BREAKING — clients with extra properties will receive 400.
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        "201":
+          description: created
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              additionalProperties: false
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const apChange = changes.find((c) => c.type === "request-schema-additional-properties-changed");
+    expect(apChange).toBeDefined();
+    expect(apChange?.severity).toBe("BREAKING");
+    expect(apChange?.before).toBe(true); // was open (default)
+    expect(apChange?.after).toBe(false); // now closed
+    expect(apChange?.message).not.toMatch(/^Change detected at/);
+  });
+
+  it("request body with additionalProperties:false removed is INFO", () => {
+    // Opening a previously-closed request schema is INFO — clients' existing payloads still work.
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              additionalProperties: false
+      responses:
+        "201":
+          description: created
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const apChange = changes.find((c) => c.type === "request-schema-additional-properties-changed");
+    expect(apChange).toBeDefined();
+    expect(apChange?.severity).toBe("INFO");
+    expect(apChange?.before).toBe(false);
+    expect(apChange?.after).toBe(true);
+  });
+
+  it("response body with additionalProperties:false added is INFO", () => {
+    // Closing a response schema is INFO — server gives a stronger guarantee, non-breaking for clients.
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users/{id}:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /users/{id}:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                additionalProperties: false
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const apChange = changes.find((c) => c.type === "response-schema-additional-properties-changed");
+    expect(apChange).toBeDefined();
+    expect(apChange?.severity).toBe("INFO");
+    expect(apChange?.before).toBe(true);
+    expect(apChange?.after).toBe(false);
+  });
+
+  it("nested request property with additionalProperties:false added is BREAKING", () => {
+    // Closing a nested object property schema is BREAKING — clients sending extra fields in the
+    // nested object will receive 400.
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /orders:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: object
+                  properties:
+                    street:
+                      type: string
+      responses:
+        "201":
+          description: created
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /orders:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: object
+                  properties:
+                    street:
+                      type: string
+                  additionalProperties: false
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const apChange = changes.find((c) => c.type === "request-schema-property-additional-properties-changed");
+    expect(apChange).toBeDefined();
+    expect(apChange?.severity).toBe("BREAKING");
+    expect(apChange?.before).toBe(true);
+    expect(apChange?.after).toBe(false);
+    expect(apChange?.message).not.toMatch(/^Change detected at/);
+  });
+});

@@ -24,6 +24,13 @@ export interface OapiSchema {
   pattern?: string;
   minItems?: number;
   maxItems?: number;
+  /**
+   * Whether extra properties are permitted (JSON Schema `additionalProperties`).
+   * undefined = spec omits the field (equivalent to `true` — extras are allowed).
+   * false = server closes the schema — no extra properties accepted/returned.
+   * true = explicitly permits extra properties (same as default).
+   */
+  additionalProperties?: boolean;
 }
 
 /** A parameter on an operation (path / query / header / cookie). */
@@ -130,7 +137,11 @@ export type OapiChangeType =
   | "response-schema-items-readonly-changed"
   | "request-schema-items-readonly-changed"
   | "response-schema-items-writeonly-changed"
-  | "request-schema-items-writeonly-changed";
+  | "request-schema-items-writeonly-changed"
+  | "request-schema-additional-properties-changed"
+  | "response-schema-additional-properties-changed"
+  | "request-schema-property-additional-properties-changed"
+  | "response-schema-property-additional-properties-changed";
 
 /** A raw structural difference between two specs before classification. */
 export interface OapiRawChange {

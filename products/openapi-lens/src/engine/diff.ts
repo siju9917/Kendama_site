@@ -306,6 +306,9 @@ function diffSchemaProperties(
       diffSchemaItems(path, method, `${location}.properties.${key}`, bProp, cProp, isRequest, changes);
     }
 
+    // Diff additionalProperties on nested object properties.
+    diffPropertyAdditionalProperties(path, method, `${location}.properties.${key}`, bProp, cProp, isRequest, changes);
+
     // Recurse into nested object properties (both old and new exist — diff them).
     if (bProp.properties || cProp.properties || bProp.required || cProp.required) {
       diffSchemaRequiredFields(
@@ -476,6 +479,57 @@ function diffSchemaTopLevelConstraints(
   }
 }
 
+/**
+ * Compare additionalProperties on a schema.
+ * `undefined` (absent) and `true` are semantically equivalent (extras allowed).
+ * The significant transition is: absent/true ↔ `false` (schema closes/opens).
+ */
+function diffAdditionalProperties(
+  path: string,
+  method: HttpMethod,
+  location: string,
+  baseline: OapiSchema | null,
+  current: OapiSchema | null,
+  isRequest: boolean,
+  changes: OapiRawChange[],
+): void {
+  // Normalize: absent or explicit true → true (extras allowed); false → false (closed schema)
+  const bAP = baseline?.additionalProperties ?? true;
+  const cAP = current?.additionalProperties ?? true;
+  if (bAP !== cAP) {
+    changes.push({
+      type: isRequest ? "request-schema-additional-properties-changed" : "response-schema-additional-properties-changed",
+      path, method,
+      location: `${location}.additionalProperties`,
+      before: bAP,
+      after: cAP,
+    });
+  }
+}
+
+/** Compare additionalProperties on schema properties (per-property level). */
+function diffPropertyAdditionalProperties(
+  path: string,
+  method: HttpMethod,
+  location: string,
+  bProp: OapiSchema,
+  cProp: OapiSchema,
+  isRequest: boolean,
+  changes: OapiRawChange[],
+): void {
+  const bAP = bProp.additionalProperties ?? true;
+  const cAP = cProp.additionalProperties ?? true;
+  if (bAP !== cAP) {
+    changes.push({
+      type: isRequest ? "request-schema-property-additional-properties-changed" : "response-schema-property-additional-properties-changed",
+      path, method,
+      location: `${location}.additionalProperties`,
+      before: bAP,
+      after: cAP,
+    });
+  }
+}
+
 /** Compare format and enum on a top-level request/response body schema. */
 function diffSchemaTopLevelFields(
   path: string,
@@ -571,6 +625,7 @@ function diffRequestBody(
     diffNullable(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffSchemaTopLevelConstraints(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
     diffSchemaTopLevelFields(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
+    diffAdditionalProperties(path, method, "requestBody.content.schema", bb.schema, cb.schema, true, changes);
   }
 }
 
@@ -599,6 +654,7 @@ function diffResponses(
     diffSchemaItems(path, method, loc, br.schema, cr.schema, false, changes);
     diffSchemaTopLevelConstraints(path, method, loc, br.schema, cr.schema, false, changes);
     diffSchemaTopLevelFields(path, method, loc, br.schema, cr.schema, false, changes);
+    diffAdditionalProperties(path, method, loc, br.schema, cr.schema, false, changes);
   }
 
   for (const code of Object.keys(cMap)) {

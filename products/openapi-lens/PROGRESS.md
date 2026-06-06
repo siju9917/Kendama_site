@@ -154,6 +154,21 @@ auto-proceeds (2026-06-13) or earlier if human approves.
   Fixed: distinguish `!before && after → INFO` from `before && !after → BREAKING`.
   Also fixed `request-schema-items-type-changed: type→null` (INFO but had generic message).
   +12 tests (6 classify unit + 6 adversarial integration). **389/389 tests.**
+- [x] **5.7.5 round 16 — `additionalProperties: false` closing/opening not detected** — a common
+  OpenAPI pattern (`additionalProperties: false` = closed schema, reject extra properties) was
+  completely invisible to the diff engine. Neither the parser, diff, nor classify had any awareness
+  of this field. Fixed:
+  - `OapiSchema`: added `additionalProperties?: boolean` field
+  - `parser.ts` `normalizeSchema`: extracts `additionalProperties` when it's a boolean value (schema-valued
+    additionalProperties not supported — Phase 2)
+  - `flattenAllOf`: inherits `additionalProperties` from allOf members when parent doesn't define it
+  - `diff.ts`: two new diff helpers (`diffAdditionalProperties`, `diffPropertyAdditionalProperties`)
+    wired into `diffRequestBody`, `diffResponses`, and the `diffSchemaProperties` property loop
+  - Two new top-level and two new property-level OapiChangeType values (4 total)
+  - Classify rules (direction-aware): request side `true→false` = BREAKING (clients with extra
+    properties will get 400); `false→true` = INFO; response side: both directions = INFO (annotation
+    only, server's guarantee narrows or relaxes)
+  +14 tests (4 TYPE_STUBS + 6 classify unit + 4 adversarial integration). **442/442 tests.**
 - [x] **5.7.5 round 15 — request-side constraint removal classified as BREAKING instead of INFO** —
   systematic audit of all request-side classify rules found 11 cases where a constraint being REMOVED
   from the server spec (before=value, after=null/undefined) was incorrectly classified as BREAKING.

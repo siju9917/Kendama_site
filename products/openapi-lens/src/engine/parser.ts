@@ -113,6 +113,7 @@ function flattenAllOf(schema: OapiSchema): OapiSchema {
     if (result.writeOnly === undefined && member.writeOnly !== undefined) result.writeOnly = member.writeOnly;
     if (result.items === undefined && member.items !== undefined) result.items = member.items;
     if (result.enum === undefined && member.enum !== undefined) result.enum = member.enum;
+    if (result.additionalProperties === undefined && member.additionalProperties !== undefined) result.additionalProperties = member.additionalProperties;
     // Inherit constraint fields from members when parent doesn't define them.
     const numericConstraints = ["minimum", "maximum", "minLength", "maxLength", "minItems", "maxItems"] as const;
     for (const cf of numericConstraints) {
@@ -164,6 +165,10 @@ function normalizeSchema(raw: unknown, lookup: Record<string, unknown>, visited:
   if (Array.isArray(rawRequired)) {
     schema.required = rawRequired.filter((v): v is string => typeof v === "string");
   }
+
+  // additionalProperties: only capture boolean values (ignoring schema-valued additionalProperties).
+  const rawAdditional = raw["additionalProperties"];
+  if (typeof rawAdditional === "boolean") schema.additionalProperties = rawAdditional;
 
   const rawProps = raw["properties"];
   if (isObject(rawProps)) {

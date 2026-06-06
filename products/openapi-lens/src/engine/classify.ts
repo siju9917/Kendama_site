@@ -698,6 +698,44 @@ const CLASSIFY_RULES: ClassifyRule[] = [
     message: (c) => `Request array items type constraint removed: ${c.location}. Server now accepts any element type (non-breaking for clients).`,
   },
 
+  // ─── additionalProperties direction-aware ────────────────────────────────
+  // Request body: adding additionalProperties:false closes the schema = BREAKING (extra properties rejected).
+  {
+    matches: (c) => c.type === "request-schema-additional-properties-changed" && c.after === false ? "BREAKING" : null,
+    message: (c) => `Request schema closed: ${c.location}. Server now rejects extra properties (\`additionalProperties: false\`). Clients sending undocumented properties will receive 400.`,
+  },
+  // Request body: removing additionalProperties:false = INFO (server now accepts extra properties).
+  {
+    matches: (c) => c.type === "request-schema-additional-properties-changed" && c.after === true ? "INFO" : null,
+    message: (c) => `Request schema opened: ${c.location}. Server no longer enforces \`additionalProperties: false\`; extra properties are now accepted (non-breaking for clients).`,
+  },
+  // Response schema: both directions are INFO (schema annotation, doesn't affect client response handling).
+  {
+    matches: (c) => c.type === "response-schema-additional-properties-changed" && c.after === false ? "INFO" : null,
+    message: (c) => `Response schema closed: ${c.location}. Server now guarantees no extra properties are returned (\`additionalProperties: false\`). Clients benefit from stricter guarantee.`,
+  },
+  {
+    matches: (c) => c.type === "response-schema-additional-properties-changed" && c.after === true ? "INFO" : null,
+    message: (c) => `Response schema opened: ${c.location}. Server may now return extra properties beyond what is documented. Clients should handle unknown fields gracefully.`,
+  },
+  // Property-level additionalProperties: same direction logic as top-level.
+  {
+    matches: (c) => c.type === "request-schema-property-additional-properties-changed" && c.after === false ? "BREAKING" : null,
+    message: (c) => `Request property schema closed: ${c.location}. Nested object now rejects extra properties; clients sending undocumented fields will receive 400.`,
+  },
+  {
+    matches: (c) => c.type === "request-schema-property-additional-properties-changed" && c.after === true ? "INFO" : null,
+    message: (c) => `Request property schema opened: ${c.location}. Nested object no longer enforces \`additionalProperties: false\`; extra fields are now accepted (non-breaking for clients).`,
+  },
+  {
+    matches: (c) => c.type === "response-schema-property-additional-properties-changed" && c.after === false ? "INFO" : null,
+    message: (c) => `Response property schema closed: ${c.location}. Nested object now guarantees no extra fields are returned.`,
+  },
+  {
+    matches: (c) => c.type === "response-schema-property-additional-properties-changed" && c.after === true ? "INFO" : null,
+    message: (c) => `Response property schema opened: ${c.location}. Nested object may now return extra fields beyond what is documented.`,
+  },
+
   // ─── SAFE / INFO ────────────────────────────────────────────────────────
   {
     matches: (c) => c.type === "endpoint-added" ? "INFO" : null,

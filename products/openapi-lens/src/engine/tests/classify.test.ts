@@ -793,6 +793,10 @@ describe("classifyChanges — completeness: every OapiChangeType must have a rul
     "request-schema-items-readonly-changed":        [false, true],
     "response-schema-items-writeonly-changed":      [false, true],
     "request-schema-items-writeonly-changed":       [false, true],
+    "request-schema-additional-properties-changed":          [true, false],
+    "response-schema-additional-properties-changed":         [true, false],
+    "request-schema-property-additional-properties-changed": [true, false],
+    "response-schema-property-additional-properties-changed":[true, false],
   };
 
   it.each(Object.keys(TYPE_STUBS) as OapiChangeType[])(
@@ -1038,6 +1042,48 @@ describe("classify — request-side constraint removal fixes (5.7.5 round 15)", 
   it("parameter-items-enum-changed (null→enum) remains BREAKING", () => {
     const result = classifyChanges([raw("parameter-items-enum-changed", null, ["jpg", "png"], "parameter(query:formats).schema.items.enum")]);
     expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+});
+
+describe("classify — additionalProperties direction-aware (5.7.5 round 16)", () => {
+  it("request-schema-additional-properties-changed (true→false) is BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-additional-properties-changed", true, false, "requestBody.content.schema.additionalProperties")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/extra|additional|reject/i);
+  });
+
+  it("request-schema-additional-properties-changed (false→true) is INFO", () => {
+    const result = classifyChanges([raw("request-schema-additional-properties-changed", false, true, "requestBody.content.schema.additionalProperties")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/open|accept|non-breaking/i);
+  });
+
+  it("response-schema-additional-properties-changed (true→false) is INFO", () => {
+    const result = classifyChanges([raw("response-schema-additional-properties-changed", true, false, "responses[200].content.schema.additionalProperties")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/closed|guarantee|stricter/i);
+  });
+
+  it("response-schema-additional-properties-changed (false→true) is INFO", () => {
+    const result = classifyChanges([raw("response-schema-additional-properties-changed", false, true, "responses[200].content.schema.additionalProperties")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/extra|unknown|graceful/i);
+  });
+
+  it("request-schema-property-additional-properties-changed (true→false) is BREAKING", () => {
+    const result = classifyChanges([raw("request-schema-property-additional-properties-changed", true, false, "requestBody.content.schema.properties.address.additionalProperties")]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+
+  it("response-schema-property-additional-properties-changed (true→false) is INFO", () => {
+    const result = classifyChanges([raw("response-schema-property-additional-properties-changed", true, false, "responses[200].content.schema.properties.address.additionalProperties")]);
+    expect(result[0]?.severity).toBe("INFO");
     expect(result[0]?.message).not.toMatch(/^Change detected at/);
   });
 });
