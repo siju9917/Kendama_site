@@ -1564,3 +1564,44 @@ describe("format direction — cross-level consistency", () => {
     expect(result[0]?.message).not.toMatch(/^Change detected at/);
   });
 });
+
+describe("classify round 62 — operation-id-changed all directions + edge cases", () => {
+  // The completeness test only checks the rename case. Verify all three transitions explicitly.
+  it("operation-id-changed: operationId added (null→id) is INFO with 'added' in message", () => {
+    const result = classifyChanges([raw("operation-id-changed", null, "getItems", "GET /items.operationId")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/added/i);
+  });
+
+  it("operation-id-changed: operationId removed (id→null) is INFO with 'removed' in message", () => {
+    const result = classifyChanges([raw("operation-id-changed", "getItems", null, "GET /items.operationId")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+    expect(result[0]?.message).toMatch(/removed/i);
+  });
+
+  it("operation-id-changed: operationId renamed includes old and new names in message", () => {
+    const result = classifyChanges([raw("operation-id-changed", "getItems", "listItems", "GET /items.operationId")]);
+    expect(result[0]?.severity).toBe("INFO");
+    expect(result[0]?.message).toMatch(/getItems/);
+    expect(result[0]?.message).toMatch(/listItems/);
+  });
+
+  it("parameter-added: required:false is still INFO (falsy required does not trigger BREAKING adjustment)", () => {
+    // adjustAddedRequiredParam checks param?.required (truthy) — false is falsy, stays INFO.
+    const result = classifyChanges([raw("parameter-added", null, { name: "q", in: "query", required: false })]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("parameter-added: required field absent (undefined) is INFO (treated as optional)", () => {
+    const result = classifyChanges([raw("parameter-added", null, { name: "q", in: "query" })]);
+    expect(result[0]?.severity).toBe("INFO");
+  });
+
+  it("parameter-added: required:true upgrades severity to BREAKING", () => {
+    const result = classifyChanges([raw("parameter-added", null, { name: "apiKey", in: "query", required: true })]);
+    expect(result[0]?.severity).toBe("BREAKING");
+    expect(result[0]?.message).not.toMatch(/^Change detected at/);
+  });
+});

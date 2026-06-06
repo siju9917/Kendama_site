@@ -8816,3 +8816,200 @@ paths:
     expect(propAdded).toBeDefined();
   });
 });
+
+describe("adversarial round 62 — content-type mismatch schema diffing (known Phase 2 limitation)", () => {
+  // When a response completely switches content type (e.g. JSON → XML) with different schemas,
+  // the engine correctly emits media-type-removed (BREAKING) + media-type-added (INFO), but ALSO
+  // emits spurious schema-property changes by comparing the mismatched schemas.
+  // This is a Phase 2 known limitation: the engine lacks per-content-type schema tracking and
+  // always diffs the "preferred" schema (application/json > first available) for each side.
+  // The overall severity verdict (BREAKING) is correct; the extra schema events are noisy.
+
+  it("JSON → XML switch: correct media-type-removed/added emitted (BREAKING+INFO)", () => {
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/xml:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeRemoved = changes.find((c) => c.type === "response-media-type-removed");
+    const typeAdded   = changes.find((c) => c.type === "response-media-type-added");
+    expect(typeRemoved).toBeDefined();
+    expect(typeRemoved?.before).toBe("application/json");
+    expect(typeRemoved?.severity).toBe("BREAKING");
+    expect(typeAdded).toBeDefined();
+    expect(typeAdded?.after).toBe("application/xml");
+    expect(typeAdded?.severity).toBe("INFO");
+  });
+
+  it("JSON → XML switch with different schemas: spurious schema-property events are emitted (Phase 2 gap)", () => {
+    // Documents the known limitation: mismatched content types cause schema cross-comparison.
+    // Both the correct media-type changes AND spurious property changes appear.
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/xml:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    // At minimum, media-type changes are present (the correct signal)
+    expect(changes.some((c) => c.type === "response-media-type-removed")).toBe(true);
+    expect(changes.some((c) => c.type === "response-media-type-added")).toBe(true);
+    // The spurious schema diffs: engine compares json schema (id:int) with xml schema (name:str)
+    // This documents the current behaviour — not an assertion it is correct.
+    const propRemoved = changes.filter((c) => c.type === "response-schema-property-removed");
+    const propAdded   = changes.filter((c) => c.type === "response-schema-property-added");
+    // `id` from JSON schema is "removed" and `name` from XML schema is "added" spuriously
+    expect(propRemoved.some((c) => String(c.before) === "integer")).toBe(true);
+    expect(propAdded.some((c) => String(c.after) === "string")).toBe(true);
+    // Overall, the highest severity is still BREAKING (from media-type-removed)
+    expect(changes.some((c) => c.severity === "BREAKING")).toBe(true);
+  });
+
+  it("same-content-type schema change emits property events with NO media-type events", () => {
+    // Positive control: when content type stays the same, only schema changes are emitted.
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    expect(changes.filter((c) => c.type === "response-media-type-removed" || c.type === "response-media-type-added")).toHaveLength(0);
+    const propAdded = changes.find((c) => c.type === "response-schema-property-added");
+    expect(propAdded).toBeDefined();
+    expect(propAdded?.after).toBe("string");
+    expect(propAdded?.severity).toBe("INFO");
+  });
+
+  it("XML → JSON switch on request body: BREAKING media-type-removed + INFO added", () => {
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeRemoved = changes.find((c) => c.type === "request-media-type-removed");
+    const typeAdded   = changes.find((c) => c.type === "request-media-type-added");
+    expect(typeRemoved).toBeDefined();
+    expect(typeRemoved?.before).toBe("application/xml");
+    expect(typeRemoved?.severity).toBe("BREAKING");
+    expect(typeAdded).toBeDefined();
+    expect(typeAdded?.after).toBe("application/json");
+    expect(typeAdded?.severity).toBe("INFO");
+  });
+});
