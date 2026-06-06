@@ -542,4 +542,52 @@ components:
     expect(breaking.some((c) => c.type === "parameter-removed")).toBe(true);
     expect(info.some((c) => c.type === "parameter-added")).toBe(true);
   });
+
+  it("detects BREAKING when a parameter becomes non-nullable (nullable: true → false)", () => {
+    const baseline = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+            nullable: true
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+            nullable: false
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const breaking = breakingOnly(changes);
+    expect(breaking.some((c) => c.type === "parameter-nullable-changed")).toBe(true);
+    const change = breaking.find((c) => c.type === "parameter-nullable-changed")!;
+    expect(change.before).toBe(true);
+    expect(change.after).toBe(false);
+    expect(change.message).toMatch(/non-nullable/i);
+  });
 });
