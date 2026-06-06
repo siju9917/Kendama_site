@@ -254,3 +254,118 @@ describe("adversarial — isTerraformPlanJson false-positive / false-negative", 
     expect(isTerraformPlanJson(text)).toBe(false);
   });
 });
+
+describe("adversarial round 42 — resource type coverage gaps", () => {
+  it("aws_eks_cluster update is CRITICAL (node drain disrupts all workloads)", () => {
+    // EKS cluster version upgrade drains all nodes and restarts pods — workload disruption
+    // is equivalent to a data-store modification. Must be CRITICAL, not NORMAL.
+    const c = classifyChange(
+      makeChange({
+        type: "aws_eks_cluster",
+        address: "aws_eks_cluster.prod",
+        actions: ["update"],
+        before: { version: "1.28" },
+        after: { version: "1.29" },
+      }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+  });
+
+  it("aws_eks_cluster creation is NORMAL (no existing workloads at risk)", () => {
+    const c = classifyChange(
+      makeChange({
+        type: "aws_eks_cluster",
+        address: "aws_eks_cluster.prod",
+        actions: ["create"],
+        before: null,
+      }),
+    );
+    expect(c.severity).toBe("NORMAL");
+  });
+
+  it("azurerm_sql_database update is CRITICAL (managed Azure SQL database modification risks data)", () => {
+    const c = classifyChange(
+      makeChange({
+        type: "azurerm_sql_database",
+        address: "azurerm_sql_database.app",
+        actions: ["update"],
+        before: { sku_name: "S1" },
+        after: { sku_name: "S3" },
+      }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+  });
+
+  it("azurerm_mysql_server update is CRITICAL (Azure MySQL PaaS server modification risks data)", () => {
+    const c = classifyChange(
+      makeChange({
+        type: "azurerm_mysql_server",
+        address: "azurerm_mysql_server.app",
+        actions: ["update"],
+      }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+  });
+
+  it("azurerm_postgresql_server update is CRITICAL (Azure PostgreSQL PaaS server modification risks data)", () => {
+    const c = classifyChange(
+      makeChange({
+        type: "azurerm_postgresql_server",
+        address: "azurerm_postgresql_server.api",
+        actions: ["update"],
+      }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+  });
+
+  it("azurerm_mariadb_server update is CRITICAL (Azure MariaDB server modification risks data)", () => {
+    const c = classifyChange(
+      makeChange({
+        type: "azurerm_mariadb_server",
+        address: "azurerm_mariadb_server.legacy",
+        actions: ["update"],
+      }),
+    );
+    expect(c.severity).toBe("CRITICAL");
+  });
+
+  it("empty actions array falls through to NORMAL (degenerate plan output — no action taken)", () => {
+    const c = classifyChange(makeChange({ actions: [] }));
+    expect(c.severity).toBe("NORMAL");
+  });
+
+  it("unknown action string falls through to NORMAL (unknown action treated as in-place)", () => {
+    const c = classifyChange(makeChange({ actions: ["unknown-action"] }));
+    expect(c.severity).toBe("NORMAL");
+  });
+
+  it("for_each keyed address does not break classifier", () => {
+    const plan = makePlan([
+      {
+        address: 'aws_db_instance.main["us-east-1"]',
+        type: "aws_db_instance",
+        name: "main",
+        mode: "managed",
+        change: { actions: ["update"], before: { engine_version: "14" }, after: { engine_version: "15" }, after_unknown: {} },
+      },
+    ]);
+    const result = parseTerraformPlan(plan);
+    expect(result.changes).toHaveLength(1);
+    expect(result.changes[0]!.severity).toBe("CRITICAL");
+  });
+
+  it("count index address does not break classifier", () => {
+    const plan = makePlan([
+      {
+        address: "aws_s3_bucket.logs[2]",
+        type: "aws_s3_bucket",
+        name: "logs",
+        mode: "managed",
+        change: { actions: ["delete"], before: { id: "logs-bucket-2" }, after: null, after_unknown: {} },
+      },
+    ]);
+    const result = parseTerraformPlan(plan);
+    expect(result.changes).toHaveLength(1);
+    expect(result.changes[0]!.severity).toBe("CRITICAL");
+  });
+});
