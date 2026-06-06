@@ -31,6 +31,13 @@ export const DATA_STORE_TYPES: readonly string[] = [
   "azurerm_cosmosdb_account",
   "azurerm_storage_account",
   "azurerm_managed_disk",
+  "azurerm_redis_cache",        // Azure Redis Cache — in-memory data store; update disrupts cache
+  "azurerm_mssql_database",     // Azure SQL (MSSQL variant) — distinct from azurerm_sql_database
+  "azurerm_mssql_server",       // Azure SQL managed instance server
+  "google_redis_instance",      // Cloud Memorystore Redis — cache loss on update
+  "google_memcache_instance",   // Cloud Memorystore Memcached — cache loss on update
+  "google_container_cluster",   // GKE cluster — node drain disrupts all workloads (mirrors aws_eks_cluster)
+  "aws_msk_cluster",            // Amazon MSK (Managed Kafka) — in-flight messages at risk on modify
 ];
 
 /** Resource types where any change should be flagged for IAM/security review. */

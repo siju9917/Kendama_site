@@ -369,3 +369,37 @@ describe("adversarial round 42 — resource type coverage gaps", () => {
     expect(result.changes[0]!.severity).toBe("CRITICAL");
   });
 });
+
+describe("adversarial round 47 — new data-store resource type coverage", () => {
+  function makeUpdateChange(type: string): TfChange {
+    return makeChange({ type, address: `${type}.main`, actions: ["update"] });
+  }
+
+  it("azurerm_redis_cache update is CRITICAL (in-memory store flush risk during modification)", () => {
+    expect(classifyChange(makeUpdateChange("azurerm_redis_cache")).severity).toBe("CRITICAL");
+  });
+
+  it("azurerm_mssql_database update is CRITICAL (MSSQL managed database risks data)", () => {
+    expect(classifyChange(makeUpdateChange("azurerm_mssql_database")).severity).toBe("CRITICAL");
+  });
+
+  it("azurerm_mssql_server update is CRITICAL (MSSQL managed server risks workload)", () => {
+    expect(classifyChange(makeUpdateChange("azurerm_mssql_server")).severity).toBe("CRITICAL");
+  });
+
+  it("google_redis_instance update is CRITICAL (GCP Memorystore Redis cache loss on modification)", () => {
+    expect(classifyChange(makeUpdateChange("google_redis_instance")).severity).toBe("CRITICAL");
+  });
+
+  it("google_memcache_instance update is CRITICAL (GCP Memorystore Memcached cache loss)", () => {
+    expect(classifyChange(makeUpdateChange("google_memcache_instance")).severity).toBe("CRITICAL");
+  });
+
+  it("google_container_cluster update is CRITICAL (GKE node drain disrupts workloads, mirrors EKS)", () => {
+    expect(classifyChange(makeUpdateChange("google_container_cluster")).severity).toBe("CRITICAL");
+  });
+
+  it("aws_msk_cluster update is CRITICAL (in-flight Kafka messages at risk during cluster modification)", () => {
+    expect(classifyChange(makeUpdateChange("aws_msk_cluster")).severity).toBe("CRITICAL");
+  });
+});
