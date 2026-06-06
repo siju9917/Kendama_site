@@ -7861,3 +7861,312 @@ paths:
     expect(reqAdded?.severity).toBe("BREAKING");
   });
 });
+
+// ─── Round 51: covering change types with zero adversarial tests ──────────────
+
+describe("request-schema-property-nullable-changed — zero prior adversarial tests (5.7.5 round 51)", () => {
+  function makeRequestSpec(nullable: boolean): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nickname:
+                  type: string
+                  nullable: ${nullable}
+      responses:
+        "201":
+          description: created
+`;
+  }
+
+  it("request property nullable true→false is BREAKING (server now rejects null — clients sending null get 400)", () => {
+    const changes = analyzeOpenApiDiff(makeRequestSpec(true), makeRequestSpec(false));
+    const nullableChange = changes.find((c) => c.type === "request-schema-property-nullable-changed");
+    expect(nullableChange).toBeDefined();
+    expect(nullableChange?.severity).toBe("BREAKING");
+    expect(nullableChange?.before).toBe(true);
+    expect(nullableChange?.after).toBe(false);
+  });
+
+  it("request property nullable false→true is INFO (server now accepts null — clients gain optional capability)", () => {
+    const changes = analyzeOpenApiDiff(makeRequestSpec(false), makeRequestSpec(true));
+    const nullableChange = changes.find((c) => c.type === "request-schema-property-nullable-changed");
+    expect(nullableChange).toBeDefined();
+    expect(nullableChange?.severity).toBe("INFO");
+  });
+});
+
+describe("response-schema-property-writeonly-changed — zero prior adversarial tests (5.7.5 round 51)", () => {
+  function makeResponseSpec(writeOnly: boolean): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  secret:
+                    type: string
+                    writeOnly: ${writeOnly}
+`;
+  }
+
+  it("response property writeOnly false→true is BREAKING (field disappears from response — clients reading it break)", () => {
+    const changes = analyzeOpenApiDiff(makeResponseSpec(false), makeResponseSpec(true));
+    const woChange = changes.find((c) => c.type === "response-schema-property-writeonly-changed");
+    expect(woChange).toBeDefined();
+    expect(woChange?.severity).toBe("BREAKING");
+    expect(woChange?.before).toBe(false);
+    expect(woChange?.after).toBe(true);
+  });
+
+  it("response property writeOnly true→false is INFO (field now appears in response — clients benefit)", () => {
+    const changes = analyzeOpenApiDiff(makeResponseSpec(true), makeResponseSpec(false));
+    const woChange = changes.find((c) => c.type === "response-schema-property-writeonly-changed");
+    expect(woChange).toBeDefined();
+    expect(woChange?.severity).toBe("INFO");
+  });
+});
+
+describe("request-schema-property-readonly-changed — zero prior adversarial tests (5.7.5 round 51)", () => {
+  function makeRequestReadOnlySpec(readOnly: boolean): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  readOnly: ${readOnly}
+      responses:
+        "201":
+          description: created
+`;
+  }
+
+  it("request property readOnly false→true is BREAKING (server now rejects the field — clients sending it get 400)", () => {
+    const changes = analyzeOpenApiDiff(makeRequestReadOnlySpec(false), makeRequestReadOnlySpec(true));
+    const roChange = changes.find((c) => c.type === "request-schema-property-readonly-changed");
+    expect(roChange).toBeDefined();
+    expect(roChange?.severity).toBe("BREAKING");
+  });
+
+  it("request property readOnly true→false is INFO (server now accepts the field — clients benefit)", () => {
+    const changes = analyzeOpenApiDiff(makeRequestReadOnlySpec(true), makeRequestReadOnlySpec(false));
+    const roChange = changes.find((c) => c.type === "request-schema-property-readonly-changed");
+    expect(roChange).toBeDefined();
+    expect(roChange?.severity).toBe("INFO");
+  });
+});
+
+describe("response-schema-property-added and request-schema-property-added — zero prior adversarial tests (5.7.5 round 51)", () => {
+  const WITHOUT_EXTRA = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: {type: string}
+`;
+  const WITH_EXTRA = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: {type: string}
+                  name: {type: string}
+`;
+
+  it("new property added to response schema is INFO (clients can ignore extra fields)", () => {
+    const changes = analyzeOpenApiDiff(WITHOUT_EXTRA, WITH_EXTRA);
+    const propAdded = changes.find((c) => c.type === "response-schema-property-added");
+    expect(propAdded).toBeDefined();
+    expect(propAdded?.severity).toBe("INFO");
+    // Location encodes the property name; after encodes the new property's type
+    expect(String(propAdded?.location)).toContain("name");
+  });
+
+  it("new property added to request schema (without required) is INFO (clients can ignore new optional field)", () => {
+    const withoutProp = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id: {type: string}
+      responses:
+        "201":
+          description: created
+`;
+    const withProp = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id: {type: string}
+                email: {type: string}
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(withoutProp, withProp);
+    const propAdded = changes.find((c) => c.type === "request-schema-property-added");
+    expect(propAdded).toBeDefined();
+    expect(propAdded?.severity).toBe("INFO");
+  });
+});
+
+describe("request-schema-field-required-removed + response-status-added (5.7.5 round 51)", () => {
+  it("removing a required field from request schema is INFO (server now accepts requests without it)", () => {
+    const withRequired = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email]
+              properties:
+                name: {type: string}
+                email: {type: string}
+      responses:
+        "201":
+          description: created
+`;
+    const withoutEmailRequired = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: {type: string}
+                email: {type: string}
+      responses:
+        "201":
+          description: created
+`;
+    const changes = analyzeOpenApiDiff(withRequired, withoutEmailRequired);
+    const reqRemoved = changes.find((c) => c.type === "request-schema-field-required-removed");
+    expect(reqRemoved).toBeDefined();
+    expect(reqRemoved?.severity).toBe("INFO");
+    expect(String(reqRemoved?.location)).toContain("email");
+  });
+
+  it("new response status code added is INFO (server now documents a new possible response)", () => {
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        "201":
+          description: created
+        "400":
+          description: bad request
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        "201":
+          description: created
+        "400":
+          description: bad request
+        "422":
+          description: unprocessable entity
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const statusAdded = changes.find((c) => c.type === "response-status-added");
+    expect(statusAdded).toBeDefined();
+    expect(statusAdded?.severity).toBe("INFO");
+    expect(statusAdded?.after).toBe("422");
+  });
+});
