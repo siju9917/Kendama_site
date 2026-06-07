@@ -16446,3 +16446,102 @@ paths:
     expect(c?.after).toBeNull();
   });
 });
+
+// ─── Round 128: parameter-items-constraint maxLength + parameter-constraint maxProperties ────────
+// parameter-items-constraint maxLength has never been tested (only minLength from R117).
+// parameter-constraint maxProperties has never been tested (only minProperties from R127).
+describe("Round 128 — parameter-items-constraint maxLength + parameter-constraint maxProperties", () => {
+  function makeStringItemsParamSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /search:
+    get:
+      parameters:
+        - name: tags
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+  function makeObjectParamSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /filter:
+    get:
+      parameters:
+        - name: options
+          in: query
+          required: false
+          style: deepObject
+          schema:
+            type: object
+            ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("(R128-1) adding maxLength to string array items parameter (null→20) is BREAKING — longer strings now fail", () => {
+    // requestConstraintSeverity max-sense: before === null → BREAKING
+    // Previously any string length in array elements was valid; >20 chars now fail validation.
+    const changes = analyzeOpenApiDiff(makeStringItemsParamSpec(""), makeStringItemsParamSpec("maxLength: 20"));
+    const c = changes.find((x) => x.type === "parameter-items-constraint-changed" && String(x.location).endsWith(".maxLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(20);
+  });
+
+  it("(R128-2) removing maxLength from string array items parameter (20→null) is INFO — constraint relaxed", () => {
+    // requestConstraintSeverity max-sense: after === null → INFO
+    const changes = analyzeOpenApiDiff(makeStringItemsParamSpec("maxLength: 20"), makeStringItemsParamSpec(""));
+    const c = changes.find((x) => x.type === "parameter-items-constraint-changed" && String(x.location).endsWith(".maxLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(20);
+    expect(c?.after).toBeNull();
+  });
+
+  it("(R128-3) tightening maxLength on string array items parameter (100→30) is BREAKING — elements 31-100 chars now fail", () => {
+    // requestConstraintSeverity max-sense: after (30) < before (100) → BREAKING
+    const changes = analyzeOpenApiDiff(makeStringItemsParamSpec("maxLength: 100"), makeStringItemsParamSpec("maxLength: 30"));
+    const c = changes.find((x) => x.type === "parameter-items-constraint-changed" && String(x.location).endsWith(".maxLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(100);
+    expect(c?.after).toBe(30);
+  });
+
+  it("(R128-4) adding maxProperties to object parameter schema (null→5) is BREAKING — objects with >5 properties now fail", () => {
+    // requestConstraintSeverity max-sense: before === null → BREAKING
+    // First test for maxProperties on a parameter-constraint type.
+    const changes = analyzeOpenApiDiff(makeObjectParamSpec(""), makeObjectParamSpec("maxProperties: 5"));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".maxProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(5);
+  });
+
+  it("(R128-5) removing maxProperties from object parameter schema (5→null) is INFO — constraint relaxed", () => {
+    // requestConstraintSeverity max-sense: after === null → INFO
+    const changes = analyzeOpenApiDiff(makeObjectParamSpec("maxProperties: 5"), makeObjectParamSpec(""));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".maxProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(5);
+    expect(c?.after).toBeNull();
+  });
+});
