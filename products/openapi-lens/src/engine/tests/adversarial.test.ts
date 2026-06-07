@@ -17382,3 +17382,102 @@ paths:
     expect(c?.after).toBe(1);
   });
 });
+
+// ─── Round 136: request/response property maxProperties value→value + response minProperties increasing ─
+// Untested paths:
+//   request-schema-property-constraint maxProperties value→value (both directions)
+//   response-schema-property-constraint maxProperties value→value (both directions)
+//   response-schema-property-constraint minProperties increasing (1→3 INFO: server strengthens floor)
+describe("Round 136 — property maxProperties value→value + response minProperties increasing", () => {
+  function makeReqBodyObjectSpec136(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /config:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              ${constraintLine}
+      responses:
+        "204":
+          description: ok
+`;
+  }
+  function makeRespBodyObjectSpec136(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /profile:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                ${constraintLine}
+`;
+  }
+
+  it("(R136-1) request body maxProperties tightened (5→3) is BREAKING — objects with 4-5 keys now fail validation", () => {
+    // requestConstraintSeverity max-sense: after (3) < before (5) → BREAKING
+    const changes = analyzeOpenApiDiff(makeReqBodyObjectSpec136("maxProperties: 5"), makeReqBodyObjectSpec136("maxProperties: 3"));
+    const c = changes.find((x) => x.type === "request-schema-property-constraint-changed" && String(x.location).endsWith(".maxProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(5);
+    expect(c?.after).toBe(3);
+  });
+
+  it("(R136-2) request body maxProperties loosened (3→5) is INFO — objects with 4-5 keys now accepted", () => {
+    // requestConstraintSeverity max-sense: after (5) > before (3) → else → INFO
+    const changes = analyzeOpenApiDiff(makeReqBodyObjectSpec136("maxProperties: 3"), makeReqBodyObjectSpec136("maxProperties: 5"));
+    const c = changes.find((x) => x.type === "request-schema-property-constraint-changed" && String(x.location).endsWith(".maxProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(3);
+    expect(c?.after).toBe(5);
+  });
+
+  it("(R136-3) response body maxProperties decreased (5→3) is INFO — server reduces max, stronger guarantee for consumers", () => {
+    // responseConstraintSeverity max-sense: after (3) < before (5) → else → INFO
+    // Server limiting itself to fewer properties is a tighter promise — not breaking.
+    const changes = analyzeOpenApiDiff(makeRespBodyObjectSpec136("maxProperties: 5"), makeRespBodyObjectSpec136("maxProperties: 3"));
+    const c = changes.find((x) => x.type === "response-schema-property-constraint-changed" && String(x.location).endsWith(".maxProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(5);
+    expect(c?.after).toBe(3);
+  });
+
+  it("(R136-4) response body maxProperties increased (3→5) is BREAKING — server may now return more properties", () => {
+    // responseConstraintSeverity max-sense: after (5) > before (3) → BREAKING
+    // Consumers relying on a bounded property count may fail with additional properties.
+    const changes = analyzeOpenApiDiff(makeRespBodyObjectSpec136("maxProperties: 3"), makeRespBodyObjectSpec136("maxProperties: 5"));
+    const c = changes.find((x) => x.type === "response-schema-property-constraint-changed" && String(x.location).endsWith(".maxProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(3);
+    expect(c?.after).toBe(5);
+  });
+
+  it("(R136-5) response body minProperties increased (1→3) is INFO — server now guarantees at least 3 keys", () => {
+    // responseConstraintSeverity min-sense: after (3) > before (1) → else → INFO
+    // Server strengthening its floor guarantee means consumers get more reliable data.
+    const changes = analyzeOpenApiDiff(makeRespBodyObjectSpec136("minProperties: 1"), makeRespBodyObjectSpec136("minProperties: 3"));
+    const c = changes.find((x) => x.type === "response-schema-property-constraint-changed" && String(x.location).endsWith(".minProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(1);
+    expect(c?.after).toBe(3);
+  });
+});
