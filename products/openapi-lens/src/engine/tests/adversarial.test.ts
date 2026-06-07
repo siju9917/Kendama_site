@@ -15391,3 +15391,168 @@ paths:
     expect(c?.after).toBe(5);
   });
 });
+
+// ─── Round 120: parameter-items numeric min null-transitions + value→value tightening ──────────
+// parameter-items-constraint minimum has NEVER been tested (only maximum in R118-5 and
+// maxLength/minLength string variants in R117). Also covers first value→value tightening paths
+// for both request-items maximum and response-items minimum constraints.
+describe("Round 120 — parameter-items minimum null-transitions + numeric value→value tightening", () => {
+  it("(R120-1) parameter array items minimum added (null→5) is BREAKING — elements <5 now fail validation", () => {
+    // requestConstraintSeverity min-sense: before === null → BREAKING
+    // Previously any non-negative integer element was valid; elements <5 now get 422.
+    function makeParamItemsMinSpec(minLine: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /search:
+    get:
+      parameters:
+        - name: ratings
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+              ${minLine}
+      responses:
+        "200":
+          description: ok
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeParamItemsMinSpec(""), makeParamItemsMinSpec("minimum: 5"));
+    const c = changes.find((x) => x.type === "parameter-items-constraint-changed" && String(x.location).endsWith(".minimum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(5);
+  });
+
+  it("(R120-2) parameter array items minimum removed (5→null) is INFO — constraint relaxed for callers", () => {
+    // requestConstraintSeverity min-sense: after === null → INFO
+    // Server now accepts elements <5; existing callers sending ≥5 are unaffected.
+    function makeParamItemsMinSpec(minLine: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /search:
+    get:
+      parameters:
+        - name: ratings
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+              ${minLine}
+      responses:
+        "200":
+          description: ok
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeParamItemsMinSpec("minimum: 5"), makeParamItemsMinSpec(""));
+    const c = changes.find((x) => x.type === "parameter-items-constraint-changed" && String(x.location).endsWith(".minimum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(5);
+    expect(c?.after).toBeNull();
+  });
+
+  it("(R120-3) parameter array items maximum removed (100→null) is INFO — constraint relaxed for callers", () => {
+    // requestConstraintSeverity max-sense: after === null → INFO
+    // Server now accepts elements >100; callers already sending ≤100 are unaffected.
+    function makeParamItemsMaxSpec(maxLine: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /top:
+    get:
+      parameters:
+        - name: scores
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+              ${maxLine}
+      responses:
+        "200":
+          description: ok
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeParamItemsMaxSpec("maximum: 100"), makeParamItemsMaxSpec(""));
+    const c = changes.find((x) => x.type === "parameter-items-constraint-changed" && String(x.location).endsWith(".maximum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(100);
+    expect(c?.after).toBeNull();
+  });
+
+  it("(R120-4) request array items maximum tightened (100→50) is BREAKING — elements 51-100 now rejected", () => {
+    // requestConstraintSeverity max-sense: after < before → BREAKING
+    // First value→value tightening for numeric maximum on request items.
+    function makeReqItemsMaxSpec(maxVal: number): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /upload:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+                maximum: ${maxVal}
+      responses:
+        "204":
+          description: ok
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeReqItemsMaxSpec(100), makeReqItemsMaxSpec(50));
+    const c = changes.find((x) => x.type === "request-schema-items-constraint-changed" && String(x.location).endsWith(".maximum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(100);
+    expect(c?.after).toBe(50);
+  });
+
+  it("(R120-5) response array items minimum tightened (1→5) is BREAKING — server may now return elements <5", () => {
+    // responseConstraintSeverity min-sense: after < before → BREAKING
+    // First value→value tightening for numeric minimum on response items.
+    // Lowering the guaranteed minimum breaks clients that assumed all elements ≥ old minimum.
+    function makeRespItemsMinSpec(minVal: number): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /levels:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+                  minimum: ${minVal}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeRespItemsMinSpec(5), makeRespItemsMinSpec(1));
+    const c = changes.find((x) => x.type === "response-schema-items-constraint-changed" && String(x.location).endsWith(".minimum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(5);
+    expect(c?.after).toBe(1);
+  });
+});
