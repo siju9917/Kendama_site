@@ -15053,3 +15053,171 @@ paths:
     expect(c?.after).toBe(50);
   });
 });
+
+// ─── Round 118: numeric (minimum/maximum) constraints on items schemas ─────────
+// All previous items-constraint tests used string constraints (minLength/maxLength/pattern).
+// Numeric constraints (minimum/maximum) on items schemas have NEVER been tested end-to-end.
+// The constraintKind function maps minimum→min-sense and maximum→max-sense, so the same
+// requestConstraintSeverity / responseConstraintSeverity branches fire but with integer items.
+// Specifically:
+//   request items: null→minimum (BREAKING), minimum→null (INFO)
+//   response items: null→minimum (INFO), minimum→null (BREAKING)
+//   parameter items: null→maximum (BREAKING) — completing the max-sense null-transitions
+
+describe("Round 118 — numeric minimum/maximum constraints on request/response/parameter items (end-to-end)", () => {
+  it("(R118-1) request array items minimum added (null→1) is BREAKING — elements <1 now fail validation", () => {
+    // requestConstraintSeverity min-sense: before === null → BREAKING
+    // Previously any integer element was accepted; clients sending 0 or negative now get 422.
+    function makeReqItemsMinSpec(minLine: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /scores:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+                ${minLine}
+      responses:
+        "201":
+          description: created
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeReqItemsMinSpec(""), makeReqItemsMinSpec("minimum: 1"));
+    const c = changes.find((x) => x.type === "request-schema-items-constraint-changed" && String(x.location).endsWith(".minimum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(1);
+  });
+
+  it("(R118-2) request array items minimum removed (1→null) is INFO — constraint relaxed, any value accepted", () => {
+    // requestConstraintSeverity min-sense: after === null → INFO
+    // Previously valid elements (≥1) remain valid; lower values now also accepted.
+    function makeReqItemsMinSpec(minLine: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /scores:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+                ${minLine}
+      responses:
+        "201":
+          description: created
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeReqItemsMinSpec("minimum: 1"), makeReqItemsMinSpec(""));
+    const c = changes.find((x) => x.type === "request-schema-items-constraint-changed" && String(x.location).endsWith(".minimum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(1);
+    expect(c?.after).toBeNull();
+  });
+
+  it("(R118-3) response array items minimum added (null→0) is INFO — server now guarantees non-negative elements", () => {
+    // responseConstraintSeverity min-sense: before === null → INFO
+    // Server adds a floor guarantee for array element values — clients benefit.
+    function makeRespItemsMinSpec(minLine: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /counts:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+                  ${minLine}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeRespItemsMinSpec(""), makeRespItemsMinSpec("minimum: 0"));
+    const c = changes.find((x) => x.type === "response-schema-items-constraint-changed" && String(x.location).endsWith(".minimum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(0);
+  });
+
+  it("(R118-4) response array items minimum removed (0→null) is BREAKING — server may now return negative elements", () => {
+    // responseConstraintSeverity min-sense: after === null → BREAKING
+    // Clients relying on all elements being ≥0 may break when server returns negative values.
+    function makeRespItemsMinSpec(minLine: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /counts:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+                  ${minLine}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeRespItemsMinSpec("minimum: 0"), makeRespItemsMinSpec(""));
+    const c = changes.find((x) => x.type === "response-schema-items-constraint-changed" && String(x.location).endsWith(".minimum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(0);
+    expect(c?.after).toBeNull();
+  });
+
+  it("(R118-5) parameter array items maximum added (null→100) is BREAKING — elements >100 now fail validation", () => {
+    // requestConstraintSeverity max-sense: before === null → BREAKING
+    // Previously any integer element was valid; clients sending elements >100 now get 422.
+    function makeParamItemsMaxSpec(maxLine: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /top:
+    get:
+      parameters:
+        - name: scores
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+              ${maxLine}
+      responses:
+        "200":
+          description: ok
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeParamItemsMaxSpec(""), makeParamItemsMaxSpec("maximum: 100"));
+    const c = changes.find((x) => x.type === "parameter-items-constraint-changed" && String(x.location).endsWith(".maximum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(100);
+  });
+});
