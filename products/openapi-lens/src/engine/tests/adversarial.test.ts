@@ -18448,3 +18448,159 @@ paths:
     expect(String(c?.location)).toContain("contact");
   });
 });
+
+// ─── Round 143: HEAD / OPTIONS / TRACE HTTP methods — zero prior coverage ─────────────────────────
+// HTTP_METHODS in parser.ts includes head, options, trace but these methods have never
+// appeared in any adversarial test. The diffSpecs loop processes all methods identically,
+// so the engine should handle them correctly — but it has never been verified.
+
+describe("Round 143 — HEAD / OPTIONS / TRACE method coverage", () => {
+  it("(R143-1) HEAD endpoint removed is BREAKING — diffSpecs endpoint-removed for HEAD method", () => {
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /resources:
+    head:
+      responses:
+        "200":
+          description: ok
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /resources:
+    get:
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "endpoint-removed" && String(x.method).toLowerCase() === "head");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("(R143-2) OPTIONS endpoint added is INFO — diffSpecs endpoint-added for OPTIONS method", () => {
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /cors:
+    get:
+      responses:
+        "200":
+          description: ok
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /cors:
+    get:
+      responses:
+        "200":
+          description: ok
+    options:
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "endpoint-added" && String(x.method).toLowerCase() === "options");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+  });
+
+  it("(R143-3) TRACE method with parameter constraint change is BREAKING — parser routes trace through diffParameters", () => {
+    function makeSpec(minLen: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /debug:
+    trace:
+      parameters:
+        - name: requestId
+          in: header
+          required: false
+          schema:
+            type: string
+            ${minLen}
+      responses:
+        "200":
+          description: ok
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeSpec(""), makeSpec("minLength: 5"));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".minLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(String(c?.method)).toBe("trace");
+  });
+
+  it("(R143-4) HEAD method with response status removed is BREAKING — diffResponses for HEAD method", () => {
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /check:
+    head:
+      responses:
+        "200":
+          description: ok
+        "404":
+          description: not found
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /check:
+    head:
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-status-removed" && String(x.method).toLowerCase() === "head");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(String(c?.path)).toBe("/check");
+  });
+
+  it("(R143-5) OPTIONS method with required parameter added is BREAKING — full pipeline for OPTIONS", () => {
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /preflight:
+    options:
+      responses:
+        "204":
+          description: ok
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /preflight:
+    options:
+      parameters:
+        - name: Origin
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "parameter-added" && String(x.method).toLowerCase() === "options");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING"); // adjustAddedRequiredParam: required=true → BREAKING
+    expect(String(c?.path)).toBe("/preflight");
+  });
+});
