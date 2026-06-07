@@ -18830,3 +18830,205 @@ paths:
     expect(scopeAdded?.severity).toBe("BREAKING");
   });
 });
+
+// ─── Round 145: flattenAllOf remaining scalar inheritance (readOnly/writeOnly/items/enum/numeric) ───
+// flattenAllOf parser.ts lines 113-121 — five more paths with zero prior test coverage:
+// - readOnly from allOf member (line 113)
+// - writeOnly from allOf member (line 114)
+// - items schema from allOf member (line 115)
+// - enum from allOf member (line 116)
+// - numeric constraint (maximum) from allOf member (line 119-121)
+
+describe("Round 145 — flattenAllOf: readOnly/writeOnly/items/enum/numeric inherited from member", () => {
+  it("(R145-1) allOf member providing readOnly:true is inherited — request readOnly false→true is BREAKING", () => {
+    // flattenAllOf line 113: result.readOnly = member.readOnly (parent has no readOnly, member does)
+    function makeAllOfReadOnlySpec(readOnly: boolean): string {
+      return `
+openapi: "3.0.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/ReadSchema"
+      responses:
+        "200":
+          description: ok
+components:
+  schemas:
+    ReadSchema:
+      type: string
+      readOnly: ${readOnly}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeAllOfReadOnlySpec(false), makeAllOfReadOnlySpec(true));
+    // flattenAllOf inherits readOnly from member; request readOnly false→true = BREAKING
+    const roChange = changes.find((c) => c.type === "request-schema-readonly-changed");
+    expect(roChange).toBeDefined();
+    expect(roChange?.before).toBe(false);
+    expect(roChange?.after).toBe(true);
+    expect(roChange?.severity).toBe("BREAKING");
+  });
+
+  it("(R145-2) allOf member providing writeOnly:true is inherited — response writeOnly false→true is BREAKING", () => {
+    // flattenAllOf line 114: result.writeOnly = member.writeOnly (parent has no writeOnly, member does)
+    function makeAllOfWriteOnlySpec(writeOnly: boolean): string {
+      return `
+openapi: "3.0.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/WriteSchema"
+components:
+  schemas:
+    WriteSchema:
+      type: string
+      writeOnly: ${writeOnly}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeAllOfWriteOnlySpec(false), makeAllOfWriteOnlySpec(true));
+    // flattenAllOf inherits writeOnly from member; response writeOnly false→true = BREAKING
+    const woChange = changes.find((c) => c.type === "response-schema-writeonly-changed");
+    expect(woChange).toBeDefined();
+    expect(woChange?.before).toBe(false);
+    expect(woChange?.after).toBe(true);
+    expect(woChange?.severity).toBe("BREAKING");
+  });
+
+  it("(R145-3) allOf member providing items schema is inherited — items type change detected as BREAKING", () => {
+    // flattenAllOf line 115: result.items = member.items (parent schema is type:array but no items)
+    // The allOf member provides the items schema; changing it is detectable.
+    function makeAllOfItemsSpec(itemType: string): string {
+      return `
+openapi: "3.0.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              allOf:
+                - $ref: "#/components/schemas/ItemsBase"
+      responses:
+        "200":
+          description: ok
+components:
+  schemas:
+    ItemsBase:
+      items:
+        type: ${itemType}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeAllOfItemsSpec("string"), makeAllOfItemsSpec("integer"));
+    // flattenAllOf inherits items from member; items type string→integer is BREAKING
+    const typeChange = changes.find((c) => c.type === "request-schema-items-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+
+  it("(R145-4) allOf member providing enum is inherited — enum removal from response is BREAKING", () => {
+    // flattenAllOf line 116: result.enum = member.enum (parent has no enum, member does)
+    const withEnum = `
+openapi: "3.0.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/StatusSchema"
+components:
+  schemas:
+    StatusSchema:
+      type: string
+      enum: [active, inactive, pending]
+`;
+    const withoutEnum = `
+openapi: "3.0.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/StatusSchema"
+components:
+  schemas:
+    StatusSchema:
+      type: string
+`;
+    const changes = analyzeOpenApiDiff(withEnum, withoutEnum);
+    // flattenAllOf inherits enum from member; removing enum from response = BREAKING (exhaustive clients)
+    const enumChange = changes.find((c) => c.type === "response-schema-enum-changed");
+    expect(enumChange).toBeDefined();
+    expect(enumChange?.severity).toBe("BREAKING");
+  });
+
+  it("(R145-5) allOf member providing maximum constraint is inherited — request maximum decreased is BREAKING", () => {
+    // flattenAllOf lines 119-121: numeric constraint fields inherited from member
+    // maximum is one of the 8 numeric constraints; only minLength and pattern were previously tested.
+    function makeAllOfMaximumSpec(max: number): string {
+      return `
+openapi: "3.0.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/CountSchema"
+      responses:
+        "200":
+          description: ok
+components:
+  schemas:
+    CountSchema:
+      type: integer
+      maximum: ${max}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeAllOfMaximumSpec(100), makeAllOfMaximumSpec(50));
+    // flattenAllOf inherits maximum from member; request maximum 100→50 (decreased) = BREAKING
+    const constraintChange = changes.find((c) =>
+      c.type === "request-schema-property-constraint-changed" &&
+      String(c.location).endsWith(".maximum")
+    );
+    expect(constraintChange).toBeDefined();
+    expect(constraintChange?.before).toBe(100);
+    expect(constraintChange?.after).toBe(50);
+    expect(constraintChange?.severity).toBe("BREAKING");
+  });
+});
