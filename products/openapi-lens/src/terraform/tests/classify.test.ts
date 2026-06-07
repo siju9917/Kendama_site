@@ -661,3 +661,86 @@ describe("classifyChange — IAM narrowing + replace (round 129)", () => {
     expect(c.reasons.some((r) => r.includes("REPLACED"))).toBe(false);
   });
 });
+
+// ─── Round 149: analyzeIamDirection untested edge cases ──────────────────────
+// Five code paths in classify.ts never previously exercised:
+//   1. countWildcards array branch: Action: ["*"] (Array.isArray branch at line 124)
+//   2. extractIamStatements JSON parse failure → catch fires → all fields invalid → null
+//   3. doc["Statement"] non-array in first field → falls through to next field
+//   4. CIDR equal count before/after → afterCidrs === beforeCidrs → "unknown"
+//   5. ipv6_cidr_blocks inside egress blocks (nested CIDR loop: egress + ipv6_cidr_blocks)
+
+describe("analyzeIamDirection — Round 149 edge cases", () => {
+  it("(R149-1) Action array containing '*' is detected as wildcard via Array.isArray branch", () => {
+    // classify.ts line 124: `Array.isArray(action) && action.includes("*")`
+    // Before: no wildcards (scalar action). After: Action is ["*"] (array form).
+    // Allow counts are equal (1 each) → wildcard comparison fires.
+    // afterWild (1) > beforeWild (0) → "widening".
+    const before = {
+      policy: JSON.stringify({
+        Statement: [{ Effect: "Allow", Action: "s3:GetObject", Resource: "*" }],
+      }),
+    };
+    const after = {
+      policy: JSON.stringify({
+        Statement: [{ Effect: "Allow", Action: ["*"], Resource: "*" }],
+      }),
+    };
+    expect(analyzeIamDirection(before, after)).toBe("widening");
+  });
+
+  it("(R149-2) extractIamStatements JSON parse failure → catch fires for all fields → analyzeIamDirection returns unknown", () => {
+    // classify.ts lines 161-163: catch { // Try next field. }
+    // When the policy string is not valid JSON, the catch fires and the loop
+    // continues to the next field. With all three fields invalid (and no CIDR data),
+    // extractIamStatements returns null on both sides → CIDR check also null → "unknown".
+    const before = { policy: "{not valid json" };
+    const after  = { policy: "{also: broken" };
+    expect(analyzeIamDirection(before, after)).toBe("unknown");
+  });
+
+  it("(R149-3) doc['Statement'] non-array in first field → loop continues → second field with valid array is used", () => {
+    // classify.ts lines 159-160: `if (Array.isArray(statements)) return statements;`
+    // When "Statement" is present but is a string (not an array), the check fails and
+    // the loop advances to the next field. The second field ("assume_role_policy") has
+    // a valid Statement array and is used for the analysis.
+    // Before: 1 Allow via assume_role_policy; After: 2 Allows → "widening".
+    const before = {
+      policy: JSON.stringify({ Statement: "see documentation" }),
+      assume_role_policy: JSON.stringify({
+        Statement: [{ Effect: "Allow", Action: "sts:AssumeRole", Resource: "arn:aws:iam::111:root" }],
+      }),
+    };
+    const after = {
+      policy: JSON.stringify({ Statement: "see documentation" }),
+      assume_role_policy: JSON.stringify({
+        Statement: [
+          { Effect: "Allow", Action: "sts:AssumeRole", Resource: "arn:aws:iam::111:root" },
+          { Effect: "Allow", Action: "sts:AssumeRole", Resource: "arn:aws:iam::222:root" },
+        ],
+      }),
+    };
+    expect(analyzeIamDirection(before, after)).toBe("widening");
+  });
+
+  it("(R149-4) CIDR count equal before and after → afterCidrs === beforeCidrs → returns 'unknown'", () => {
+    // classify.ts line 139: implicit fall-through when afterCidrs === beforeCidrs.
+    // Same number of CIDRs but different values — the count analysis can't determine
+    // direction (a swap, not an add or remove). Returns "unknown" → conservative CRITICAL.
+    const before = { cidr_blocks: ["10.0.0.0/8", "192.168.0.0/16"] };
+    const after  = { cidr_blocks: ["172.16.0.0/12", "10.0.0.0/8"] };
+    // extractCidrCount(before)=2, extractCidrCount(after)=2 → equal → "unknown"
+    expect(analyzeIamDirection(before, after)).toBe("unknown");
+  });
+
+  it("(R149-5) ipv6_cidr_blocks inside egress blocks counted via nested CIDR loop", () => {
+    // classify.ts lines 197-201: `for (const cidrField of ["cidr_blocks", "ipv6_cidr_blocks"])`
+    // inside the egress branch. The egress + ipv6_cidr_blocks combination was never
+    // previously exercised — only egress + cidr_blocks (R105-3) and ingress + ipv6_cidr_blocks
+    // (P2 coverage line 412) were tested.
+    // Before: egress with 2 IPv6 CIDRs; After: egress with 1 IPv6 CIDR → narrowing.
+    const before = { egress: [{ ipv6_cidr_blocks: ["::/0", "2001:db8::/32"] }] };
+    const after  = { egress: [{ ipv6_cidr_blocks: ["::/0"] }] };
+    expect(analyzeIamDirection(before, after)).toBe("narrowing");
+  });
+});
