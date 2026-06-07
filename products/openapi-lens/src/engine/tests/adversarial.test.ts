@@ -18604,3 +18604,229 @@ paths:
     expect(String(c?.path)).toBe("/preflight");
   });
 });
+
+// ─── Round 144: flattenAllOf scalar-field inheritance + Swagger 2.0 path-level body + security scope union ───
+// Three untested parser code paths identified in parser.ts flattenAllOf and parseOperations:
+//
+// 1. flattenAllOf lines 111-117: format/nullable/additionalProperties inherited from allOf member
+//    when parent schema does not define these fields. Zero prior tests for these three fields.
+// 2. buildSwagger2RequestBody with pathLevelParams: path-level `in: body` parameter is inherited
+//    when the operation defines no body parameter (parser.ts line 453). Not previously tested.
+// 3. parseSecurityRequirements else branch (line 400-402): same scheme in two separate OR
+//    security entries — scopes are unioned. Only the !result[scheme] (first-entry) branch was covered.
+
+describe("Round 144 — flattenAllOf scalar inheritance (format/nullable/AP) + Swagger 2.0 path body + security scope union", () => {
+  it("(R144-1) allOf member providing format is inherited — format change detected as BREAKING", () => {
+    // flattenAllOf line 111: result.format = member.format (parent has no format, member does)
+    // When the allOf base schema changes its format, the parent schema inherits the new value.
+    function makeAllOfFormatSpec(fmt: string): string {
+      return `
+openapi: "3.0.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/IdSchema"
+      responses:
+        "200":
+          description: ok
+components:
+  schemas:
+    IdSchema:
+      type: string
+      format: ${fmt}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeAllOfFormatSpec("uuid"), makeAllOfFormatSpec("email"));
+    // flattenAllOf inherits format from member; format uuid→email is a change (BREAKING: after != null)
+    const formatChange = changes.find((c) => c.type === "request-schema-format-changed");
+    expect(formatChange).toBeDefined();
+    expect(formatChange?.before).toBe("uuid");
+    expect(formatChange?.after).toBe("email");
+    expect(formatChange?.severity).toBe("BREAKING");
+  });
+
+  it("(R144-2) allOf member providing nullable:true is inherited — nullable false→true on response is BREAKING", () => {
+    // flattenAllOf line 112: result.nullable = member.nullable (parent has no nullable, member does)
+    function makeAllOfNullableSpec(nullable: boolean): string {
+      return `
+openapi: "3.0.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/NameSchema"
+components:
+  schemas:
+    NameSchema:
+      type: string
+      nullable: ${nullable}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeAllOfNullableSpec(false), makeAllOfNullableSpec(true));
+    // flattenAllOf inherits nullable from member; false→true on response is BREAKING
+    const nullableChange = changes.find((c) => c.type === "response-schema-nullable-changed");
+    expect(nullableChange).toBeDefined();
+    expect(nullableChange?.before).toBe(false);
+    expect(nullableChange?.after).toBe(true);
+    expect(nullableChange?.severity).toBe("BREAKING");
+  });
+
+  it("(R144-3) allOf member with additionalProperties:false is inherited — request schema closed is BREAKING", () => {
+    // flattenAllOf line 117: result.additionalProperties = member.additionalProperties
+    // When allOf base adds additionalProperties:false, parent schema inherits the closed constraint.
+    const open = `
+openapi: "3.0.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/StrictBase"
+      responses:
+        "200":
+          description: ok
+components:
+  schemas:
+    StrictBase:
+      type: object
+      properties:
+        id: {type: string}
+`;
+    const closed = `
+openapi: "3.0.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/StrictBase"
+      responses:
+        "200":
+          description: ok
+components:
+  schemas:
+    StrictBase:
+      type: object
+      properties:
+        id: {type: string}
+      additionalProperties: false
+`;
+    const changes = analyzeOpenApiDiff(open, closed);
+    // flattenAllOf inherits additionalProperties:false from member; request schema now closed = BREAKING
+    const apChange = changes.find((c) => c.type === "request-schema-additional-properties-changed");
+    expect(apChange).toBeDefined();
+    expect(apChange?.before).toBe(true);
+    expect(apChange?.after).toBe(false);
+    expect(apChange?.severity).toBe("BREAKING");
+  });
+
+  it("(R144-4) Swagger 2.0 path-level body parameter is inherited by operations without their own body — type change detected", () => {
+    // parser.ts line 453: buildSwagger2RequestBody([...opLevelParams, ...pathLevelParams], ...)
+    // When opLevelParams has no body param, the path-level body param from pathLevelParams is used.
+    const baseline = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: string
+    post:
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: integer
+    post:
+      responses:
+        "200":
+          description: ok
+`;
+    // The POST operation has no op-level body param; it inherits the path-level body param.
+    // Changing the inherited body schema type string→integer should be detected as BREAKING.
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const typeChange = changes.find((c) => c.type === "request-schema-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+
+  it("(R144-5) same security scheme in two OR entries has scopes unioned — scope addition detected as BREAKING", () => {
+    // parseSecurityRequirements else branch (line 400-402): same scheme in two OR entries.
+    // security: [{OAuth2: [read:users]}, {OAuth2: [write:users]}] → union → {OAuth2: [read:users, write:users]}
+    // When the second entry adds a new scope, the scope union grows — scope-added is BREAKING.
+    const singleScope = `
+openapi: "3.0.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      security:
+        - OAuth2:
+          - read:users
+      responses:
+        "200":
+          description: ok
+`;
+    const twoEntries = `
+openapi: "3.0.0"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      security:
+        - OAuth2:
+          - read:users
+        - OAuth2:
+          - write:users
+      responses:
+        "200":
+          description: ok
+`;
+    // baseline has OAuth2 with [read:users]; after unions to [read:users, write:users]
+    // Net: write:users scope added → BREAKING (scope-added = tighter requirement)
+    const changes = analyzeOpenApiDiff(singleScope, twoEntries);
+    const scopeAdded = changes.find((c) => c.type === "operation-security-scope-added");
+    expect(scopeAdded).toBeDefined();
+    expect(scopeAdded?.after).toBe("write:users");
+    expect(scopeAdded?.severity).toBe("BREAKING");
+  });
+});
