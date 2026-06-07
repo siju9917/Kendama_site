@@ -15719,3 +15719,161 @@ paths:
     expect(c?.after).toBe(50);
   });
 });
+
+// ─── Round 122: remaining value→value INFO loosening paths for items + header max decrease ──────
+// Four items-constraint INFO loosening directions have never been tested (response min/max,
+// parameter min/max), plus response-header-constraint maximum decrease (tightening → INFO).
+describe("Round 122 — value→value INFO loosening for response/parameter items + header max decrease", () => {
+  it("(R122-1) response array items minimum loosened (5→1) is INFO — server strengthens guarantee less tightly", () => {
+    // responseConstraintSeverity min-sense: else → INFO (after > before)
+    // Wait — after (1) < before (5): that IS after < before → BREAKING, not INFO.
+    // ACTUALLY: responseConstraintSeverity min-sense says after < before → BREAKING.
+    // So min 5→1 is BREAKING (tested in R120-5). Min 1→5 IS "else" → INFO. Let me fix:
+    // response-items minimum increased (1→5) is INFO — server now guarantees a higher floor.
+    // responseConstraintSeverity min-sense: after (5) > before (1), not after < before → else → INFO
+    function makeRespItemsMinSpec(minVal: number): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /levels:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+                  minimum: ${minVal}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeRespItemsMinSpec(1), makeRespItemsMinSpec(5));
+    const c = changes.find((x) => x.type === "response-schema-items-constraint-changed" && String(x.location).endsWith(".minimum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(1);
+    expect(c?.after).toBe(5);
+  });
+
+  it("(R122-2) response array items maximum decreased (100→50) is INFO — server strengthens its upper-bound guarantee", () => {
+    // responseConstraintSeverity max-sense: else → INFO (after (50) < before (100): not after > before)
+    function makeRespItemsMaxSpec(maxVal: number): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /scores:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+                  maximum: ${maxVal}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeRespItemsMaxSpec(100), makeRespItemsMaxSpec(50));
+    const c = changes.find((x) => x.type === "response-schema-items-constraint-changed" && String(x.location).endsWith(".maximum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(100);
+    expect(c?.after).toBe(50);
+  });
+
+  it("(R122-3) parameter array items minimum loosened (5→1) is INFO — server accepts smaller element values", () => {
+    // requestConstraintSeverity min-sense: else → INFO (after (1) < before (5): not after > before)
+    function makeParamItemsMinSpec(minVal: number): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /search:
+    get:
+      parameters:
+        - name: ratings
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+              minimum: ${minVal}
+      responses:
+        "200":
+          description: ok
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeParamItemsMinSpec(5), makeParamItemsMinSpec(1));
+    const c = changes.find((x) => x.type === "parameter-items-constraint-changed" && String(x.location).endsWith(".minimum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(5);
+    expect(c?.after).toBe(1);
+  });
+
+  it("(R122-4) parameter array items maximum loosened (50→100) is INFO — server accepts larger element values", () => {
+    // requestConstraintSeverity max-sense: else → INFO (after (100) > before (50): not after < before)
+    function makeParamItemsMaxSpec(maxVal: number): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /top:
+    get:
+      parameters:
+        - name: scores
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+              maximum: ${maxVal}
+      responses:
+        "200":
+          description: ok
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeParamItemsMaxSpec(50), makeParamItemsMaxSpec(100));
+    const c = changes.find((x) => x.type === "parameter-items-constraint-changed" && String(x.location).endsWith(".maximum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(50);
+    expect(c?.after).toBe(100);
+  });
+
+  it("(R122-5) response header maximum decreased (100→50) is INFO — server tightens upper-bound guarantee", () => {
+    // responseConstraintSeverity max-sense: else → INFO (after (50) < before (100): not after > before)
+    // This direction was never tested for response-header-constraint-changed + .maximum.
+    function makeHeaderMaxSpec(maxVal: number): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Rate-Limit:
+              schema:
+                type: integer
+                maximum: ${maxVal}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeHeaderMaxSpec(100), makeHeaderMaxSpec(50));
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".maximum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(100);
+    expect(c?.after).toBe(50);
+  });
+});
