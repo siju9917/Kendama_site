@@ -17926,3 +17926,140 @@ paths:
     expect(c?.after).toBeNull();
   });
 });
+
+// ─── Round 140: array-of-objects body — required field changes + nullable/format ─────────────────
+// diffSchemaItems → diffSchemaRequiredFields has only been tested via RESPONSE (Round 1, line 1387).
+// The REQUEST side (request-schema-field-required-added / request-schema-field-required-removed via
+// items path) has never been exercised. Also: nullable and format changes on properties of
+// array-of-objects schemas go through diffSchemaItems → diffSchemaProperties → field comparisons
+// but have never been tested with those specific fields.
+
+describe("Round 140 — array-of-objects required field changes + nullable/format via items path", () => {
+  function makeReqArrayObjSpec(requiredFields: string[], formatLine: string): string {
+    const reqLine = requiredFields.length > 0 ? `required: [${requiredFields.join(", ")}]` : "";
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /batch:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                ${reqLine}
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                    ${formatLine}
+      responses:
+        "201":
+          description: created
+`;
+  }
+
+  it("(R140-1) request array-of-objects required field added is BREAKING — diffSchemaItems→diffSchemaRequiredFields request path", () => {
+    // Adding 'name' to the required array of items objects: clients that omit 'name'
+    // in each element will now get 400.
+    // Route: diffSchemaItems sees items.required differs → calls diffSchemaRequiredFields(isRequest=true)
+    const changes = analyzeOpenApiDiff(makeReqArrayObjSpec(["id"], ""), makeReqArrayObjSpec(["id", "name"], ""));
+    const c = changes.find((x) => x.type === "request-schema-field-required-added" && String(x.location).includes("name"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(String(c?.location)).toContain("items");
+  });
+
+  it("(R140-2) request array-of-objects required field removed is INFO — diffSchemaItems→diffSchemaRequiredFields request path", () => {
+    // Removing 'name' from required makes it optional. Existing clients still sending it are unaffected.
+    const changes = analyzeOpenApiDiff(makeReqArrayObjSpec(["id", "name"], ""), makeReqArrayObjSpec(["id"], ""));
+    const c = changes.find((x) => x.type === "request-schema-field-required-removed" && String(x.location).includes("name"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(String(c?.location)).toContain("items");
+  });
+
+  it("(R140-3) response array-of-objects required field added is INFO — server now guarantees field presence", () => {
+    // Strengthening the response contract by adding to required is INFO (consumers benefit).
+    function makeRespArrayObjSpec(requiredFields: string[]): string {
+      const reqLine = requiredFields.length > 0 ? `required: [${requiredFields.join(", ")}]` : "";
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  ${reqLine}
+                  properties:
+                    id: {type: string}
+                    email: {type: string}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeRespArrayObjSpec(["id"]), makeRespArrayObjSpec(["id", "email"]));
+    const c = changes.find((x) => x.type === "response-schema-field-required-added" && String(x.location).includes("email"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(String(c?.location)).toContain("items");
+  });
+
+  it("(R140-4) request array-of-objects property format added is BREAKING — diffSchemaItems→diffSchemaProperties→format", () => {
+    // Adding a format to a property of items objects (null→uuid): new validation constraint.
+    // requestPropertyFormatChanged: after !== null → BREAKING.
+    const changes = analyzeOpenApiDiff(makeReqArrayObjSpec(["id"], ""), makeReqArrayObjSpec(["id"], 'format: "uuid"'));
+    const c = changes.find((x) => x.type === "request-schema-property-format-changed" && String(x.location).includes("name"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe("uuid");
+    expect(String(c?.location)).toContain("items");
+  });
+
+  it("(R140-5) response array-of-objects property became nullable is BREAKING — diffSchemaItems→diffSchemaProperties→nullable", () => {
+    // Adding nullable: true to a property of response items objects: clients that assume
+    // non-null for this field will crash on receiving null.
+    // response-schema-property-nullable-changed false→true → BREAKING.
+    function makeRespNullableSpec(nullableLine: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /products:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    price:
+                      type: number
+                      ${nullableLine}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeRespNullableSpec("nullable: false"), makeRespNullableSpec("nullable: true"));
+    const c = changes.find((x) => x.type === "response-schema-property-nullable-changed" && String(x.location).includes("price"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(false);
+    expect(c?.after).toBe(true);
+    expect(String(c?.location)).toContain("items");
+  });
+});
