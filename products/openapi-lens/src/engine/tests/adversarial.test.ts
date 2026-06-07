@@ -16883,3 +16883,125 @@ paths:
     expect(c?.after).toBe(20);
   });
 });
+
+// ─── Round 132: string constraint value→value gaps across parameter/items/response-items ─────────
+// Remaining untested value→value directions:
+//   parameter-items-constraint minLength tightening (3→8 BREAKING — requestConstraintSeverity min-sense after > before)
+//   parameter-items-constraint maxLength loosening (30→100 INFO — requestConstraintSeverity max-sense after > before)
+//   parameter-constraint minLength loosening (8→3 INFO — requestConstraintSeverity min-sense after < before)
+//   parameter-constraint maxLength loosening (20→50 INFO — requestConstraintSeverity max-sense after > before)
+//   response-schema-items-constraint maxLength loosening (50→100 BREAKING — responseConstraintSeverity max-sense after > before)
+describe("Round 132 — string constraint value→value gaps across parameter/items/response-items", () => {
+  function makeArrayParamStringItemsSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /events:
+    get:
+      parameters:
+        - name: tags
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+  function makeStringParamSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /search:
+    get:
+      parameters:
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+            ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+  function makeRespArrayStringSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /tags:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  ${constraintLine}
+`;
+  }
+
+  it("(R132-1) parameter items minLength tightened (3→8) is BREAKING — elements 3-7 chars now fail validation", () => {
+    // requestConstraintSeverity min-sense: after (8) > before (3) → BREAKING
+    // First value→value tightening test for parameter-items-constraint minLength.
+    const changes = analyzeOpenApiDiff(makeArrayParamStringItemsSpec("minLength: 3"), makeArrayParamStringItemsSpec("minLength: 8"));
+    const c = changes.find((x) => x.type === "parameter-items-constraint-changed" && String(x.location).endsWith(".minLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(3);
+    expect(c?.after).toBe(8);
+  });
+
+  it("(R132-2) parameter items maxLength loosened (30→100) is INFO — clients may now send longer elements", () => {
+    // requestConstraintSeverity max-sense: after (100) > before (30) → else branch → INFO
+    // First value→value loosening test for parameter-items-constraint maxLength.
+    const changes = analyzeOpenApiDiff(makeArrayParamStringItemsSpec("maxLength: 30"), makeArrayParamStringItemsSpec("maxLength: 100"));
+    const c = changes.find((x) => x.type === "parameter-items-constraint-changed" && String(x.location).endsWith(".maxLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(30);
+    expect(c?.after).toBe(100);
+  });
+
+  it("(R132-3) string parameter minLength loosened (8→3) is INFO — strings 3-7 chars now accepted", () => {
+    // requestConstraintSeverity min-sense: after (3) < before (8) → else branch → INFO
+    const changes = analyzeOpenApiDiff(makeStringParamSpec("minLength: 8"), makeStringParamSpec("minLength: 3"));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".minLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(8);
+    expect(c?.after).toBe(3);
+  });
+
+  it("(R132-4) string parameter maxLength loosened (20→50) is INFO — strings 21-50 chars now accepted", () => {
+    // requestConstraintSeverity max-sense: after (50) > before (20) → else branch → INFO
+    const changes = analyzeOpenApiDiff(makeStringParamSpec("maxLength: 20"), makeStringParamSpec("maxLength: 50"));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".maxLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(20);
+    expect(c?.after).toBe(50);
+  });
+
+  it("(R132-5) response items maxLength loosened (50→100) is BREAKING — server may now return longer string elements", () => {
+    // responseConstraintSeverity max-sense: after (100) > before (50) → BREAKING
+    // Server increases its upper bound — weaker guarantee; clients written for ≤50 chars may fail.
+    const changes = analyzeOpenApiDiff(makeRespArrayStringSpec("maxLength: 50"), makeRespArrayStringSpec("maxLength: 100"));
+    const c = changes.find((x) => x.type === "response-schema-items-constraint-changed" && String(x.location).endsWith(".maxLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(50);
+    expect(c?.after).toBe(100);
+  });
+});
