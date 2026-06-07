@@ -18063,3 +18063,184 @@ paths:
     expect(String(c?.location)).toContain("items");
   });
 });
+
+// ─── Round 141: array-of-objects body — writeOnly/readOnly/enum/additionalProperties ─────────────
+// diffSchemaItems → diffSchemaProperties handles writeOnly, readOnly, enum, and
+// additionalProperties on properties of items objects, but none of these have been
+// tested through the items path. Prior tests hit these fields at the direct body level
+// (Rounds 51–53) and items level (Rounds 10, 53), but not at items.properties.
+
+describe("Round 141 — array-of-objects properties: writeOnly/readOnly/enum/additionalProperties via items path", () => {
+  it("(R141-1) response array-of-objects property writeOnly false→true is BREAKING — property disappears from responses", () => {
+    // diffSchemaItems → diffSchemaProperties → writeOnly comparison.
+    // response-schema-property-writeonly-changed false→true → BREAKING.
+    function makeSpec(writeOnlyLine: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /events:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    secret:
+                      type: string
+                      ${writeOnlyLine}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeSpec("writeOnly: false"), makeSpec("writeOnly: true"));
+    const c = changes.find((x) => x.type === "response-schema-property-writeonly-changed" && String(x.location).includes("secret"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(false);
+    expect(c?.after).toBe(true);
+    expect(String(c?.location)).toContain("items");
+  });
+
+  it("(R141-2) request array-of-objects property readOnly false→true is BREAKING — server now rejects property", () => {
+    // diffSchemaItems → diffSchemaProperties → readOnly comparison.
+    // request-schema-property-readonly-changed false→true → BREAKING.
+    function makeSpec(readOnlyLine: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    ${readOnlyLine}
+      responses:
+        "201":
+          description: created
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeSpec("readOnly: false"), makeSpec("readOnly: true"));
+    const c = changes.find((x) => x.type === "request-schema-property-readonly-changed" && String(x.location).includes("id"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(String(c?.location)).toContain("items");
+  });
+
+  it("(R141-3) request array-of-objects property enum added (null→values) is BREAKING — new constraint restricts element property", () => {
+    // diffSchemaItems → diffSchemaProperties → enumSetsEqual comparison.
+    // request-schema-property-enum-changed with before=undefined, after=[...] → BREAKING.
+    function makeSpec(enumLine: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /orders:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    ${enumLine}
+      responses:
+        "201":
+          description: created
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeSpec(""), makeSpec('enum: ["pending", "active"]'));
+    const c = changes.find((x) => x.type === "request-schema-property-enum-changed" && String(x.location).includes("status"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.after).toEqual(["pending", "active"]);
+    expect(String(c?.location)).toContain("items");
+  });
+
+  it("(R141-4) response array-of-objects property enum removed is BREAKING — exhaustive enum clients break", () => {
+    // diffSchemaItems → diffSchemaProperties → enumSetsEqual comparison.
+    // response-schema-property-enum-changed with before=[...], after=undefined → BREAKING.
+    function makeSpec(enumLine: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /orders:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    state:
+                      type: string
+                      ${enumLine}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeSpec('enum: ["open", "closed"]'), makeSpec(""));
+    const c = changes.find((x) => x.type === "response-schema-property-enum-changed" && String(x.location).includes("state"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toEqual(["open", "closed"]);
+    expect(String(c?.location)).toContain("items");
+  });
+
+  it("(R141-5) request array-of-objects property additionalProperties closed is BREAKING — nested object rejects extra fields", () => {
+    // diffSchemaItems → diffSchemaProperties → diffPropertyAdditionalProperties.
+    // request-schema-property-additional-properties-changed after=false → BREAKING.
+    function makeSpec(apLine: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /records:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  meta:
+                    type: object
+                    ${apLine}
+                    properties:
+                      key: {type: string}
+      responses:
+        "201":
+          description: created
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeSpec(""), makeSpec("additionalProperties: false"));
+    const c = changes.find((x) => x.type === "request-schema-property-additional-properties-changed" && String(x.location).includes("meta"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.after).toBe(false);
+    expect(String(c?.location)).toContain("items");
+  });
+});
