@@ -17481,3 +17481,177 @@ paths:
     expect(c?.after).toBe(3);
   });
 });
+
+// ─── Round 137: nested/exotic constraint scenarios ──────────────────────────────────────────
+// Novel scenarios not covered by simple single-field/single-scope tests:
+//   1. Nested array items minItems constraint (array of arrays: items schema has minItems)
+//   2. Simultaneous multi-constraint change produces two separate events
+//   3. Parameter items object schema with minProperties (parameter-items-constraint for object schema)
+describe("Round 137 — nested array items minItems + multi-constraint + parameter object items", () => {
+
+  it("(R137-1) response body nested array minItems added (null→2 INFO) — outer response has array-of-arrays, inner array minItems added", () => {
+    // Tests response-schema-items-constraint-changed for minItems on a nested array items schema.
+    // Outer schema: type:array, items:{type:array, minItems:2}. Adding minItems=2 to inner items.
+    // responseConstraintSeverity min-sense: before=null → INFO (server adds floor guarantee).
+    function makeNestedArrayRespSpec(innerConstraint: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /matrix:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+                  ${innerConstraint}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeNestedArrayRespSpec(""), makeNestedArrayRespSpec("minItems: 2"));
+    const c = changes.find((x) => x.type === "response-schema-items-constraint-changed" && String(x.location).endsWith(".minItems"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(2);
+  });
+
+  it("(R137-2) request body nested array maxItems tightened (10→4 BREAKING) — inner array of request body constrained", () => {
+    // Tests request-schema-items-constraint-changed for maxItems on nested array items schema.
+    // requestConstraintSeverity max-sense: after (4) < before (10) → BREAKING.
+    function makeNestedArrayReqSpec(maxItems: number): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /batch:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: array
+                maxItems: ${maxItems}
+      responses:
+        "204":
+          description: ok
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeNestedArrayReqSpec(10), makeNestedArrayReqSpec(4));
+    const c = changes.find((x) => x.type === "request-schema-items-constraint-changed" && String(x.location).endsWith(".maxItems"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(10);
+    expect(c?.after).toBe(4);
+  });
+
+  it("(R137-3) simultaneous minimum+maximum change on request body produces two independent constraint events", () => {
+    // Tests that the constraint comparison loop emits a separate event per field.
+    // Both minimum and maximum change in the same spec update.
+    function makeIntBodySpec137(constraints: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /score:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: integer
+              ${constraints}
+      responses:
+        "204":
+          description: ok
+`;
+    }
+    const changes = analyzeOpenApiDiff(
+      makeIntBodySpec137("minimum: 1\n              maximum: 100"),
+      makeIntBodySpec137("minimum: 5\n              maximum: 50"),
+    );
+    const minChange = changes.find((x) => x.type === "request-schema-property-constraint-changed" && String(x.location).endsWith(".minimum"));
+    const maxChange = changes.find((x) => x.type === "request-schema-property-constraint-changed" && String(x.location).endsWith(".maximum"));
+    expect(minChange).toBeDefined();
+    expect(minChange?.severity).toBe("BREAKING"); // min 1→5 BREAKING
+    expect(minChange?.before).toBe(1);
+    expect(minChange?.after).toBe(5);
+    expect(maxChange).toBeDefined();
+    expect(maxChange?.severity).toBe("BREAKING"); // max 100→50 BREAKING
+    expect(maxChange?.before).toBe(100);
+    expect(maxChange?.after).toBe(50);
+  });
+
+  it("(R137-4) parameter array items object minProperties added (null→2 BREAKING) — first parameter-items-constraint for object schema", () => {
+    // Tests parameter-items-constraint-changed for minProperties on object array parameter items.
+    // requestConstraintSeverity min-sense: before=null → BREAKING.
+    function makeObjectArrayParamSpec(constraint: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /resources:
+    get:
+      parameters:
+        - name: filters
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: object
+              ${constraint}
+      responses:
+        "200":
+          description: ok
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeObjectArrayParamSpec(""), makeObjectArrayParamSpec("minProperties: 2"));
+    const c = changes.find((x) => x.type === "parameter-items-constraint-changed" && String(x.location).endsWith(".minProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(2);
+  });
+
+  it("(R137-5) response body simultaneous minItems+maxItems change produces two independent events", () => {
+    // Both minItems and maxItems change on the same response array body.
+    function makeRespArraySpec137(constraints: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                ${constraints}
+`;
+    }
+    const changes = analyzeOpenApiDiff(
+      makeRespArraySpec137("minItems: 3\n                maxItems: 50"),
+      makeRespArraySpec137("minItems: 1\n                maxItems: 100"),
+    );
+    const minChange = changes.find((x) => x.type === "response-schema-property-constraint-changed" && String(x.location).endsWith(".minItems"));
+    const maxChange = changes.find((x) => x.type === "response-schema-property-constraint-changed" && String(x.location).endsWith(".maxItems"));
+    expect(minChange).toBeDefined();
+    expect(minChange?.severity).toBe("BREAKING"); // minItems 3→1 BREAKING (server weakens floor)
+    expect(maxChange).toBeDefined();
+    expect(maxChange?.severity).toBe("BREAKING"); // maxItems 50→100 BREAKING (server weakens ceiling)
+  });
+});
