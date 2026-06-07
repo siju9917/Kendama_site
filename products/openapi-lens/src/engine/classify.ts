@@ -854,11 +854,15 @@ const CLASSIFY_RULES: ClassifyRule[] = [
 
   // response-header-enum-changed: enum values ADDED = BREAKING (exhaustive client handlers fail on unknown values).
   // Enum values REMOVED = INFO (server narrows output; dead code in client).
+  // Use value-content comparison, not length: a same-length swap (remove "a", add "b") is still BREAKING.
   {
-    matches: (c) =>
-      c.type === "response-header-enum-changed" && c.before !== null && c.after !== null
-        ? ((c.before as unknown[]).length < (c.after as unknown[]).length ? "BREAKING" : "INFO")
-        : null,
+    matches: (c) => {
+      if (c.type !== "response-header-enum-changed" || c.before === null || c.after === null) return null;
+      const before = c.before as unknown[];
+      const after = c.after as unknown[];
+      const added = after.filter((v) => !before.includes(v));
+      return added.length > 0 ? "BREAKING" : "INFO";
+    },
     message: (c) => {
       const before = c.before as unknown[] | null;
       const after  = c.after  as unknown[] | null;

@@ -15877,3 +15877,85 @@ paths:
     expect(c?.after).toBe(50);
   });
 });
+
+// ─── Round 123: response-header-enum-changed length-comparison bug ──────────────────────────────
+// classify.ts rule at line ~858 uses `before.length < after.length` to determine severity:
+//   before.length < after.length → BREAKING; else → INFO
+// This is wrong for same-length value SWAPS: if "inactive" is removed and "pending" added
+// (both arrays length 2), it returns INFO — but a value WAS added that exhaustive clients
+// won't handle, so it should be BREAKING.
+// Also wrong for multi-remove + multi-add where lengths cancel out.
+describe("Round 123 — response-header-enum-changed length-comparison severity bug", () => {
+  function makeHeaderEnumSpec(enumValues: string[]): string {
+    const enumYaml = enumValues.map((v) => `                  - ${v}`).join("\n");
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Status:
+              schema:
+                type: string
+                enum:
+${enumYaml}
+`;
+  }
+
+  it("(R123-1) response header enum value SWAPPED (same length: 'inactive'→'pending') is BREAKING — new value added", () => {
+    // Before: ["active","inactive"], After: ["active","pending"]
+    // Same length (2=2) — old code returns INFO via length check.
+    // Correct: "pending" was added → exhaustive client switch won't handle it → BREAKING.
+    const before = makeHeaderEnumSpec(["active", "inactive"]);
+    const after  = makeHeaderEnumSpec(["active", "pending"]);
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING"); // value added → BREAKING regardless of array length
+  });
+
+  it("(R123-2) response header enum value removed only (length decreased) is INFO — server narrows output", () => {
+    // Before: ["active","inactive","pending"], After: ["active","inactive"]
+    // "pending" removed, nothing added → clients that handled all 3 values still work → INFO.
+    const before = makeHeaderEnumSpec(["active", "inactive", "pending"]);
+    const after  = makeHeaderEnumSpec(["active", "inactive"]);
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO"); // value removed → INFO
+  });
+
+  it("(R123-3) response header enum value added only (length increased) is BREAKING — exhaustive clients fail", () => {
+    // Before: ["active","inactive"], After: ["active","inactive","pending"]
+    // "pending" added → clients may have switch without default for this header → BREAKING.
+    const before = makeHeaderEnumSpec(["active", "inactive"]);
+    const after  = makeHeaderEnumSpec(["active", "inactive", "pending"]);
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING"); // value added → BREAKING
+  });
+
+  it("(R123-4) response header enum multi-swap (2 removed 2 added, same length) is BREAKING — new values added", () => {
+    // Before: ["a","b","c","d"], After: ["a","b","e","f"]
+    // Length 4=4, so old code returns INFO. But "e" and "f" are new → BREAKING.
+    const before = makeHeaderEnumSpec(["a", "b", "c", "d"]);
+    const after  = makeHeaderEnumSpec(["a", "b", "e", "f"]);
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "response-header-enum-changed");
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+  });
+
+  it("(R123-5) response header enum unchanged produces no enum-changed event (no false-positive)", () => {
+    // Same enum values (same order or reordered) should produce no event.
+    const spec = makeHeaderEnumSpec(["active", "inactive"]);
+    const changes = analyzeOpenApiDiff(spec, spec);
+    const c = changes.find((x) => x.type === "response-header-enum-changed");
+    expect(c).toBeUndefined();
+  });
+});
