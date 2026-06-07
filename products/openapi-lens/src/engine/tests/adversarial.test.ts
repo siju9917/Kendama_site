@@ -16142,3 +16142,192 @@ paths:
     expect(c?.after).toBe(100);
   });
 });
+
+// ─── Round 126: parameter-constraint array fields + response-header-constraint INFO loosening ───
+// parameter-constraint minItems/maxItems have NEVER been tested (parameter array schema constraints).
+// Also covers remaining INFO loosening directions for response-header string constraint fields.
+describe("Round 126 — parameter-constraint minItems/maxItems + response-header-constraint string loosening", () => {
+  it("(R126-1) adding minItems to array parameter schema (null→2) is BREAKING — arrays with <2 elements now fail", () => {
+    // requestConstraintSeverity min-sense: before === null → BREAKING
+    // Parameter with type:array now enforces a minimum element count.
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /search:
+    get:
+      parameters:
+        - name: ids
+          in: query
+          required: false
+          schema:
+            type: array
+      responses:
+        "200":
+          description: ok
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /search:
+    get:
+      parameters:
+        - name: ids
+          in: query
+          required: false
+          schema:
+            type: array
+            minItems: 2
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".minItems"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(2);
+  });
+
+  it("(R126-2) adding maxItems to array parameter schema (null→10) is BREAKING — arrays with >10 elements now fail", () => {
+    // requestConstraintSeverity max-sense: before === null → BREAKING
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /tags:
+    get:
+      parameters:
+        - name: codes
+          in: query
+          required: false
+          schema:
+            type: array
+      responses:
+        "200":
+          description: ok
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /tags:
+    get:
+      parameters:
+        - name: codes
+          in: query
+          required: false
+          schema:
+            type: array
+            maxItems: 10
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".maxItems"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(10);
+  });
+
+  it("(R126-3) removing minItems from array parameter schema (2→null) is INFO — constraint relaxed", () => {
+    // requestConstraintSeverity min-sense: after === null → INFO
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /search:
+    get:
+      parameters:
+        - name: ids
+          in: query
+          required: false
+          schema:
+            type: array
+            minItems: 2
+      responses:
+        "200":
+          description: ok
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /search:
+    get:
+      parameters:
+        - name: ids
+          in: query
+          required: false
+          schema:
+            type: array
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(before, after);
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".minItems"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(2);
+    expect(c?.after).toBeNull();
+  });
+
+  it("(R126-4) response header minLength loosened (3→8) is INFO — server guarantees longer strings", () => {
+    // responseConstraintSeverity min-sense: else → INFO (after (8) > before (3): not after < before)
+    function makeStringHeaderSpec(minLen: number): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Request-Id:
+              schema:
+                type: string
+                minLength: ${minLen}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeStringHeaderSpec(3), makeStringHeaderSpec(8));
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".minLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(3);
+    expect(c?.after).toBe(8);
+  });
+
+  it("(R126-5) response header maxLength tightened (100→50) is INFO — server guarantees shorter strings", () => {
+    // responseConstraintSeverity max-sense: else → INFO (after (50) < before (100): not after > before)
+    function makeStringHeaderSpec(maxLen: number): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Request-Id:
+              schema:
+                type: string
+                maxLength: ${maxLen}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeStringHeaderSpec(100), makeStringHeaderSpec(50));
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".maxLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(100);
+    expect(c?.after).toBe(50);
+  });
+});
