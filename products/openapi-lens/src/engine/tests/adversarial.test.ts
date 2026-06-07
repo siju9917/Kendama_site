@@ -19243,3 +19243,211 @@ paths:
     expect(parsed.operations[0]?.path).toBe("/items");
   });
 });
+
+// ─── Round 147: path param implicit required + 3-hop $ref chain + malformed items + allOf first-member items wins ───
+// More untested parser.ts code paths:
+// 1. Path parameter implicit required: true (line 238: `(inVal === "path")` default)
+// 2. $ref chain 3 hops: A→B→C resolution via nested resolveLocalRef calls
+// 3. normalizeSchema on non-object items value (graceful — returns {})
+// 4. allOf first member items wins when two members have items (flattenAllOf line 115)
+// 5. spec with no operations (empty paths) produces no diff changes
+
+describe("Round 147 — parser edge cases: implicit required / 3-hop $ref / malformed items / allOf items conflict / empty spec", () => {
+  it("(R147-1) path parameter with no explicit required: true is implicitly required — removal is BREAKING", () => {
+    // parser.ts line 238: `const required = asBoolean(raw["required"]) ?? (inVal === "path")`
+    // For in:path, required defaults to true even when not written in the spec.
+    const withParam = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const withoutParam = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /users/{id}:
+    get:
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(withParam, withoutParam);
+    const removed = changes.find((c) => c.type === "parameter-removed");
+    expect(removed).toBeDefined();
+    // The removed parameter should have been treated as required (path params always required)
+    const paramBefore = removed?.before as { required?: boolean } | null;
+    expect(paramBefore?.required).toBe(true);
+    // parameter-removed is always BREAKING
+    expect(removed?.severity).toBe("BREAKING");
+  });
+
+  it("(R147-2) 3-hop $ref chain A→B→C is fully resolved transitively", () => {
+    // resolveLocalRef calls normalizeSchema which can call resolveLocalRef again (recursive).
+    // A→B→C: 3 levels of indirection. Result should be C's schema (type: string, minLength: 5).
+    function makeChainSpec(minLen: number): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/A"
+      responses:
+        "200":
+          description: ok
+components:
+  schemas:
+    A:
+      $ref: "#/components/schemas/B"
+    B:
+      $ref: "#/components/schemas/C"
+    C:
+      type: string
+      minLength: ${minLen}
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeChainSpec(3), makeChainSpec(8));
+    // C's minLength changed 3→8; the chain A→B→C must be fully resolved for this to be detected.
+    const constraintChange = changes.find((c) =>
+      c.type === "parameter-constraint-changed" &&
+      String(c.location).endsWith(".minLength")
+    );
+    expect(constraintChange).toBeDefined();
+    expect(constraintChange?.before).toBe(3);
+    expect(constraintChange?.after).toBe(8);
+    expect(constraintChange?.severity).toBe("BREAKING");
+  });
+
+  it("(R147-3) malformed items value (non-object) is normalized to empty schema — no crash, no change emitted", () => {
+    // normalizeSchema parser.ts line 131: if (!isObject(raw)) return {}
+    // When items has a non-object value (e.g., items: 42), normalizeSchema returns {}.
+    // The empty items schema has no type/properties, so no meaningful diff is possible.
+    // Importantly: the engine must NOT crash on this malformed input.
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: 42
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: 42
+`;
+    // No crash and no changes (both sides have the same malformed items schema)
+    expect(() => analyzeOpenApiDiff(baseline, current)).not.toThrow();
+    const changes = analyzeOpenApiDiff(baseline, current);
+    expect(changes).toHaveLength(0);
+  });
+
+  it("(R147-4) allOf with two members having items: first member wins — second member's items ignored", () => {
+    // flattenAllOf parser.ts line 115: if (result.items === undefined ...) result.items = member.items
+    // When the FIRST member sets items, subsequent member's items are skipped.
+    // Changing the second member's items produces NO change (it was always ignored).
+    const withFirstMemberItems = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /data:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/ArrayBase"
+                - $ref: "#/components/schemas/IgnoredItems"
+      responses:
+        "200":
+          description: ok
+components:
+  schemas:
+    ArrayBase:
+      type: array
+      items:
+        type: string
+    IgnoredItems:
+      items:
+        type: integer
+`;
+    const withChangedSecondMember = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /data:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/ArrayBase"
+                - $ref: "#/components/schemas/IgnoredItems"
+      responses:
+        "200":
+          description: ok
+components:
+  schemas:
+    ArrayBase:
+      type: array
+      items:
+        type: string
+    IgnoredItems:
+      items:
+        type: object
+`;
+    // Second member's items changes integer→object, but ArrayBase's items (string) wins via allOf.
+    // So the effective items type remains "string" — no items-type-changed event.
+    const changes = analyzeOpenApiDiff(withFirstMemberItems, withChangedSecondMember);
+    const itemsChange = changes.find((c) => c.type === "request-schema-items-type-changed");
+    expect(itemsChange).toBeUndefined(); // second member's items ignored; first member (string) wins
+  });
+
+  it("(R147-5) spec with no paths or operations produces zero diff changes", () => {
+    // diffSpecs: bMap and cMap both empty → neither loops run → no changes emitted.
+    // diffServers: no servers on either side → empty sets → no changes.
+    const empty = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths: {}
+`;
+    const changes = analyzeOpenApiDiff(empty, empty);
+    expect(changes).toHaveLength(0);
+  });
+});
