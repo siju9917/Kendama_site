@@ -15959,3 +15959,94 @@ ${enumYaml}
     expect(c).toBeUndefined();
   });
 });
+
+// ─── Round 124: response-header-constraint minLength/maxLength/minItems/maxItems ────────────────
+// The diff engine tracks all 9 constraint fields for response headers (line ~820 diff.ts).
+// Only minimum, maximum, pattern, minProperties, maxProperties have been tested.
+// minLength, maxLength, minItems, maxItems on response header schemas are completely untested.
+describe("Round 124 — response-header-constraint string and array constraint fields (minLength/maxLength/minItems/maxItems)", () => {
+  function makeStringHeaderSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Request-Id:
+              schema:
+                type: string
+                ${constraintLine}
+`;
+  }
+  function makeArrayHeaderSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Tags:
+              schema:
+                type: array
+                ${constraintLine}
+`;
+  }
+
+  it("(R124-1) adding minLength to response string header (null→8) is INFO — server strengthens format guarantee", () => {
+    // responseConstraintSeverity min-sense: before === null → INFO
+    const changes = analyzeOpenApiDiff(makeStringHeaderSpec(""), makeStringHeaderSpec("minLength: 8"));
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".minLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(8);
+  });
+
+  it("(R124-2) removing minLength from response string header (8→null) is BREAKING — server may return shorter strings", () => {
+    // responseConstraintSeverity min-sense: after === null → BREAKING
+    const changes = analyzeOpenApiDiff(makeStringHeaderSpec("minLength: 8"), makeStringHeaderSpec(""));
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".minLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(8);
+    expect(c?.after).toBeNull();
+  });
+
+  it("(R124-3) adding maxLength to response string header (null→50) is INFO — server adds upper-length guarantee", () => {
+    // responseConstraintSeverity max-sense: before === null → INFO
+    const changes = analyzeOpenApiDiff(makeStringHeaderSpec(""), makeStringHeaderSpec("maxLength: 50"));
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".maxLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(50);
+  });
+
+  it("(R124-4) removing maxLength from response string header (50→null) is BREAKING — server may return longer strings", () => {
+    // responseConstraintSeverity max-sense: after === null → BREAKING
+    const changes = analyzeOpenApiDiff(makeStringHeaderSpec("maxLength: 50"), makeStringHeaderSpec(""));
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".maxLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(50);
+    expect(c?.after).toBeNull();
+  });
+
+  it("(R124-5) adding minItems to response array header (null→1) is INFO — server guarantees non-empty array header", () => {
+    // responseConstraintSeverity min-sense: before === null → INFO
+    const changes = analyzeOpenApiDiff(makeArrayHeaderSpec(""), makeArrayHeaderSpec("minItems: 1"));
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".minItems"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(1);
+  });
+});
