@@ -19032,3 +19032,214 @@ components:
     expect(constraintChange?.severity).toBe("BREAKING");
   });
 });
+
+// ─── Round 146: parser edge cases — Swagger 2.0 shared params + OAS 3.x path-level + resolveLocalRef + detectVersion ───
+// Five untested parser.ts code paths:
+// 1. Swagger 2.0 top-level #/parameters/ $ref resolution (parseSharedParameters + parseParameter regex)
+// 2. OAS 3.x path-level parameter inherited by operations (parseParameters pathLevelParams)
+// 3. OAS 3.x op-level parameter overrides path-level (op processed second in merge map)
+// 4. resolveLocalRef with matching regex but missing name (def === undefined → returns {})
+// 5. detectVersion fallback when no openapi/swagger field (returns "3.0")
+
+describe("Round 146 — parser edge cases: shared params / path-level params / resolveLocalRef / detectVersion", () => {
+  it("(R146-1) Swagger 2.0 shared #/parameters/X ref is resolved — changing the shared param is detected as BREAKING", () => {
+    // parser.ts parseSharedParameters: topLevelParams merges raw["parameters"] for Swagger 2.0.
+    // parseParameter regex: /^#\/(components\/parameters|parameters)\/(.+)$/ — the `parameters` branch.
+    const baseline = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+parameters:
+  UserId:
+    name: userId
+    in: query
+    required: true
+    type: string
+paths:
+  /users:
+    get:
+      parameters:
+        - $ref: "#/parameters/UserId"
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+swagger: "2.0"
+info: {title: T, version: "1"}
+parameters:
+  UserId:
+    name: userId
+    in: query
+    required: true
+    type: integer
+paths:
+  /users:
+    get:
+      parameters:
+        - $ref: "#/parameters/UserId"
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    // Shared param type changed string→integer: BREAKING (after != null)
+    const typeChange = changes.find((c) => c.type === "parameter-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("string");
+    expect(typeChange?.after).toBe("integer");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+
+  it("(R146-2) OAS 3.x path-level query parameter is inherited by all operations on the path", () => {
+    // parser.ts parseParameters: pathLevelParams are processed first in the merge map.
+    // An operation with no op-level params inherits ALL path-level params.
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+    get:
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 5
+    get:
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    // path-level param minimum tightened 1→5 via path-level inheritance: BREAKING
+    const constraintChange = changes.find((c) =>
+      c.type === "parameter-constraint-changed" &&
+      String(c.location).endsWith(".minimum")
+    );
+    expect(constraintChange).toBeDefined();
+    expect(constraintChange?.before).toBe(1);
+    expect(constraintChange?.after).toBe(5);
+    expect(constraintChange?.severity).toBe("BREAKING");
+  });
+
+  it("(R146-3) OAS 3.x op-level parameter overrides path-level same-named parameter", () => {
+    // parser.ts parseParameters: op-level params processed second; op wins on key conflict in merge map.
+    // Path has page: type integer; GET operation redefines page as type string — op wins.
+    const baseline = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+    get:
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+    get:
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    // op-level page: integer→string is BREAKING; path-level version is overridden (op-level wins)
+    const typeChange = changes.find((c) => c.type === "parameter-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("integer");
+    expect(typeChange?.after).toBe("string");
+    expect(typeChange?.severity).toBe("BREAKING");
+    // Should produce exactly ONE type change (not two — op-level override suppresses path-level)
+    expect(changes.filter((c) => c.type === "parameter-type-changed")).toHaveLength(1);
+  });
+
+  it("(R146-4) resolveLocalRef with regex-matching but missing schema returns empty (no crash)", () => {
+    // resolveLocalRef parser.ts line 77: def === undefined → return {}
+    // The ref matches the regex (#/components/schemas/MissingSchema) but the schema isn't defined.
+    const spec = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MissingSchema"
+components:
+  schemas: {}
+`;
+    // No throw; missing $ref resolves to {} which then normalizes to null (empty schema)
+    const parsed = parseOapiSpec(spec);
+    const op = parsed.operations[0]!;
+    // Resolved to empty schema → stored as null in response.schema
+    expect(op.responses["200"]?.schema).toBeNull();
+  });
+
+  it("(R146-5) detectVersion fallback: spec with neither openapi nor swagger field defaults to 3.0", () => {
+    // detectVersion parser.ts line 42: if no openapi/swagger field, returns "3.0"
+    // This happens with hand-crafted JSON without a version marker.
+    const noVersionSpec = `
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+`;
+    // Should parse without error; defaults to 3.0 parsing
+    const parsed = parseOapiSpec(noVersionSpec);
+    expect(parsed.version).toBe("3.0");
+    // Operations are still parsed correctly
+    expect(parsed.operations).toHaveLength(1);
+    expect(parsed.operations[0]?.path).toBe("/items");
+  });
+});
