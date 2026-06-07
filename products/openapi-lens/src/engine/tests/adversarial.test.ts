@@ -17005,3 +17005,123 @@ paths:
     expect(c?.after).toBe(100);
   });
 });
+
+// ─── Round 133: items-constraint + response-property minLength value→value gaps ──────────────────
+// Genuinely untested paths:
+//   request-schema-items-constraint minLength value→value TIGHTENING (3→10 BREAKING)
+//   request-schema-items-constraint maxLength value→value LOOSENING (50→100 INFO)
+//   response-schema-items-constraint minLength value→value TIGHTENING (10→2 BREAKING)
+//   response-schema-property-constraint minLength value→value INCREASING (3→8 INFO)
+//   response-schema-property-constraint minLength value→value DECREASING (8→3 BREAKING)
+describe("Round 133 — items-constraint + response-property minLength value→value gaps", () => {
+  function makeReqArrayStringSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /batch:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                ${constraintLine}
+      responses:
+        "204":
+          description: ok
+`;
+  }
+  function makeRespArrayStringSpec133(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /names:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  ${constraintLine}
+`;
+  }
+  function makeRespBodyStringSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /username:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+                ${constraintLine}
+`;
+  }
+
+  it("(R133-1) request items minLength tightened (3→10) is BREAKING — elements 3-9 chars now fail validation", () => {
+    // requestConstraintSeverity min-sense: after (10) > before (3) → BREAKING
+    const changes = analyzeOpenApiDiff(makeReqArrayStringSpec("minLength: 3"), makeReqArrayStringSpec("minLength: 10"));
+    const c = changes.find((x) => x.type === "request-schema-items-constraint-changed" && String(x.location).endsWith(".minLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(3);
+    expect(c?.after).toBe(10);
+  });
+
+  it("(R133-2) request items maxLength loosened (50→100) is INFO — clients may send longer elements, widens acceptance", () => {
+    // requestConstraintSeverity max-sense: after (100) > before (50) → else → INFO
+    const changes = analyzeOpenApiDiff(makeReqArrayStringSpec("maxLength: 50"), makeReqArrayStringSpec("maxLength: 100"));
+    const c = changes.find((x) => x.type === "request-schema-items-constraint-changed" && String(x.location).endsWith(".maxLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(50);
+    expect(c?.after).toBe(100);
+  });
+
+  it("(R133-3) response items minLength tightened (10→2) is BREAKING — server may now return shorter elements", () => {
+    // responseConstraintSeverity min-sense: after (2) < before (10) → BREAKING
+    // Server weakens its floor guarantee; clients relying on ≥10 chars may fail.
+    const changes = analyzeOpenApiDiff(makeRespArrayStringSpec133("minLength: 10"), makeRespArrayStringSpec133("minLength: 2"));
+    const c = changes.find((x) => x.type === "response-schema-items-constraint-changed" && String(x.location).endsWith(".minLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(10);
+    expect(c?.after).toBe(2);
+  });
+
+  it("(R133-4) response body minLength increased (3→8) is INFO — server now guarantees longer strings for consumers", () => {
+    // responseConstraintSeverity min-sense: after (8) > before (3) → else → INFO
+    // Server strengthens its floor guarantee: stronger promise, not weaker.
+    const changes = analyzeOpenApiDiff(makeRespBodyStringSpec("minLength: 3"), makeRespBodyStringSpec("minLength: 8"));
+    const c = changes.find((x) => x.type === "response-schema-property-constraint-changed" && String(x.location).endsWith(".minLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(3);
+    expect(c?.after).toBe(8);
+  });
+
+  it("(R133-5) response body minLength decreased (8→3) is BREAKING — server may now return shorter strings, weakening consumer guarantee", () => {
+    // responseConstraintSeverity min-sense: after (3) < before (8) → BREAKING
+    // Consumers relying on ≥8 char responses may fail when server returns 3-7 char strings.
+    const changes = analyzeOpenApiDiff(makeRespBodyStringSpec("minLength: 8"), makeRespBodyStringSpec("minLength: 3"));
+    const c = changes.find((x) => x.type === "response-schema-property-constraint-changed" && String(x.location).endsWith(".minLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(8);
+    expect(c?.after).toBe(3);
+  });
+});
