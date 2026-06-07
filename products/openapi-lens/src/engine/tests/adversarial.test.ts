@@ -16050,3 +16050,95 @@ paths:
     expect(c?.after).toBe(1);
   });
 });
+
+// ─── Round 125: response-header-constraint remaining null-transitions + value tightening ────────
+// Continuing R124: test maxItems null-transitions, minItems value→null, and first
+// value→value tightening directions for string header constraints (minLength/maxLength).
+describe("Round 125 — response-header-constraint maxItems null-transitions + string value tightening", () => {
+  function makeArrayHeaderSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Tags:
+              schema:
+                type: array
+                ${constraintLine}
+`;
+  }
+  function makeStringHeaderSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Request-Id:
+              schema:
+                type: string
+                ${constraintLine}
+`;
+  }
+
+  it("(R125-1) adding maxItems to response array header (null→5) is INFO — server guarantees at most 5 elements", () => {
+    // responseConstraintSeverity max-sense: before === null → INFO
+    const changes = analyzeOpenApiDiff(makeArrayHeaderSpec(""), makeArrayHeaderSpec("maxItems: 5"));
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".maxItems"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(5);
+  });
+
+  it("(R125-2) removing maxItems from response array header (5→null) is BREAKING — clients may receive unbounded arrays", () => {
+    // responseConstraintSeverity max-sense: after === null → BREAKING
+    const changes = analyzeOpenApiDiff(makeArrayHeaderSpec("maxItems: 5"), makeArrayHeaderSpec(""));
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".maxItems"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(5);
+    expect(c?.after).toBeNull();
+  });
+
+  it("(R125-3) removing minItems from response array header (1→null) is BREAKING — server may return empty arrays", () => {
+    // responseConstraintSeverity min-sense: after === null → BREAKING
+    const changes = analyzeOpenApiDiff(makeArrayHeaderSpec("minItems: 1"), makeArrayHeaderSpec(""));
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".minItems"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(1);
+    expect(c?.after).toBeNull();
+  });
+
+  it("(R125-4) decreasing minLength on response string header (8→3) is BREAKING — server may return shorter strings", () => {
+    // responseConstraintSeverity min-sense: after (3) < before (8) → BREAKING
+    // Clients relying on all header values being ≥8 chars may break with 3-char values.
+    const changes = analyzeOpenApiDiff(makeStringHeaderSpec("minLength: 8"), makeStringHeaderSpec("minLength: 3"));
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".minLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(8);
+    expect(c?.after).toBe(3);
+  });
+
+  it("(R125-5) increasing maxLength on response string header (50→100) is BREAKING — server may return longer strings", () => {
+    // responseConstraintSeverity max-sense: after (100) > before (50) → BREAKING
+    // Clients that allocated fixed-size buffers for ≤50 chars may overflow with 100-char values.
+    const changes = analyzeOpenApiDiff(makeStringHeaderSpec("maxLength: 50"), makeStringHeaderSpec("maxLength: 100"));
+    const c = changes.find((x) => x.type === "response-header-constraint-changed" && String(x.location).endsWith(".maxLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(50);
+    expect(c?.after).toBe(100);
+  });
+});
