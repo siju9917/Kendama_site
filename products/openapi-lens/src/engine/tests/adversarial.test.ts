@@ -19451,3 +19451,280 @@ paths: {}
     expect(changes).toHaveLength(0);
   });
 });
+
+// ─── Round 148: Swagger 2.0 definitions allOf + OAS 3.1 only-null type + header $ref missing + allOf multi-required + security [] ───
+// Five genuinely untested parser/diff/classify paths:
+// R148-1: parseDefinitions + flattenAllOf + resolveLocalRef via "#/definitions/" regex branch (first Swagger 2.0 allOf definitions test)
+// R148-2: OAS 3.1 type:["null"] (only-null array) produces {nullable:true} no type field
+// R148-3: parseResponseHeaders header $ref to non-existent component → null schema, graceful no-crash
+// R148-4: flattenAllOf with two members each contributing different required fields → union accumulated
+// R148-5: both operations have security:[] → parseSecurityRequirements returns {} on each side → diffOperationSecurity no events
+
+describe("Round 148 — Swagger 2.0 defs allOf + OAS 3.1 only-null type + header $ref missing + allOf multi-required + empty security both sides", () => {
+  it("(R148-1) Swagger 2.0 definitions: allOf inheritance via #/definitions/ $ref — base type change propagates to inheriting schema", () => {
+    // parseDefinitions calls normalizeSchema for each entry. For a definition using allOf:
+    //   allOf: [{$ref: "#/definitions/Base"}, {type: object, properties: {...}}]
+    // normalizeSchema resolves the $ref via resolveLocalRef with "#/definitions/" regex branch,
+    // then flattenAllOf merges the base schema into the inheriting schema.
+    // Changing Base.id.type from integer to string must propagate through allOf inheritance.
+    const baseline = `
+swagger: "2.0"
+info:
+  title: T
+  version: "1"
+host: api.example.com
+basePath: /v1
+paths:
+  /pets:
+    get:
+      responses:
+        200:
+          description: ok
+          schema:
+            $ref: "#/definitions/Pet"
+definitions:
+  Base:
+    type: object
+    properties:
+      id:
+        type: integer
+  Pet:
+    allOf:
+      - $ref: "#/definitions/Base"
+      - type: object
+        properties:
+          name:
+            type: string
+`;
+    const current = `
+swagger: "2.0"
+info:
+  title: T
+  version: "1"
+host: api.example.com
+basePath: /v1
+paths:
+  /pets:
+    get:
+      responses:
+        200:
+          description: ok
+          schema:
+            $ref: "#/definitions/Pet"
+definitions:
+  Base:
+    type: object
+    properties:
+      id:
+        type: string
+  Pet:
+    allOf:
+      - $ref: "#/definitions/Base"
+      - type: object
+        properties:
+          name:
+            type: string
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    // The Pet schema inherits {id: integer} from Base via allOf. Changing Base.id to string
+    // must propagate — response property type change from integer to string is BREAKING.
+    const typeChange = changes.find(
+      (c) => c.type === "response-schema-property-type-changed" && String(c.location).includes("id")
+    );
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBe("integer");
+    expect(typeChange?.after).toBe("string");
+    expect(typeChange?.severity).toBe("BREAKING");
+  });
+
+  it("(R148-2) OAS 3.1 type:[\"null\"] (only-null array) produces {nullable:true} no schema.type — changing to [\"string\",\"null\"] emits type-changed (null→string) but no nullable-changed", () => {
+    // normalizeSchema OAS 3.1 type-array handling:
+    //   rawType = ["null"] → nonNullType = rawType.find(t => t !== "null") = undefined → no schema.type
+    //   rawType.includes("null") = true → schema.nullable = true
+    // Result: {nullable: true} with no type.
+    // Changing to ["string","null"] → {type:"string", nullable:true}.
+    // Diff: type-changed (null→"string") BREAKING. nullable: both true → no change.
+    const baseline = `
+openapi: "3.1.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /tokens:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type:
+                - "null"
+      responses:
+        "200":
+          description: ok
+`;
+    const current = `
+openapi: "3.1.0"
+info:
+  title: T
+  version: "1"
+paths:
+  /tokens:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type:
+                - string
+                - "null"
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(baseline, current);
+    // type: null→"string" = request BREAKING (after !== null)
+    const typeChange = changes.find((c) => c.type === "request-schema-type-changed");
+    expect(typeChange).toBeDefined();
+    expect(typeChange?.before).toBeNull();
+    expect(typeChange?.after).toBe("string");
+    expect(typeChange?.severity).toBe("BREAKING");
+    // nullable: both are true (["null"] synthesizes true, ["string","null"] also true) → no change
+    const nullableChange = changes.find((c) => c.type === "request-schema-nullable-changed");
+    expect(nullableChange).toBeUndefined();
+  });
+
+  it("(R148-3) response header $ref to non-existent #/components/headers component → null schema, no crash, no type event", () => {
+    // parseResponseHeaders: ref matches #/components/headers/X regex, but headerLookup[X] is undefined.
+    // effective = {} (empty fallback). normalizeSchema({}) = {}. Object.keys({}).length = 0 → schema: null.
+    // Both baseline and current have the same missing-ref header → no events emitted.
+    const spec = `
+openapi: "3.0.3"
+info:
+  title: T
+  version: "1"
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            X-Custom:
+              $ref: "#/components/headers/NonExistentHeader"
+components:
+  headers: {}
+`;
+    // Must not throw.
+    expect(() => analyzeOpenApiDiff(spec, spec)).not.toThrow();
+    // No change events for identical specs.
+    expect(analyzeOpenApiDiff(spec, spec)).toHaveLength(0);
+  });
+
+  it("(R148-4) flattenAllOf with two members each contributing different required fields — union of both sets preserved", () => {
+    // flattenAllOf required-accumulation loop:
+    //   After member 1: result.required = ["id"]
+    //   After member 2: result.required = [...new Set(["id", "name"])] = ["id", "name"]
+    // The merged schema requires both fields. Removing "name" from the final required set
+    // in the current spec is detected as BREAKING (required field removed from response).
+    const baseline = `
+openapi: "3.0.3"
+info:
+  title: T
+  version: "1"
+paths:
+  /widgets:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - type: object
+                    required:
+                      - id
+                    properties:
+                      id:
+                        type: integer
+                  - type: object
+                    required:
+                      - name
+                    properties:
+                      name:
+                        type: string
+`;
+    const current = `
+openapi: "3.0.3"
+info:
+  title: T
+  version: "1"
+paths:
+  /widgets:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - type: object
+                    required:
+                      - id
+                    properties:
+                      id:
+                        type: integer
+                  - type: object
+                    properties:
+                      name:
+                        type: string
+`;
+    // Baseline: schema.required = union(["id"], ["name"]) = ["id", "name"]
+    // Current:  schema.required = union(["id"]) = ["id"] (second member no longer has "name" required)
+    // diff: "name" removed from required → response-schema-field-required-removed (BREAKING)
+    const changes = analyzeOpenApiDiff(baseline, current);
+    const requiredRemoved = changes.find(
+      (c) => c.type === "response-schema-field-required-removed" && String(c.location).includes("name")
+    );
+    expect(requiredRemoved).toBeDefined();
+    expect(requiredRemoved?.severity).toBe("BREAKING");
+  });
+
+  it("(R148-5) both operations have security:[] (override global with none) — parseSecurityRequirements returns {} on each side — no security events", () => {
+    // parseSecurityRequirements([]) = {} (truthy empty object, not null).
+    // In parseOperations: security = {} → included as { security: {} } (because {} is truthy).
+    // diffOperationSecurity: bSec = {}, cSec = {}. !bSec && !cSec = false (both truthy).
+    // bKeys = Set{}, cKeys = Set{} → no scheme-removed, no scheme-added, no scope events.
+    // This tests the path where both sides have explicit empty security (≠ absent security).
+    const spec = `
+openapi: "3.0.3"
+info:
+  title: T
+  version: "1"
+paths:
+  /public:
+    get:
+      security: []
+      responses:
+        "200":
+          description: ok
+`;
+    const changes = analyzeOpenApiDiff(spec, spec);
+    // No security events of any kind (same security on both sides).
+    const secChanges = changes.filter(
+      (c) =>
+        c.type === "operation-security-scheme-added" ||
+        c.type === "operation-security-scheme-removed" ||
+        c.type === "operation-security-scope-added" ||
+        c.type === "operation-security-scope-removed"
+    );
+    expect(secChanges).toHaveLength(0);
+    // No other changes either (identical specs).
+    expect(changes).toHaveLength(0);
+  });
+});
