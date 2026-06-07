@@ -17655,3 +17655,129 @@ paths:
     expect(maxChange?.severity).toBe("BREAKING"); // maxItems 50→100 BREAKING (server weakens ceiling)
   });
 });
+
+// ─── Round 138: cookie parameter constraints + 3-level property nesting ────────────────────────
+// Cookie parameters (`in: cookie`) have never been tested for constraint changes.
+// All prior parameter-constraint tests used query/path/header parameters.
+// Also: 3-level deep object property constraint (obj → obj → obj → constraint).
+describe("Round 138 — cookie parameter constraints + 3-level property nesting", () => {
+  function makeCookieConstraintSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /session:
+    get:
+      parameters:
+        - name: session-token
+          in: cookie
+          required: false
+          schema:
+            type: string
+            ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+  function makeCookieIntSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /session:
+    get:
+      parameters:
+        - name: ttl
+          in: cookie
+          required: false
+          schema:
+            type: integer
+            ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("(R138-1) cookie parameter minLength added (null→5) is BREAKING — first cookie constraint test", () => {
+    // requestConstraintSeverity min-sense: before=null → BREAKING
+    const changes = analyzeOpenApiDiff(makeCookieConstraintSpec(""), makeCookieConstraintSpec("minLength: 5"));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).includes("cookie:session-token") && String(x.location).endsWith(".minLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(5);
+  });
+
+  it("(R138-2) cookie parameter minimum tightened (1→10) is BREAKING — integer cookie constraint value→value", () => {
+    // requestConstraintSeverity min-sense: after (10) > before (1) → BREAKING
+    const changes = analyzeOpenApiDiff(makeCookieIntSpec("minimum: 1"), makeCookieIntSpec("minimum: 10"));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).includes("cookie:ttl") && String(x.location).endsWith(".minimum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(1);
+    expect(c?.after).toBe(10);
+  });
+
+  it("(R138-3) cookie parameter maximum loosened (50→200) is INFO — cookie max increase widens acceptance", () => {
+    // requestConstraintSeverity max-sense: after (200) > before (50) → INFO
+    const changes = analyzeOpenApiDiff(makeCookieIntSpec("maximum: 50"), makeCookieIntSpec("maximum: 200"));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).includes("cookie:ttl") && String(x.location).endsWith(".maximum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(50);
+    expect(c?.after).toBe(200);
+  });
+
+  it("(R138-4) cookie parameter pattern removed (pattern→null) is INFO — any string now accepted", () => {
+    // requestConstraintSeverity pattern: after=null → INFO
+    const changes = analyzeOpenApiDiff(makeCookieConstraintSpec("pattern: '^[a-f0-9]{32}$'"), makeCookieConstraintSpec(""));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).includes("cookie:session-token") && String(x.location).endsWith(".pattern"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe("^[a-f0-9]{32}$");
+    expect(c?.after).toBeNull();
+  });
+
+  it("(R138-5) 3-level deeply nested property constraint change is detected", () => {
+    // body.level1.level2.minimum change — tests depth=2 recursion in diffSchemaProperties.
+    function makeDeepSpec(minValue: number): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /orders:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                shipping:
+                  type: object
+                  properties:
+                    address:
+                      type: object
+                      properties:
+                        postalCode:
+                          type: string
+                          minLength: ${minValue}
+      responses:
+        "204":
+          description: ok
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeDeepSpec(3), makeDeepSpec(8));
+    const c = changes.find((x) => x.type === "request-schema-property-constraint-changed" && String(x.location).endsWith(".minLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING"); // min 3→8 BREAKING
+    expect(c?.before).toBe(3);
+    expect(c?.after).toBe(8);
+    expect(String(c?.location)).toContain("shipping");
+    expect(String(c?.location)).toContain("address");
+    expect(String(c?.location)).toContain("postalCode");
+  });
+});
