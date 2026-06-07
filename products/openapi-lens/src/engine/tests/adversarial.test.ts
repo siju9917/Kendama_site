@@ -17781,3 +17781,148 @@ paths:
     expect(String(c?.location)).toContain("postalCode");
   });
 });
+
+// ─── Round 139: array-of-objects body property constraint changes ─────────────────────────
+// The path diffSchemaItems → diffSchemaProperties is exercised when a request/response body
+// has type:array with items that are objects with named properties. Earlier rounds only tested
+// TYPE changes (Round 1) and required-field changes (Round 1) on those properties.
+// CONSTRAINT changes on properties of array-of-objects have never been tested.
+// Route under test: diffSchemaItems(…) → (bItems.properties exists) →
+//   diffSchemaProperties(path, method, `${loc}.items`, bItems, cItems, isRequest, changes, 0)
+// Then inside diffSchemaProperties the constraint loop emits request/response-schema-property-constraint-changed.
+
+describe("Round 139 — array-of-objects body property constraint changes", () => {
+  function makeRequestArrayOfObjectsSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /orders:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  amount:
+                    type: integer
+                    ${constraintLine}
+      responses:
+        "201":
+          description: created
+`;
+  }
+
+  function makeResponseArrayOfObjectsSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /scores:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    score:
+                      type: integer
+                      ${constraintLine}
+`;
+  }
+
+  it("(R139-1) request array-of-objects property minLength added (null→3) is BREAKING — new constraint on element property", () => {
+    // diffSchemaItems → diffSchemaProperties → constraint loop.
+    // requestConstraintSeverity min-sense: before=null → BREAKING.
+    function makeSpec(constraint: string): string {
+      return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    ${constraint}
+      responses:
+        "201":
+          description: created
+`;
+    }
+    const changes = analyzeOpenApiDiff(makeSpec(""), makeSpec("minLength: 3"));
+    const c = changes.find((x) => x.type === "request-schema-property-constraint-changed" && String(x.location).endsWith(".minLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBeNull();
+    expect(c?.after).toBe(3);
+    // Location must traverse through items into the object property
+    expect(String(c?.location)).toContain("items");
+    expect(String(c?.location)).toContain("code");
+  });
+
+  it("(R139-2) request array-of-objects property minimum tightened (1→10) is BREAKING — stricter floor on element property", () => {
+    // diffSchemaItems → diffSchemaProperties → constraint loop.
+    // requestConstraintSeverity min-sense: after (10) > before (1) → BREAKING.
+    const changes = analyzeOpenApiDiff(makeRequestArrayOfObjectsSpec("minimum: 1"), makeRequestArrayOfObjectsSpec("minimum: 10"));
+    const c = changes.find((x) => x.type === "request-schema-property-constraint-changed" && String(x.location).endsWith(".minimum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(1);
+    expect(c?.after).toBe(10);
+    expect(String(c?.location)).toContain("items");
+    expect(String(c?.location)).toContain("amount");
+  });
+
+  it("(R139-3) request array-of-objects property minimum loosened (10→1) is INFO — more element values now accepted", () => {
+    // diffSchemaItems → diffSchemaProperties → constraint loop.
+    // requestConstraintSeverity min-sense: after (1) < before (10) → INFO.
+    const changes = analyzeOpenApiDiff(makeRequestArrayOfObjectsSpec("minimum: 10"), makeRequestArrayOfObjectsSpec("minimum: 1"));
+    const c = changes.find((x) => x.type === "request-schema-property-constraint-changed" && String(x.location).endsWith(".minimum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(10);
+    expect(c?.after).toBe(1);
+  });
+
+  it("(R139-4) response array-of-objects property minimum decreased (10→3) is BREAKING — server may now return lower values", () => {
+    // diffSchemaItems → diffSchemaProperties → constraint loop.
+    // responseConstraintSeverity min-sense: after (3) < before (10) → BREAKING.
+    const changes = analyzeOpenApiDiff(makeResponseArrayOfObjectsSpec("minimum: 10"), makeResponseArrayOfObjectsSpec("minimum: 3"));
+    const c = changes.find((x) => x.type === "response-schema-property-constraint-changed" && String(x.location).endsWith(".minimum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(10);
+    expect(c?.after).toBe(3);
+    expect(String(c?.location)).toContain("items");
+    expect(String(c?.location)).toContain("score");
+  });
+
+  it("(R139-5) response array-of-objects property maximum removed (value→null) is BREAKING — server may now return unbounded values", () => {
+    // diffSchemaItems → diffSchemaProperties → constraint loop.
+    // responseConstraintSeverity max-sense: after=null → BREAKING.
+    const changes = analyzeOpenApiDiff(makeResponseArrayOfObjectsSpec("maximum: 100"), makeResponseArrayOfObjectsSpec(""));
+    const c = changes.find((x) => x.type === "response-schema-property-constraint-changed" && String(x.location).endsWith(".maximum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(100);
+    expect(c?.after).toBeNull();
+  });
+});
