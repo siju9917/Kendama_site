@@ -598,3 +598,66 @@ describe("classifyChange — Rule 2+5 IAM deletion + inline_policy + egress CIDR
     expect(result).toBe("narrowing");
   });
 });
+
+// ─── Round 129: IAM narrowing + pure deletion — untested classify branch ─────────────────────────
+// When an IAM resource is purely deleted (actions=["delete"], not replacement), Rule 2 fires
+// first (CRITICAL). Rule 5 then runs with severity already CRITICAL and iamDirection="narrowing".
+// R129-1: tests the "narrowing + already-CRITICAL (replace)" note path.
+// analyzeIamDirection requires both before AND after to return "narrowing";
+// a pure deletion (after=null) returns "unknown" → "direction unclear" note.
+// Only a replace (actions:["delete","create"] with both before+after present) can
+// hit the "policy appears more restrictive, but replacement … makes this CRITICAL" branch.
+describe("classifyChange — IAM narrowing + replace (round 129)", () => {
+  function makeNarrowingPolicy(): string {
+    return JSON.stringify({
+      Statement: [
+        { Effect: "Allow", Action: "s3:GetObject", Resource: "*" },
+        { Effect: "Allow", Action: "s3:PutObject", Resource: "*" },
+      ],
+    });
+  }
+  function makeNarrowerPolicy(): string {
+    return JSON.stringify({
+      Statement: [{ Effect: "Allow", Action: "s3:GetObject", Resource: "*" }],
+    });
+  }
+
+  it("(R129-1) IAM resource replace with narrowing policy: CRITICAL with 'more restrictive' note", () => {
+    // Rule 3 fires (replace → CRITICAL). Rule 5 detects narrowing (afterAllows < beforeAllows).
+    // Since severity is already CRITICAL the narrowing branch fires with the "more restrictive" note.
+    const c = classifyChange({
+      address: "aws_iam_policy.replaced",
+      type: "aws_iam_policy",
+      name: "replaced",
+      actions: ["delete", "create"],
+      before: { policy: makeNarrowingPolicy() },
+      after: { policy: makeNarrowerPolicy() },
+    });
+    expect(c.severity).toBe("CRITICAL");
+    // Rule 3 reason: REPLACED.
+    expect(c.reasons.some((r) => r.includes("REPLACED"))).toBe(true);
+    // Rule 5 reason: must mention IAM CRITICAL and "restrictive" (not "WIDENED").
+    const iamReason = c.reasons.find((r) => r.includes("IAM change is CRITICAL"));
+    expect(iamReason).toBeDefined();
+    expect(iamReason).toContain("restrictive");
+    expect(iamReason).not.toContain("WIDENED");
+  });
+
+  it("(R129-2) IAM narrowing pure update (no deletion/replacement): NORMAL with narrowing note", () => {
+    // Rule 5 fires, iamDirection="narrowing", severity is still NORMAL → first branch fires.
+    // Adds a NORMAL-advisory reason without upgrading to CRITICAL.
+    const c = classifyChange({
+      address: "aws_iam_policy.restricted",
+      type: "aws_iam_policy",
+      name: "restricted",
+      actions: ["update"],
+      before: { policy: makeNarrowingPolicy() },
+      after: { policy: makeNarrowerPolicy() },
+    });
+    expect(c.severity).toBe("NORMAL");
+    // Only the narrowing advisory reason should appear (no DELETED or REPLACED).
+    expect(c.reasons.some((r) => r.includes("RESTRICT access"))).toBe(true);
+    expect(c.reasons.some((r) => r.includes("DELETED"))).toBe(false);
+    expect(c.reasons.some((r) => r.includes("REPLACED"))).toBe(false);
+  });
+});

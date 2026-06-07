@@ -16545,3 +16545,103 @@ paths:
     expect(c?.after).toBeNull();
   });
 });
+
+// ─── Round 129: parameter-constraint minItems/maxItems value tightening ──────────────────────────
+// Adding null-transitions for parameter-constraint minItems/maxItems in R126, but value→value
+// tightening directions are missing. Also documents the exclusiveMinimum/Maximum gap.
+describe("Round 129 — parameter-constraint minItems/maxItems value tightening + exclusiveMinimum gap", () => {
+  function makeArrayParamSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /search:
+    get:
+      parameters:
+        - name: ids
+          in: query
+          required: false
+          schema:
+            type: array
+            ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("(R129-3) minItems tightened on array parameter (2→5) is BREAKING — arrays with 2-4 elements now fail", () => {
+    // requestConstraintSeverity min-sense: after (5) > before (2) → BREAKING
+    const changes = analyzeOpenApiDiff(makeArrayParamSpec("minItems: 2"), makeArrayParamSpec("minItems: 5"));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".minItems"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(2);
+    expect(c?.after).toBe(5);
+  });
+
+  it("(R129-4) maxItems tightened on array parameter (10→4) is BREAKING — arrays with 5-10 elements now fail", () => {
+    // requestConstraintSeverity max-sense: after (4) < before (10) → BREAKING
+    const changes = analyzeOpenApiDiff(makeArrayParamSpec("maxItems: 10"), makeArrayParamSpec("maxItems: 4"));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".maxItems"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(10);
+    expect(c?.after).toBe(4);
+  });
+
+  it("(R129-5) exclusiveMinimum/exclusiveMaximum changes are NOT detected — known Phase 2 gap", () => {
+    // The diff engine tracks: minimum, maximum, minLength, maxLength, pattern, minItems,
+    // maxItems, minProperties, maxProperties. It does NOT track exclusiveMinimum or
+    // exclusiveMaximum (OAS 3.1 / JSON Schema 2020-12 keywords). Adding exclusiveMinimum: 5
+    // to a request schema is a BREAKING change (values 0-4 now fail), but is silently missed.
+    const before = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                count:
+                  type: integer
+      responses:
+        "204":
+          description: ok
+`;
+    const after = `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                count:
+                  type: integer
+                  exclusiveMinimum: 5
+      responses:
+        "204":
+          description: ok
+`;
+    // Engine does NOT emit a constraint-changed event for exclusiveMinimum (Phase 2 gap).
+    // Verify no crash and no false-positive constraint-changed event.
+    const changes = analyzeOpenApiDiff(before, after);
+    const exclusiveChange = changes.find(
+      (c) => String(c.location).includes("exclusiveMinimum") || String(c.location).includes("exclusiveMaximum"),
+    );
+    expect(exclusiveChange).toBeUndefined(); // Known gap: not detected.
+    // No crash — the unknown field is silently ignored.
+    expect(changes).toBeDefined();
+  });
+});
