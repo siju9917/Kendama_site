@@ -17241,3 +17241,144 @@ paths:
     expect(c?.after).toBe(20);
   });
 });
+
+// ─── Round 135: request/response property minItems/minProperties value→value gaps ──────────────────
+// Untested paths:
+//   request-schema-property-constraint minItems value→value loosening (5→1 INFO)
+//   request-schema-property-constraint minProperties value→value TIGHTENING (2→5 BREAKING)
+//   request-schema-property-constraint minProperties value→value LOOSENING (5→2 INFO)
+//   response-schema-property-constraint minItems value→value INCREASING (1→3 INFO: server guarantees more)
+//   response-schema-property-constraint minProperties value→value DECREASING (3→1 BREAKING: server weakens floor)
+describe("Round 135 — request/response property minItems + minProperties value→value gaps", () => {
+  function makeReqBodyArraySpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /batch:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+              ${constraintLine}
+      responses:
+        "204":
+          description: ok
+`;
+  }
+  function makeReqBodyObjectSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /config:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              ${constraintLine}
+      responses:
+        "204":
+          description: ok
+`;
+  }
+  function makeRespBodyArraySpec135(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                ${constraintLine}
+`;
+  }
+  function makeRespBodyObjectSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /profile:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                ${constraintLine}
+`;
+  }
+
+  it("(R135-1) request body minItems loosened (5→1) is INFO — arrays with 1-4 elements now accepted by server", () => {
+    // requestConstraintSeverity min-sense: after (1) < before (5) → else → INFO
+    const changes = analyzeOpenApiDiff(makeReqBodyArraySpec("minItems: 5"), makeReqBodyArraySpec("minItems: 1"));
+    const c = changes.find((x) => x.type === "request-schema-property-constraint-changed" && String(x.location).endsWith(".minItems"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(5);
+    expect(c?.after).toBe(1);
+  });
+
+  it("(R135-2) request body minProperties tightened (2→5) is BREAKING — objects with 2-4 keys now fail validation", () => {
+    // requestConstraintSeverity min-sense: after (5) > before (2) → BREAKING
+    // First value→value tightening test for minProperties on request body.
+    const changes = analyzeOpenApiDiff(makeReqBodyObjectSpec("minProperties: 2"), makeReqBodyObjectSpec("minProperties: 5"));
+    const c = changes.find((x) => x.type === "request-schema-property-constraint-changed" && String(x.location).endsWith(".minProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(2);
+    expect(c?.after).toBe(5);
+  });
+
+  it("(R135-3) request body minProperties loosened (5→2) is INFO — objects with 2-4 keys now accepted", () => {
+    // requestConstraintSeverity min-sense: after (2) < before (5) → else → INFO
+    const changes = analyzeOpenApiDiff(makeReqBodyObjectSpec("minProperties: 5"), makeReqBodyObjectSpec("minProperties: 2"));
+    const c = changes.find((x) => x.type === "request-schema-property-constraint-changed" && String(x.location).endsWith(".minProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(5);
+    expect(c?.after).toBe(2);
+  });
+
+  it("(R135-4) response body minItems increased (1→3) is INFO — server now guarantees at least 3 elements", () => {
+    // responseConstraintSeverity min-sense: after (3) > before (1) → else → INFO
+    // Server strengthens its floor guarantee — stronger promise for consumers.
+    const changes = analyzeOpenApiDiff(makeRespBodyArraySpec135("minItems: 1"), makeRespBodyArraySpec135("minItems: 3"));
+    const c = changes.find((x) => x.type === "response-schema-property-constraint-changed" && String(x.location).endsWith(".minItems"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(1);
+    expect(c?.after).toBe(3);
+  });
+
+  it("(R135-5) response body minProperties decreased (3→1) is BREAKING — server may now return objects with fewer keys", () => {
+    // responseConstraintSeverity min-sense: after (1) < before (3) → BREAKING
+    // Consumers relying on ≥3 keys being present may fail when server returns objects with 1-2 keys.
+    const changes = analyzeOpenApiDiff(makeRespBodyObjectSpec("minProperties: 3"), makeRespBodyObjectSpec("minProperties: 1"));
+    const c = changes.find((x) => x.type === "response-schema-property-constraint-changed" && String(x.location).endsWith(".minProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(3);
+    expect(c?.after).toBe(1);
+  });
+});
