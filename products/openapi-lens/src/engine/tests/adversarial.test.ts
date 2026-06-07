@@ -16645,3 +16645,241 @@ paths:
     expect(changes).toBeDefined();
   });
 });
+
+// ─── Round 130: parameter-constraint value→value loosening + minProperties/maxProperties tightening ─
+// Untested branches:
+//   - requestConstraintSeverity min-sense: after < before → INFO (loosening: min decreases)
+//   - requestConstraintSeverity max-sense: after > before → INFO (loosening: max increases)
+//   - requestConstraintSeverity min-sense value→value: minProperties tightening (BREAKING)
+//   - requestConstraintSeverity max-sense value→value: maxProperties tightening (BREAKING)
+//   - requestConstraintSeverity min-sense value→value: minItems loosening (INFO)
+describe("Round 130 — parameter-constraint value→value loosening + minProperties/maxProperties tightening", () => {
+  function makeIntParamSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      parameters:
+        - name: count
+          in: query
+          required: false
+          schema:
+            type: integer
+            ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+  function makeArrayParamSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      parameters:
+        - name: ids
+          in: query
+          required: false
+          schema:
+            type: array
+            ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+  function makeObjectParamSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /filter:
+    get:
+      parameters:
+        - name: options
+          in: query
+          required: false
+          style: deepObject
+          schema:
+            type: object
+            ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("(R130-1) query parameter minimum loosened (5→1) is INFO — constraint relaxed, more values accepted", () => {
+    // requestConstraintSeverity min-sense: after (1) < before (5) → INFO (not tightening)
+    const changes = analyzeOpenApiDiff(makeIntParamSpec("minimum: 5"), makeIntParamSpec("minimum: 1"));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".minimum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(5);
+    expect(c?.after).toBe(1);
+  });
+
+  it("(R130-2) query parameter maximum loosened (50→100) is INFO — constraint relaxed, more values accepted", () => {
+    // requestConstraintSeverity max-sense: after (100) > before (50) → INFO (not tightening)
+    const changes = analyzeOpenApiDiff(makeIntParamSpec("maximum: 50"), makeIntParamSpec("maximum: 100"));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".maximum"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(50);
+    expect(c?.after).toBe(100);
+  });
+
+  it("(R130-3) array parameter minItems loosened (5→2) is INFO — relaxed: previously-rejected arrays now accepted", () => {
+    // requestConstraintSeverity min-sense: after (2) < before (5) → INFO
+    const changes = analyzeOpenApiDiff(makeArrayParamSpec("minItems: 5"), makeArrayParamSpec("minItems: 2"));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".minItems"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(5);
+    expect(c?.after).toBe(2);
+  });
+
+  it("(R130-4) object parameter minProperties tightened (1→3) is BREAKING — objects with 1-2 properties now fail", () => {
+    // requestConstraintSeverity min-sense: after (3) > before (1) → BREAKING
+    const changes = analyzeOpenApiDiff(makeObjectParamSpec("minProperties: 1"), makeObjectParamSpec("minProperties: 3"));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".minProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(1);
+    expect(c?.after).toBe(3);
+  });
+
+  it("(R130-5) object parameter maxProperties tightened (10→3) is BREAKING — objects with 4-10 properties now fail", () => {
+    // requestConstraintSeverity max-sense: after (3) < before (10) → BREAKING
+    const changes = analyzeOpenApiDiff(makeObjectParamSpec("maxProperties: 10"), makeObjectParamSpec("maxProperties: 3"));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".maxProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(10);
+    expect(c?.after).toBe(3);
+  });
+});
+
+// ─── Round 131: parameter-constraint remaining value→value gaps ────────────────────────────
+// Remaining untested parameter-constraint value→value branches:
+//   maxItems loosening (after > before → INFO for max-sense)
+//   minProperties loosening (after < before → INFO for min-sense)
+//   maxProperties loosening (after > before → INFO for max-sense)
+//   minLength tightening (after > before → BREAKING for min-sense) value→value
+//   maxLength tightening (after < before → BREAKING for max-sense) value→value
+describe("Round 131 — parameter-constraint remaining value→value loosening + string tightening", () => {
+  function makeArrayParamSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      parameters:
+        - name: ids
+          in: query
+          required: false
+          schema:
+            type: array
+            ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+  function makeObjectParamSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /filter:
+    get:
+      parameters:
+        - name: options
+          in: query
+          required: false
+          style: deepObject
+          schema:
+            type: object
+            ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+  function makeStringParamSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /search:
+    get:
+      parameters:
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+            ${constraintLine}
+      responses:
+        "200":
+          description: ok
+`;
+  }
+
+  it("(R131-1) array parameter maxItems loosened (4→10) is INFO — previously-rejected arrays now accepted", () => {
+    // requestConstraintSeverity max-sense: after (10) > before (4) → else branch → INFO
+    const changes = analyzeOpenApiDiff(makeArrayParamSpec("maxItems: 4"), makeArrayParamSpec("maxItems: 10"));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".maxItems"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(4);
+    expect(c?.after).toBe(10);
+  });
+
+  it("(R131-2) object parameter minProperties loosened (3→1) is INFO — objects with 1-2 properties now accepted", () => {
+    // requestConstraintSeverity min-sense: after (1) < before (3) → else branch → INFO
+    const changes = analyzeOpenApiDiff(makeObjectParamSpec("minProperties: 3"), makeObjectParamSpec("minProperties: 1"));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".minProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(3);
+    expect(c?.after).toBe(1);
+  });
+
+  it("(R131-3) object parameter maxProperties loosened (3→10) is INFO — objects with 4-10 properties now accepted", () => {
+    // requestConstraintSeverity max-sense: after (10) > before (3) → else branch → INFO
+    const changes = analyzeOpenApiDiff(makeObjectParamSpec("maxProperties: 3"), makeObjectParamSpec("maxProperties: 10"));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".maxProperties"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(3);
+    expect(c?.after).toBe(10);
+  });
+
+  it("(R131-4) string parameter minLength tightened (3→8) is BREAKING — strings 3-7 chars now fail validation", () => {
+    // requestConstraintSeverity min-sense: after (8) > before (3) → BREAKING
+    // First value→value tightening test for minLength on parameter-constraint.
+    const changes = analyzeOpenApiDiff(makeStringParamSpec("minLength: 3"), makeStringParamSpec("minLength: 8"));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".minLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(3);
+    expect(c?.after).toBe(8);
+  });
+
+  it("(R131-5) string parameter maxLength tightened (50→20) is BREAKING — strings 21-50 chars now fail validation", () => {
+    // requestConstraintSeverity max-sense: after (20) < before (50) → BREAKING
+    // First value→value tightening test for maxLength on parameter-constraint.
+    const changes = analyzeOpenApiDiff(makeStringParamSpec("maxLength: 50"), makeStringParamSpec("maxLength: 20"));
+    const c = changes.find((x) => x.type === "parameter-constraint-changed" && String(x.location).endsWith(".maxLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(50);
+    expect(c?.after).toBe(20);
+  });
+});
