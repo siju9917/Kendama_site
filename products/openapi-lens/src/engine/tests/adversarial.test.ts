@@ -17125,3 +17125,119 @@ paths:
     expect(c?.after).toBe(3);
   });
 });
+
+// ─── Round 134: response/request property maxLength + response minItems/maxItems value→value ───────
+// Untested paths:
+//   response-schema-property-constraint maxLength increasing (50→100 BREAKING: server weakens max guarantee)
+//   request-schema-property-constraint maxLength decreasing (100→50 BREAKING: rejects clients who send 51-100)
+//   request-schema-property-constraint maxLength increasing (50→100 INFO: widens acceptance)
+//   response-schema-property-constraint minItems decreasing (3→1 BREAKING: server may return fewer elements)
+//   response-schema-property-constraint maxItems increasing (10→20 BREAKING: server may return more elements)
+describe("Round 134 — property maxLength value→value + response minItems/maxItems value→value", () => {
+  function makeRespBodyStringSpec134(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /message:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+                ${constraintLine}
+`;
+  }
+  function makeReqBodyStringSpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /message:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              ${constraintLine}
+      responses:
+        "204":
+          description: ok
+`;
+  }
+  function makeRespBodyArraySpec(constraintLine: string): string {
+    return `
+openapi: "3.0.3"
+info: {title: T, version: "1"}
+paths:
+  /items:
+    get:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                ${constraintLine}
+`;
+  }
+
+  it("(R134-1) response body maxLength loosened (50→100) is BREAKING — server may now return longer strings", () => {
+    // responseConstraintSeverity max-sense: after (100) > before (50) → BREAKING
+    // Consumers relying on strings being ≤50 chars may fail with up to 100 chars.
+    const changes = analyzeOpenApiDiff(makeRespBodyStringSpec134("maxLength: 50"), makeRespBodyStringSpec134("maxLength: 100"));
+    const c = changes.find((x) => x.type === "response-schema-property-constraint-changed" && String(x.location).endsWith(".maxLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(50);
+    expect(c?.after).toBe(100);
+  });
+
+  it("(R134-2) request body maxLength tightened (100→50) is BREAKING — clients sending 51-100 char strings now fail", () => {
+    // requestConstraintSeverity max-sense: after (50) < before (100) → BREAKING
+    const changes = analyzeOpenApiDiff(makeReqBodyStringSpec("maxLength: 100"), makeReqBodyStringSpec("maxLength: 50"));
+    const c = changes.find((x) => x.type === "request-schema-property-constraint-changed" && String(x.location).endsWith(".maxLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(100);
+    expect(c?.after).toBe(50);
+  });
+
+  it("(R134-3) request body maxLength loosened (50→100) is INFO — clients may now send longer strings", () => {
+    // requestConstraintSeverity max-sense: after (100) > before (50) → else → INFO
+    const changes = analyzeOpenApiDiff(makeReqBodyStringSpec("maxLength: 50"), makeReqBodyStringSpec("maxLength: 100"));
+    const c = changes.find((x) => x.type === "request-schema-property-constraint-changed" && String(x.location).endsWith(".maxLength"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("INFO");
+    expect(c?.before).toBe(50);
+    expect(c?.after).toBe(100);
+  });
+
+  it("(R134-4) response body minItems decreased (3→1) is BREAKING — server may now return as few as 1 element", () => {
+    // responseConstraintSeverity min-sense: after (1) < before (3) → BREAKING
+    const changes = analyzeOpenApiDiff(makeRespBodyArraySpec("minItems: 3"), makeRespBodyArraySpec("minItems: 1"));
+    const c = changes.find((x) => x.type === "response-schema-property-constraint-changed" && String(x.location).endsWith(".minItems"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(3);
+    expect(c?.after).toBe(1);
+  });
+
+  it("(R134-5) response body maxItems increased (10→20) is BREAKING — server may now return up to 20 elements", () => {
+    // responseConstraintSeverity max-sense: after (20) > before (10) → BREAKING
+    const changes = analyzeOpenApiDiff(makeRespBodyArraySpec("maxItems: 10"), makeRespBodyArraySpec("maxItems: 20"));
+    const c = changes.find((x) => x.type === "response-schema-property-constraint-changed" && String(x.location).endsWith(".maxItems"));
+    expect(c).toBeDefined();
+    expect(c?.severity).toBe("BREAKING");
+    expect(c?.before).toBe(10);
+    expect(c?.after).toBe(20);
+  });
+});
