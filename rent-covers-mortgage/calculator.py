@@ -19,7 +19,7 @@ ARGS
   --hoa --insurance --capex   monthly overrides    --cooccupant  monthly roommate income yrs 1-2 (default 1500)
   --ppr         rate cut per discount point (default 0.0025)         --name  label
 """
-import argparse, re
+import argparse, re, os
 import numpy as np
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -63,12 +63,12 @@ def rent_for_beds(b): return RENT_BY_BED.get(b, RENT_BY_BED[6]+(b-6)*450)
 def type_defaults(typ, price):
     t=typ.lower()
     if 'condo' in t or 'town' in t:                     # HOA covers exterior -> low ins/capex
-        return 300, max(150, 0.005*price/12), 0.004*price/12
+        return 300, max(40, 0.0015*price/12), 0.004*price/12   # condo insurance 0.15%/yr (HO-6; HOA covers the building)
     if 'adu' in t:
-        return 0, 0.0095*price/12, 0.011*price/12
+        return 0, 0.0035*price/12, 0.011*price/12             # multi/ADU insurance 0.35%/yr
     if any(k in t for k in ['duplex','triplex','fourplex','plex','multi']):
-        return 0, 0.0095*price/12, 0.012*price/12
-    return 0, 0.0085*price/12, 0.010*price/12            # SFH
+        return 0, 0.0035*price/12, 0.012*price/12             # multi insurance 0.35%/yr
+    return 0, 0.003*price/12, 0.010*price/12              # SFH insurance 0.30%/yr
 
 def closing(P, L, rate, ins_mo):                          # decomposed from the user's real pre-approval
     return 4_100 + L*rate/365*15 + (P*TAX_RATE/12)*4 + ins_mo*15
@@ -173,7 +173,11 @@ def main():
     ap.add_argument('--taxrate',type=float,default=None)     # effective annual property tax rate as a decimal (e.g. 0.0125 = 1.25%); varies a lot by state/county
     ap.add_argument('--emit-series',dest='emit_series',action='store_true')  # print downsampled cash/networth series as JSON
     ap.add_argument('--noplot',action='store_true')         # skip PNG rendering (fast batch re-runs)
+    ap.add_argument('--outdir',type=str,default=None)        # where to save the report + PNGs (default: ./output, or the agent sandbox if present)
     a=ap.parse_args()
+    # Output dir: prefer an explicit --outdir; else the agent sandbox if it exists; else a local ./output.
+    outdir = a.outdir or ('/mnt/user-data/outputs' if os.path.isdir('/mnt/user-data/outputs') else os.path.join(os.getcwd(),'output'))
+    os.makedirs(outdir, exist_ok=True)
     global NETF,MO,G2,TAX_RATE
     if a.vacancy is not None:
         NETF=(1.0-a.vacancy-BADDEBT)*(1.0-PM)
@@ -282,7 +286,7 @@ def main():
     # ===================== PLOTS =====================
     name=a.name or f"{typ} {'/'.join(str(b) if b>0 else 'studio' for b in beds)} @ ${P:,.0f}"
     slug=re.sub(r'[^a-z0-9]+','_',(a.name or f"{typ}_{'-'.join(map(str,beds))}_{int(P/1000)}k").lower()).strip('_')
-    cf_png=f"/mnt/user-data/outputs/{slug}_cashflow.png"; nw_png=f"/mnt/user-data/outputs/{slug}_networth.png"
+    cf_png=os.path.join(outdir,f"{slug}_cashflow.png"); nw_png=os.path.join(outdir,f"{slug}_networth.png")
     if not a.noplot:
         x=np.arange(MONTHS+1)/12.0; plt.rcParams.update({'font.family':'DejaVu Sans','font.size':11})
         name_plot=name.replace('$',r'\$')
@@ -305,7 +309,7 @@ def main():
         ax.plot(x,ARCH[0]['idx']/1000,lw=2.4,color='#374151',ls=(0,(6,3)),label=f"Invest ${cash:,.0f} in S&P 500 + rent")
         ax.plot(x,B/1000,lw=3.4,color='black',zorder=6,label=f"★ THIS HOUSE — ${P:,.0f}")
         ax.axhline(0,color='#111827',lw=1.0); ax.axvline(2,color='#9ca3af',ls='--',lw=1.2); ax.axvline(30,color='#9ca3af',ls=':',lw=1.4)
-        ax.set_title(f"After-tax net worth in 2026 dollars — THIS HOUSE vs. archetypes vs. invest-and-rent\n{name_plot}  ·  yr-35 \\${nwB35/1e3:,.0f}k ({"beats" if nwB35>idx35 else "trails"} investing by \\${abs(nwB35-idx35)/1e3:,.0f}k)",fontsize=12,fontweight='bold',pad=12)
+        ax.set_title(f"After-tax net worth in 2026 dollars — THIS HOUSE vs. archetypes vs. invest-and-rent\n{name_plot}  ·  yr-35 \\${nwB35/1e3:,.0f}k ({'beats' if nwB35>idx35 else 'trails'} investing by \\${abs(nwB35-idx35)/1e3:,.0f}k)",fontsize=12,fontweight='bold',pad=12)
         ax.set_xlabel("Years from purchase"); ax.set_ylabel("After-tax net worth if liquidated — 2026 $ (thousands)")
         ax.yaxis.set_major_formatter(FuncFormatter(lambda v,_:f"${v:,.0f}k")); ax.grid(True,alpha=0.25); ax.set_xlim(0,35); ax.set_ylim(bottom=0)
         ax.legend(loc='upper left',fontsize=8.5,framealpha=0.95)
@@ -397,7 +401,7 @@ def main():
     R.append("- ADU value holds only if the unit **already exists and is legal**.")
     report="\n".join(R)
     print(report)
-    rp=f"/mnt/user-data/outputs/Denver_Report_{slug}.md"; open(rp,"w").write(report)
+    rp=os.path.join(outdir,f"Denver_Report_{slug}.md"); open(rp,"w").write(report)
     print(f"\n[saved] {rp}\n[saved] {cf_png}\n[saved] {nw_png}")
 
 if __name__=="__main__": main()
